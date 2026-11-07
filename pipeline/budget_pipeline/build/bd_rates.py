@@ -7,15 +7,20 @@ Every number is re-read from a primary document on each build and cross-checked 
     Приложения 2 and 2А (ТЗПБ rate by economic activity), art. 15(1) (ГВРС: no contributions), Приложения 1 and 1А (minimum
     insurable income by activity and profession group). Parsed from the Държавен вестник HTML with lawparse.
   * ЗБНЗОК 2026 (ДВ, бр. 68): art. 2 (health-insurance contribution, 8%).
-  * ASBP bill (docx in prototype/data/raw/parliament/), Приложение № 2 "Основни допускания": the income-tax rate and the assumptions the contribution
+  * ASBP bill (docx in data/originals/parliament/), Приложение № 2 "Основни допускания": the income-tax rate and the assumptions the contribution
     parameters are re-derived from (60:40 split, 8,22:6,58 pension split, ...).
 Scenarios other than "employment" are real only where the NAP table has a row for them; the pensioner scenario has no row and stays
 pending (no numbers). The tax side of the self-employed and management-contract scenarios is left out (not in the sources).
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import re
 
-import lawparse as L
-from dlib import RAW, isnum, meta, pct, rnd
+import budget_pipeline.extract.lawparse as L
+from budget_pipeline.build.dlib import RAW, isnum, meta, pct, rnd
 
 NAP_PDF = RAW / "nap" / "nap_prilozhenie_1_VK-30-10237_12.08.2026.pdf"
 DOO_HTML = RAW / "dv" / "zbdoo2026_dv68_idMat244982.html"
@@ -81,7 +86,7 @@ def _nap_rows():
     try:
         import fitz                      # PyMuPDF: build-time only, not needed to serve the site
     except ImportError as exc:
-        raise RuntimeError("rates: PyMuPDF (fitz) is needed to read the NAP table; run with .venv-data/bin/python (tools/data/requirements.txt)") from exc
+        raise RuntimeError("rates: PyMuPDF (fitz) is needed to read the NAP table; run with tmp/venv-data/bin/python (pipeline/requirements.txt)") from exc
     rows = {}
     with fitz.open(str(NAP_PDF)) as doc:
         for pno, page in enumerate(doc, start=1):

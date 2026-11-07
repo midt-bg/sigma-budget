@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""mock_labels.py - editorial labels of the 52 budget measures (dataset M06). Pure data, read by build_mock.py.
+"""example_labels.py - editorial labels of the 52 budget measures (dataset M06). Pure data, read by build_examples.py.
 
-Every label is read off the measure's own text (site/data/measures.json: `quote`, `text`, `context.quote`):
+Every label is read off the measure's own text (data/release/measures.json: `quote`, `text`, `context.quote`):
   affects       the groups (M06_PERSONAS) a reader of the text would say are touched; [] = none of the six groups directly
   payer/winner  who bears the cost / who gains, in words the text supports ("Не е посочено в текста" when it is silent)
   evidence      a verbatim excerpt of the measure's text that the label rests on (validate_mock.py checks that it is one)

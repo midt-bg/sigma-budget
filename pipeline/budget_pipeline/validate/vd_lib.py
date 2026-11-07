@@ -1,18 +1,23 @@
-"""Shared helpers of validate_data.py (the DATA validator): the Check collector, file loading, walking, tolerances.
+"""Shared helpers of base.py (the DATA validator): the Check collector, file loading, walking, tolerances.
 
 Pure standard library. Nothing here writes a file.
 """
+
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 import json
 import math
 import os
 import re
 
-HERE = os.path.dirname(os.path.abspath(__file__))     # .../tools/mock
-ROOT = os.path.dirname(os.path.dirname(HERE))         # repository root
-SITE = os.path.join(ROOT, "site")                     # the Mock application
-DATA = os.environ.get("BUDGET_DATA_DIR") or os.path.join(SITE, "data")   # tools/budget.py validate points it at a release
+HERE = os.path.dirname(os.path.abspath(__file__))     # .../pipeline/budget_pipeline
+ROOT = str(__import__("pathlib").Path(__file__).resolve().parents[3])         # repository root
+SITE = os.path.join(ROOT, "apps", "web", "public")                     # the site
+DATA = os.environ.get("BUDGET_DATA_DIR") or os.path.join(ROOT, "data", "release")   # pipeline/budget_pipeline/cli.py validate points it at a release
 PROTO = os.path.join(ROOT, "prototype")
-RAW = os.path.join(PROTO, "data", "raw")              # raw sources, NOT in the repository: see docs/data-sources.md
+RAW = os.path.join(ROOT, "data", "originals")              # raw sources, NOT in the repository: see docs/data-sources.md
 TMP = os.path.join(ROOT, "tmp")                       # scratch and outputs (gitignored)
 BUILD_DATE = os.environ.get("BUILD_DATE", "2026-11-05")
 ISO = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -64,14 +69,14 @@ def _no_constants(name):
 
 
 def load(rel, base=None):
-    """Parse site/data/<rel> (NaN / Infinity are errors). execution.json comes through the adapter of its contract v2 (money as decimal
+    """Parse data/release/<rel> (NaN / Infinity are errors). execution.json comes through the adapter of its contract v2 (money as decimal
     strings -> floats), so the checks compute as before; vd_contract.py checks the file as written."""
     path = os.path.join(base or DATA, rel)
     with open(path, "r", encoding="utf-8") as fh:
         obj = json.loads(fh.read(), parse_constant=_no_constants)
     if os.path.basename(rel) == "execution.json":
-        import exec_contract
-        obj = exec_contract.numbers(obj)
+        import budget_pipeline.validate.execution_contract as execution_contract
+        obj = execution_contract.numbers(obj)
     return obj
 
 
@@ -80,8 +85,8 @@ def exists(rel, base=None):
 
 
 def data_files():
-    """Every file under site/data as site-data-relative paths with '/' separators, sorted. site/data/releases/ is left out: the manifests
-    describe the release (tools/budget.py, docs/release.md), they are not datasets of it."""
+    """Every file under data/release as site-data-relative paths with '/' separators, sorted. data/release/releases/ is left out: the manifests
+    describe the release (pipeline/budget_pipeline/cli.py, docs/release.md), they are not datasets of it."""
     out = []
     for dp, dn, fn in os.walk(DATA):
         if os.path.samefile(dp, DATA) and "releases" in dn:
@@ -174,18 +179,18 @@ class Ctx(object):
 
     def proto(self, rel):
         """A JSON file of the frozen prototype (read only)."""
-        with open(os.path.join(PROTO, rel), "r", encoding="utf-8") as fh:
+        with open(os.path.join(ROOT, "data", "inputs", rel.removeprefix("src/")), "r", encoding="utf-8") as fh:
             return json.loads(fh.read())
 
 
 # ------------------------------------------------------------------------------------------------ route patterns
 class Routes(object):
-    """The route table of site/js/routes.js, parsed from its R('S01', 'key', '/pattern', ...) lines."""
+    """The route table of apps/web/client/routes.js, parsed from its R('S01', 'key', '/pattern', ...) lines."""
 
     LINE = re.compile(r"""^\s*R\(\s*'(S\d\d)'\s*,\s*'([^']+)'\s*,\s*(null|'([^']*)')""", re.M)
 
     def __init__(self):
-        with open(os.path.join(SITE, "js", "routes.js"), "r", encoding="utf-8") as fh:
+        with open(os.path.join(ROOT, "apps", "web", "client", "routes.js"), "r", encoding="utf-8") as fh:
             src = fh.read()
         self.routes = {}                                    # id -> (key, pattern or None)
         self.compiled = []

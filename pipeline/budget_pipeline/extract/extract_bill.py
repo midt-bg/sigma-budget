@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """D08 + D10 input: the budgets of the adopted ЗДБ 2026 (ДВ бр. 69/31.07.2026) against the bill as submitted.
 
-Reads (read-only):  prototype/data/raw/dv/zdb2026_dv69_idMat245041.html   the adopted law (46 budgets, чл. 2-47, + чл. 1)
-                    prototype/data/raw/parliament/52-602-01-19.docx    the bill, parliament file 52-602-01-19
-Writes:             tools/mock/cache/law_bill.json                              consumed by build_data.py (bd_budgets, bd_law, bd_misc)
+Reads (read-only):  data/originals/dv/zdb2026_dv69_idMat245041.html   the adopted law (46 budgets, чл. 2-47, + чл. 1)
+                    data/originals/parliament/52-602-01-19.docx    the bill, parliament file 52-602-01-19
+Writes:             data/cache/law_bill.json                              consumed by build_data.py (bd_budgets, bd_law, bd_misc)
 
 What is compared (all amounts in хил. €, as printed):
   * every budget's headline rows (revenue, expenditure, transfers, EU contribution, balance, financing),
@@ -16,14 +16,19 @@ drafted by the Висш съдебен съвет; the second one sits under the
 adopted law. The other articles occur once. So "bill" below = the first occurrence ("as submitted"), "billMc" = the second.
 
 Checks (a failed one exits with 1): 46 budgets in both texts; Σ expenditure 13 326 470,3 and Σ revenue 2 284 302,7; names and
-policy tables agree with prototype/src/zdb2026.json; art. 1 agrees with dv_laws_2026.json; the Council of Ministers'
+policy tables agree with data/inputs/zdb2026.json; art. 1 agrees with dv_laws_2026.json; the Council of Ministers'
 occurrence of чл. 1/2 equals the law; distribution tables sum to the budget's expenditure; чл. 51 sums to 4 887 464,0.
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import difflib
 import sys
 
-import lawparse as L
-from dlib import RAW, SRC, Problems, jload, say, write_cache
+import budget_pipeline.extract.lawparse as L
+from budget_pipeline.build.dlib import RAW, SRC, Problems, jload, say, write_cache
 
 LAW_HTML = RAW / "dv" / "zdb2026_dv69_idMat245041.html"
 BILL_DOCX = RAW / "parliament" / "52-602-01-19.docx"
@@ -346,7 +351,7 @@ def main():
     result = build(p)
     if not p.errors:
         write_cache("law_bill.json", result)
-        say("wrote tools/mock/cache/law_bill.json")
+        say("wrote data/cache/law_bill.json")
     p.finish()
 
 

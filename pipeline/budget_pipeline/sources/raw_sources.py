@@ -1,33 +1,38 @@
 #!/usr/bin/env python3
 """Суровите файлове на данните: какво има, какво липсва и внасяне на свалените на ръка.
 
-Защо: сглобяването (tools/mock/run_all.sh) чете само prototype/data/raw/ и tools/mock/cache/. Файловете на МФ (месечните
+Защо: сглобяването (pipeline/budget_pipeline/build/run_all.sh) чете само data/originals/ и data/cache/. Файловете на МФ (месечните
 отчети по КФП в kfp_<ГГГГ>/ и PDF-ът с АСБП в asbp/) са в хранилището; останалите се свалят наново (docs/data-sources.md,
-раздел 5). Списъкът на всички със sha256 е в tools/mock/prototype.sha256. Командата казва
+раздел 5). Списъкът на всички със sha256 е в data/originals.sha256. Командата казва
 какво от списъка е налично и вярно, какво липсва и откъде се взима. Внася и ръчно свалените файлове на точното място
 (docs/data-acquisition.md, раздели 5.2 и 5.3).
 
-  status   сравнява prototype/data/raw/ с tools/mock/prototype.sha256: налично и вярно, липсва, различно, не е очакваният
+  status   сравнява data/originals/ с data/originals.sha256: налично и вярно, липсва, различно, не е очакваният
            вид (например страница с CAPTCHA, записана като PDF). Казва кой е следващият отчет по КФП и с какво се взима
            всеки липсващ файл. Изход 0, когато всичко е налице и вярно (живите източници може да са се променили), иначе 1.
   import   внася файлове или папки; без аргумент чете tmp/sources/inbox/.
-           * Файл, чийто sha256 е в prototype.sha256, отива на мястото си (така се възстановява архивът на работната група).
+           * Файл, чийто sha256 е в originals.sha256, отива на мястото си (така се възстановява архивът на работната група).
            * Нов месечен отчет по КФП се разпознава по съдържанието: лист „стартова“ 54×4, период от клетка A3, единица.
-             Записва се като kfp_<ГГГГ>/<ГГГГ>-EU_funds_<ММГГ>_BG_WEB[_N].xls, а редът му се добавя в prototype.sha256.
+             Записва се като kfp_<ГГГГ>/<ГГГГ>-EU_funds_<ММГГ>_BG_WEB[_N].xls, а редът му се добавя в originals.sha256.
            * За всеки внесен файл се дописва запис за придобиване в tmp/sources/ACQUISITIONS.jsonl: адрес (на macOS
              от метаданните на файла), време на сваляне, sha256, проверки.
            Нищо не се изтрива: друг файл на същото място се мести в tmp/sources/replaced/, а друга версия на същия
            месец по КФП — само с --replace.
 
 Употреба:
-    python3 tools/data/raw_sources.py status
-    .venv-data/bin/python tools/data/raw_sources.py import ~/Downloads/2026-EU\\ funds_0926_BG_WEB.xls
-    .venv-data/bin/python tools/data/raw_sources.py import /път/до/архива/          # възстановяване по sha256
-    .venv-data/bin/python tools/data/raw_sources.py import ФАЙЛ --url АДРЕС --replace --dry-run
+    python3 pipeline/budget_pipeline/sources/raw_sources.py status
+    tmp/venv-data/bin/python pipeline/budget_pipeline/sources/raw_sources.py import ~/Downloads/2026-EU\\ funds_0926_BG_WEB.xls
+    tmp/venv-data/bin/python pipeline/budget_pipeline/sources/raw_sources.py import /път/до/архива/          # възстановяване по sha256
+    tmp/venv-data/bin/python pipeline/budget_pipeline/sources/raw_sources.py import ФАЙЛ --url АДРЕС --replace --dry-run
 
-status е само стандартна библиотека (Python 3.9+); import на нов отчет по КФП иска xlrd (tools/data/requirements.txt).
-Не сваля нищо и не пипа site/data/.
+status е само стандартна библиотека (Python 3.9+); import на нов отчет по КФП иска xlrd (pipeline/requirements.txt).
+Не сваля нищо и не пипа data/release/.
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import argparse
 import calendar
 import datetime
@@ -41,12 +46,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
-RAW = ROOT / "prototype" / "data" / "raw"
-SUMS = ROOT / "tools" / "mock" / "prototype.sha256"
-PREFIX = "prototype/data/raw/"
+ROOT = Path(__file__).resolve().parents[3]
+RAW = ROOT / "data" / "originals"
+SUMS = ROOT / "data" / "originals.sha256"
+PREFIX = "data/originals/"
 # работните файлове на импорта са в tmp/sources/ (там са и другите ръчни входове, docs/data-sources.md, раздел 2), не в
-# prototype/data/raw/: проверката PROTO не допуска там файлове извън tools/mock/prototype.sha256
+# data/originals/: проверката PROTO не допуска там файлове извън data/originals.sha256
 WORK = ROOT / "tmp" / "sources"
 INBOX = WORK / "inbox"
 LOG = WORK / "ACQUISITIONS.jsonl"
@@ -60,8 +65,8 @@ KFP_NAME = re.compile(r"EU[ _]funds_(\d{2})(\d{2})_")       # „EU funds“ с 
 KFP_SUFFIX = re.compile(r"_BG_WEB(_\d+)?\.xls$", re.I)        # коригирана версия: _1, _2, _4
 
 # производни файлове в raw/: правят ги екстракторите, не се свалят
-DERIVED = {"asbp/asbp_tables.json": "tools/prototype/extract_asbp_tables.py",
-           "dv/dv_laws_2026.json": "tools/prototype/extract_dv_laws.py"}
+DERIVED = {"asbp/asbp_tables.json": "pipeline/budget_pipeline/extract/extract_asbp_tables.py",
+           "dv/dv_laws_2026.json": "pipeline/budget_pipeline/extract/extract_dv_laws.py"}
 OPTIONAL = {"data_europa"}                                  # метаданни за справка (docs/data-sources.md, 3.7)
 EXPECT = {".pdf": "pdf", ".xls": "xls", ".xlsx": "zip", ".docx": "zip", ".zip": "zip", ".7z": "7z",
           ".json": "json", ".jsonld": "json", ".xml": "xml", ".html": "html"}
@@ -114,7 +119,7 @@ def how_to_get(rel):
     if rel in DERIVED:
         return "extract", DERIVED[rel]
     if folder == "program_budgets":
-        return "extract", "tools/prototype/extract_program_budgets.py (от parliament/52-602-01-19.zip)"
+        return "extract", "pipeline/budget_pipeline/extract/extract_program_budgets.py (от parliament/52-602-01-19.zip)"
     if folder.startswith("kfp_"):
         return "import", "ръчно през браузър от %s, после `import`" % KFP_PAGE
     if folder == "asbp":
@@ -211,7 +216,7 @@ def cmd_status(_args):
 
     new = [r for r in files_on_disk() if r not in sums]
     if new:
-        print("\nНа диска, но не в tools/mock/prototype.sha256 (внеси ги с `import`, за да влязат в списъка):")
+        print("\nНа диска, но не в data/originals.sha256 (внеси ги с `import`, за да влязат в списъка):")
         for rel in new:
             print("  " + rel)
 
@@ -226,7 +231,7 @@ def cmd_status(_args):
             y, m, calendar.monthrange(ny, nm)[1], nm, ny, note, KFP_PAGE))
     if to_fetch:
         print("\nЛипсващите автоматични файлове (от България за nap/):")
-        print("  SSL_CERT_FILE=$(.venv-data/bin/python -m certifi) .venv-data/bin/python tools/prototype/fetch_sources.py "
+        print("  SSL_CERT_FILE=$(tmp/venv-data/bin/python -m certifi) tmp/venv-data/bin/python pipeline/budget_pipeline/sources/fetch_sources.py "
               + " ".join(to_fetch))
     if live:
         print("\n%d файла от живи източници са се променили. Сглобяването може да спре на тях: проверете ги, преди да опреснявате." % live)
@@ -271,7 +276,7 @@ def inputs(paths):
 
 
 def add_sum(rel, sha, dry):
-    """Добавя реда на файла в prototype.sha256, до файловете от същата папка."""
+    """Добавя реда на файла в originals.sha256, до файловете от същата папка."""
     full = PREFIX + rel
     lines = [ln for ln in SUMS.read_text(encoding="utf-8").splitlines() if ln.partition("  ")[2] != full]
     paths = [ln.partition("  ")[2] for ln in lines]
@@ -312,7 +317,7 @@ def read_kfp(data):
     try:
         import xlrd
     except ImportError:
-        raise ValueError("за отчетите по КФП трябва xlrd: пусни с .venv-data/bin/python (tools/data/requirements.txt)")
+        raise ValueError("за отчетите по КФП трябва xlrd: пусни с tmp/venv-data/bin/python (pipeline/requirements.txt)")
     try:
         wb = xlrd.open_workbook(file_contents=data)
     except Exception as exc:                           # noqa: BLE001 - a damaged file: xlrd raises CompDocError, XLRDError, struct.error and others
@@ -354,14 +359,14 @@ def import_one(src, args, by_hash, stamp, log):
         if dest.is_file():
             print("  на мястото му има друг файл: преместен в %s" % move_aside(dest, stamp, args.dry_run).relative_to(ROOT))
         place(src, rel, args.dry_run)
-        rec.update({"source": rel.split("/", 1)[0], "file": rel, "match": "sha256 от tools/mock/prototype.sha256"})
+        rec.update({"source": rel.split("/", 1)[0], "file": rel, "match": "sha256 от data/originals.sha256"})
         log.append(rec)
         print("  внесен по sha256: %s" % rel)
         return True
 
     kind = kind_of(data[:4096])
     if kind != "xls":
-        print("  ГРЕШКА: sha256 не е в tools/mock/prototype.sha256 и файлът не е отчет по КФП (вид: %s)" % kind)
+        print("  ГРЕШКА: sha256 не е в data/originals.sha256 и файлът не е отчет по КФП (вид: %s)" % kind)
         return False
     try:
         year, month, day, unit = read_kfp(data)
@@ -379,19 +384,19 @@ def import_one(src, args, by_hash, stamp, log):
         rel_have = next(p for p in same if sha256_file(p) == sha).relative_to(RAW).as_posix()
         for r in listed:
             drop_sum(r, args.dry_run)
-        add_sum(rel_have, sha, args.dry_run)          # на мястото си е, но може още да не е в prototype.sha256
-        print("  вече е внесен: %s (редът му в tools/mock/prototype.sha256 е налице)" % rel_have)
+        add_sum(rel_have, sha, args.dry_run)          # на мястото си е, но може още да не е в originals.sha256
+        print("  вече е внесен: %s (редът му в data/originals.sha256 е налице)" % rel_have)
         return True
     if (same or listed) and not args.replace:          # закованата версия е друга, дори файлът ѝ да не е на диска
         print("  ГРЕШКА: за %04d-%02d вече има %s. Ако това е коригирана версия, пусни с --replace." % (
-            year, month, ", ".join([p.name for p in same] + ["%s (ред в tools/mock/prototype.sha256, sha256 %s…)" % (r, sums[r][:12]) for r in listed])))
+            year, month, ", ".join([p.name for p in same] + ["%s (ред в data/originals.sha256, sha256 %s…)" % (r, sums[r][:12]) for r in listed])))
         return False
     for p in same:
         drop_sum(p.relative_to(RAW).as_posix(), args.dry_run)
         print("  старата версия е преместена в %s" % move_aside(p, stamp, args.dry_run).relative_to(ROOT))
     for r in listed:
         drop_sum(r, args.dry_run)
-        print("  заменя %s (sha256 %s…) в tools/mock/prototype.sha256" % (r, sums[r][:12]))
+        print("  заменя %s (sha256 %s…) в data/originals.sha256" % (r, sums[r][:12]))
     place(src, rel, args.dry_run)
     add_sum(rel, sha, args.dry_run)
     if listed:

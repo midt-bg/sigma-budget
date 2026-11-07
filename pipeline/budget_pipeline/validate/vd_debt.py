@@ -1,13 +1,18 @@
-"""DEBT group of validate_data.py: debt.json (D13 + D14), state debt 2024-2028, Maastricht debt, quarterly series, limits.
+"""DEBT group of base.py: debt.json (D13 + D14), state debt 2024-2028, Maastricht debt, quarterly series, limits.
 
 Every identity of the file is recomputed here: total = external + domestic, the printed percentages against the GDP of outlook.json,
 the structure shares against 100, the issuance and limit figures against each other, and the stored `check` block against the
 recomputed values. Printed values carry one decimal, so a sum may be off by 0.06 and a share by 0.051. Pure standard library.
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import re
 
-import vd_lib as L
-from vd_lib import Check, isnum
+import budget_pipeline.validate.vd_lib as L
+from budget_pipeline.validate.vd_lib import Check, isnum
 
 TOL = 0.06                      # a printed value of one decimal on each side of an identity
 

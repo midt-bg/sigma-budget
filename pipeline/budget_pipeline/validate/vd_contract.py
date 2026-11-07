@@ -1,4 +1,4 @@
-"""CONTRACT group of validate_data_v6.py: execution.json as written (contract v2, tools/mock/exec_contract.py) and its provenance index.
+"""CONTRACT group of datasets.py: execution.json as written (contract v2, pipeline/budget_pipeline/validate/execution_contract.py) and its provenance index.
 
 The other groups read execution.json through the adapter (money as floats). This one reads the file itself:
   * the contract block: schema 2, currency, unit and scale, the places of each block, the scope of each column, the accounting basis, and
@@ -8,12 +8,17 @@ The other groups read execution.json through the adapter (money as floats). This
   * execution-provenance.json: one original per reported month with the file name and sha256 of the data block, a cell for every row and
     column, a rule for the computed row, and an Annex 3 locator (page and row) for every plan item.
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import json
 import os
 import re
 
-import exec_contract as C
-from vd_lib import DATA, Check
+import budget_pipeline.validate.execution_contract as C
+from budget_pipeline.validate.vd_lib import DATA, Check
 
 EVIDENCE = {"real", "mock", "pending"}
 BUDGET = {"draft", "law", "report", "forecast"}
@@ -92,7 +97,7 @@ def g_contract(ctx):
 
     # provenance
     pname = k.get("provenance")
-    if not c.ok(pname and os.path.exists(os.path.join(DATA, pname)), "contract.provenance names a file of site/data: %r" % pname):
+    if not c.ok(pname and os.path.exists(os.path.join(DATA, pname)), "contract.provenance names a file of data/release: %r" % pname):
         return c
     p = _raw(pname)
     c.ok(p.get("schema") == "provenance/1" and p.get("dataset") == "execution", "%s: schema provenance/1 for execution" % pname)

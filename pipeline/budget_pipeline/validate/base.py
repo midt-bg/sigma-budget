@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
-"""validate_data.py: the data contract of the Mock prototype (DATA_SPEC section 5). Pure standard library.
+"""base.py: the data contract of the Mock prototype (DATA_SPEC section 5). Pure standard library.
 
-Run from anywhere:  .venv/bin/python tools/mock/validate_data.py [--only GROUP,...] [-v] [--no-rebuild] [--no-mock] [--list]
+Run from anywhere:  tmp/venv/bin/python pipeline/budget_pipeline/validate/base.py [--only GROUP,...] [-v] [--no-rebuild] [--no-mock] [--list]
 
   --only     comma separated group names (see --list); default: all
   -v         print every problem, warning and fact in full
   --no-rebuild  skip the REBUILD group (an in-process `build_data.py --check`)
-  --no-mock  skip the MOCK group (`python3 tools/mock/validate_mock.py`, DATA2's validator)
+  --no-mock  skip the MOCK group (`python3 reference/mock/validate_mock.py`, DATA2's validator)
 Exit code: 0 all checks passed, 1 at least one violation, 2 usage error.
 Each group prints one line: OK|FAIL, name, number of checks and the key facts it established.
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import argparse
 import os
 import sys
@@ -19,8 +24,8 @@ import traceback
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
-import vd_lib as L                                       # noqa: E402
-import vd_core, vd_fiscal, vd_budget, vd_other           # noqa: E402,E401
+import budget_pipeline.validate.vd_lib as L                                       # noqa: E402
+import budget_pipeline.validate.vd_core as vd_core, vd_fiscal, vd_budget, vd_other           # noqa: E402,E401
 
 MODULES = (vd_core, vd_fiscal, vd_budget, vd_other)
 
@@ -38,7 +43,7 @@ def all_groups():
     names = [g[0] for g in out]
     dup = sorted({n for n in names if names.count(n) > 1})
     if dup:
-        raise SystemExit("validate_data: group registered twice: %s" % ", ".join(dup))
+        raise SystemExit("base: group registered twice: %s" % ", ".join(dup))
     rank = dict((n, i) for i, n in enumerate(ORDER))
     return sorted(out, key=lambda g: rank.get(g[0], len(ORDER)))
 
@@ -68,7 +73,7 @@ def main(argv=None):
     ctx = L.Ctx({"no_rebuild": a.no_rebuild, "no_mock": a.no_mock, "verbose": a.verbose})
     t0 = time.time()
     n_files = len(L.data_files())
-    print("validate_data: site/data, %d files, build date %s" % (n_files, L.BUILD_DATE))
+    print("base: data/release, %d files, build date %s" % (n_files, L.BUILD_DATE))
     n_checks = n_problems = n_warnings = 0
     failed = []
     for name, fn, _doc in groups:

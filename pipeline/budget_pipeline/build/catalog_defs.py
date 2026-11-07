@@ -1,10 +1,10 @@
-"""Static definitions of the data catalog (D25): one entry per file of site/data/, in the order screen S24 shows them.
+"""Static definitions of the data catalog (D25): one entry per file of data/release/, in the order screen S24 shows them.
 
 Shared by build_catalog.py (catalog.json) and build_search.py (the "datasets" group of the search index), so neither
 imports the other. Everything that is a DECISION lives here: titles, plain-language descriptions (templates filled with
 facts computed from the data by build_catalog.py), the screens that read each file, the group of each file.
 
-`screens` is reconciled with the `needs` that the screens declare in site/js/pages/*.js (validate_data.py prints a warning
+`screens` is reconciled with the `needs` that the screens declare in apps/web/client/pages/*.js (base.py prints a warning
 for every difference). User-facing strings are Bulgarian; keys and comments are English.
 """
 
@@ -21,7 +21,7 @@ GROUPS = [
     {"id": "pending", "label": "Предстоящи набори"},
 ]
 
-# One row per file. `file` is relative to site/data/. `{…}` placeholders are filled by build_catalog.facts().
+# One row per file. `file` is relative to data/release/. `{…}` placeholders are filled by build_catalog.facts().
 DEFS = [
     # ---------------------------------------------------------------------------------------------- budget
     {"slug": "outlook", "file": "outlook.json", "group": "budget", "title": "Рамка на КФП и макропрогноза 2024–2028",
@@ -29,7 +29,7 @@ DEFS = [
              "в млн. € и като дял от БВП, макроикономическата прогноза (БВП, инфлация, безработица) и сравнение на двете "
              "версии на Приложение 3 към мотивите на законопроекта.",
      "screens": ["S01", "S04", "S13", "S17"]},
-    # v5: built by gva_sectors_v5.py from two saved Eurostat answers (build_catalog.GVA_FILES); its search row has its own words
+    # v5: built by gva_sectors.py from two saved Eurostat answers (build_catalog.GVA_FILES); its search row has its own words
     {"slug": "gva-sectors", "file": "gva-sectors.json", "group": "budget",
      "title": "Икономиката по отрасли: добавена стойност и БВП 2019–2025",
      "desc": "Добавената стойност на десетте отрасъла на българската икономика (и на преработващата промишленост като част от "

@@ -13,6 +13,11 @@ Percentages (pctPlan, yoyPct, pace) stay numbers: they are ratios, not money.
     load(path)      read execution.json and return numbers(...)
     money(value, places)   one canonical string; Decimal or float in, half away from zero
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import copy
 import json
 from decimal import Decimal, ROUND_HALF_UP

@@ -1,6 +1,6 @@
 """catalog.json (D25): the inventory behind screens S24 (Откъде са данните?) and S25 (Отворени данни и API).
 
-One entry per file of site/data/ (plus one per pending set P01-P07 without a file), the six traps of reading Bulgarian
+One entry per file of data/release/ (plus one per pending set P01-P07 without a file), the six traps of reading Bulgarian
 budget numbers, the methodology notes and the checksums of the primary source files.
 
 Runs LAST in build_data.py: it reads my files from `ctx.out` and DATA2's files (glossary, guide, mock/*) from disk, so that
@@ -13,21 +13,26 @@ Shape (DATA_SPEC §3.20):
               multi-file entry "ministries-programs"; + expected / reason for pending sets, which have NO file and NO sizes)
   groups[], counts, traps[], methodology[], files[] (primary sources with sha256), meta
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import json
 import re
 import urllib.parse
 from pathlib import Path
 
-import catalog_defs
-from bd_common import NBSP, PENDING_DEFS, SOURCES as SOURCE_REGISTRY, fmt_date, fmt_money, fmt_num, fmt_pct, month_name
-from dlib import BUILD_DATE, DATA, EUR, RAW, CACHE, gz_size, jdumps, meta, sha256_file
+import budget_pipeline.build.catalog_defs as catalog_defs
+from budget_pipeline.build.bd_common import NBSP, PENDING_DEFS, SOURCES as SOURCE_REGISTRY, fmt_date, fmt_money, fmt_num, fmt_pct, month_name
+from budget_pipeline.build.dlib import BUILD_DATE, DATA, EUR, RAW, CACHE, gz_size, jdumps, meta, sha256_file
 
 KHIL = NBSP + "хил." + NBSP + "€"
 
 
 # ------------------------------------------------------------------------------------------------ file access
 def _blob(ctx, rel):
-    """(object or None, bytes or None) of site/data/<rel>: from this build when we make the file, else from disk."""
+    """(object or None, bytes or None) of data/release/<rel>: from this build when we make the file, else from disk."""
     if rel in ctx.out:
         obj = ctx.out[rel]
         return obj, (jdumps(obj) + "\n").encode("utf-8")
@@ -413,7 +418,7 @@ _SEBRA_CACHE = [("sebra_27.08.2026.xlsx", "3789/27.08..2026.xlsx", "27.08.2026")
 _ASBP_PDF = RAW / "asbp" / "UMTBF-2026-2028-motivi.pdf"
 
 
-# the two saved Eurostat answers behind gva-sectors.json (gva_sectors_v5.py); they are not in prototype/data/raw, so their record is
+# the two saved Eurostat answers behind gva-sectors.json (gva_sectors.py); they are not in data/originals, so their record is
 # written out here as it was taken on 2026-10-09
 GVA_FILES = [
     {"name": "nama_10_a10_BG_B1G.json", "title": "Евростат nama_10_a10: брутна добавена стойност по отрасли, България (годишно, текущи цени)",

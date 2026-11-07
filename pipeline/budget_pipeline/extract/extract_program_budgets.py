@@ -5,7 +5,7 @@
   1. Разархивира програмните бюджети на първостепенните разпоредители (ПРБ) от архива към
      законопроекта за държавния бюджет 2026 (parliament.bg/bills/52/52-602-01-19.zip, папка
      „7.Програмни формати на бюджети на ПРБ с бюджет по ДБ“: 4 zip-а + 7z за съдебната власт)
-     в prototype/data/raw/program_budgets/.
+     в data/originals/program_budgets/.
   2. Във всеки PDF намира таблиците „Код | Области на политики и бюджетни програми“
      (PyMuPDF find_tables) с 9 колони числа: консолидирани / ведомствени / администрирани разходи,
      всяка разделена на „общо“, „по бюджета на ПРБ“ и „по други бюджети и сметки за средства от ЕС“.
@@ -13,21 +13,26 @@
      се взима от заглавието ѝ или от текста точно над нея; таблица без заглавие продължава предишната.
   3. Сверява „Проект 2026 — по бюджета на ПРБ“ с чл. 3–47 на ЗДБ 2026 (src/zdb2026.json):
      общата сума и сумите по политики/програми, които законът дава.
-  4. Пише prototype/src/program_budgets_2026.json.
+  4. Пише data/inputs/program_budgets_2026.json.
 
-Входове: prototype/data/raw/parliament/52-602-01-19.zip (сваля го fetch_sources.py), prototype/src/zdb2026.json
-Изход:   prototype/src/program_budgets_2026.json (+ разархивираните PDF-и в data/raw/program_budgets/)
+Входове: data/originals/parliament/52-602-01-19.zip (сваля го fetch_sources.py), data/inputs/zdb2026.json
+Изход:   data/inputs/program_budgets_2026.json (+ разархивираните PDF-и в data/raw/program_budgets/)
 Изисква: pymupdf, py7zr (pip install pymupdf py7zr) — в отделен venv.
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import io, json, os, re, sys, zipfile
 
 import pymupdf
 
-PROTO = str(__import__("pathlib").Path(__file__).resolve().parents[2]) + "/prototype"
-ZIP = f"{PROTO}/data/raw/parliament/52-602-01-19.zip"
-OUTDIR = f"{PROTO}/data/raw/program_budgets"
-OUT = f"{PROTO}/src/program_budgets_2026.json"
-ZDB = f"{PROTO}/src/zdb2026.json"
+PROTO = str(__import__("pathlib").Path(__file__).resolve().parents[3])
+ZIP = f"{PROTO}/data/originals/parliament/52-602-01-19.zip"
+OUTDIR = f"{PROTO}/data/originals/program_budgets"
+OUT = f"{PROTO}/data/inputs/program_budgets_2026.json"
+ZDB = f"{PROTO}/data/inputs/zdb2026.json"
 
 NUM = re.compile(r"^-?\d{1,3}(?:[ \u00a0\u202f]\d{3})*(?:[.,]\d+)?$|^-?\d+(?:[.,]\d+)?$|^-$")
 CODE = re.compile(r"^(\d{4})\.\s*(\d{2})\.\s*(\d{2})\*?$")

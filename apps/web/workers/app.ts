@@ -1,19 +1,19 @@
 // The Worker of the site (docs/adr/0002-react-router-ssr.md). The platform serves the static files of the client build first (css/, js/,
 // data/, vendor/, images); the Worker answers the rest:
-//   /admin/*                            the operator API (worker/admin.js), behind Cloudflare Access and checked again there
+//   /admin/*                            the operator API (apps/web/workers/api/admin.js), behind Cloudflare Access and checked again there
 //   anything but GET and HEAD           405: the public routes never write
-//   /api/releases*, /data/releases/*    the public, read-only release API (worker/api.js)
+//   /api/releases*, /data/releases/*    the public, read-only release API (apps/web/workers/api/api.js)
 //   /data/<file>                        the stable address of a data file: the file of the current release (registry), else the static one
-//                                       (wrangler.jsonc assets.run_worker_first sends these here before the static files)
+//                                       (apps/web/wrangler.jsonc assets.run_worker_first sends these here before the static files)
 //   every screen                        React Router: the screen drawn from the current release (app/), one scope per request
 // The registry is D1 (binding DB), the objects are R2 (binding OBJECTS): docs/release.md.
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { createRequestHandler } from 'react-router';
-import { adminApi } from '../worker/admin.js';
-import { publicApi } from '../worker/api.js';
-import { provideScope } from '../site/js/env.js';
-import { requestState } from '../site/js/store.js';
-import { screenSearch } from '../site/js/routes.js';
+import { adminApi } from './api/admin.js';
+import { publicApi } from './api/api.js';
+import { provideScope } from '../client/env.js';
+import { requestState } from '../client/store.js';
+import { screenSearch } from '../client/routes.js';
 import { releaseData, noRegistry, type ReleaseData } from './release-data';
 import { inFlight, claim, withinCap } from './render-gate';
 import { CSP } from '../app/lib/security';
@@ -34,7 +34,7 @@ interface Scope {
   state: Record<string, unknown>;
   data: Map<string, unknown>;
   load: ReleaseData['load'];
-  /** a file of the screen could not be read (site/js/data.js): the screen is shown, but not kept in the edge cache */
+  /** a file of the screen could not be read (apps/web/client/data.js): the screen is shown, but not kept in the edge cache */
   degraded?: boolean;
 }
 const scopes = new AsyncLocalStorage<Scope>();
@@ -43,11 +43,11 @@ provideScope(() => scopes.getStore() ?? null);
 const handler = createRequestHandler(() => import('virtual:react-router/server-build'), import.meta.env.MODE);
 
 /* The edge cache, as in СИГМА (midt-bg/sigma, apps/web/workers/app.ts and cache-key.ts). A drawn screen depends only on the release, the
-   build and the address of the screen: its path and the keys of the query that the screen reads (site/js/routes.js screenSearch). The
+   build and the address of the screen: its path and the keys of the query that the screen reads (apps/web/client/routes.js screenSearch). The
    server draws it from exactly that address, and the cache keeps it under exactly that key, so a repeated request costs no render (a
    cold render takes up to ~60 ms of CPU, docs/production-readiness.md), ?x=… or another screen's key lands on the same entry, and a new
    release or a new deploy is a new key. Only a complete screen is kept: a 200 with every file it read (no error, no redirect, no 404
-   screen, no 503); identical misses wait for the first one (workers/render-gate.ts). The stored copy is the response before
+   screen, no 503); identical misses wait for the first one (apps/web/workers/render-gate.ts). The stored copy is the response before
    documentHeaders(); the visitor's copy is always revalidated (max-age=0). */
 declare const __BUILD__: string;
 const BUILD = typeof __BUILD__ !== 'undefined' ? __BUILD__ : 'dev';
@@ -87,8 +87,8 @@ async function fallback(request: Request, env: Env, res: Response): Promise<Resp
   return file.status === 404 ? res : file;
 }
 
-/* data/feed.xml of a release links to a placeholder host (tools/mock/bd_feed.py: a reserved name that never resolves), as the hash
-   addresses of the prototype. tools/site/build.py writes the site's origin into the static copy (stamp_files); the stable address of a
+/* data/feed.xml of a release links to a placeholder host (pipeline/budget_pipeline/build/bd_feed.py: a reserved name that never resolves), as the hash
+   addresses of the prototype. apps/web/scripts/build.py writes the site's origin into the static copy (stamp_files); the stable address of a
    registry release gets the same links here. The file of the release itself (/data/releases/<id>/data/feed.xml) keeps its bytes. */
 const FEED = 'data/feed.xml';
 const PLACEHOLDER = /https?:\/\/budget-na-svetlo\.example\/(?:#\/)?/g;
@@ -117,7 +117,7 @@ async function dataFile(request: Request, env: Env, url: URL, data: ReleaseData,
   return encoded(request, new Response(request.method === 'HEAD' ? null : f.bytes, { headers }));
 }
 
-/* the headers that site/_headers (tools/site/build.py) gives the static files, for the documents the Worker draws. no-transform: a zone
+/* the headers that site/_headers (apps/web/scripts/build.py) gives the static files, for the documents the Worker draws. no-transform: a zone
    feature that edits HTML on the way out (the Web Analytics beacon, Email Obfuscation, Rocket Loader) must not change the screens */
 function documentHeaders(res: Response, env: Env, embed: boolean, rid: string, cached?: 'HIT' | 'MISS' | 'BYPASS', degraded = false): Response {
   const h = new Headers(res.headers);
@@ -147,7 +147,7 @@ export default {
       return new Response('Method not allowed', { status: 405, headers: { Allow: 'GET, HEAD' } });
     }
     if (RELEASES.test(url.pathname)) {
-      // the registry's releases; a release that was published with the site (site/data/releases/) is one of the static files. An
+      // the registry's releases; a release that was published with the site (data/release/releases/) is one of the static files. An
       // environment without a registry (no D1 tables: a local check, a new environment) answers as one where the release is unknown
       let res: Response;
       try { res = await publicApi(request, env, url); }
@@ -182,7 +182,7 @@ export default {
     const hit = await fromCache();
     if (hit) return hit;
 
-    // the same miss is already being drawn in this isolate: take its entry instead of drawing the screen again (workers/render-gate.ts)
+    // the same miss is already being drawn in this isolate: take its entry instead of drawing the screen again (apps/web/workers/render-gate.ts)
     const pending = cache && inFlight(key.url);
     if (pending) {
       await pending;

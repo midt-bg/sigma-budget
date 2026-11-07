@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""catalog_refresh_v5.py - bring site/data/catalog.json back in line with the files of site/data (version v5: check out the tag mock-v5) (pure standard library).
+"""catalog_refresh.py - bring data/release/catalog.json back in line with the files of data/release (version v5: check out the tag mock-v5) (pure standard library).
 
-The V5 pass edited several data files after tools/v5_data_active.py had refreshed the catalog (core, feed, guide, search-index). The catalog states
-their sizes, their top-level schema, their meta.source and the screens that read them, and the CATALOG group of validate_data prints each drift.
+The V5 pass edited several data files after tools/active_data.py had refreshed the catalog (core, feed, guide, search-index). The catalog states
+their sizes, their top-level schema, their meta.source and the screens that read them, and the CATALOG group of base prints each drift.
 This script recomputes exactly what the validator compares and nothing else:
 
   * bytes / gzipBytes of every dataset file (and of the parts of the multi-file set), schema from the top-level keys (the validator's own rule),
@@ -13,9 +13,14 @@ This script recomputes exactly what the validator compares and nothing else:
   * counts: datasets, listed files, real / mock / pending, primary sources.
 data/sebra.json stays on disk, unreferenced, and is not listed (so counts.files is 64 while the folder holds 65).
 
-  python3 tools/mock/catalog_refresh_v5.py          rewrite catalog.json when something differs
-  python3 tools/mock/catalog_refresh_v5.py --check   write nothing; exit 1 when the catalog is stale
+  python3 pipeline/budget_pipeline/build/catalog_refresh.py          rewrite catalog.json when something differs
+  python3 pipeline/budget_pipeline/build/catalog_refresh.py --check   write nothing; exit 1 when the catalog is stale
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import glob
 import gzip
 import io
@@ -24,9 +29,9 @@ import os
 import re
 import sys
 
-ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))   # repository root
-SITE = os.path.join(ROOT, "site")                  # the Mock application (run this at the tag mock-v5)
-DATA = os.path.join(SITE, "data")
+ROOT = str(_Path(__file__).resolve().parents[3])   # repository root
+SITE = os.path.join(ROOT, "apps", "web", "public")                  # the site (run this at the tag mock-v5)
+DATA = os.path.join(ROOT, "data", "release")
 UNLISTED = {"sebra.json"}
 
 
@@ -52,13 +57,13 @@ def schema(obj):
 
 
 def active_routes():
-    src = open(os.path.join(SITE, "js", "routes.js"), encoding="utf-8").read()
+    src = open(os.path.join(ROOT, "apps", "web", "client", "routes.js"), encoding="utf-8").read()
     return set(re.findall(r"^\s*R\(\s*'(S\d\d)'", src, re.M))
 
 
 def page_needs():
     out = {}
-    for path in sorted(glob.glob(os.path.join(SITE, "js", "pages", "s[0-9][0-9]-*.js"))):
+    for path in sorted(glob.glob(os.path.join(ROOT, "apps", "web", "client", "pages", "s[0-9][0-9]-*.js"))):
         rid = os.path.basename(path)[:3].upper()
         m = re.search(r"export const needs\s*=\s*\[([^\]]*)\]", open(path, encoding="utf-8").read())
         if m:
@@ -77,7 +82,7 @@ def refresh(cat):
         if d.get("parts"):
             tot = gz = 0
             for pp in d["parts"]:
-                raw = open(os.path.join(SITE, pp["file"]), "rb").read()
+                raw = open(os.path.join(DATA, pp["file"].removeprefix("data/")), "rb").read()
                 if (pp["bytes"], pp["gzipBytes"]) != (len(raw), gz_size(raw)):
                     pp["bytes"], pp["gzipBytes"] = len(raw), gz_size(raw)
                     changes.append("%s part %s: size" % (slug, pp["code"]))
@@ -89,7 +94,7 @@ def refresh(cat):
             continue
         if not d.get("file"):
             continue
-        raw = open(os.path.join(SITE, d["file"]), "rb").read()
+        raw = open(os.path.join(DATA, d["file"].removeprefix("data/")), "rb").read()
         if d["id"] != "D25" and (d.get("bytes"), d.get("gzipBytes")) != (len(raw), gz_size(raw)):
             d["bytes"], d["gzipBytes"] = len(raw), gz_size(raw)
             changes.append("%s: size" % slug)
@@ -151,7 +156,7 @@ def main():
     path = os.path.join(DATA, "catalog.json")
     cat = json.load(open(path, encoding="utf-8"))
     changes = refresh(cat)
-    print("catalog_refresh_v5: %d change(s)" % len(changes))
+    print("catalog_refresh: %d change(s)" % len(changes))
     for c in changes:
         print("  " + c)
     if changes and not only:

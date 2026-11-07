@@ -1,7 +1,7 @@
 """search-index.json (DATA_SPEC 3.21): the rows behind the search box of the shell and screen S28.
 
 One flat table, `fields` = g, title, sub, value, period, status, href, kw. `g` is an index into `groups`. The client
-(site/js/searchlib.js) adds the "screens" group itself from its route table, so it is NOT here; it falls back to the
+(apps/web/client/searchlib.js) adds the "screens" group itself from its route table, so it is NOT here; it falls back to the
 glossary only when the index has no `terms` rows, so the terms ARE here (built with the same rules as the client).
 
 Six groups: indicators (the headline numbers and the rows of the money screens), institutions (46 budgets + their
@@ -11,14 +11,19 @@ only the wording of a few synonyms (kw) is typed in. Budget: < 250 KB raw (§6.7
 
 Runs after core.json (it reads it) and before catalog.json (which lists this file with its size).
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import json
 import re
 
-import bd_common
-from bd_common import (BUDGET_INFO, FUNCTION_DEFS, KIND_LABELS, PENDING_DEFS, fmt_eur, fmt_khil, fmt_money, fmt_num, fmt_pct,
+import budget_pipeline.build.bd_common as bd_common
+from budget_pipeline.build.bd_common import (BUDGET_INFO, FUNCTION_DEFS, KIND_LABELS, PENDING_DEFS, fmt_eur, fmt_khil, fmt_money, fmt_num, fmt_pct,
                        month_name)
-from catalog_defs import DEFS, GROUPS as CATALOG_GROUPS
-from dlib import DATA, isnum, jdumps, meta
+from budget_pipeline.build.catalog_defs import DEFS, GROUPS as CATALOG_GROUPS
+from budget_pipeline.build.dlib import DATA, isnum, jdumps, meta
 
 GROUPS = ["indicators", "institutions", "municipalities", "measures", "terms", "datasets"]
 FIELDS = ["g", "title", "sub", "value", "period", "status", "href", "kw"]
@@ -76,7 +81,7 @@ _DS_STATUS = {"real": "реални данни", "mock": "примерни да�
 
 # ----------------------------------------------------------------------------------------------- helpers
 def _obj(ctx, rel, optional=False):
-    """A built file: from this run (ctx.out) or, for DATA2's files, from site/data on disk."""
+    """A built file: from this run (ctx.out) or, for DATA2's files, from data/release on disk."""
     if rel in ctx.out:
         return ctx.out[rel]
     p = DATA / rel

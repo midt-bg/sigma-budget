@@ -1,15 +1,20 @@
 """Builder for measures.json (D12): budget measures of 2026 as stated in the motives to the bill.
 
-Source: prototype/src/measures_2026.json (normalised from the .docx of the motives submitted on 01.07.2026):
+Source: data/inputs/measures_2026.json (normalised from the .docx of the motives submitted on 01.07.2026):
 the introduction (8 revenue + 9 expenditure measures with an estimate, 4 + 3 without), Табл. II-8 and II-9 (discretionary
 measures on an accrual basis) and Част VIII (8 changes to other laws). Everything is copied or summed from that file;
 the `related` links are hand-coded and asserted to carry equal numbers. The editorial labels (who is affected, who pays)
 are mock M06, keyed by item id, and live in mock/measure-labels.json (DATA2).
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import re
 
-from bd_common import fmt_num
-from dlib import isnum, meta, rnd
+from budget_pipeline.build.bd_common import fmt_num
+from budget_pipeline.build.dlib import isnum, meta, rnd
 
 ASOF = "2026-07-01"
 YEARS3 = [2026, 2027, 2028]

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """The acceptance checks of stage C (docs/approach-specification.md, section 11) against the Worker on a local registry.
 
-    python tools/release_check.py                  synthetic releases (no raw files needed: this is what CI runs)
-    python tools/release_check.py --real DIR       also publish the release of `budget build` in DIR and reproduce it from the Worker
+    python tests/release/release_check.py                  synthetic releases (no raw files needed: this is what CI runs)
+    python tests/release/release_check.py --real DIR       also publish the release of `budget build` in DIR and reproduce it from the Worker
 
-It builds the site (react-router build: the Worker of workers/app.ts and the static files, docs/adr/0002-react-router-ssr.md) and starts
+It builds the site (react-router build: the Worker of apps/web/workers/app.ts and the static files, docs/adr/0002-react-router-ssr.md) and starts
 `wrangler dev` on it (node_modules, package-lock.json) with a fresh local D1 and R2, applies migrations/, and signs Cloudflare Access
 tokens with an RSA key made for the run (openssl; the Worker gets the public key as ACCESS_JWKS). Then:
   9  operator: no token, a foreign key, a wrong audience, an expired token and a person who is not an operator are refused
@@ -19,6 +19,14 @@ tokens with an RSA key made for the run (openssl; the Worker gets the public key
      the edge cache keys a screen on the query it reads only and never keeps the 404 screen
 Exit code 0 only when every check passes.
 """
+
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
 import argparse
 import base64
 import gzip
@@ -36,7 +44,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 ISSUER, AUD = "https://sigma-budget-test.cloudflareaccess.com", "sigma-budget-test-aud"
 OPERATORS = "alice@example.org,bob@example.org"
 RESULTS = []
@@ -101,11 +109,7 @@ def jbody(b):
 
 
 def free_port():
-    s = socket.socket()
-    s.bind(("127.0.0.1", 0))
-    p = s.getsockname()[1]
-    s.close()
-    return p
+    return int(os.environ.get('BUDGET_TEST_PORT', '8816'))
 
 
 def make_release(root, name, text, commit="a" * 40):
@@ -115,8 +119,8 @@ def make_release(root, name, text, commit="a" * 40):
             '<item><link>https://budget-na-svetlo.example/#/izpalnenie?mesec=9</link></item></channel></rss>\n' % text).encode()
     files = {"data/x.json": json.dumps({"meta": {"status": "real"}, "value": text}).encode(), "data/feed.xml": feed,
              "validation.json": b'{"passed":true}\n'}
-    originals = {"prototype/data/raw/kfp_2026/report.xls": b"\xd0\xcf\x11\xe0" + text.encode() * 8,
-                 "prototype/data/raw/dv/law.html": ("<html><script>alert(1)</script>%s</html>" % text).encode()}
+    originals = {"data/originals/kfp_2026/report.xls": b"\xd0\xcf\x11\xe0" + text.encode() * 8,
+                 "data/originals/dv/law.html": ("<html><script>alert(1)</script>%s</html>" % text).encode()}
     for p, b in files.items():
         (rel / p).parent.mkdir(parents=True, exist_ok=True)
         (rel / p).write_bytes(b)
@@ -137,7 +141,7 @@ def make_release(root, name, text, commit="a" * 40):
 
 
 def budget(args, env):
-    r = subprocess.run([sys.executable, str(ROOT / "tools" / "budget.py"), "--json"] + args, capture_output=True, text=True, env=env)
+    r = subprocess.run([sys.executable, str(ROOT / "pipeline" / "budget_pipeline" / "cli.py"), "--json"] + args, capture_output=True, text=True, env=env)
     try:
         return r.returncode, json.loads(r.stdout)
     except ValueError:
@@ -154,8 +158,8 @@ def main(argv):
         sys.exit("release_check: run `npm ci` first (wrangler from package-lock.json)")
     tmp = Path(tempfile.mkdtemp(prefix="release-check-"))
     state = tmp / "state"
-    built = ROOT / "build" / "server" / "wrangler.json"
-    b = subprocess.run([str(ROOT / "node_modules" / ".bin" / "react-router"), "build"], cwd=ROOT, capture_output=True, text=True)
+    built = ROOT / "apps" / "web" / "build" / "server" / "wrangler.json"
+    b = subprocess.run([str(ROOT / "node_modules" / ".bin" / "react-router"), "build"], cwd=ROOT / "apps/web", capture_output=True, text=True)
     if b.returncode != 0 or not built.exists():
         sys.exit("release_check: react-router build failed:\n" + (b.stdout + b.stderr)[-2000:])
     key, foreign = Keys(tmp, "test-key"), Keys(tmp, "foreign-key")
@@ -301,7 +305,7 @@ def main(argv):
         ok(s == 304, "If-None-Match: 304")
         s, h, b = req("GET", base + "/data/releases/%s/%s" % (A[2], out0["path"]), headers={"Range": "bytes=0-9"})
         ok(s == 206 and len(b) == 10 and h.get("Content-Range", "").startswith("bytes 0-9/"), "Range: 206 with ten bytes")
-        s, h, _b = req("GET", base + "/data/releases/%s/prototype/data/raw/dv/law.html" % A[2])
+        s, h, _b = req("GET", base + "/data/releases/%s/data/originals/dv/law.html" % A[2])
         ok(s == 200 and "attachment" in h.get("Content-Disposition", "") and h.get("Content-Security-Policy") == "sandbox",
            "an HTML original is a download in a sandbox, not a page of this origin")
         ok("no-transform" in h.get("Cache-Control", ""), "release files are no-transform: the edge may not edit their bytes (a Web Analytics beacon)")
@@ -372,7 +376,7 @@ def main(argv):
             pj = jbody(b)
             ok(s == 200 and pj.get("cell") == "B11" and pj.get("value") == "33898.456" and pj.get("original", {}).get("download"),
                "provenance of data/2026-09/kfp/rev: B11 of the September report, 33898.456, with the original to download")
-            time.sleep(11)                                     # the Worker reads the pointer at most every ten seconds (workers/release-data.ts)
+            time.sleep(11)                                     # the Worker reads the pointer at most every ten seconds (apps/web/workers/release-data.ts)
             s, h, b = req("GET", base + "/izpalnenie")
             page = b.decode("utf-8", "replace")
             ok(s == 200 and h.get("X-Release-Id") == rid and 'data-view="ready"' in page and "/data/releases/%s/data/execution-provenance.json" % rid in page,

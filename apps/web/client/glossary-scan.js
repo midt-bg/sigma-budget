@@ -1,5 +1,5 @@
 // The glossary scanner (PLAN 6.3), without a browser (docs/adr/0002-react-router-ssr.md): js/glossary.js runs it on the page, the server
-// (app/lib/screen.server.ts) on the screen it draws, with the same rules, so a crawler reads the same links as a visitor.
+// (apps/web/app/lib/screen.server.ts) on the screen it draws, with the same rules, so a crawler reads the same links as a visitor.
 //   link(root, g) -> number linked      root: an element of any DOM (the page's, or linkedom's on the server); g: index(glossary.json)
 //   index(doc) -> {terms, by: Map(slug -> term)}
 // The first mention of a term on the screen becomes a link, at most 3 per paragraph, never inside headings, numbers (the word right after

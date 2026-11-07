@@ -13,14 +13,19 @@
 Не заобикаля защити: не пуска браузър, не решава проверки, не сменя IP адреса.
 
 Употреба:
-    python3 tools/data/probe_sources.py                       # таблица в терминала
-    python3 tools/data/probe_sources.py --label "София, дом"  # бележка къде е пусната пробата
-    python3 tools/data/probe_sources.py --json probe.json     # и машинночетим отчет
-    python3 tools/data/probe_sources.py --only minfin nra     # само избрани източници (по префикс на id)
+    python3 pipeline/budget_pipeline/sources/probe_sources.py                       # таблица в терминала
+    python3 pipeline/budget_pipeline/sources/probe_sources.py --label "София, дом"  # бележка къде е пусната пробата
+    python3 pipeline/budget_pipeline/sources/probe_sources.py --json probe.json     # и машинночетим отчет
+    python3 pipeline/budget_pipeline/sources/probe_sources.py --only minfin nra     # само избрани източници (по префикс на id)
 
 Само стандартна библиотека (Python 3.9+). Не пише нищо освен файла от --json.
 Изход 0 винаги, когато пробата е изпълнена: недостъпният източник е резултат, не грешка.
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import argparse
 import datetime
 import json
@@ -236,7 +241,7 @@ def main(argv):
         if v in MEANING:
             print("  %-14s %s" % (v, MEANING[v]))
     if args.json:
-        report = {"probe": "sigma-budget/tools/data/probe_sources.py", "label": args.label,
+        report = {"probe": "sigma-budget/pipeline/budget_pipeline/sources/probe_sources.py", "label": args.label,
                   "ran": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                   "python": sys.version.split()[0], "user_agent": UA, "results": rows}
         with open(args.json, "w", encoding="utf-8") as fh:

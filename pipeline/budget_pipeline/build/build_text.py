@@ -3,21 +3,26 @@
 """build_text.py - glossary.json (DATA_SPEC 3.16) and guide.json (3.17) for the Mock site.
 
 Both files are EDITORIAL TEXT, not data: every word of the glossary terms and of the guide is copied programmatically
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 from the original sources and is never retyped here:
 
-  glossary  <-  prototype/src/glossary.json            (64 terms, 5 categories, 7 related-term rows, 7 sources)
-  guide     <-  tmp/research/guide/guide_raw.txt   (introduction, 8 steps, "Preди да използваш или споделиш число")
+  glossary  <-  data/inputs/glossary.json            (64 terms, 5 categories, 7 related-term rows, 7 sources)
+  guide     <-  data/cache/research/guide/guide_raw.txt   (introduction, 8 steps, "Preди да използваш или споделиш число")
 
 Only the SHAPE changes (slug/categories/aliases/related/see as in DATA_SPEC 3.16, steps/blocks/next/checks as in 3.17).
 The "Виж в бюджета" links of the old single-file prototype are mapped to the route keys of the new router and every
-href is checked against site/js/routes.js (pattern match + route-param registry). A link that cannot be resolved
+href is checked against apps/web/client/routes.js (pattern match + route-param registry). A link that cannot be resolved
 stops the build; nothing is guessed.
 
 Deterministic (no clock, no randomness): two runs give byte-identical files. Pure Python 3 standard library.
 
-Usage:  python3 tools/mock/build_text.py [--check]       (--check = build in memory, compare with disk, write nothing)
-Output: site/data/glossary.json, site/data/guide.json     (exit code != 0 on any problem)
-Input not in the repository: tmp/research/guide/guide_raw.txt (the guide text as supplied; the result is already in site/data/guide.json).
+Usage:  python3 pipeline/budget_pipeline/build/build_text.py [--check]       (--check = build in memory, compare with disk, write nothing)
+Output: data/release/glossary.json, data/release/guide.json     (exit code != 0 on any problem)
+Input not in the repository: data/cache/research/guide/guide_raw.txt (the guide text as supplied; the result is already in data/release/guide.json).
 """
 import json
 import math
@@ -25,15 +30,15 @@ import os
 import re
 import sys
 
-HERE = os.path.dirname(os.path.abspath(__file__))     # .../tools/mock
-ROOT = os.path.dirname(os.path.dirname(HERE))         # repository root
-SITE = os.path.join(ROOT, "site")                     # the Mock application
-DATA_DIR = os.path.join(SITE, "data")
-GLOSSARY_SRC = os.path.join(ROOT, "prototype", "src", "glossary.json")
-GUIDE_SRC = os.path.join(ROOT, "tmp", "research", "guide", "guide_raw.txt")   # not in the repository
-ROUTES_JS = os.path.join(SITE, "js", "routes.js")
+HERE = os.path.dirname(os.path.abspath(__file__))     # .../pipeline/budget_pipeline
+ROOT = str(__import__("pathlib").Path(__file__).resolve().parents[3])         # repository root
+SITE = os.path.join(ROOT, "apps", "web", "public")                     # the site
+DATA_DIR = os.path.join(ROOT, "data", "release")
+GLOSSARY_SRC = os.path.join(ROOT, "data", "inputs", "glossary.json")
+GUIDE_SRC = os.path.join(ROOT, "data", "cache", "research", "guide", "guide_raw.txt")   # not in the repository
+ROUTES_JS = os.path.join(ROOT, "apps", "web", "client", "routes.js")
 
-BUILD_DATE = os.environ.get("BUILD_DATE", "2026-11-05")   # same default as tools/mock/dlib.py; a constant => byte-identical rebuilds
+BUILD_DATE = os.environ.get("BUILD_DATE", "2026-11-05")   # same default as pipeline/budget_pipeline/build/dlib.py; a constant => byte-identical rebuilds
 TEXT_AS_OF = "2026-10-01"                                  # date of the source documents
 
 # route params that have a closed registry (DATA_SPEC 2.3)
@@ -41,7 +46,7 @@ REVENUE_GROUPS = ["dds", "osiguritelni", "nedanachni", "pomoshti", "ddfl", "akci
 
 SEE_LABEL = "Виж в бюджета"
 
-# "Виж в бюджета": slug -> new href.  Old target (GL_SEE of prototype v3.6 / site/index.html) in the comment.
+# "Виж в бюджета": slug -> new href.  Old target (GL_SEE of prototype v3.6 / apps/web/public/index.html) in the comment.
 # Sub-block anchors of the old single page (ix-komp, ix-mesec, ix-res, dl-*, tx-dop, jul) do not exist in the new router,
 # so those links point to the screen that now holds the block ("approximate").
 SEE = {
@@ -117,7 +122,7 @@ def clean(obj, where="$"):
 
 
 def jdumps(obj):
-    """Minified UTF-8 JSON, keys in insertion order (same style as tools/mock/dlib.py)."""
+    """Minified UTF-8 JSON, keys in insertion order (same style as pipeline/budget_pipeline/build/dlib.py)."""
     return json.dumps(clean(obj), ensure_ascii=False, separators=(",", ":"), allow_nan=False)
 
 
@@ -259,7 +264,7 @@ def build_glossary(routes):
             continue
         hit = match_href(routes, href)
         if hit is None:
-            problem("SEE: %s -> %s does not match any route of site/js/routes.js" % (slug, href))
+            problem("SEE: %s -> %s does not match any route of apps/web/client/routes.js" % (slug, href))
             continue
         route, params = hit
         if route["key"] == "prihodi" and params.get("source") not in (None,) + tuple(REVENUE_GROUPS):
@@ -342,7 +347,7 @@ def read_guide_blocks():
     """Body of the raw file as paragraphs (the '#'-lines are the download header: author, channel, ids; never copied)."""
     if not os.path.exists(GUIDE_SRC):
         sys.stderr.write("build_text: input missing: %s (the guide text as supplied; it is not in the repository, "
-                         "the result is already in site/data/guide.json)\n" % os.path.relpath(GUIDE_SRC, ROOT))
+                         "the result is already in data/release/guide.json)\n" % os.path.relpath(GUIDE_SRC, ROOT))
         sys.exit(2)
     with open(GUIDE_SRC, "r", encoding="utf-8") as fh:
         raw = fh.read().split("\n")

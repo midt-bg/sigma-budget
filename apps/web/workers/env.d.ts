@@ -1,4 +1,4 @@
-// The bindings and variables of the Worker (wrangler.jsonc).
+// The bindings and variables of the Worker (apps/web/wrangler.jsonc).
 interface Env {
   ASSETS: Fetcher;
   DB: D1Database;
@@ -12,7 +12,7 @@ interface Env {
   SITE_ORIGIN?: string;
   /** the address of the original СИГМА (docs/approach-specification.md, section 2.2) */
   SIGMA_URL?: string;
-  /** the address the feedback form writes to (site/js/feedback.js); empty: the form keeps the message in the browser and says so */
+  /** the address the feedback form writes to (apps/web/client/feedback.js); empty: the form keeps the message in the browser and says so */
   FEEDBACK_EMAIL?: string;
   /** "1" keeps the environment out of search engines (staging) */
   NOINDEX?: string;

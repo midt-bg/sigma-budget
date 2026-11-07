@@ -1,14 +1,14 @@
-// The first response of a screen (docs/adr/0002-react-router-ssr.md): the screen that site/js/router.js paints in the browser, drawn
-// here from the release of the request. The browser then takes the same document over (site/js/main.js), as it took over the
-// prerendered files before. The request scope (site/js/env.js) is set by workers/app.ts around this call.
-import { resolve, build, frameHtml, docTitle, periodsFor, errorVm } from '../../site/js/render.js';
-import { head } from '../../site/js/seo.js';
-import { bannerHtml, topbarHtml, tabbarHtml, footerHtml } from '../../site/js/chrome.js';
-import { data } from '../../site/js/data.js';
-import { screenQuery } from '../../site/js/routes.js';
-import { toHref, parts, fileHref } from '../../site/js/loc.js';
-import { reset as resetShare } from '../../site/js/share.js';
-import { index as glossaryIndex, link as linkTerms } from '../../site/js/glossary-scan.js';
+// The first response of a screen (docs/adr/0002-react-router-ssr.md): the screen that apps/web/client/router.js paints in the browser, drawn
+// here from the release of the request. The browser then takes the same document over (apps/web/client/main.js), as it took over the
+// prerendered files before. The request scope (apps/web/client/env.js) is set by apps/web/workers/app.ts around this call.
+import { resolve, build, frameHtml, docTitle, periodsFor, errorVm } from '../../client/render.js';
+import { head } from '../../client/seo.js';
+import { bannerHtml, topbarHtml, tabbarHtml, footerHtml } from '../../client/chrome.js';
+import { data } from '../../client/data.js';
+import { screenQuery } from '../../client/routes.js';
+import { toHref, parts, fileHref } from '../../client/loc.js';
+import { reset as resetShare } from '../../client/share.js';
+import { index as glossaryIndex, link as linkTerms } from '../../client/glossary-scan.js';
 import { parseHTML } from 'linkedom';
 
 export interface HeadTag { tag: 'meta' | 'link'; attrs: Record<string, string> }
@@ -19,7 +19,7 @@ export interface ScreenDoc {
   ld: string;
   /** the page styles of the screen (css/pages/<name>.css), by name */
   css: string[];
-  /** the address this document is the screen of (site/js/router.js dropStalePrerender compares it); '404' for the 404 screen */
+  /** the address this document is the screen of (apps/web/client/router.js dropStalePrerender compares it); '404' for the 404 screen */
   prerendered: string;
   bare: boolean;
   release: { id: string; dataBase: string; origin: string; sigmaUrl: string; feedbackEmail: string };
@@ -33,12 +33,12 @@ export interface ScreenDoc {
 }
 export type ScreenResult = { redirect: string } | { doc: ScreenDoc };
 
-/* the browser rewrites old #/x links and file links relative to the root (data/core.json) once they are in the page (site/js/loc.js
+/* the browser rewrites old #/x links and file links relative to the root (data/core.json) once they are in the page (apps/web/client/loc.js
    fixLinks); the document gets the same links from the start */
 const fixLinks = (s: string, base = '') => s
   .replace(/href="(#\/[^"]*)"/g, (_m, h: string) => `href="${toHref(h)}"`)
   .replace(/href="(data\/[^"]*)"/g, (_m, h: string) => `href="${fileHref(h, base)}"`);
-/* the glossary links the browser adds to running text (site/js/glossary-scan.js, the same rules), so a crawler reads them too. The
+/* the glossary links the browser adds to running text (apps/web/client/glossary-scan.js, the same rules), so a crawler reads them too. The
    article is parsed with linkedom only when it has text to scan, and written out only when a term was linked; linkedom writes the same
    HTML in its own spelling (&#160;, " />", empty attributes as ="" and so on), so the two spellings a reader could notice are put back */
 async function withGlossary(article: string): Promise<string> {
@@ -60,18 +60,18 @@ export async function renderScreen(url: URL, release: Rel): Promise<ScreenResult
   const r = resolve(address);
   if (r.found && !sameAddress(r.want, address)) return { redirect: r.want };    // /Prihodi, an old address, a default ?per= → the canonical one
   const { route, params } = r;
-  const query = screenQuery(route, r.query);                   // the keys of the screen only: what the edge cache keys it on (workers/app.ts)
+  const query = screenQuery(route, r.query);                   // the keys of the screen only: what the edge cache keys it on (apps/web/workers/app.ts)
 
   resetShare(route);
   try { await data.load('core'); } catch { /* the footer and the source cards degrade without core.json, as in the browser */ }
   let vm;
   let status = route.id === 'S30' ? 404 : 200;
-  if (route.bare) vm = null;                                   // the embed view is built in the browser (site/js/pages/s29-embed.js)
+  if (route.bare) vm = null;                                   // the embed view is built in the browser (apps/web/client/pages/s29-embed.js)
   else {
     try { vm = await build(route, params, query, { path: r.segs.join('/') }); }
     catch (e) { console.error(e); vm = errorVm(route, params, query); status = 500; }
     if (vm.route.id === 'S30') status = 404;
-    // a file the screen needs could not be read (the „Опитайте пак“ state of site/js/render.js): a 503 that workers/app.ts never keeps
+    // a file the screen needs could not be read (the „Опитайте пак“ state of apps/web/client/render.js): a 503 that apps/web/workers/app.ts never keeps
     else if (vm.view === 'error' && !vm.demo) status = 503;
   }
   const shown = vm ? vm.route : route;

@@ -2,24 +2,29 @@
 """Извлича таблиците от АСБП 2026–2028 (мотивите към законопроекта за бюджета), нужни на прототипа.
 
 Какво прави:
-  1. Чете PDF-а на МФ UMTBF-2026-2028-motivi.pdf (prototype/data/raw/asbp/) с PyMuPDF.
+  1. Чете PDF-а на МФ UMTBF-2026-2028-motivi.pdf (data/originals/asbp/) с PyMuPDF.
      Таблиците са с текстов слой: всяко число е отделен „span“ с координати, затова колоната
      се определя по позицията (най-близкият център на заглавие на колона), а не по реда на текста.
   2. Сверява Приложение № 3 с внесения в парламента файл 52-602-01-19.docx: там приложението
      е вградено като EMF картинки (word/media/image19–22.emf), чиито текстови записи
      (EMR_EXTTEXTOUTW) съдържат същите числа. Сверката е число по число.
-  3. Пише prototype/data/raw/asbp/asbp_tables.json — суровите таблици с номерата на страниците
+  3. Пише data/originals/asbp/asbp_tables.json — суровите таблици с номерата на страниците
      (в PDF-а на МФ и в docx-а, по съдържанието му).
 
-Входове: prototype/data/raw/asbp/UMTBF-2026-2028-motivi.pdf, prototype/data/raw/parliament/52-602-01-19.docx
-Изход:   prototype/data/raw/asbp/asbp_tables.json
+Входове: data/originals/asbp/UMTBF-2026-2028-motivi.pdf, data/originals/parliament/52-602-01-19.docx
+Изход:   data/originals/asbp/asbp_tables.json
 Изисква: pymupdf (pip install pymupdf) — в отделен venv, не в репото на бота.
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import hashlib, json, re, struct, sys, zipfile
 
 import pymupdf
 
-RAW = str(__import__("pathlib").Path(__file__).resolve().parents[2]) + "/prototype/data/raw"
+RAW = str(__import__("pathlib").Path(__file__).resolve().parents[3]) + "/data/originals"
 PDF = f"{RAW}/asbp/UMTBF-2026-2028-motivi.pdf"
 DOCX = f"{RAW}/parliament/52-602-01-19.docx"
 OUT = f"{RAW}/asbp/asbp_tables.json"

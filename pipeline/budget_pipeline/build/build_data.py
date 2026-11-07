@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
-"""Orchestrator: builds every dataset DATA owns into site/data/ (core.json last).
+"""Orchestrator: builds every dataset DATA owns into data/release/ (core.json last).
 
-  python3 tools/mock/build_data.py            build + write (only files whose content changed are rewritten)
-  python3 tools/mock/build_data.py --check    build in memory and compare with disk (exit 1 on any difference)
-  python3 tools/mock/build_data.py --dry      build in memory, print the size table, write nothing
+  python3 pipeline/budget_pipeline/build/build_data.py            build + write (only files whose content changed are rewritten)
+  python3 pipeline/budget_pipeline/build/build_data.py --check    build in memory and compare with disk (exit 1 on any difference)
+  python3 pipeline/budget_pipeline/build/build_data.py --dry      build in memory, print the size table, write nothing
 
 A builder module that does not exist yet is skipped with a notice, so datasets can land one by one and the script can be
 re-run. It never writes DATA2's files (glossary.json, guide.json, mock/*.json); the catalog and the search index read
 them from disk when they exist.
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import argparse
 import gzip
 import importlib
@@ -19,9 +24,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import dlib                        # noqa: E402
-from bd_common import set_kfp_pending  # noqa: E402
-from bd_ctx import Ctx             # noqa: E402
+import budget_pipeline.build.dlib as dlib                        # noqa: E402
+from budget_pipeline.build.bd_common import set_kfp_pending  # noqa: E402
+from budget_pipeline.build.bd_ctx import Ctx             # noqa: E402
 
 # (module, function): order = the order the screens need the data; every function puts its files into ctx.out.
 STEPS = [
@@ -41,7 +46,7 @@ STEPS = [
     ("build_search", "build_search"),           # search-index.json
     ("build_catalog", "build_catalog"),         # catalog.json (reads every file, incl. DATA2's)
 ]
-OWNED_DIRS = ["ministries", "geo"]             # sub-directories of site/data that this script owns (stale files are pruned)
+OWNED_DIRS = ["ministries", "geo"]             # sub-directories of data/release that this script owns (stale files are pruned)
 
 
 def run_steps(ctx):
@@ -85,8 +90,8 @@ def main():
     ap.add_argument("--dry", action="store_true", help="build and print sizes, write nothing")
     args = ap.parse_args()
     if not dlib.RAW.is_dir():
-        sys.exit("build_data: prototype/data/raw is missing: the MF reports and the ASBP PDF come with the repository, the other raw "
-                 "files are fetched with tools/data/raw_sources.py status (docs/data-sources.md); tools/mock/cache/ is filled by "
+        sys.exit("build_data: data/originals is missing: the MF reports and the ASBP PDF come with the repository, the other raw "
+                 "files are fetched with pipeline/budget_pipeline/sources/raw_sources.py status (docs/data-sources.md); data/cache/ is filled by "
                  "fetch_gisco.py, fetch_sebra.py and extract_bill.py")
 
     ctx = Ctx()

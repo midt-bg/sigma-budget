@@ -1,6 +1,6 @@
-"""The figures the v6 checks expect on the plan block (S01, S15) and in the year-on-year table of S15, read from site/data/execution.json.
+"""The figures the v6 checks expect on the plan block (S01, S15) and in the year-on-year table of S15, read from data/release/execution.json.
 
-The checks had them written in for August 2026 (accept_v6, motion_v6, check_mock_v6), so every new monthly report broke them. Here they
+The checks had them written in for August 2026 (accept, motion, screens), so every new monthly report broke them. Here they
 follow the latest report the way the screens compute them (js/ui/plan.js, js/pages/s15-izpalnenie.js): sums in млрд. € with 2 decimals,
 shares of the plan in % with 1 decimal. Numbers are written as the screen writes them: decimal comma, U+2212 for minus.
 
@@ -8,17 +8,25 @@ shares of the plan in % with 1 decimal. Numbers are written as the screen writes
                    "widths": the style width of those bars, ['60.7%', '61.2%', …] (js/ui/progress.js: Number(share.toFixed(1)) + '%')}
     compare()  -> {"prev": [rev, exp, balance], "cur": […], "diff": [rev, exp], "balanceDiff": '0,41'}   (млрд. €, same months of the two years)
 """
+
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
 import json
 from pathlib import Path
 
-EXECUTION = Path(__file__).resolve().parents[2] / "site" / "data" / "execution.json"
+EXECUTION = Path(__file__).resolve().parents[2] / "data" / "release" / "execution.json"
 PLAN_ROWS = ("rev", "exp.total", "exp.capex")          # js/ui/plan.js PLAN_ROWS
 COMPARE_ROWS = ("rev", "exp.total", "balance")
 
 
 def _ex():
-    import exec_contract                                # contract v2: money as decimal strings, read as floats
-    return exec_contract.load(EXECUTION)
+    import budget_pipeline.validate.execution_contract as execution_contract                                # contract v2: money as decimal strings, read as floats
+    return execution_contract.load(EXECUTION)
 
 
 def num(v, d=2, sign=False):

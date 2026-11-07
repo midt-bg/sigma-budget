@@ -3,8 +3,8 @@
 
 Writes two small cache files (the raw 100+ MB GISCO GeoJSON is STREAMED and never stored):
 
-  tools/mock/cache/gisco_lau_bg.json            Bulgaria's 265 LAUs: id, name, population, area, border rings (5 decimals)
-  tools/mock/cache/eurostat_pop_nuts3_bg.json   Eurostat demo_r_pjanaggr3 (all sexes, all ages), the 28 Bulgarian NUTS3 regions
+  data/cache/gisco_lau_bg.json            Bulgaria's 265 LAUs: id, name, population, area, border rings (5 decimals)
+  data/cache/eurostat_pop_nuts3_bg.json   Eurostat demo_r_pjanaggr3 (all sexes, all ages), the 28 Bulgarian NUTS3 regions
 
 The build (build_data.py) reads only these caches, so it runs offline once they exist.
 `--refresh` forces a new download; without it an existing cache is reused (idempotent, no network).
@@ -17,6 +17,11 @@ municipality codes and names, and its POP_2024 sums exactly to Eurostat's nation
 If the network is unavailable and there is no cache the script exits 0 with a warning; the build then publishes the
 municipality list without population/borders and marks D20/D21 as pending (never with invented numbers).
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import codecs
 import csv
 import io
@@ -25,7 +30,7 @@ import sys
 import time
 import urllib.request
 
-from dlib import CACHE, jdumps, say, write_text
+from budget_pipeline.build.dlib import CACHE, jdumps, say, write_text
 
 UA = "budget-na-svetlo-data-pipeline/1.0 (+public data; contact: working group)"
 LAU_RELEASE = "2024"

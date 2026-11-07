@@ -1,11 +1,11 @@
-// One route for every screen of site/js/routes.js (27), and a catch-all for the rest (an old address, a mistyped one: the 404 screen).
-// They share one module: the screen comes from the address itself (site/js/render.js resolve), so an old or non-canonical address is
+// One route for every screen of apps/web/client/routes.js (27), and a catch-all for the rest (an old address, a mistyped one: the 404 screen).
+// They share one module: the screen comes from the address itself (apps/web/client/render.js resolve), so an old or non-canonical address is
 // redirected exactly as the browser rewrites it.
 import { type RouteConfig, index, route } from '@react-router/dev/routes';
-import { ROUTES } from '../site/js/routes.js';
+import { ROUTES } from '../client/routes.js';
 
 const SCREEN = 'routes/screen.tsx';
-// site/js/routes.js pattern grammar -> React Router: /izpalnenie/:sub(byudzheti)? -> izpalnenie/:sub?
+// apps/web/client/routes.js pattern grammar -> React Router: /izpalnenie/:sub(byudzheti)? -> izpalnenie/:sub?
 const toPath = (p: string) => p.replace(/^\//, '').replace(/:(\w+)\([^)]*\)/g, ':$1');
 
 export default [

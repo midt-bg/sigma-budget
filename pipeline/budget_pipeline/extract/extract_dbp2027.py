@@ -2,7 +2,7 @@
 """
 Извлича ключовите числа от „Проект на бюджетен план на Република България за 2027 г.“
 (МФ, октомври 2026; tmp/sources/bud2027_Draft_Budgetary_Plan_of_the_Republic_of_Bulgaria_for_2027.pdf)
-и ги записва в tmp/research/dbp-2027/dbp2027_figures.json.
+и ги записва в data/cache/research/dbp-2027/dbp2027_figures.json.
 
 Всяко число носи: стойност, мерна единица, година, счетоводна основа, страница, цитат.
 - Табличните числа се четат от клетките на таблицата (PyMuPDF find_tables); цитатът е самият ред.
@@ -20,9 +20,14 @@
   DERIVED  изчислено тук от други числа на документа
 
 Пускане (от корена на хранилището):
-  .venv-data/bin/python tools/mock/extract_dbp2027.py
-Само stdlib + PyMuPDF (в .venv). Не пише никъде другаде освен в tmp/research/dbp-2027/.
+  tmp/venv-data/bin/python pipeline/budget_pipeline/extract/extract_dbp2027.py
+Само stdlib + PyMuPDF (в tmp/venv). Не пише никъде другаде освен в data/cache/research/dbp-2027/.
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import hashlib
 import json
 import re
@@ -31,10 +36,10 @@ from pathlib import Path
 
 import pymupdf
 
-ROOT = Path(__file__).resolve().parents[2]            # repository root
+ROOT = Path(__file__).resolve().parents[3]            # repository root
 PDF = ROOT / "tmp" / "sources" / "bud2027_Draft_Budgetary_Plan_of_the_Republic_of_Bulgaria_for_2027.pdf"      # not in the repository: docs/data-sources.md 4.3
-OUT = ROOT / "tmp" / "research" / "dbp-2027" / "dbp2027_figures.json"
-OUTLOOK = ROOT / "site" / "data" / "outlook.json"
+OUT = ROOT / "data" / "cache" / "research" / "dbp-2027" / "dbp2027_figures.json"
+OUTLOOK = ROOT / "data" / "release" / "outlook.json"
 EXPECT_SHA = "8c91cdf4778f2864e1eeb167f14b08d1f68a076ea4ad27a8a4305175a73f1182"
 if not PDF.exists():
     sys.exit("extract_dbp2027: input missing: %s (not in the repository: docs/data-sources.md 4.3)" % PDF.relative_to(ROOT))
@@ -550,7 +555,7 @@ try:
             "kfp_balance_mln": k["balance"]["mln"][i], "kfp_balance_pct_gdp": k["balance"]["pctGdp"][i],
             "gdp_mln_used_by_mock": ol["gdp"]["mln"][i],
         }
-    mock_cmp["_source"] = "site/data/outlook.json (КФП, касова основа; АСБП 2026–2028, Приложение 3)"
+    mock_cmp["_source"] = "data/release/outlook.json (КФП, касова основа; АСБП 2026–2028, Приложение 3)"
 except Exception as e:  # noqa: BLE001
     mock_cmp["_error"] = f"outlook.json не е прочетен: {e}"
 
@@ -610,7 +615,7 @@ doc_meta = {
 
 out = {
     "meta": {
-        "id": "DBP2027", "generated_by": "tools/extract_dbp2027.py", "status": "draft-proposal-data",
+        "id": "DBP2027", "generated_by": "pipeline/budget_pipeline/extract/extract_dbp2027.py", "status": "draft-proposal-data",
         "language": "bg", "currency": "EUR",
         "legend_basis": BASES,
         "how_to_read": ("figures[]: value е числото както е в документа (знак минус = дефицит/спад); unit показва единицата; "

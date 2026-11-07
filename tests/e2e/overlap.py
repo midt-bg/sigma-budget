@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""overlap_v6.py - the final-review sweep of site/ (V6, 27.10): every route x every width, looking for what a visitor would call «a button on a button».  Project venv only.
+"""overlap.py - the final-review sweep of site/ (V6, 27.10): every route x every width, looking for what a visitor would call «a button on a button».  Project venv only.
 
-  PLAYWRIGHT_BROWSERS_PATH=$PWD/.pw-browsers .venv/bin/python tools/mock/overlap_v6.py [--widths 1920,1440,...] [--routes S06,S12] [--no-clicks] [--no-keys] [--quick] [--shots DIR]
+  PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python tests/e2e/overlap.py [--widths 1920,1440,...] [--routes S06,S12] [--no-clicks] [--no-keys] [--quick] [--shots DIR]
 
   LAYOUT (every route x every width, motion off, banner on and off):
     overlap     two visible interactive elements (a, button, [role=tab], input, select, summary, [tabindex]) whose boxes cross by more than 2x2 px (ancestors and the content of a closed <details> are skipped;
@@ -13,16 +13,24 @@
     print       with print media there is no sideways scroll and the heading is visible
   CLICKS (1280 and 390, every route): each visible button / tab / switch / summary / menu is pressed; no console error, no page error, Escape closes what opened, the hash is restored
   KEYS (1280 and 390): Tab walks the first 25 stops without a focus ring lost off-screen; Escape closes the header dropdown and the search panel; Back / Forward keep the route
-  --quick  widths 1440 / 1241 / 390, banner on, no clicks, no keys (about 2 minutes; accept_v6.py runs it)
+  --quick  widths 1440 / 1241 / 390, banner on, no clicks, no keys (about 2 minutes; accept.py runs it)
   --shots DIR  a screenshot of the viewport of every page state with a layout finding (DIR/<route>-<width>px-<state>.png)
 Exit 1 when anything is found; the findings are printed one per line.
 """
+
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
 import http.server, json, os, socketserver, sys, threading
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-SITE = ROOT / "site"
-os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(ROOT / ".pw-browsers"))
+SITE = __import__("static_assets").root()
+os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(ROOT / "tmp" / "pw-browsers"))
 WIDTHS = [1920, 1440, 1280, 1241, 1181, 1024, 768, 390, 320]
 found = []
 

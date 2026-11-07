@@ -1,20 +1,25 @@
 """sebra.json (D24): the daily SEBRA payment summaries that the МИДТ transparency page publishes (27, 28 and 31 August 2026).
 
 Inputs (no network at build time):
-  * prototype/data/raw/sebra/midt_sebra_31.08.2026.xlsx  - the day the spec is about (28 payments, 171 854,85 EUR)
-  * tools/mock/cache/sebra_27.08.2026.xlsx, sebra_28.08.2026.xlsx - the two other files the page lists (fetch_sebra.py); optional
-  * prototype/data/raw/sebra/midt_sebra_2026_page.html - the page itself: which files it lists, their listing date and size
+  * data/originals/sebra/midt_sebra_31.08.2026.xlsx  - the day the spec is about (28 payments, 171 854,85 EUR)
+  * data/cache/sebra_27.08.2026.xlsx, sebra_28.08.2026.xlsx - the two other files the page lists (fetch_sebra.py); optional
+  * data/originals/sebra/midt_sebra_2026_page.html - the page itself: which files it lists, their listing date and size
 
 The .xlsx files are read with the standard library only (zip + XML). Every file is checked: the categories add up to the printed total,
 the organisations add up to the ministry, the period is the day in the file name, and the file size matches the size printed on the page.
 The files hold counts and sums by category and by budget organisation. They carry no recipients and no single payments.
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import html as htmllib
 import re
 import zipfile
 import xml.etree.ElementTree as ET
 
-from dlib import CACHE, RAW, meta, rnd
+from budget_pipeline.build.dlib import CACHE, RAW, meta, rnd
 
 M = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
 PAGE_URL = "https://midt.gov.bg/bg/transparency/sebra/2026"

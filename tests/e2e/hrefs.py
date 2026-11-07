@@ -1,22 +1,30 @@
 #!/usr/bin/env python3
 """hrefs_v5.py - every in-app address ('#/...') written in the data files and in the JS of site/ (version v6, tag mock-v6) must reach an ACTIVE screen.
 
-  PLAYWRIGHT_BROWSERS_PATH=$PWD/.pw-browsers .venv/bin/python tools/mock/hrefs_v6.py [--all]
+  PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python tests/e2e/hrefs.py [--all]
 
-Collects each '#/path?query' found in site/data/**/*.json and site/js/**/*.js (not in comments), then asks the site's own router
+Collects each '#/path?query' found in data/release/**/*.json and apps/web/client/**/*.js (not in comments), then asks the site's own router
 (js/routes.js match + js/redirects.js redirectHash, loaded in a browser) where it leads:
   OK          matches an active route directly
   REDIRECT    an old address that the redirect table moves (listed so the data can be rewritten to the new address)
   DEAD        matches no route and no redirect (a broken link)
 Exit 1 when a DEAD address exists.
 """
+
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
 import http.server, json, os, re, socketserver, sys, threading
 from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]            # repository root
-SITE = ROOT / "site"                                 # the Mock application: run this at the tag mock-v6
-os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(ROOT / ".pw-browsers"))
+SITE = __import__("static_assets").root()                                 # the site: run this at the tag mock-v6
+os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(ROOT / "tmp" / "pw-browsers"))
 HREF = re.compile(r"(?<![\w&])#/[A-Za-z0-9_\-/.:%+]*(?:\?[A-Za-z0-9_=&,.%:+\-]*)?")
 
 

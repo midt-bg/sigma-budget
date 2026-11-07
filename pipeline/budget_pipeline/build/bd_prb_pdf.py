@@ -1,6 +1,6 @@
 """Independent reader of the program-budget PDFs (PyMuPDF text layer, word stream order).
 
-Why it exists: the prototype extraction (tools/extract_program_budgets.py, find_tables) takes the year of a table from
+Why it exists: the prototype extraction (pipeline/budget_pipeline/extract/extract_program_budgets.py, find_tables) takes the year of a table from
 the text above it and stores the table under that year label, overwriting an earlier table with the same label. Where
 a heading is split, mistyped or missing, whole tables end up under the wrong year (checked: 3000, 3900, 1600, 4000,
 5300, 7100, 8600). A published number must be reproducible from the primary document, so this module re-reads every
@@ -15,14 +15,19 @@ documents mistype the keyword ("Закон за 2023 г.").
 Numbers: "157 517,1" (grouped, decimal comma) and "5018.5" (decimal point) both occur; blank cells are OMITTED from
 the text layer (so a row can have fewer than nine numbers), "-", "0" and "0,0" are zeros.
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import re
 from itertools import combinations
 
 import fitz  # PyMuPDF (build-time only; not needed to serve the site)
 
-from dlib import PROTO
+from budget_pipeline.build.dlib import PROTO
 
-PDF_DIR = PROTO / "data" / "raw" / "program_budgets"
+PDF_DIR = ROOT / "data" / "originals" / "program_budgets"
 YEAR_LABEL = {2023: "Отчет 2023", 2024: "Отчет 2024", 2025: "Закон 2025", 2026: "Проект 2026",
               2027: "Прогноза 2027", 2028: "Прогноза 2028"}
 COLS = ["cons_total", "cons_prb", "cons_other", "dept_total", "dept_prb", "dept_other", "adm_total", "adm_prb", "adm_other"]

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """calc_check_v5.py - tests of the «Моите данъци» (S18) calculator of site/ (version v6, tag mock-v6) (project venv only).
 
-  PLAYWRIGHT_BROWSERS_PATH=$PWD/.pw-browsers .venv/bin/python tools/mock/calc_check_v6.py [--shots OUTDIR]
+  PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python tests/e2e/calc_check.py [--shots OUTDIR]
 
 Part A  the engine: js/pages/s18-danaci.js compute() is run in the browser for many salaries and compared with an independent
         Python model (Decimal, rounded half up to the cent, rates read from data/rates.json):
@@ -14,13 +14,21 @@ Part B  the screen: #/danaci in Chromium at 1280 and 390: the reference numbers 
         numbers, the disclosures open, the indirect estimate stays out of the main result, no console errors.
 Exit 1 on any failure.
 """
+
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
 import http.server, json, os, re, socketserver, sys, threading
 from decimal import Decimal as D, ROUND_HALF_UP
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]            # repository root
-SITE = ROOT / "site"                                 # the Mock application: run this at the tag mock-v6
-os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(ROOT / ".pw-browsers"))
+SITE = __import__("static_assets").root()                                 # the site: run this at the tag mock-v6
+os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(ROOT / "tmp" / "pw-browsers"))
 FAILS = []
 CHECKS = [0]
 
@@ -45,7 +53,7 @@ def r2(x):
 
 
 # ------------------------------------------------------------------ the independent model
-RATES = json.load(open(SITE / "data" / "rates.json", encoding="utf-8"))
+RATES = json.load(open(ROOT / "data" / "release" / "rates.json", encoding="utf-8"))
 EMP = next(s for s in RATES["scenarios"] if s["id"] == "employment")
 MAXES = {m["id"]: D(str(m["eur"])) for m in EMP["maxInsurableIncomeEur"]}
 MONTHS = {"until": 7, "from": 5}

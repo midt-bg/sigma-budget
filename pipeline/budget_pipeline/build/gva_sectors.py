@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""gva_sectors_v5.py - builds site/data/gva-sectors.json (version v5: run at the tag mock-v5) from two saved Eurostat answers (plain stdlib, no network).
+"""gva_sectors.py - builds data/release/gva-sectors.json (version v5: run at the tag mock-v5) from two saved Eurostat answers (plain stdlib, no network).
 
-  python3 tools/mock/gva_sectors_v5.py NAMA.json GDP.json            # writes the data file
-  python3 tools/mock/gva_sectors_v5.py NAMA.json GDP.json --check    # only verifies, writes nothing
+  python3 pipeline/budget_pipeline/build/gva_sectors.py NAMA.json GDP.json            # writes the data file
+  python3 pipeline/budget_pipeline/build/gva_sectors.py NAMA.json GDP.json --check    # only verifies, writes nothing
 
 The inputs are the JSON answers of the open Eurostat API (national accounts of Bulgaria, compiled from the data of the NSI):
   NAMA.json  https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/nama_10_a10?format=JSON&lang=EN&geo=BG&unit=CP_MEUR&na_item=B1G&sinceTimePeriod=2019
@@ -11,12 +11,17 @@ The inputs are the JSON answers of the open Eurostat API (national accounts of B
 What is checked before anything is written: ten branches add up to the total of the economy; gross value added + taxes less subsidies on products
 = GDP; GDP equals the actual GDP of outlook.json for the years the two files share (2024, 2025).
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import json, sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]            # repository root
-OUT = ROOT / "site" / "data" / "gva-sectors.json"
-OUTLOOK = ROOT / "site" / "data" / "outlook.json"
+ROOT = Path(__file__).resolve().parents[3]            # repository root
+OUT = ROOT / "data" / "release" / "gva-sectors.json"
+OUTLOOK = ROOT / "data" / "release" / "outlook.json"
 
 # the ten branches of the NACE A*10 grouping, in the order of the classification; C (manufacturing) is a part of B-E
 BRANCHES = [

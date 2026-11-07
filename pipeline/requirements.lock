@@ -1,7 +1,7 @@
-# Lockfile of tools/data/requirements.txt with the hash of every distribution (spec, section 5.2). Install with
-#   pip install --require-hashes -r tools/data/requirements.lock
-# Regenerate after a change of tools/data/requirements.txt:
-#   uv pip compile tools/data/requirements.txt --universal --python-version 3.12 --generate-hashes --no-header --annotation-style line -o tools/data/requirements.lock
+# Lockfile of pipeline/requirements.txt with the hash of every distribution (spec, section 5.2). Install with
+#   pip install --require-hashes -r pipeline/requirements.lock
+# Regenerate after a change of pipeline/requirements.txt:
+#   uv pip compile pipeline/requirements.txt --universal --python-version 3.12 --generate-hashes --no-header --annotation-style line -o pipeline/requirements.lock
 # (pycryptodomex is held at 3.24.1, the version that built the published data: add -c with `pycryptodomex==3.24.1`)
 backports-zstd==1.8.0 ; python_full_version < '3.14' \
     --hash=sha256:029bca2385ebb4355135bdb8559792d2768ae19707705eea84e68c42a30a0276 \
@@ -266,7 +266,7 @@ brotlicffi==1.2.1.0 ; platform_python_implementation == 'PyPy' \
 certifi==2026.10.23 \
     --hash=sha256:a9895e6e2758b371e0545e321a3a8fd1fcfd9829ada8824a936dfb16aaaf36cd \
     --hash=sha256:e9b54de76e530bb6cf0ccd036787103acb58fd42ba930ea8bf948ddbaa2f61d1
-    # via -r tools/data/requirements.txt
+    # via -r pipeline/requirements.txt
 cffi==2.1.1 \
     --hash=sha256:046bfc24911b37851ee1b51aab8bffe713d89c68c6a057b09484ce9fd5f69b4e \
     --hash=sha256:06c72bb76605a4b0cd0aad6930b69d4baf7dd5d806cfc409b824191099700e66 \
@@ -866,7 +866,7 @@ pdfminer-six==20260107 \
 pdfplumber==0.11.10 \
     --hash=sha256:7741ea81bf165b474b153e6789d10d18e06b6ddcf3ec84289c3ef2fed6802580 \
     --hash=sha256:b95b2d28c66efb0a794a83b88c6c6aea5987532a445d20a1cbcfa657022e6e57
-    # via -r tools/data/requirements.txt
+    # via -r pipeline/requirements.txt
 pillow==13.0.0 \
     --hash=sha256:02464da86f561f410e13b061ec37c3068a9cb557a095494157742d07b3c24a27 \
     --hash=sha256:04a63720f79e22fd54d897c233a68314c50ca0603360f54ce2bd5db8f0f43782 \
@@ -978,7 +978,7 @@ psutil==7.2.2 ; sys_platform != 'cygwin' \
 py7zr==1.1.4 \
     --hash=sha256:7674697559bd06b697bf6e8249985cee6dc704a4b07b8e11f24d0b1695707c3e \
     --hash=sha256:f6f868a457a6bd485b78d26e619045718bcd0b7720a6bf97d5fe86a1523423e8
-    # via -r tools/data/requirements.txt
+    # via -r pipeline/requirements.txt
 pybcj==1.0.8 \
     --hash=sha256:0074af187b1acce9e31717fc9aa42bc36b67f1a44088a8b44f4f4792af688ee6 \
     --hash=sha256:0657c9534d480a43b11743cad4209d140d09d417adaf19213ff395686ed08812 \
@@ -1094,7 +1094,7 @@ pymupdf==1.26.5 \
     --hash=sha256:caad0ffeb63dcc4a29ca40f3c68d7b78d32a932e834b0056b529cc0bdbaaffc9 \
     --hash=sha256:d58599479bc471d3ae56c3d68d9160d0b7de8a3bd40221ddc3a4eaae2d281b86 \
     --hash=sha256:e24e7a7d696bd398543cc5c147869edb2026d5d5a21b7f8e35db2f20170b389e
-    # via -r tools/data/requirements.txt
+    # via -r pipeline/requirements.txt
 pypdfium2==5.14.0 \
     --hash=sha256:09b99c8f0cb427eb17fec13c0862ed598bba34b4843df153f70fff806a2820bc \
     --hash=sha256:11f281613fa22313d9c7ab89947665e84eccf8ebe40e1198a84a88352305648d \
@@ -1186,7 +1186,7 @@ pyppmd==1.3.1 \
 python-docx==1.2.0 \
     --hash=sha256:3fd478f3250fbbbfd3b94fe1e985955737c145627498896a8a6bf81f4baf66c7 \
     --hash=sha256:7bc9d7b7d8a69c9c02ca09216118c86552704edc23bac179283f2e38f86220ce
-    # via -r tools/data/requirements.txt
+    # via -r pipeline/requirements.txt
 pyyaml==6.0.3 \
     --hash=sha256:00c4bdeba853cc34e7dd471f16b4114f4162dc03e6b7afcc2128711f0eca823c \
     --hash=sha256:0150219816b6a1fa26fb4699fb7daa9caf09eb1999f3b70fb6e786805e80375a \
@@ -1261,7 +1261,7 @@ pyyaml==6.0.3 \
     --hash=sha256:f7057c9a337546edc7973c0d3ba84ddcdf0daa14533c2065749c9075001090e6 \
     --hash=sha256:fa160448684b4e94d80416c0fa4aac48967a969efe22931448d853ada8baf926 \
     --hash=sha256:fc09d0aa354569bc501d4e787133afc08552722d3ab34836a80547331bb5d4a0
-    # via -r tools/data/requirements.txt
+    # via -r pipeline/requirements.txt
 texttable==1.7.2 \
     --hash=sha256:a381e1ed30e4d4bd24cdacabe26463b7a570c0e964fc0b35d8d9276b2fcbe252 \
     --hash=sha256:dc16ea6b35fbf5291ba6ef79d79e37d9b3ca6acd7bae3ca3450488d7c2e19c99
@@ -1273,4 +1273,4 @@ typing-extensions==4.16.0 \
 xlrd==2.0.2 \
     --hash=sha256:08b5e25de58f21ce71dc7db3b3b8106c1fa776f3024c54e45b45b374e89234c9 \
     --hash=sha256:ea762c3d29f4cca48d82df517b6d89fbce4db3107f9d78713e48cd321d5c9aa9
-    # via -r tools/data/requirements.txt
+    # via -r pipeline/requirements.txt

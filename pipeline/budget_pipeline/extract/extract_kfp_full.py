@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""D06 + D16 + D26: full extraction of the monthly KFP reports since January 2024 -> site/data/execution.json.
+"""D06 + D16 + D26: full extraction of the monthly KFP reports since January 2024 -> data/release/execution.json.
 
-Source files: prototype/data/raw/kfp_<year>/*.xls from 2024 on, sheet "стартова" (cumulative since 1 January). Every year but the
+Source files: data/originals/kfp_<year>/*.xls from 2024 on, sheet "стартова" (cumulative since 1 January). Every year but the
 last must hold all 12 reports; the last one holds months 1..n, n being the newest report (no month count is written in the code).
 Layout is identical in all files (54 rows); every expected row label is verified before a number is read.
 Columns: B = к.2 (КФП) = C = к.3 (национален бюджет) + D = к.4 (европейски средства).
@@ -12,8 +12,13 @@ Columns: B = к.2 (КФП) = C = к.3 (национален бюджет) + D = 
   converted numbers with the rounding bound of the conversion.  Any violation is an error (exit code 1, nothing is written), except the two
   source-internal differences of the 2024 files listed in KNOWN_SOURCE_DIFFS (reported as warnings, bounded).
 
-Run:  .venv-data/bin/python tools/mock/extract_kfp_full.py     (needs xlrd; reads only prototype/ and writes only site/data/; raw files: docs/data-sources.md)
+Run:  tmp/venv-data/bin/python pipeline/budget_pipeline/extract/extract_kfp_full.py     (needs xlrd; reads only prototype/ and writes only data/release/; raw files: docs/data-sources.md)
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import calendar
 import glob
 import os
@@ -23,9 +28,9 @@ from decimal import ROUND_HALF_UP, Decimal
 
 import xlrd
 
-import asbp
-import exec_contract
-from dlib import (DATA, EUR, RAW, SRC, BUILD_DATE, Problems, jload, meta, pct, rnd, say, sha256_file, to_eur,
+import budget_pipeline.build.asbp as asbp
+import budget_pipeline.validate.execution_contract as execution_contract
+from budget_pipeline.build.dlib import (DATA, EUR, RAW, SRC, BUILD_DATE, Problems, jload, meta, pct, rnd, say, sha256_file, to_eur,
                   write_data)
 
 SHEET = "стартова"
@@ -276,7 +281,7 @@ def dec(x):
 
 def convert(v, unit):
     """Original number -> млн. € rounded to 3 decimals, in decimal arithmetic (BGN is divided by 1.95583 first). The float returned holds
-    exactly that decimal (exec_contract.money() writes it); on the 3168 numbers of the 33 reports it equals the earlier float division."""
+    exactly that decimal (execution_contract.money() writes it); on the 3168 numbers of the 33 reports it equals the earlier float division."""
     d = dec(v) / D_EUR if unit == "BGN" else dec(v)
     r = float(d.quantize(D_PLACES, rounding=ROUND_HALF_UP))
     return 0.0 if r == 0 else r
@@ -346,10 +351,10 @@ def provenance(by_year, rows_out, plan2026, a3, as_of):
         },
         "originals": originals,
         "plan2026": {"kfp": dict(pdf, rows=plan["kfp"]),
-                     "nat": {"source": "prototype/src/kfp_components_2026.json", "rows": plan["nat"],
-                             "note": "made by tools/prototype/build_src.py from the motives (Табл. II-3/II-4); see sources/registry.yaml"},
-                     "eu": {"source": "prototype/src/kfp_components_2026.json", "rows": plan["eu"],
-                            "note": "made by tools/prototype/build_src.py from the motives (Табл. II-3/II-4); see sources/registry.yaml"}},
+                     "nat": {"source": "data/inputs/kfp_components_2026.json", "rows": plan["nat"],
+                             "note": "made by reference/prototype/tools/build_src.py from the motives (Табл. II-3/II-4); see data/sources.yaml"},
+                     "eu": {"source": "data/inputs/kfp_components_2026.json", "rows": plan["eu"],
+                            "note": "made by reference/prototype/tools/build_src.py from the motives (Табл. II-3/II-4); see data/sources.yaml"}},
     }
 
 
@@ -357,7 +362,7 @@ def build():
     prob = Problems("extract_kfp_full")
     files = list_reports()
     if not files:
-        prob.error("no reports in prototype/data/raw/kfp_*/ (raw files, not in the repository: docs/data-sources.md)")
+        prob.error("no reports in data/originals/kfp_*/ (raw files, not in the repository: docs/data-sources.md)")
         prob.finish()
     reports = [parse_report(f) for f in files]
     reports.sort(key=lambda r: (r["year"], r["month"]))
@@ -595,7 +600,7 @@ def build():
         if tuple(rnd(v, 1) for v in ref) != want:
             prob.error("%d-%02d headline reference differs from %s: %s" % (ry, rm, want, ref))
     if prob.errors:
-        say("nothing written: site/data/execution.json keeps the last extraction that passed")
+        say("nothing written: data/release/execution.json keeps the last extraction that passed")
         prob.finish()
 
     doc = {
@@ -613,10 +618,10 @@ def build():
         "pendingMonths": pending_months,
         "reconcile": reconcile,
     }
-    path, size, changed = write_data("execution.json", exec_contract.canonical(doc))
+    path, size, changed = write_data("execution.json", execution_contract.canonical(doc))
     say("wrote %s (%d bytes, %s)" % (path.relative_to(DATA.parent.parent), size, "changed" if changed else "unchanged"))
     prov = provenance(by_year, rows_out, plan2026, a3, data[str(last_year)]["asOf"][-1])
-    path, size, changed = write_data(exec_contract.CONTRACT["provenance"], prov)
+    path, size, changed = write_data(execution_contract.CONTRACT["provenance"], prov)
     say("wrote %s (%d bytes, %s)" % (path.relative_to(DATA.parent.parent), size, "changed" if changed else "unchanged"))
     prob.finish()
     return doc

@@ -1,13 +1,18 @@
 """Annex 3 (Приложение № 3, КФП 2023–2028) of the MF motives: the revenue/expenditure trees.
 
-The source rows come from prototype/data/raw/asbp/asbp_tables.json (tables `annex3_mln`, `annex3_pct_gdp`).
+The source rows come from data/originals/asbp/asbp_tables.json (tables `annex3_mln`, `annex3_pct_gdp`).
 The PDF indentation does not follow the arithmetic (interest is printed at the level of "Разходи" but is
 part of "Текущи разходи"; "Нелихвени разходи" is a memo line), so the tree below is defined by hand and every
 parent is verified against its children (tolerance 0.3 млн. €, the source rounds each cell to 0.1).
 
 Columns (years): 2024 actual, 2025 preliminary, 2026 project, 2027 forecast, 2028 forecast.
 """
-from dlib import RAW, jload
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
+from budget_pipeline.build.dlib import RAW, jload
 
 YEARS = [2024, 2025, 2026, 2027, 2028]
 VINTAGE = ["actual", "prelim", "plan", "forecast", "forecast"]

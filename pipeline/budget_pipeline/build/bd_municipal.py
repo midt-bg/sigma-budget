@@ -1,7 +1,7 @@
 """municipalities.json (D19 + D20 + D21) and geo/obshtini.json (D20): transfers, population and borders of the 265 municipalities.
 
 Sources, all read from caches/prototype inputs (no network):
-  * ЗДБ 2026 чл. 51 (law_bill.json -> municipal.art51; cross-checked row by row against prototype/src/municipal_transfers_2026.json);
+  * ЗДБ 2026 чл. 51 (law_bill.json -> municipal.art51; cross-checked row by row against data/inputs/municipal_transfers_2026.json);
   * Eurostat GISCO LAU 2024 (gisco_lau_bg.json): id, official name, population on 01.01.2024, borders;
   * Eurostat demo_r_pjanaggr3 (eurostat_pop_nuts3_bg.json): population of the 28 oblasts, 2025.
 
@@ -11,11 +11,16 @@ population adds up to the national figure of 01.01.2024, the oblast mapping LAU 
 every oblast exactly. The borders are rounded to 3 decimals and thinned (Douglas-Peucker, 0.0005 deg ~ 50 m) to fit the 400 KB budget; the
 area of every municipality is compared before/after.
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import math
 import re
 
-from bd_common import fmt_num
-from dlib import isnum, jsonstat_series, meta, rnd
+from budget_pipeline.build.bd_common import fmt_num
+from budget_pipeline.build.dlib import isnum, jsonstat_series, meta, rnd
 
 # (LAU id prefix, oblast as printed in the law, display name, NUTS3). The data decide whether this table is right (see _check_regions).
 REGIONS = [

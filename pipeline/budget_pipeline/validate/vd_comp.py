@@ -1,4 +1,4 @@
-"""COMPONENTS and RATES groups of validate_data.py: components.json (D07) and rates.json (D17).
+"""COMPONENTS and RATES groups of base.py: components.json (D07) and rates.json (D17).
 
 COMPONENTS: the five constituent budgets (state, DOO, NZOK, municipalities, EU accounts) and the other recipients of art. 1 of the law,
 the transfers between them, the national vs EU split of the consolidated programme, the Sankey links and the pending monthly split.
@@ -7,10 +7,15 @@ RATES: the contribution and tax rates of 2026 (NAP table, ZBDOO, ZBNZOK, ASBP an
 the verbatim ASBP assumption strings, and the two annex tables (minimum insurable income, TZPB rate) from their cells.
 Pure standard library.
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import re
 
-import vd_lib as L
-from vd_lib import Check, isnum
+import budget_pipeline.validate.vd_lib as L
+from budget_pipeline.validate.vd_lib import Check, isnum
 
 
 def _tol_sum(n):

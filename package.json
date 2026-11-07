@@ -1,0 +1,17 @@
+{
+  "name": "sigma-budget",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/web"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace @sigma-budget/web",
+    "typecheck": "npm run typecheck --workspace @sigma-budget/web",
+    "dev": "npm run dev --workspace @sigma-budget/web --",
+    "registry:local": "npm run registry:local --workspace @sigma-budget/web"
+  },
+  "overrides": {
+    "undici": "7.30.1"
+  }
+}

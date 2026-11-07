@@ -3,12 +3,12 @@
 
 Public operations, no credentials:
   budget collect        [--out work/acquisition]               download every source the registry can fetch; snapshot.json lists them
-  budget import-source  --source kfp --file F [--url U]         a file downloaded by a person (tools/data/raw_sources.py import)
+  budget import-source  --source kfp --file F [--url U]         a file downloaded by a person (pipeline/budget_pipeline/sources/raw_sources.py import)
   budget build          [--commit REV] [--inputs DIR] [--out work/candidate] [--build-date YYYY-MM-DD] [--site]
                         the release of one commit: the code of that commit, the inputs of DIR (default: this checkout), the pinned image;
-                        writes data/, validation.json and manifest.json; --site also puts the outputs and the manifest into site/data
+                        writes data/, validation.json and manifest.json; --site also puts the outputs and the manifest into data/release
   budget validate       (--release DIR | --site)                the manifest, the bytes and sha256 of every output, the data checks;
-                        --site: the release published in site/data, as CI checks it
+                        --site: the release published in data/release, as CI checks it
   budget reproduce      (--manifest PATH|URL | --current SITE) [--originals DIR]
                         rebuild the release from its commit and its originals and compare every output byte for byte
   budget refetch        (--manifest PATH|URL | --current SITE) [--out DIR]
@@ -19,14 +19,19 @@ Operator operations (stage C; an Access login or a service token, docs/release.m
   budget upload         --release DIR --environment NAME        upload a candidate (resumable) and seal it; it does not become current
   budget publish        --release DIR --environment NAME        check locally, upload, publish on the current revision, read it back
   budget rollback       --release-id ID --environment NAME      make an earlier release current again (a new revision)
-  --yes skips the question before a change; --dry-run writes nothing remote. Environments: tools/environments.json, and your own
-  in tools/environments.local.json (not in git).
+  --yes skips the question before a change; --dry-run writes nothing remote. Environments: pipeline/environments.json, and your own
+  in pipeline/environments.local.json (not in git).
 
 Every command prints a readable report, or JSON with --json. Exit codes (section 8.3):
   0 checked, nothing differs   1 differences   2 invalid data or usage   3 missing input or unavailable source (unverified)
   4 auth refused   5 revision conflict (someone published first)   6 the publish is not confirmed by the read-back
-The build runs in the image of tools/data/Dockerfile (--env docker, the default when docker answers) or in .venv-data (--env local).
+The build runs in the image of pipeline/Dockerfile (--env docker, the default when docker answers) or in tmp/venv-data (--env local).
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[2]
 import argparse
 import hashlib
 import io
@@ -45,12 +50,12 @@ import urllib.request
 from fnmatch import fnmatchcase
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 MANIFEST_SCHEMA = "budget-release/1"
-INPUT_DIRS = ("prototype/data/raw", "tools/mock/cache", "tmp/research")          # inputs that are not in git (sources/registry.yaml)
+INPUT_DIRS = ("data/originals", "data/cache")          # inputs that are not in git (data/sources.yaml)
 WORDING_TAGS = ("mock-v2", "mock-v4")
 WORDING_FILES = ("catalog.json", "core.json", "search-index.json")
-RELEASES = "releases"                                                            # site/data/releases/: the manifests, not outputs
+RELEASES = "releases"                                                            # data/release/releases/: the manifests, not outputs
 UA = "budget-na-svetlo-data-pipeline/1.0 (+public data; contact: working group)"
 MIME = {".xls": "application/vnd.ms-excel", ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         ".pdf": "application/pdf", ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -97,12 +102,12 @@ def yaml_load(path):
     try:
         import yaml
     except ImportError:
-        raise Fail(EXIT_INVALID, "PyYAML is needed (requirements-dev.lock or tools/data/requirements.lock)")
+        raise Fail(EXIT_INVALID, "PyYAML is needed (tests/requirements-dev.lock or pipeline/requirements.lock)")
     return yaml.safe_load(Path(path).read_text(encoding="utf-8"))
 
 
 def tls_context():
-    """certifi's bundle when it is installed (tools/data/requirements.txt: the Python of uv does not accept the chain of ec.europa.eu)"""
+    """certifi's bundle when it is installed (pipeline/requirements.txt: the Python of uv does not accept the chain of ec.europa.eu)"""
     try:
         import certifi
         return ssl.create_default_context(cafile=certifi.where())
@@ -164,8 +169,8 @@ def kind_ok(path, head):
 # ------------------------------------------------------------------------------------------------------------------------ inputs
 def registry_inputs(root, inputs_dir):
     """the files the build reads, from the registries: path -> {kind, source, datasets, entry}; and the declared ones that are missing"""
-    sreg = yaml_load(root / "sources" / "registry.yaml")
-    dreg = yaml_load(root / "datasets" / "registry.yaml")
+    sreg = yaml_load(root / "data" / "sources.yaml")
+    dreg = yaml_load(root / "data" / "datasets.yaml")
     sources = {s["id"]: s for s in sreg["sources"]}
     inter = {i["path"]: i for i in sreg.get("intermediates", [])}
     found, missing = {}, {}
@@ -185,7 +190,7 @@ def registry_inputs(root, inputs_dir):
                 continue                                       # another dataset: an output of the same build
             for pat, entry in pats:
                 if not pat.startswith(INPUT_DIRS):
-                    continue                                   # in git at the commit (prototype/src) or not read by the build
+                    continue                                   # in git at the commit (data/inputs) or not read by the build
                 hits = sorted(p.relative_to(inputs_dir).as_posix() for p in inputs_dir.glob(pat) if p.is_file())
                 if not hits:
                     missing.setdefault(pat, set()).add(d["id"])
@@ -198,23 +203,23 @@ def registry_inputs(root, inputs_dir):
 def acquisition_records(inputs_dir):
     """retrieved dates: the log of fetch_sources.py and the records of raw_sources.py import"""
     out = {}
-    m = inputs_dir / "prototype" / "data" / "raw" / "MANIFEST.json"
+    m = inputs_dir / "data" / "originals" / "MANIFEST.json"
     if m.is_file():
         for rel, e in json.loads(m.read_text(encoding="utf-8")).items():
-            out["prototype/data/raw/" + rel] = {"retrieved": e.get("retrieved"), "url": e.get("url"), "method": "fetch"}
+            out["data/originals/" + rel] = {"retrieved": e.get("retrieved"), "url": e.get("url"), "method": "fetch"}
     log = inputs_dir / "tmp" / "sources" / "ACQUISITIONS.jsonl"
     if log.is_file():
         for ln in log.read_text(encoding="utf-8").splitlines():
             if ln.strip():
                 e = json.loads(ln)
-                out["prototype/data/raw/" + e["file"]] = {"retrieved": e.get("retrieved"), "url": e.get("url") or e.get("page"),
+                out["data/originals/" + e["file"]] = {"retrieved": e.get("retrieved"), "url": e.get("url") or e.get("page"),
                                                           "method": e.get("mode", "import")}
     return out
 
 
 def pins(root):
     out = {}
-    for ln in (root / "tools" / "mock" / "prototype.sha256").read_text(encoding="utf-8").splitlines():
+    for ln in (root / "data" / "originals.sha256").read_text(encoding="utf-8").splitlines():
         h, _, p = ln.partition("  ")
         if p:
             out[p] = h
@@ -231,7 +236,7 @@ def export_commit(commit, dest):
         out = dest / "tmp" / "versions" / ("site-" + tag.split("-")[1]) / "data"
         out.mkdir(parents=True, exist_ok=True)
         for f in WORDING_FILES:
-            (out / f).write_bytes(git("show", "%s:site/data/%s" % (tag, f), binary=True))
+            (out / f).write_bytes(git("show", "%s:%s/%s" % (tag, "site" + "/data", f), binary=True))
 
 
 def stage_inputs(found, inputs_dir, view):
@@ -257,8 +262,8 @@ def run_in_env(env, src, inputs_dir, cmd, extra_env=None):
     """run a python command of the exported tree, with the inputs read-only; returns (returncode, output)"""
     extra_env = dict(extra_env or {})
     if env == "docker":
-        image = "sigma-budget-data:" + sha256_file(src / "tools" / "data" / "requirements.lock")[:12]
-        b = subprocess.run(["docker", "build", "-q", "-t", image, str(src / "tools" / "data")], capture_output=True)
+        image = "sigma-budget-data:" + sha256_file(src / "pipeline" / "requirements.lock")[:12]
+        b = subprocess.run(["docker", "build", "-q", "-t", image, str(src / "pipeline")], capture_output=True)
         if b.returncode:
             raise Fail(EXIT_INVALID, "docker build: " + b.stderr.decode("utf-8", "replace")[-400:])
         args = ["docker", "run", "--rm", "-v", "%s:/repo" % src]
@@ -270,9 +275,9 @@ def run_in_env(env, src, inputs_dir, cmd, extra_env=None):
         args += [image, "python"] + cmd
         r = subprocess.run(args, capture_output=True)
     else:
-        py = ROOT / ".venv-data" / "bin" / "python"
+        py = ROOT / "tmp/venv-data" / "bin" / "python"
         if not py.is_file():
-            raise Fail(EXIT_INVALID, "--env local needs .venv-data (tools/data/requirements.lock)")
+            raise Fail(EXIT_INVALID, "--env local needs tmp/venv-data (pipeline/requirements.lock)")
         for d in INPUT_DIRS:
             target = src / d
             if (inputs_dir / d).is_dir() and not target.exists():
@@ -283,7 +288,7 @@ def run_in_env(env, src, inputs_dir, cmd, extra_env=None):
 
 
 def validation_report(output):
-    """the lines of validate_data_v6.py as data, without the timing (the report is an output and must be the same on every run)"""
+    """the lines of datasets.py as data, without the timing (the report is an output and must be the same on every run)"""
     groups = []
     for ln in output.splitlines():
         parts = ln.split(None, 2)
@@ -291,7 +296,7 @@ def validation_report(output):
             groups.append({"group": parts[1], "status": parts[0], "summary": parts[2]})
     result = [ln for ln in output.splitlines() if ln.startswith("RESULT")]
     res = result[-1].rsplit(",", 1)[0] if result else "RESULT missing"
-    return {"tool": "tools/mock/validate_data_v6.py", "result": res, "groups": groups}
+    return {"tool": "pipeline/budget_pipeline/validate/datasets.py", "result": res, "groups": groups}
 
 
 def build_release(commit, inputs_dir, out, build_date, env, log=print):
@@ -317,7 +322,7 @@ def build_release(commit, inputs_dir, out, build_date, env, log=print):
             if pin and pin != h:
                 bad.append("%s: sha256 %s…, pinned %s…" % (path, h[:12], pin[:12]))
             elif not pin and rec["entry"].get("pinned") is not False:
-                bad.append("%s: not pinned in the commit (commit its line of prototype.sha256 first)" % path)
+                bad.append("%s: not pinned in the commit (commit its line of originals.sha256 first)" % path)
             s = sources.get(rec["source"]) if rec["source"] else None
             a = acq.get(path, {})
             item = {"path": path, "kind": rec["kind"], "datasets": sorted(rec["datasets"]), "mime": MIME.get(p.suffix.lower(), "application/octet-stream"),
@@ -332,10 +337,10 @@ def build_release(commit, inputs_dir, out, build_date, env, log=print):
                 item["retrieved"] = a["retrieved"]
             inputs.append({k: v for k, v in item.items() if v is not None})
         if bad:
-            raise Fail(EXIT_INVALID, "inputs differ from their pins (tools/mock/prototype.sha256, sources/registry.yaml):\n  " + "\n  ".join(bad))
+            raise Fail(EXIT_INVALID, "inputs differ from their pins (data/originals.sha256, data/sources.yaml):\n  " + "\n  ".join(bad))
         view = work / "inputs"
         stage_inputs(found, inputs_dir, view)
-        args = ["tools/mock/rebuild_v6.py", "--versions-ready"] + (["--build-date", build_date] if build_date else [])
+        args = ["pipeline/budget_pipeline/build/rebuild.py", "--versions-ready"] + (["--build-date", build_date] if build_date else [])
         rc, output = run_in_env(env, src, view, args)
         (work / "build.log").write_text(output, encoding="utf-8")
         if rc:
@@ -343,9 +348,9 @@ def build_release(commit, inputs_dir, out, build_date, env, log=print):
             keep.parent.mkdir(parents=True, exist_ok=True)
             keep.write_text(output, encoding="utf-8")
             raise Fail(EXIT_INVALID, "the build failed (exit %d), the whole log is in %s:\n%s" % (rc, keep.relative_to(ROOT), output[-1500:]))
-        data = src / "site" / "data"
+        data = src / "data" / "release"
         shutil.copytree(data, out / "data", ignore=shutil.ignore_patterns(RELEASES))
-        rc, voutput = run_in_env(env, src, view, ["tools/mock/validate_data_v6.py"], {"BUILD_DATE": build_date} if build_date else None)
+        rc, voutput = run_in_env(env, src, view, ["pipeline/budget_pipeline/validate/datasets.py"], {"BUILD_DATE": build_date} if build_date else None)
         report = validation_report(voutput)
         report["passed"] = rc == 0
         (out / "validation.json").write_bytes(canonical_json(report))
@@ -364,7 +369,7 @@ def build_release(commit, inputs_dir, out, build_date, env, log=print):
 
 
 def make_manifest(src, commit, inputs, missing, out, build_date):
-    dreg = yaml_load(src / "datasets" / "registry.yaml")
+    dreg = yaml_load(src / "data" / "datasets.yaml")
     exe = json.loads((out / "data" / "execution.json").read_text(encoding="utf-8"))
     prov = json.loads((out / "data" / exe["contract"]["provenance"]).read_text(encoding="utf-8"))
     outputs = []
@@ -374,7 +379,7 @@ def make_manifest(src, commit, inputs, missing, out, build_date):
             by_file[pat] = d["id"]
     for p in sorted(x for x in out.rglob("*") if x.is_file() and x.name not in ("manifest.json", "receipt.json")):
         rel = p.relative_to(out).as_posix()
-        ds = next((v for k, v in by_file.items() if fnmatchcase("site/" + rel, k)), None)
+        ds = next((v for k, v in by_file.items() if fnmatchcase("data/release/" + rel.removeprefix("data/"), k)), None)
         item = {"path": rel, "mime": MIME.get(p.suffix.lower(), "application/octet-stream"), "bytes": p.stat().st_size, "sha256": sha256_file(p)}
         if ds:
             item["dataset"] = ds
@@ -388,7 +393,7 @@ def make_manifest(src, commit, inputs, missing, out, build_date):
             if d.get(k):
                 e[k] = d[k]
         if d["status"] != "pending":
-            e["rebuiltByThisRelease"] = bool(d.get("rebuild") and "rebuild_v6.py" in d["rebuild"])
+            e["rebuiltByThisRelease"] = bool(d.get("rebuild") and "rebuild.py" in d["rebuild"])
         if d.get("limitations"):
             e["limitations"] = d["limitations"]
         if d["status"] == "pending":
@@ -401,25 +406,25 @@ def make_manifest(src, commit, inputs, missing, out, build_date):
         "provenance_format": prov["schema"],
         "processing": {
             "code": {"repository": "https://github.com/midt-bg/sigma-budget", "commit": commit, "tags": tags},
-            "environment": {"dockerfile": "tools/data/Dockerfile", "dockerfile_sha256": sha256_file(src / "tools" / "data" / "Dockerfile"),
-                            "lock": "tools/data/requirements.lock", "lock_sha256": sha256_file(src / "tools" / "data" / "requirements.lock")},
-            "command": "tools/mock/rebuild_v6.py --versions-ready" + (" --build-date " + build_date if build_date else ""),
+            "environment": {"dockerfile": "pipeline/Dockerfile", "dockerfile_sha256": sha256_file(src / "pipeline" / "Dockerfile"),
+                            "lock": "pipeline/requirements.lock", "lock_sha256": sha256_file(src / "pipeline" / "requirements.lock")},
+            "command": "pipeline/budget_pipeline/build/rebuild.py --versions-ready" + (" --build-date " + build_date if build_date else ""),
             "parameters": {"build_date": build_date},
-            "registries": {"sources/registry.yaml": sha256_file(src / "sources" / "registry.yaml"),
-                           "datasets/registry.yaml": sha256_file(src / "datasets" / "registry.yaml")},
+            "registries": {"data/sources.yaml": sha256_file(src / "data" / "sources.yaml"),
+                           "data/datasets.yaml": sha256_file(src / "data" / "datasets.yaml")},
         },
         "inputs": inputs,
         "outputs": outputs,
         "coverage": {"datasets": coverage, "missingInputs": [{"path": k, "datasets": v} for k, v in sorted(missing.items())],
                      "latest": {"execution": exe["latest"]["asOf"]}},
         "compatibility": {"execution": ["execution/1", "execution/2"],
-                          "readers": "site/js/data.js and tools/mock/exec_contract.py read both versions"},
+                          "readers": "apps/web/client/data.js and pipeline/budget_pipeline/validate/execution_contract.py read both versions"},
     }
 
 
 def publish_to_site(out, rid):
-    """--site: the outputs into site/data, the manifest under site/data/releases/<id>/ and the pointer current.json"""
-    data = ROOT / "site" / "data"
+    """--site: the outputs into data/release, the manifest under data/release/releases/<id>/ and the pointer current.json"""
+    data = ROOT / "data" / "release"
     for p in (out / "data").rglob("*"):
         if p.is_file():
             t = data / p.relative_to(out / "data")
@@ -436,16 +441,16 @@ def publish_to_site(out, rid):
 
 # ------------------------------------------------------------------------------------------------------------------------ checks
 def site_release():
-    """the release published in site/data: (manifest path, path of an output -> file)"""
-    data = ROOT / "site" / "data"
+    """the release published in data/release: (manifest path, path of an output -> file)"""
+    data = ROOT / "data" / "release"
     cur = json.loads((data / RELEASES / "current.json").read_text(encoding="utf-8"))
     folder = data / RELEASES / cur["release_id"]
-    where = lambda rel: folder / rel if rel == "validation.json" else ROOT / "site" / rel      # noqa: E731
+    where = lambda rel: folder / rel if rel == "validation.json" else data / rel.removeprefix("data/")      # noqa: E731
     return folder / "manifest.json", where, cur["release_id"]
 
 
 def check_release_dir(release, manifest=None, where=None):
-    """the manifest against the files of a release folder (or of site/data with site_release()): [(path, problem)]"""
+    """the manifest against the files of a release folder (or of data/release with site_release()): [(path, problem)]"""
     where = where or (lambda rel: release / rel)
     mbytes = (manifest or release / "manifest.json").read_bytes()
     m = json.loads(mbytes)
@@ -495,7 +500,7 @@ def cmd_build(a):
 
 def cmd_validate(a):
     if a.site:
-        release = ROOT / "site"
+        release = ROOT / "apps" / "web" / "public"
         manifest, where, pointer = site_release()
         rid, m, probs = check_release_dir(release, manifest, where)
         if rid != pointer:
@@ -503,8 +508,8 @@ def cmd_validate(a):
     else:
         release = Path(a.release).resolve()
         rid, m, probs = check_release_dir(release)
-    env = dict(os.environ, BUDGET_DATA_DIR=str(release / "data"))
-    r = subprocess.run([sys.executable, str(ROOT / "tools" / "mock" / "validate_data_v6.py")], capture_output=True, env=env)
+    env = dict(os.environ, BUDGET_DATA_DIR=str(ROOT / "data/release" if a.site else release / "data"))
+    r = subprocess.run([sys.executable, str(ROOT / "pipeline" / "budget_pipeline" / "validate" / "datasets.py")], capture_output=True, env=env)
     report = validation_report((r.stdout + r.stderr).decode("utf-8", "replace"))
     if r.returncode:
         probs.append(("data", report["result"]))
@@ -614,7 +619,7 @@ def cmd_refetch(a):
 
 
 def cmd_collect(a):
-    sreg = yaml_load(ROOT / "sources" / "registry.yaml")
+    sreg = yaml_load(ROOT / "data" / "sources.yaml")
     out = Path(a.out).resolve()
     rows = []
     for s in sreg["sources"]:
@@ -647,20 +652,20 @@ def cmd_collect(a):
 def cmd_import_source(a):
     if a.source != "kfp":
         raise Fail(EXIT_INVALID, "import-source handles the monthly КФП reports (--source kfp); other files go by sha256 with "
-                                 "tools/data/raw_sources.py import")
-    args = [sys.executable, str(ROOT / "tools" / "data" / "raw_sources.py"), "import", a.file] + (["--url", a.url] if a.url else [])
+                                 "pipeline/budget_pipeline/sources/raw_sources.py import")
+    args = [sys.executable, str(ROOT / "pipeline" / "budget_pipeline" / "sources" / "raw_sources.py"), "import", a.file] + (["--url", a.url] if a.url else [])
     r = subprocess.run(args)
     return (EXIT_OK if r.returncode == 0 else EXIT_INVALID), {"imported": a.file, "exit": r.returncode}
 
 
 # ------------------------------------------------------------------------------------------------------------------------ operator
 def environment(name):
-    envs = json.loads((ROOT / "tools" / "environments.json").read_text(encoding="utf-8"))
-    local = ROOT / "tools" / "environments.local.json"  # your own account's environments, not in git
+    envs = json.loads((ROOT / "pipeline" / "environments.json").read_text(encoding="utf-8"))
+    local = ROOT / "pipeline" / "environments.local.json"  # your own account's environments, not in git
     if local.exists():
         envs.update(json.loads(local.read_text(encoding="utf-8")))
     if name not in envs or name.startswith("_"):
-        raise Fail(EXIT_INVALID, "no environment %r in tools/environments.json or tools/environments.local.json" % name)
+        raise Fail(EXIT_INVALID, "no environment %r in pipeline/environments.json or pipeline/environments.local.json" % name)
     url = os.environ.get("BUDGET_%s_URL" % name.upper()) or envs[name].get("url")
     if not url:
         raise Fail(EXIT_INVALID, "%s is not provisioned yet: %s" % (name, envs[name].get("note")))
@@ -936,11 +941,11 @@ def main(argv):
     b.add_argument("--out", default=str(ROOT / "work" / "candidate"))
     b.add_argument("--build-date")
     b.add_argument("--env", choices=["docker", "local"])
-    b.add_argument("--site", action="store_true", help="also put the outputs and the manifest into site/data")
+    b.add_argument("--site", action="store_true", help="also put the outputs and the manifest into data/release")
     v = sub.add_parser("validate")
     vg = v.add_mutually_exclusive_group(required=True)
     vg.add_argument("--release", help="a release folder (budget build --out)")
-    vg.add_argument("--site", action="store_true", help="the release published in site/data (releases/current.json)")
+    vg.add_argument("--site", action="store_true", help="the release published in data/release (releases/current.json)")
     for name in ("reproduce", "refetch"):
         p = sub.add_parser(name)
         g = p.add_mutually_exclusive_group(required=True)
@@ -963,7 +968,7 @@ def main(argv):
     st.add_argument("--environment", required=True)
     for name in ("upload", "publish", "rollback"):
         p = sub.add_parser(name)
-        p.add_argument("--environment", required=True, help="tools/environments.json; no default, production is always named")
+        p.add_argument("--environment", required=True, help="pipeline/environments.json; no default, production is always named")
         if name == "rollback":
             p.add_argument("--release-id", required=True)
         else:

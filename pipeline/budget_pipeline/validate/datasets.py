@@ -1,18 +1,23 @@
 #!/usr/bin/env python3
-"""validate_data_v6.py - validate_data.py for the version v6 (site/data at the tag mock-v6) (a thin wrapper; the donor validator and its vd_*.py modules are NOT edited).
+"""datasets.py - base.py for the version v6 (data/release at the tag mock-v6) (a thin wrapper; the donor validator and its vd_*.py modules are NOT edited).
 
-Run:  .venv/bin/python tools/mock/validate_data_v6.py [--only GROUP,...] [-v] [--list] [--no-accepted]
+Run:  tmp/venv/bin/python pipeline/budget_pipeline/validate/datasets.py [--only GROUP,...] [-v] [--list] [--no-accepted]
 
-What differs from validate_data.py (each point is a deliberate V5 decision, see docs/plan.md):
+What differs from base.py (each point is a deliberate V5 decision, see docs/plan.md):
   * DATA / SITE of vd_lib are the checked-out site/ (the validators read the paths through the vd_lib module, so nothing else changes).
   * REBUILD and MOCK are skipped: they run build_data.py --check / validate_mock.py against the v1 donor tree and the
-    donor builders know nothing of the V5 active layer (the generated "C" sets and the daily СЕБРА set are taken out by tools/v5_data_active.py).
-    The same question for V5 is answered by `diff_json_v5.py tmp/versions/site-v1/data site/data` (every differing leaf is classified).
+    donor builders know nothing of the V5 active layer (the generated "C" sets and the daily СЕБРА set are taken out by tools/active_data.py).
+    The same question for V5 is answered by `diff_json_v5.py tmp/versions/site-v1/data data/release` (every differing leaf is classified).
   * The SEARCH group is run with empty stand-ins for the three mock sets V5 removed (mock/projects, activities, payments); it crashed on them.
   * Problems that follow ONLY from what V5 removed on purpose are moved out of the failure count into an explicit list (ACCEPTED below: group,
     pattern, reason). They are printed with the reason at the end - nothing is hidden - and a problem not matched by a pattern stays a failure.
     --no-accepted turns the list off and shows the donor's raw verdict.
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import json
 import os
 import re
@@ -21,12 +26,12 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
-import vd_lib as L                                    # noqa: E402
+import budget_pipeline.validate.vd_lib as L                                    # noqa: E402
 
 # vd_lib.SITE / DATA already point at site/ (the checked-out version; run this at the tag mock-v6)
 
-import validate_data as V                             # noqa: E402
-import vd_contract                                    # noqa: E402  contract v2 of execution.json (stage B)
+import budget_pipeline.validate.base as V                             # noqa: E402
+import budget_pipeline.validate.vd_contract as vd_contract                                    # noqa: E402  contract v2 of execution.json (stage B)
 
 GONE_SEBRA = "СЕБРА (daily payments) was taken out of the active interface and of core.sources; data/sebra.json stays on disk, unreferenced, for phase 2"
 GONE_SEARCH = "search shows only active real sets; the 7 pending and 2 mock datasets have no search row (docs/plan.md, search)"

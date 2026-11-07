@@ -1,16 +1,21 @@
-"""CORE and CATALOG groups of validate_data.py.
+"""CORE and CATALOG groups of base.py.
 
 CORE: core.json copies numbers that other datasets own (KPIs, counts, functions, revenue groups, population); every copy is
-compared with its owner. CATALOG: catalog.json describes every file of site/data; each statement is compared with the file.
+compared with its owner. CATALOG: catalog.json describes every file of data/release; each statement is compared with the file.
 Pure standard library.
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import glob
 import os
 import re
 
-import vd_lib as L
-from vd_idx import MONTHS
-from vd_lib import Check, fmt, isnum
+import budget_pipeline.validate.vd_lib as L
+from budget_pipeline.validate.vd_idx import MONTHS
+from budget_pipeline.validate.vd_lib import Check, fmt, isnum
 
 SOURCE_KEYS = ("kfp", "asbp", "bill", "zdb", "zbdoo", "zbnzok", "prb", "parliament", "eurostat", "bnb", "nap", "sebra",
                "gisco", "dataeuropa", "minfin", "wg", "mockgen")
@@ -136,9 +141,9 @@ def _schema(obj):
 
 
 def _page_needs():
-    """{route id: [need names]} from `export const needs = [...]` of site/js/pages/sNN-*.js (None when a page declares none)."""
+    """{route id: [need names]} from `export const needs = [...]` of apps/web/client/pages/sNN-*.js (None when a page declares none)."""
     out = {}
-    for path in sorted(glob.glob(os.path.join(L.SITE, "js", "pages", "s[0-9][0-9]-*.js"))):
+    for path in sorted(glob.glob(os.path.join(ROOT, "apps", "web", "client", "pages", "s[0-9][0-9]-*.js"))):
         rid = os.path.basename(path)[:3].upper()
         with open(path, "r", encoding="utf-8") as fh:
             m = re.search(r"export const needs\s*=\s*\[([^\]]*)\]", fh.read())
@@ -194,7 +199,7 @@ def g_catalog(ctx):
             c.ok(all(cc in {m["id"] for m in mins["items"]} for cc in codes), "%s: part codes must be ministry ids" % sl)
             tot = gz = 0
             for pp in parts:
-                path = os.path.join(L.SITE, pp["file"])
+                path = os.path.join(L.DATA, pp["file"].removeprefix("data/"))
                 if not c.ok(os.path.exists(path) and pp["file"] == "data/ministries/%s.json" % pp["code"], "%s: part file %s" % (sl, pp["file"])):
                     continue
                 listed.add(pp["file"][len("data/"):])
@@ -275,7 +280,7 @@ def g_catalog(ctx):
             d = file_ds.get(fn)
             if d is None:
                 if L.exists(fn[len("data/"):]) is False:
-                    c.warn("%s needs '%s' but there is no such file in site/data" % (rid, nm))
+                    c.warn("%s needs '%s' but there is no such file in data/release" % (rid, nm))
                     warn += 1
                 continue
             if rid not in d["screens"] and d["id"] != "core":

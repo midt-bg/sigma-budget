@@ -1,19 +1,24 @@
 #!/usr/bin/env python3
-"""prototype_sums.py - refresh tools/mock/prototype.sha256 after the published prototype/ files changed (pure standard library).
+"""originals_sums.py - refresh data/originals.sha256 after the published prototype/ files changed (pure standard library).
 
-  python3 tools/mock/prototype_sums.py            rewrite the entries of the files that are in the repository
-  python3 tools/mock/prototype_sums.py --check    write nothing; exit 1 when an entry is stale
+  python3 pipeline/budget_pipeline/build/originals_sums.py            rewrite the entries of the files that are in the repository
+  python3 pipeline/budget_pipeline/build/originals_sums.py --check    write nothing; exit 1 when an entry is stale
 
-The manifest also lists the raw files of prototype/data/raw (not in the repository, see docs/data-sources.md): their entries are kept as they are.
+The manifest also lists the raw files of data/originals (not in the repository, see docs/data-sources.md): their entries are kept as they are.
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import hashlib
 import os
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.dirname(os.path.dirname(HERE))              # repository root
-MANIFEST = os.path.join(HERE, "prototype.sha256")
-RAW_PREFIX = "prototype/data/raw/"
+ROOT = str(__import__("pathlib").Path(__file__).resolve().parents[3])              # repository root
+MANIFEST = os.path.join(ROOT, "data", "originals.sha256")
+RAW_PREFIX = "data/originals/"
 
 
 def sha(path):

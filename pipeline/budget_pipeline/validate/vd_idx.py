@@ -1,4 +1,4 @@
-"""SEARCH and FEED groups of validate_data.py.
+"""SEARCH and FEED groups of base.py.
 
 FEED: every event of feed.json is recomputed from the dataset it was derived from (execution.json, law.json, rates.json,
 debt.json, expenditure.json, sebra.json, core.json); the amounts printed in a text are parsed back and compared with the
@@ -6,10 +6,16 @@ dataset (so a wrong number fails, a different wording does not); highlights and 
 KFP report; feed.xml is parsed and compared item by item with the events.
 SEARCH: every row of search-index.json is checked for shape, link (must resolve in the route table), status and for its
 numbers against the dataset it was copied from; the groups are tied 1:1 to their sources (265 municipalities, 52 measures,
-the glossary, the catalog, the mock sets); a Python port of the client engine (site/js/searchlib.js: norm, lat, stem, SYN,
+the glossary, the catalog, the mock sets); a Python port of the client engine (apps/web/client/searchlib.js: norm, lat, stem, SYN,
 parse, tokScore, score) confirms that each popular query of the search page has hits.
 Pure standard library; nothing here writes a file.
 """
+
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import datetime
 import email.utils
 import os
@@ -17,9 +23,9 @@ import re
 import unicodedata
 import xml.etree.ElementTree as ET
 
-import vd_lib as L
-from vd_comp import dig
-from vd_lib import Check, isnum
+import budget_pipeline.validate.vd_lib as L
+from budget_pipeline.validate.vd_comp import dig
+from budget_pipeline.validate.vd_lib import Check, isnum
 
 NNBSP, NBSP, MINUS = "\u202f", "\u00a0", "\u2212"
 MONTHS = ("януари", "февруари", "март", "април", "май", "юни", "юли", "август", "септември", "октомври", "ноември", "декември")
@@ -365,7 +371,7 @@ def g_feed(ctx):
 
 
 # ================================================================================================ SEARCH
-# A Python port of the client engine (site/js/searchlib.js): norm, lat, stem, parse, tokScore, osa, near, score, mag, run. It lets the
+# A Python port of the client engine (apps/web/client/searchlib.js): norm, lat, stem, parse, tokScore, osa, near, score, mag, run. It lets the
 # validator answer "what would the search box show for this word" without a browser. The group "screens" (built from the route
 # table in the browser) is not part of it: only the rows of search-index.json are searched. If searchlib.js changes its rules, this
 # port has to follow (the port self-tests below fail when they drift apart from the expectations derived from the JS code).

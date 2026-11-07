@@ -20,17 +20,17 @@
        reason; every embed address (S29) is still loaded by the `embed` family.
     6. The PNG button says «Изображение» (was «PNG»); the downloaded file name check follows.
     7. VALUE_CHECKS: the concrete numbers are the acceptance values of BRIEF §6 (Jan–Aug 2025/2026 КФП, млрд. €) instead of the old July/plan values.
-    8. Removed screens (S02, S09, S19, S22, S23, S33; S02 and S32 are removed too; the page files of S02 and S32 are deleted) are no longer in the route list; their old addresses are tested by tools/redirects_v5.py.
+    8. Removed screens (S02, S09, S19, S22, S23, S33; S02 and S32 are removed too; the page files of S02 and S32 are deleted) are no longer in the route list; their old addresses are tested by reference/mock/redirects_v5.py.
     9. working-group feedback (09.10): the guide is merged into «Бюджетът за 5 минути» (S02 gone, six scenes), so the store has no `guide` key any more
-       (the bad-preferences test asserts the key stays out); /patevoditel[/N] addresses are redirect cases of tools/redirects_v5.py.
+       (the bad-preferences test asserts the key stays out); /patevoditel[/N] addresses are redirect cases of reference/mock/redirects_v5.py.
 
 
 It serves site/ from a throw-away local http.server, drives headless Chromium (Playwright) through every route in
 `window.__ROUTES__` at 1280 px and 400 px, in the light and the dark theme, and prints what is wrong. Exit code 0 only when
 there is no failure (warnings never fail the run, unless --strict); 1 = failures; 2 = the checker itself could not run.
 
-  Run (always with the project venv; the chromium build lives in .pw-browsers in the repository root, which this script picks up by itself):
-    PLAYWRIGHT_BROWSERS_PATH=$PWD/.pw-browsers .venv/bin/python tools/mock/check_mock.py [options]
+  Run (always with the project venv; the chromium build lives in tmp/pw-browsers in the repository root, which this script picks up by itself):
+    PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python reference/mock/check_mock.py [options]
 
   Options
     --quick            the final gate, about a minute: the first sample of every route at 1280 px and at 400 px in the light
@@ -87,9 +87,17 @@ there is no failure (warnings never fail the run, unless --strict); 1 = failures
     - Missing /data/... files are a WARNING ("pending data file"), not a failure: the data side may not have landed them yet.
     - A stub screen (still the generic "предстои да бъде изграден" text) gets the generic checks only.
     - Text that must show a literal NaN/null/undefined (e.g. an API sample) goes in <code>/<pre> or under [data-allow-tokens].
-    - The checker never touches site/data, prototype/ or anything outside tmp/ (it only writes screenshots with --shots).
+    - The checker never touches data/release, prototype/ or anything outside tmp/ (it only writes screenshots with --shots).
 """
 from __future__ import annotations
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
 
 import argparse
 import concurrent.futures as cf
@@ -112,15 +120,15 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]            # repository root (this file is tools/mock/check_mock_v6.py)
+ROOT = Path(__file__).resolve().parents[2]            # repository root (this file is tests/e2e/screens.py)
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import expect_v6                                      # noqa: E402  the plan and comparison figures of the latest report
+import expect                                      # noqa: E402  the plan and comparison figures of the latest report
 P_ROOT = ROOT                                         # older name of ROOT
-SITE = ROOT / 'site'                                  # the Mock application  (version v6: run at the tag mock-v6)
+SITE = __import__("static_assets").root()                                  # the site  (version v6: run at the tag mock-v6)
 SHOT_DIR = ROOT / 'tmp' / 'render-check-v6'                 # screenshots (gitignored)
-PROTO_SUMS = ROOT / 'tools' / 'mock' / 'prototype.sha256'
-if 'PLAYWRIGHT_BROWSERS_PATH' not in os.environ and (P_ROOT / '.pw-browsers').is_dir():
-    os.environ['PLAYWRIGHT_BROWSERS_PATH'] = str(P_ROOT / '.pw-browsers')
+PROTO_SUMS = ROOT / 'data' / 'originals.sha256'
+if 'PLAYWRIGHT_BROWSERS_PATH' not in os.environ and (P_ROOT / 'tmp' / 'pw-browsers').is_dir():
+    os.environ['PLAYWRIGHT_BROWSERS_PATH'] = str(P_ROOT / 'tmp' / 'pw-browsers')
 
 # --------------------------------------------------------------------------------------------------------------- constants
 CELLS = {
@@ -741,7 +749,7 @@ class Worker:
         o = dict(viewport={'width': extra.get('w', c['w']), 'height': extra.get('h', c['h'])}, color_scheme=c['scheme'],
                  has_touch=c['touch'], locale='bg-BG', timezone_id='Europe/Sofia', service_workers=extra.get('sw', 'block'),
                  accept_downloads=True, permissions=['clipboard-read', 'clipboard-write'])
-        if extra.get('reduced_motion') or not extra.get('motion'):          # V6 (26.10): the checks run with the motion switched off (the final state at once); tools/motion_v6.py drives the motion itself
+        if extra.get('reduced_motion') or not extra.get('motion'):          # V6 (26.10): the checks run with the motion switched off (the final state at once); tools/motion.py drives the motion itself
             o['reduced_motion'] = 'reduce'
         ctx = self.browser.new_context(**o)
         ctx.add_init_script(INIT_JS)
@@ -942,8 +950,8 @@ def deep_pass(page):
 
 
 # concrete numbers the plan fixes for the finished screens (checked only on screens that are no longer stubs). The plan block and the
-# S15 comparison follow the latest report in site/data/execution.json (expect_v6); they were written in for August 2026.
-_PLAN, _CMP = expect_v6.plan(), expect_v6.compare()
+# S15 comparison follow the latest report in data/release/execution.json (expect); they were written in for August 2026.
+_PLAN, _CMP = expect.plan(), expect.compare()
 VALUE_CHECKS = {
     # V6 (working-group feedback, 25.10): the plan block has two bars per indicator (2026, 2025: 'NN,N%'), the sums read '30,12 от 49,62 млрд. €', the lede is the new sentence; the long note is gone.
     # v5 (working-group feedback, 10.10): the start page is the v4 opening again: h1, the one button, the plan block (three bars, КФП Jan–Aug 2026 against the annual plan, млрд. €) and the eight question cards;

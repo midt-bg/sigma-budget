@@ -1,16 +1,21 @@
 """Builders for outlook.json, revenue.json and expenditure.json, plus the shared table parsers.
 
 Inputs: Annex 3 (asbp.load), the printed Табл. I-2 (macro frame) and Табл. III-1 (functions) from the PDF text,
-the as-submitted III-1 from prototype/src/kfp_functions_2026.json, COFOG from prototype/src/cofog_bg.json and
+the as-submitted III-1 from data/inputs/kfp_functions_2026.json, COFOG from data/inputs/cofog_bg.json and
 Табл. VI-1 (state debt) from asbp_tables.json. Every number is read from a source or computed here from numbers
 that are read; nothing is typed in. User-facing strings are Bulgarian, keys/comments English.
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import re
 
-import asbp
-from bd_common import (FUNCTION_DEFS, FUNCTION_NAMES, FUNCTIONS_MINISTRIES_NOTE, NBSP, REVENUE_GROUP_DEFS, fmt_num,
+import budget_pipeline.build.asbp as asbp
+from budget_pipeline.build.bd_common import (FUNCTION_DEFS, FUNCTION_NAMES, FUNCTIONS_MINISTRIES_NOTE, NBSP, REVENUE_GROUP_DEFS, fmt_num,
                        span)
-from dlib import isnum, meta, pct, rnd
+from budget_pipeline.build.dlib import isnum, meta, pct, rnd
 
 YEARS = asbp.YEARS
 VINTAGE = asbp.VINTAGE
@@ -489,12 +494,12 @@ def build_expenditure(ctx):
 
 
 def _population_2026(ctx):
-    """Eurostat tps00001, 1 January 2026 (prototype/src/population.json -> latest)."""
+    """Eurostat tps00001, 1 January 2026 (data/inputs/population.json -> latest)."""
     return population_latest(ctx.src("population"))
 
 
 def population_latest(p):
-    """{'year': 2026, 'date': '2026-01-01', 'persons': 6423207} from prototype/src/population.json."""
+    """{'year': 2026, 'date': '2026-01-01', 'persons': 6423207} from data/inputs/population.json."""
     lat = p["latest"]
     year = int(lat["date"][:4])
     if year != 2026 or not isnum(lat["persons"]):

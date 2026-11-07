@@ -2,7 +2,7 @@
 accounts and the transfers between them (screen S15).
 
 Everything is re-derived from the primary documents and then cross-checked against the hand-curated
-prototype/src/kfp_components_2026.json (a mismatch is a build error):
+data/inputs/kfp_components_2026.json (a mismatch is a build error):
   * state budget      ЗДБ чл. 1 (the art. 1 rows already parsed into law.json by bd_law)
   * ДОО and НЗОК      ЗБДОО and ЗБНЗОК чл. 1 (ДВ бр. 68), parsed from the Държавен вестник HTML with lawparse
   * municipalities    MF motives Табл. IV-1, the text above it and Прил. 9 (asbp_tables.json) + the ЗДБ чл. 51 totals (municipalities.json)
@@ -11,11 +11,16 @@ prototype/src/kfp_components_2026.json (a mismatch is a build error):
   * execution         execution.json `latest` (the last report) splits only national vs EU; the split by component budgets (state, ДОО,
                       НЗОК, municipalities) is not available in machine-readable form -> pending P02 (no numbers)
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import re
 
-import lawparse
-from bd_common import fmt_money, fmt_num, pending_block
-from dlib import RAW, meta, rnd
+import budget_pipeline.extract.lawparse as lawparse
+from budget_pipeline.build.bd_common import fmt_money, fmt_num, pending_block
+from budget_pipeline.build.dlib import RAW, meta, rnd
 
 TOL = 0.051          # khil EUR: rounding tolerance for sums of printed one-decimal numbers
 TOL_MLN = 0.151      # mln EUR: two printed tables added together

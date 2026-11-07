@@ -1,5 +1,5 @@
 // State components (plan 6.6). Each root carries data-state="loading|empty|error|pending|mock|offline":
-// the checker (tools/check_mock.py) and ?demo= use that attribute. Texts are the plan's wording.
+// the checker (reference/mock/check_mock.py) and ?demo= use that attribute. Texts are the plan's wording.
 //   skeleton({lines})  ·  pageSkeleton()  ·  emptyState({title,text,action})  ·  errorState({retry:true})
 //   pendingState({id:'P01'})  ·  pendingState({title, text, source:['minfin']})  ·  mockBadge()  ·  mockNote(text)
 import { html } from '../html.js';

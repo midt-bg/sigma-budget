@@ -1,24 +1,29 @@
 #!/usr/bin/env python3
 """Сваля публичните източници за наборите „за извличане / проверка“ на прототипа „Бюджет на светло“.
 
-Какво прави: тегли всеки файл от списъка SOURCES в prototype/data/raw/<папка>/ и пише
-prototype/data/raw/MANIFEST.json (адрес, файл, размер, sha256, HTTP код, дата на сваляне).
+Какво прави: тегли всеки файл от списъка SOURCES в data/originals/<папка>/ и пише
+data/originals/MANIFEST.json (адрес, файл, размер, sha256, HTTP код, дата на сваляне).
 Повторното пускане презаписва файловете и манифеста. Неуспешните заявки (403 и т.н.) също
 се записват в манифеста — така причината „няма данни“ е проверима.
 
-Входове: няма (само мрежа). Изходи: prototype/data/raw/** и MANIFEST.json.
+Входове: няма (само мрежа). Изходи: data/originals/** и MANIFEST.json.
 Мрежа: Bash с изключен sandbox. Само stdlib.
 
 Източници, които НЕ са тук:
 - PDF-ът на МФ UMTBF-2026-2028-motivi.pdf — предоставен от работната група (виж docs/data-sources.md);
 - месечните отчети на МФ по КФП (data/raw/kfp_2025, kfp_2026) — прикачени от работната група.
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import datetime, hashlib, json, os, sys, time, urllib.error, urllib.request
 
-ROOT = str(__import__("pathlib").Path(__file__).resolve().parents[2]) + "/prototype/data/raw"
-# the access probes are no data: their pages go to tmp/sources/probes/ (prototype/data/raw holds only the pinned files of
-# tools/mock/prototype.sha256, which the PROTO check enforces); their status stays in MANIFEST.json
-PROBES = str(__import__("pathlib").Path(__file__).resolve().parents[2]) + "/tmp/sources/probes"
+ROOT = str(__import__("pathlib").Path(__file__).resolve().parents[3]) + "/data/originals"
+# the access probes are no data: their pages go to tmp/sources/probes/ (data/originals holds only the pinned files of
+# data/originals.sha256, which the PROTO check enforces); their status stays in MANIFEST.json
+PROBES = str(__import__("pathlib").Path(__file__).resolve().parents[3]) + "/tmp/sources/probes"
 UA = "budget-na-svetlo-data-pipeline/1.0 (+public data; contact: working group)"   # същият като fetch_gisco.py; не се представяме за браузър
 # първите байтове, които файлът трябва да има (страница за грешка или проверка с код 200 не се записва като данни)
 MAGIC = {".pdf": b"%PDF", ".zip": b"PK", ".docx": b"PK", ".xlsx": b"PK", ".xls": b"\xd0\xcf\x11\xe0"}

@@ -1,17 +1,25 @@
 #!/usr/bin/env python3
-"""perf_v6.py - first paint, long tasks and scroll smoothness of the heaviest screens of site/ on a phone with a throttled CPU (V6, 27.10).  Project venv only.
+"""perf.py - first paint, long tasks and scroll smoothness of the heaviest screens of site/ on a phone with a throttled CPU (V6, 27.10).  Project venv only.
 
-  PLAYWRIGHT_BROWSERS_PATH=$PWD/.pw-browsers .venv/bin/python tools/mock/perf_v6.py [--rate 4] [--width 390] [--routes S05,S06,S07,S08] [--motion off]
+  PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python tests/e2e/perf.py [--rate 4] [--width 390] [--routes S05,S06,S07,S08] [--motion off]
 
   Per screen: FCP, time until the screen is ready (article[data-ready=1]), long tasks (>50 ms) while loading and while scrolling top to bottom in 12 steps, the longest task, the worst frame gap while scrolling, layout shifts of the screen.
   Motion is ON by default (the costs of motion.js on scroll are part of the measure). Limits (exit 1 when exceeded, at 4x throttle): ready <= 6 s, longest LOAD task <= 1000 ms (the one big task is the parse of vendor/echarts.min.js, 1 MB, loaded only by screens with charts: ~200 ms unthrottled),
   no long task at all while scrolling, worst scroll frame gap <= 250 ms."""
+
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
 import http.server, os, socketserver, sys, threading
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-SITE = ROOT / "site"
-os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(ROOT / ".pw-browsers"))
+SITE = __import__("static_assets").root()
+os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(ROOT / "tmp" / "pw-browsers"))
 
 
 class H(http.server.SimpleHTTPRequestHandler):

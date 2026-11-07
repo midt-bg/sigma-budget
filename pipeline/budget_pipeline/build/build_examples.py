@@ -1,19 +1,24 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""build_mock.py - builds the MOCK datasets M01-M07 of the „Бюджет на светло“ prototype.
+"""build_examples.py - builds the MOCK datasets M01-M07 of the „Бюджет на светло“ prototype.
 
-    python3 tools/build_mock.py                  # build all seven files into site/data/mock/
-    python3 tools/build_mock.py --only M03,M04   # build some of them
-    python3 tools/build_mock.py --check          # build in memory, compare with disk, write nothing (exit 1 on a difference)
+    python3 tools/build_examples.py                  # build all seven files into data/release/mock/
+    python3 tools/build_examples.py --only M03,M04   # build some of them
+    python3 tools/build_examples.py --check          # build in memory, compare with disk, write nothing (exit 1 on a difference)
 
 Pure Python 3 standard library; fixed seed 20261002; the same input gives byte-identical files (no clock, no network).
-Run it AFTER DATA's builders (tools/build_data.py): it reads, read-only,
-    site/data/{ministries,programs,measures,execution,expenditure,core,municipalities}.json   (DATA's real files)
-    tools/mock/cache/{law_bill,gisco_lau_bg}.json, ../prototype/src/municipal_transfers_2026.json   (caches on disk)
+Run it AFTER DATA's builders (pipeline/budget_pipeline/build/build_data.py): it reads, read-only,
+    data/release/{ministries,programs,measures,execution,expenditure,core,municipalities}.json   (DATA's real files)
+    data/cache/{law_bill,gisco_lau_bg}.json, ../data/inputs/municipal_transfers_2026.json   (caches on disk)
 and writes
-    site/data/mock/{activities,indicators,municipal-finance,payments,projects,measure-labels,tax-assumptions}.json
+    data/release/mock/{activities,indicators,municipal-finance,payments,projects,measure-labels,tax-assumptions}.json
 
 Every mock set is tied to real numbers it breaks down (see each builder and validate_mock.py, which re-derives all of them
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 from disk). Every record carries "mock": true and a Bulgarian "why"; the file meta has status "mock", the seed and
 "constrainedBy". Nothing here pretends to be an account of what an institution, a municipality or a firm really did.
 """
@@ -25,7 +30,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import mock_lib as L  # noqa: E402
+import budget_pipeline.build.example_lib as L  # noqa: E402
 
 problems = []
 notes = []                                           # informational lines printed after the build (not problems)
@@ -44,10 +49,10 @@ def need(path, what=None):
 
 
 def data(name):
-    obj = need(os.path.join(L.DATA_DIR, name), "run tools/build_data.py first")
+    obj = need(os.path.join(L.DATA_DIR, name), "run pipeline/budget_pipeline/build/build_data.py first")
     if name == "execution.json" and obj is not None:
-        import exec_contract                                        # contract v2: money as decimal strings
-        obj = exec_contract.numbers(obj)
+        import budget_pipeline.validate.execution_contract as execution_contract                                        # contract v2: money as decimal strings
+        obj = execution_contract.numbers(obj)
     return obj
 
 
@@ -57,7 +62,7 @@ def k1(t):
 
 
 # =============================================================================================================== M03
-# Municipal finance. Real: names, codes, population (GISCO LAU 2024; taken from DATA's site/data/municipalities.json so that
+# Municipal finance. Real: names, codes, population (GISCO LAU 2024; taken from DATA's data/release/municipalities.json so that
 # the mock and the real set always agree, GISCO cache as fallback), transfers (ЗДБ 2026 чл. 51), the total expenditure.
 # Model: own revenue (per-capita, rises with city size), the small balance, debt, the quarterly path.
 
@@ -138,7 +143,7 @@ def municipalities_matched():
         notes.append("M03: population follows municipalities.json; it differs from the GISCO cache for %d municipalities (%s)"
                      % (len(differs), "; ".join(differs[:4]) + ("; ..." if len(differs) > 4 else "")))
     if not pop19:
-        notes.append("M03: site/data/municipalities.json is not on disk, population taken from the GISCO cache")
+        notes.append("M03: data/release/municipalities.json is not on disk, population taken from the GISCO cache")
     out.sort(key=lambda x: x["id"])
     return out
 
@@ -667,7 +672,7 @@ def build_m01():
     ex = data("expenditure.json")
     if ex is None:
         return None
-    import mock_content as C
+    import budget_pipeline.build.example_content as C
     fx = ex["functions"]
     real = {it["id"]: it for it in fx["items"]}
     r = L.rng("M01")
@@ -757,7 +762,7 @@ def build_m02():
     mins = data("ministries.json")
     if prg is None or mins is None:
         return None
-    import mock_content as C
+    import budget_pipeline.build.example_content as C
     f = prg["fields"]
     ix = dict((k, f.index(k)) for k in ("ministry", "code", "name", "level", "y2026"))
     nodata = (prg.get("sentinels") or {}).get("noData", -1)
@@ -773,7 +778,7 @@ def build_m02():
     table = collections.OrderedDict(C.M02_INDICATORS)
     for code in real:
         if code not in table:
-            problem("M02: program %s has no indicators in mock_content.py" % code)
+            problem("M02: program %s has no indicators in example_content.py" % code)
     for code in table:
         if code not in real:
             problem("M02: indicator table has %s, which is not a program of МФ/МТСП/МОН in programs.json" % code)
@@ -870,7 +875,7 @@ def m05_status(now, start, cend, deadline, asof, progress, weights):
 
 
 def build_m05():
-    import mock_content as C
+    import budget_pipeline.build.example_content as C
     core = data("core.json")
     mun = municipalities_matched()
     if core is None or mun is None:
@@ -951,7 +956,7 @@ def build_m05():
 # =============================================================================================================== M06
 # Editorial labels of the 52 measures. Real: the measure ids and the excerpts (`evidence`, `riskEvidence`, `legal`,
 # `sinceText`), which are checked to be verbatim parts of the measure's own text. Editorial: who is touched (`affects`),
-# who pays and who wins (`payer`, `winner`) and the one-line `risk` note. Texts live in mock_labels.py.
+# who pays and who wins (`payer`, `winner`) and the one-line `risk` note. Texts live in example_labels.py.
 
 M06_WHY = "Примерен редакционен етикет по текста на мярката; не е официална класификация и не е проверен."
 M06_NOTICE = ("РЕДАКЦИОННИ ЕТИКЕТИ, НЕ ОФИЦИАЛНА КЛАСИФИКАЦИЯ. Кого засяга мярката, кой плаща и кой печели са преценки на "
@@ -984,7 +989,7 @@ def m06_risk_kind(it):
 
 
 def build_m06():
-    import mock_labels as ML
+    import budget_pipeline.build.example_labels as ML
     ms = data("measures.json")
     if ms is None:
         return None
@@ -992,11 +997,11 @@ def build_m06():
     labels = collections.OrderedDict()
     for lab in ML.M06_LABELS:
         if lab["id"] in labels:
-            problem("M06: duplicate label for %s in mock_labels.py" % lab["id"])
+            problem("M06: duplicate label for %s in example_labels.py" % lab["id"])
         labels[lab["id"]] = lab
     for mid in byid:
         if mid not in labels:
-            problem("M06: measure %s has no label in mock_labels.py" % mid)
+            problem("M06: measure %s has no label in example_labels.py" % mid)
     for lid in labels:
         if lid not in byid:
             problem("M06: label %s matches no measure in measures.json" % lid)
@@ -1114,7 +1119,7 @@ def main(argv=None):
         if obj is not None:
             built[ds] = L.jdumps(obj) + "\n"
     if problems:
-        print("build_mock.py: %d problem(s):" % len(problems))
+        print("build_examples.py: %d problem(s):" % len(problems))
         for p in problems:
             print("  - " + p)
         return 1

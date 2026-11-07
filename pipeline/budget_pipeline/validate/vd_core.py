@@ -1,14 +1,19 @@
-"""Cross-cutting groups of validate_data.py: PROTO, ENVELOPE, NUMBERS, SIZES, PRIVACY, GLOSSARY (CORE and CATALOG live in vd_catalog.py).
+"""Cross-cutting groups of base.py: PROTO, ENVELOPE, NUMBERS, SIZES, PRIVACY, GLOSSARY (CORE and CATALOG live in vd_catalog.py).
 
 Pure standard library. Each group is a function `g_x(ctx) -> Check`; `GROUPS` lists (name, function, one-line doc).
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import hashlib
 import os
 import re
 
-import vd_lib as L
-from vd_catalog import g_core, g_catalog
-from vd_lib import Check, isnum, pattern, walk
+import budget_pipeline.validate.vd_lib as L
+from budget_pipeline.validate.vd_catalog import g_core, g_catalog
+from budget_pipeline.validate.vd_lib import Check, isnum, pattern, walk
 
 STATUSES = ("real", "mock", "pending")
 SOURCE_KEYS = ("kfp", "asbp", "bill", "zdb", "zbdoo", "zbnzok", "prb", "parliament", "eurostat", "bnb", "nap", "sebra",
@@ -17,21 +22,21 @@ SOURCE_KEYS = ("kfp", "asbp", "bill", "zdb", "zbdoo", "zbnzok", "prb", "parliame
 
 # ------------------------------------------------------------------------------------------------------- PROTO
 def g_proto(ctx):
-    """prototype/ is frozen: same file SET and the same SHA-256 of every file as in tools/mock/prototype.sha256 (raw files may be absent; regenerate the rest with prototype_sums.py)."""
+    """prototype/ is frozen: same file SET and the same SHA-256 of every file as in data/originals.sha256 (raw files may be absent; regenerate the rest with originals_sums.py)."""
     c = Check("PROTO")
     expected = {}
-    with open(os.path.join(L.HERE, "prototype.sha256"), "r", encoding="utf-8") as fh:
+    with open(os.path.join(L.ROOT, "data", "originals.sha256"), "r", encoding="utf-8") as fh:
         for ln in fh:
             ln = ln.rstrip("\n")
             if not ln.strip():
                 continue
             m = re.match(r"^([0-9a-f]{64})\s+(\S.*)$", ln)
-            if not c.ok(m, "prototype.sha256: unparsable line %r" % ln[:60]):
+            if not c.ok(m, "originals.sha256: unparsable line %r" % ln[:60]):
                 continue
-            c.ok(m.group(2) not in expected, "prototype.sha256: duplicate path %s" % m.group(2))
+            c.ok(m.group(2) not in expected, "originals.sha256: duplicate path %s" % m.group(2))
             expected[m.group(2)] = m.group(1)
     actual = {}
-    for dp, dn, fn in os.walk(L.PROTO):
+    for dp, dn, fn in (entry for base in ("data/originals", "data/inputs", "reference/prototype/site") for entry in os.walk(os.path.join(L.ROOT, base))):
         dn.sort()
         for f in sorted(fn):
             full = os.path.join(dp, f)
@@ -41,12 +46,12 @@ def g_proto(ctx):
                 for chunk in iter(lambda: fh.read(1 << 20), b""):
                     h.update(chunk)
             actual[rel] = h.hexdigest()
-    raw_prefix = "prototype/data/raw/"                      # the raw files are not in the repository (docs/data-sources.md)
+    raw_prefix = "data/originals/"                      # the raw files are not in the repository (docs/data-sources.md)
     absent = sorted(p for p in set(expected) - set(actual) if p.startswith(raw_prefix))
     missing = sorted(p for p in set(expected) - set(actual) if not p.startswith(raw_prefix))
     extra = sorted(set(actual) - set(expected))
     if absent:
-        c.warn("%d raw files of the manifest are not in the repository (prototype/data/raw, see docs/data-sources.md); the files that are present are compared" % len(absent))
+        c.warn("%d raw files of the manifest are not in the repository (data/originals, see docs/data-sources.md); the files that are present are compared" % len(absent))
     c.ok(not missing, "prototype/ files missing: %s" % ", ".join(missing[:5]))
     c.ok(not extra, "prototype/ has files not in the manifest: %s" % ", ".join(extra[:5]))
     changed = sorted(p for p in expected if p in actual and expected[p] != actual[p])
@@ -221,7 +226,7 @@ WORD = r"(?<![\w])%s(?![\w])"
 
 
 def g_privacy(ctx):
-    """site/data is public: no private-channel references, no repository paths, no personal names."""
+    """data/release is public: no private-channel references, no repository paths, no personal names."""
     c = Check("PRIVACY")
     scanned = 0
     for f in L.data_files():
@@ -239,7 +244,7 @@ def g_privacy(ctx):
             c.ok(not u or u.lower().startswith("https://"), "catalog.files[] %s %r" % (k, u[:80]))
     # the rest of the shipped site (not mine): a warning only
     hits = []
-    for dp, dn, fn in os.walk(L.SITE):
+    for dp, dn, fn in (entry for base in (L.SITE, os.path.join(L.ROOT, "apps/web/client")) for entry in os.walk(base)):
         if os.path.abspath(dp).startswith(os.path.abspath(L.DATA)):
             continue
         for f in fn:
@@ -291,11 +296,11 @@ def g_glossary(ctx):
 
 
 GROUPS = (
-    ("PROTO", g_proto, "prototype/ file set and every sha256 equal tools/mock/prototype.sha256"),
+    ("PROTO", g_proto, "prototype/ file set and every sha256 equal data/originals.sha256"),
     ("ENVELOPE", g_envelope, "meta envelopes, status/source/pending ids, nested pending blocks carry no numbers"),
     ("NUMBERS", g_numbers, "no NaN/Infinity; null and empty strings only at documented positions"),
     ("SIZES", g_sizes, "size budget of DATA_SPEC section 1"),
-    ("PRIVACY", g_privacy, "no private-channel references / personal names / repository paths in site/data"),
+    ("PRIVACY", g_privacy, "no private-channel references / personal names / repository paths in data/release"),
     ("GLOSSARY", g_glossary, "glossary terms and slug references"),
     ("CORE", g_core, "core.json: KPIs, counts, population, functions and revenue groups equal their owning datasets"),
     ("CATALOG", g_catalog, "catalog.json against the files on disk: sizes, meta, schema, sources, traps, screens vs page needs"),

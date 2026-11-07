@@ -1,13 +1,19 @@
-"""MUNIC and SEBRA groups of validate_data.py: municipalities.json (D19 + D20 + D21), geo/obshtini.json and sebra.json (D24).
+"""MUNIC and SEBRA groups of base.py: municipalities.json (D19 + D20 + D21), geo/obshtini.json and sebra.json (D24).
 
 MUNIC: 265 municipalities, thousand euro of transfers by kind, population (GISCO LAU 2024 with the Dobrich swap corrected), the 28
 oblasts, per-capita values, and the boundary file. SEBRA: the daily payment summaries of one ministry, three days of August 2026.
 Pure standard library.
 """
+
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import re
 
-import vd_lib as L
-from vd_lib import Check, isnum
+import budget_pipeline.validate.vd_lib as L
+from budget_pipeline.validate.vd_lib import Check, isnum
 
 KHIL = 0.05                     # a printed value in thousand euro has one decimal
 ID = re.compile(r"^([A-Z]{3})(\d{2})$")

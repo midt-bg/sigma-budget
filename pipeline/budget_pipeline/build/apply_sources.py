@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""apply_v6_glue.py - the minimum shared-file glue for the new screen S34 «Бюджет 2027 (проект)» in site/ (applied once to the v5 tree to get v6: run it on a checkout of the tag mock-v5).
+"""apply_sources.py - the minimum shared-file glue for the new screen S34 «Бюджет 2027 (проект)» in site/ (applied once to the v5 tree to get v6: run it on a checkout of the tag mock-v5).
 
 v6 is a byte copy of v5 plus ONE screen. This script makes the only permitted edits to shared files (every one is additive and idempotent):
   1. js/routes.js   one route row S34 (periods:'none'), after S31
@@ -10,23 +10,34 @@ v6 is a byte copy of v5 plus ONE screen. This script makes the only permitted ed
   6. data/glossary.json + data/search-index.json   5 additive terms in a new theme (n = 65..69)
   7. data/core.json 4 source records (dbp2027, ec-edp-bg, ec-fiscal-bg, ec-dbp) and counts.terms = 69 (build.dataVersion is NOT touched)
 
-Run from anywhere:  python3 tools/apply_v6_glue.py   (re-running changes nothing)
+Run from anywhere:  python3 tools/apply_sources.py   (re-running changes nothing)
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import json
 import pathlib
 import re
 import sys
 
-W = pathlib.Path(__file__).resolve().parents[2]       # repository root
-S = W / 'site'                                         # the Mock application
+W = pathlib.Path(__file__).resolve().parents[3]       # repository root
+S = W / 'apps/web/public'                                         # the site
+
+
+def target(rel):
+    group, name = rel.split('/', 1)
+    base = {'js': W / 'apps/web/client', 'data': W / 'data/release'}.get(group)
+    return base / name if base else S / rel
 
 
 def rd(rel):
-    return (S / rel).read_text(encoding='utf-8')
+    return target(rel).read_text(encoding='utf-8')
 
 
 def wr(rel, text):
-    (S / rel).write_text(text, encoding='utf-8')
+    target(rel).write_text(text, encoding='utf-8')
 
 
 def sub_once(rel, old, new, marker):

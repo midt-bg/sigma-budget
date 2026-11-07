@@ -1,13 +1,19 @@
-"""LAW group of validate_data.py: law.json (D10 + D11), the bill against the law, the 46 budgets, the legislative path.
+"""LAW group of base.py: law.json (D10 + D11), the bill against the law, the 46 budgets, the legislative path.
 
 Differences are law minus bill in thousand euro; both sides are printed with one decimal, so a diff may be off by 0.06.
 A budget without a revenue (or transfers) line has null there (the documented "no value" of DATA_SPEC section 0.3).
 Pure standard library.
 """
+
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import re
 
-import vd_lib as L
-from vd_lib import Check, fmt, isnum
+import budget_pipeline.validate.vd_lib as L
+from budget_pipeline.validate.vd_lib import Check, fmt, isnum
 
 TOL = 0.06                      # one printed decimal on both sides
 TOL_SUM = 0.15                  # a sum of up to a dozen printed values

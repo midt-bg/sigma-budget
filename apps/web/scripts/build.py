@@ -1,12 +1,12 @@
 """Build the site for the host and check every screen (docs/adr/0002-react-router-ssr.md).
 
-    PLAYWRIGHT_BROWSERS_PATH=$PWD/.pw-browsers .venv/bin/python tools/site/build.py
+    PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python apps/web/scripts/build.py
     ... build.py --origin https://preview.example.org     # the address the canonical links, the sitemap and llms.txt name
     ... build.py --limit 40                                # a quick partial check (the link checks below still run)
     ... build.py --env staging --noindex                   # staging: its Worker config (CLOUDFLARE_ENV), kept out of search engines
 
 How it works. `react-router build` writes build/client (the files of site/, served as they are) and build/server (the Worker that draws
-every screen from the current release, workers/app.ts). The files that depend on this build are stamped in build/client (the RSS links,
+every screen from the current release, apps/web/workers/app.ts). The files that depend on this build are stamped in build/client (the RSS links,
 the service worker's cache name). Then the built Worker runs under `wrangler dev` with an empty registry, so it draws the screens from
 the data built from git, and headless Chromium crawls it from the start page: every screen it reaches through a link is checked twice,
 as the server sends it (a finished screen in the HTML itself, for crawlers and the first paint: data-view="ready", an h1, a description,
@@ -16,6 +16,10 @@ _headers are written into build/client.
 A screen that is not ready, shows an error, logs a console error, links to an address that is not a screen or still carries an old #/
 link, or lacks a title, description or canonical link fails the build (exit 1).
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 import argparse
 import asyncio
 import collections
@@ -37,10 +41,10 @@ import urllib.request
 
 from playwright.async_api import async_playwright
 
-ROOT = pathlib.Path(__file__).resolve().parents[2]
-SITE = ROOT / 'site'
+ROOT = pathlib.Path(__file__).resolve().parents[3]
+SITE = ROOT / 'apps' / 'web' / 'public'
 NOT_FOUND_PROBE = '/nyama-takava-stranitsa'
-FILE_EXT = re.compile(r'\.[A-Za-z][A-Za-z0-9]{0,4}$')     # as FILE_EXT in site/js/loc.js: /vedomstvo/0200/0200.01.00 is a screen
+FILE_EXT = re.compile(r'\.[A-Za-z][A-Za-z0-9]{0,4}$')     # as FILE_EXT in apps/web/client/loc.js: /vedomstvo/0200/0200.01.00 is a screen
 UI_NOISE = {'Сподели', 'PNG', 'Копирай', 'Таблица', 'Графика', 'Източник', 'Източници', 'Покажи още', 'Скрий', 'Следва', 'Виж още', 'CSV', 'JSON'}
 
 # Run in the page once the screen is ready: what the build needs to know, and the document as the file should hold it.
@@ -93,7 +97,7 @@ def norm_path(href):
         p = p.rstrip('/')
     if FILE_EXT.search(p) and not p.startswith('/embed/'):
         return None
-    if re.match(r'/(data/|api/releases(/|$))', p):                  # the data files and the release API (as NOT_SCREENS in site/js/loc.js)
+    if re.match(r'/(data/|api/releases(/|$))', p):                  # the data files and the release API (as NOT_SCREENS in apps/web/client/loc.js)
         return None
     if p.startswith('/embed/'):
         return None
@@ -263,8 +267,8 @@ def clean_text(t, cap):
     return s if len(s) <= cap else s[:cap].rsplit('\n', 1)[0] + '\n…'
 
 
-# The Content-Security-Policy of site/index.html as an HTTP header, plus what a <meta> cannot carry: frame-ancestors (no framing of the
-# site by others; workers/app.ts lifts it for /embed/*, which is made to be framed). Every file is same-origin: HSTS keeps it on https.
+# The Content-Security-Policy of apps/web/public/index.html as an HTTP header, plus what a <meta> cannot carry: frame-ancestors (no framing of the
+# site by others; apps/web/workers/app.ts lifts it for /embed/*, which is made to be framed). Every file is same-origin: HSTS keeps it on https.
 CSP = ("default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; font-src 'self'; "
        "base-uri 'self'; form-action 'none'; object-src 'none'; frame-ancestors 'self'")
 
@@ -333,7 +337,7 @@ def write_extras(out, pages, origin, lastmod, routes, noindex=False):
     (out / 'llms-full.txt').write_text('\n'.join(full), encoding='utf-8')
 
     (out / '_headers').write_text(
-        '# Cloudflare Workers Static Assets: headers of the static files (wrangler.jsonc)\n'
+        '# Cloudflare Workers Static Assets: headers of the static files (apps/web/wrangler.jsonc)\n'
         '/*\n'
         f'  Content-Security-Policy: {CSP}\n'
         '  X-Frame-Options: SAMEORIGIN\n'
@@ -357,7 +361,7 @@ def write_extras(out, pages, origin, lastmod, routes, noindex=False):
 
 
 def gz_size(raw):
-    """as gz_size in tools/mock/catalog_refresh_v5.py, which wrote the sizes of the catalog"""
+    """as gz_size in pipeline/budget_pipeline/build/catalog_refresh.py, which wrote the sizes of the catalog"""
     buf = io.BytesIO()
     with gzip.GzipFile(fileobj=buf, mode='wb', mtime=0, compresslevel=9) as fh:
         fh.write(raw)
@@ -392,10 +396,7 @@ def stamp_files(out, origin, data_version):
 
 
 def free_port():
-    import socket
-    with socket.socket() as so:
-        so.bind(('127.0.0.1', 0))
-        return so.getsockname()[1]
+    return int(os.environ.get('BUDGET_TEST_PORT', '8816'))
 
 
 def start_worker(built, origin, sigma_url, state):
@@ -419,9 +420,9 @@ def start_worker(built, origin, sigma_url, state):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
-    ap.add_argument('--origin', help='production address (default: <meta name="site-origin"> in site/index.html)')
+    ap.add_argument('--origin', help='production address (default: <meta name="site-origin"> in apps/web/public/index.html)')
     ap.add_argument('--sigma-url', help='address of the original СИГМА for the menu and the footer (default: the Worker config)')
-    ap.add_argument('--env', default='', help='the Worker environment of wrangler.jsonc to build for (CLOUDFLARE_ENV), e.g. staging')
+    ap.add_argument('--env', default='', help='the Worker environment of apps/web/wrangler.jsonc to build for (CLOUDFLARE_ENV), e.g. staging')
     ap.add_argument('--no-build', action='store_true', help='check the build/ that is there (react-router build was run already)')
     ap.add_argument('--jobs', type=int, default=6, help='pages checked at the same time')
     ap.add_argument('--limit', type=int, default=0, help='check at most N screens (a quick try; links to the others then fail the check)')
@@ -434,18 +435,18 @@ def main():
         sys.exit('--sigma-url must be an https address')
     if not a.no_build:
         env = dict(os.environ, **({'CLOUDFLARE_ENV': a.env} if a.env else {}))
-        r = subprocess.run([str(ROOT / 'node_modules' / '.bin' / 'react-router'), 'build'], cwd=ROOT, env=env, capture_output=True, text=True)
+        r = subprocess.run([str(ROOT / 'node_modules' / '.bin' / 'react-router'), 'build'], cwd=ROOT / 'apps/web', env=env, capture_output=True, text=True)
         if r.returncode != 0:
             sys.exit('build: react-router build failed:\n' + (r.stdout + r.stderr)[-3000:])
-    out, built = ROOT / 'build' / 'client', ROOT / 'build' / 'server' / 'wrangler.json'
+    out, built = ROOT / 'apps' / 'web' / 'build' / 'client', ROOT / 'apps' / 'web' / 'build' / 'server' / 'wrangler.json'
     if not out.is_dir() or not built.is_file():
         sys.exit('build: no build/ (run without --no-build)')
     (out / 'data' / 'sebra.json').unlink(missing_ok=True)       # СЕБРА: on disk for phase 2, used by no screen and not in the catalog
 
-    core = json.loads((SITE / 'data' / 'core.json').read_text(encoding='utf-8'))
+    core = json.loads((ROOT / 'data' / 'release' / 'core.json').read_text(encoding='utf-8'))
     dv = (core.get('build') or {}).get('dataVersion') or ''
     lastmod = dv[:10] if re.match(r'\d{4}-\d{2}-\d{2}', dv) else datetime.date.today().isoformat()
-    routes_js = (SITE / 'js' / 'routes.js').read_text(encoding='utf-8')
+    routes_js = (ROOT / 'apps' / 'web' / 'client' / 'routes.js').read_text(encoding='utf-8')
     seeds = ['/'] + sorted({norm_path(urllib.parse.unquote(s.lstrip('#')).split('?')[0]) or '/' for s in re.findall(r"'(#/[^']*)'", routes_js)} - {None})
 
     stamp_files(out, origin, dv)

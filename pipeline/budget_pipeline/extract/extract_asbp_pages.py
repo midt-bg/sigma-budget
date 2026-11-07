@@ -1,22 +1,27 @@
 #!/usr/bin/env python3
-"""Пише текста на страниците от АСБП 2026–2028 (мотивите към законопроекта за бюджета) за строителите на Mock приложението.
+"""Пише текста на страниците от АСБП 2026–2028 (мотивите към законопроекта за бюджета) за строителите на сайтът.
 
 Защо: bd_fiscal.py (Табл. I-2 и III-1), bd_debt_pdf.py (Табл. VI-2 и текстът на стр. 138–145) и bd_components.py (стр. 171 и 175)
-четат tmp/research/mf-umtbf-2026-2028/extracts/pdf_pages_clean.json. Файлът идваше от междинно извличане без описан производител
+четат data/cache/research/mf-umtbf-2026-2028/extracts/pdf_pages_clean.json. Файлът идваше от междинно извличане без описан производител
 (docs/approach-specification.md, раздел 4). Този скрипт го прави отново от PDF-а на МФ.
 
 Какво прави:
-  1. Чете prototype/data/raw/asbp/UMTBF-2026-2028-motivi.pdf с PyMuPDF; текстът на всяка страница е редовете на get_text("dict")
+  1. Чете data/originals/asbp/UMTBF-2026-2028-motivi.pdf с PyMuPDF; текстът на всяка страница е редовете на get_text("dict")
      (същото като get_text()), всеки ред завършва с „\\n“.
   2. Маха номерата на бележките под линия: части с флаг „горен индекс“, които са само цифри („Заетост (СНС15)“ → „(СНС)“).
   3. Маха номера на страницата: първия ред, който е само поредният номер на страницата в PDF-а (на 195 страници е първият
      ред, на 2 е по-надолу, 4 нямат номер). Иначе той се залепя за таблица, която продължава на следващата страница.
-С PyMuPDF 1.26.5 (tools/data/requirements.txt) outlook.json и expenditure.json от build_data.py излизат байт по байт като в site/data.
+С PyMuPDF 1.26.5 (pipeline/requirements.txt) outlook.json и expenditure.json от build_data.py излизат байт по байт като в data/release.
 
-Вход:  prototype/data/raw/asbp/UMTBF-2026-2028-motivi.pdf
-Изход: tmp/research/mf-umtbf-2026-2028/extracts/pdf_pages_clean.json   [{"page": номер в PDF-а, "body": текст}, …]
-Изисква: pymupdf — .venv-data/bin/python tools/prototype/extract_asbp_pages.py
+Вход:  data/originals/asbp/UMTBF-2026-2028-motivi.pdf
+Изход: data/cache/research/mf-umtbf-2026-2028/extracts/pdf_pages_clean.json   [{"page": номер в PDF-а, "body": текст}, …]
+Изисква: pymupdf — tmp/venv-data/bin/python pipeline/budget_pipeline/extract/extract_asbp_pages.py
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import json
 import os
 import sys
@@ -24,9 +29,9 @@ from pathlib import Path
 
 import pymupdf
 
-ROOT = Path(__file__).resolve().parents[2]
-PDF = ROOT / "prototype" / "data" / "raw" / "asbp" / "UMTBF-2026-2028-motivi.pdf"
-OUT = ROOT / "tmp" / "research" / "mf-umtbf-2026-2028" / "extracts" / "pdf_pages_clean.json"
+ROOT = Path(__file__).resolve().parents[3]
+PDF = ROOT / "data" / "originals" / "asbp" / "UMTBF-2026-2028-motivi.pdf"
+OUT = ROOT / "data" / "cache" / "research" / "mf-umtbf-2026-2028" / "extracts" / "pdf_pages_clean.json"
 SUPERSCRIPT = 1                                    # бит 0 на span["flags"] в PyMuPDF
 
 
@@ -44,7 +49,7 @@ def page_lines(page):
 
 def main():
     if not PDF.is_file():
-        sys.exit("няма %s (docs/data-sources.md, раздел 4.2; tools/data/raw_sources.py import)" % PDF.relative_to(ROOT))
+        sys.exit("няма %s (docs/data-sources.md, раздел 4.2; pipeline/budget_pipeline/sources/raw_sources.py import)" % PDF.relative_to(ROOT))
     pages = []
     with pymupdf.open(str(PDF)) as doc:
         for i, page in enumerate(doc):

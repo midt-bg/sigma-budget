@@ -1,11 +1,15 @@
 """Static server for the site with path addresses (/prihodi, /razhodi/obrazovanie): the app in the browser, without the server part.
 
-    python3 tools/site/serve.py              # site/ on http://127.0.0.1:8000/  (every unknown path gets the app shell)
-    python3 tools/site/serve.py --port 8080 --dir some/folder
+    python3 apps/web/scripts/serve.py              # site/ on http://127.0.0.1:8000/  (every unknown path gets the app shell)
+    python3 apps/web/scripts/serve.py --port 8080 --dir some/folder
 
-Every path without a file extension gets site/index.html, so the router builds the screen in the browser. The v6 checks (tools/mock/) run
+Every path without a file extension gets apps/web/public/index.html, so the router builds the screen in the browser. The v6 checks (pipeline/budget_pipeline/build/) run
 the app this way. The host itself draws every screen on the server (docs/adr/0002-react-router-ssr.md): npm run build, then npx wrangler dev.
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 import argparse
 import functools
 import http.server
@@ -18,14 +22,26 @@ import sys
 import threading
 import urllib.parse
 
-ROOT = pathlib.Path(__file__).resolve().parents[2]
-FILE_EXT = re.compile(r'\.[A-Za-z][A-Za-z0-9]{0,4}$')     # as in site/js/loc.js: /vedomstvo/0200/0200.01.00 is a screen, not a file
+ROOT = pathlib.Path(__file__).resolve().parents[3]
+def static_root():
+    """Compose the browser-only site without a second tracked copy of release data."""
+    target = ROOT / 'tmp' / 'static-site'
+    target.mkdir(parents=True, exist_ok=True)
+    entries = {p.name: p for p in (ROOT / 'apps/web/public').iterdir()}
+    entries.update(js=ROOT / 'apps/web/client', data=ROOT / 'data/release')
+    for name, source in entries.items():
+        dest = target / name
+        if not dest.exists():
+            dest.symlink_to(source, target_is_directory=source.is_dir())
+    return target
+
+FILE_EXT = re.compile(r'\.[A-Za-z][A-Za-z0-9]{0,4}$')     # as in apps/web/client/loc.js: /vedomstvo/0200/0200.01.00 is a screen, not a file
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
     """SimpleHTTPRequestHandler with path-address fallbacks"""
 
-    shell = None          # bytes of the app shell for the development fallback (site/index.html); read at start
+    shell = None          # bytes of the app shell for the development fallback (apps/web/public/index.html); read at start
 
     def log_message(self, *a):
         pass
@@ -103,7 +119,7 @@ def main():
     ap.add_argument('--dir', help='folder to serve (default site/)')
     ap.add_argument('--port', type=int, default=8000)
     a = ap.parse_args()
-    d = pathlib.Path(a.dir) if a.dir else ROOT / 'site'
+    d = pathlib.Path(a.dir) if a.dir else static_root()
     if not (d / 'index.html').is_file():
         sys.exit(f'{d}/index.html not found')
     srv, url = start(d, a.port)

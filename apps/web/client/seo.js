@@ -1,5 +1,5 @@
 // The <head> of a screen for search engines, social cards and answer engines (SEO/GEO/AEO). The router calls apply() after every paint;
-// the server writes the same head into the first response (app/root.tsx, head()), so one place decides what a crawler reads.
+// the server writes the same head into the first response (apps/web/app/root.tsx, head()), so one place decides what a crawler reads.
 //   description   the screen's short answer (parts.answer / mod.answer), else its lede, else the route's desc; at most ~160 characters
 //   Q&A           a screen named as a question („Колко дължим?“), or one that names its question (mod.question), with a factual answer that is
 //                 on the screen: mod.answer (the page's own „Накратко“) or the lede when it has a number in it -> FAQPage in the JSON-LD
@@ -109,7 +109,7 @@ function graph(vm, { url, title, desc, question, answer }) {
 }
 
 /** the head of a view model, as data: [{tag:'meta'|'link', attrs:{…}}] and the JSON-LD text. The browser writes it into the page (apply),
- *  the server writes it into the document it sends (app/root.tsx); title = the document title */
+ *  the server writes it into the document it sends (apps/web/app/root.tsx); title = the document title */
 export function head(vm, docTitle) {
   const o = origin();
   const { path } = addrParts(here());

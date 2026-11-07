@@ -1,5 +1,5 @@
 // The view of one screen, without a browser (docs/adr/0002-react-router-ssr.md). js/router.js paints it in the page; the server
-// (app/, workers/app.ts) draws the same screen for the first response. Nothing here touches document, window or history: the
+// (app/, apps/web/workers/app.ts) draws the same screen for the first response. Nothing here touches document, window or history: the
 // address, the period and the data of a server request come from js/env.js.
 //
 //   resolve(address)            the screen of an address: an old address redirected (js/redirects.js), the route, its params, the

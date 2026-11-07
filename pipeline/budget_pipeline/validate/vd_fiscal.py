@@ -1,14 +1,24 @@
-"""Fiscal groups of validate_data.py: ANNEX3 (outlook), REVENUE, EXPENDITURE, MEASURES (+ KFP from vd_kfp).
+"""Fiscal groups of base.py: ANNEX3 (outlook), REVENUE, EXPENDITURE, MEASURES (+ KFP from vd_kfp).
 
 Every check recomputes a published number from other published numbers or from a documented reference value; tolerances are
 the rounding of the printed source (1 decimal in млн. €, 1 or 2 decimals in % of GDP). Pure standard library.
 """
+
+
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 import hashlib
 import os
 
-import vd_lib as L
-from vd_kfp import g_kfp
-from vd_lib import Check, fmt, isnum
+import budget_pipeline.validate.vd_lib as L
+from budget_pipeline.validate.vd_kfp import g_kfp
+from budget_pipeline.validate.vd_lib import Check, fmt, isnum
 
 KFP_KEYS = ("revenue", "expenditure", "balance", "interest", "primaryBalance", "financing")
 

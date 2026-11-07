@@ -3,11 +3,16 @@
 It carries what every screen needs without a second request: the source registry (popovers), the pending registry
 (the dashed „Предстои“ state), counts, the population, the six headline numbers of the home page, the nine functions
 and the eight revenue groups. Every number here is COPIED from the dataset that owns it (`outlook`, `revenue`,
-`expenditure`, `execution`, VI-1); `validate_data.py` asserts they are identical. Budget: <= 10 KB gzip, <= 40 KB raw.
+`expenditure`, `execution`, VI-1); `base.py` asserts they are identical. Budget: <= 10 KB gzip, <= 40 KB raw.
 """
-from bd_common import EBK_ART, PENDING_DEFS, POPULATION_ASOF, SOURCES, pending_block
-from bd_fiscal import population_latest, zdd_table
-from dlib import DATA, EUR, DATA_VERSION, isnum, jload, meta, pct, rnd
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
+from budget_pipeline.build.bd_common import EBK_ART, PENDING_DEFS, POPULATION_ASOF, SOURCES, pending_block
+from budget_pipeline.build.bd_fiscal import population_latest, zdd_table
+from budget_pipeline.build.dlib import DATA, EUR, DATA_VERSION, isnum, jload, meta, pct, rnd
 
 I26 = 2          # index of 2026 in the Annex 3 arrays [2024..2028]
 YEARS = [2024, 2025, 2026, 2027, 2028]
@@ -15,7 +20,7 @@ VINTAGE = {"2024": "actual", "2025": "prelim", "2026": "plan", "2027": "forecast
 
 
 def _glossary_terms(ctx):
-    """Number of glossary terms: from the file DATA2 writes (site/data/glossary.json), else from the prototype source."""
+    """Number of glossary terms: from the file DATA2 writes (data/release/glossary.json), else from the prototype source."""
     p = DATA / "glossary.json"
     if p.exists():
         return len(jload(p)["terms"])

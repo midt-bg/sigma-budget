@@ -1,13 +1,13 @@
-# Dataset registry (docs/approach-specification.md, section 4): every file of site/data, with the files the published catalog does not
-# list and the pending sets that have no file yet. Checked by `python tools/data/registry.py check` (CI).
+# Dataset registry (docs/approach-specification.md, section 4): every file of data/release, with the files the published catalog does not
+# list and the pending sets that have no file yet. Checked by `python pipeline/budget_pipeline/validate/registry.py check` (CI).
 #
 # datasets[]      id = the slug in catalog.json (sebra and dbp2027 are not in the catalog)
 #   catalogId     the dataset id of catalog.json (D01 …, M06, P01 …); several files can share one
 #   status        real | mock | pending, as catalog.json says; a pending set has `reason` and `expected` instead of files
-#   files         the paths in site/data (a glob for the 42 ministry files)
+#   files         the paths in data/release (a glob for the 42 ministry files)
 #   producer      the script (and builder function) that writes it
-#   layers        the v5/v6 steps of tools/mock/rebuild_v6.py that change it after the producer
-#   inputs        source ids (sources/registry.yaml), intermediate paths, or ids of other datasets
+#   layers        the v5/v6 steps of pipeline/budget_pipeline/build/rebuild.py that change it after the producer
+#   inputs        source ids (data/sources.yaml), intermediate paths, or ids of other datasets
 #   schema        the document with its data contract
 #   screens, period, unit   as catalog.json says (the checker compares them)
 #   scope         which budget or sector the numbers cover
@@ -21,11 +21,11 @@ datasets:
   title: Рамка на КФП и макропрогноза 2024–2028
   status: real
   files:
-  - site/data/outlook.json
-  producer: tools/mock/bd_fiscal.py (build_outlook)
+  - data/release/outlook.json
+  producer: pipeline/budget_pipeline/build/bd_fiscal.py (build_outlook)
   inputs:
-  - prototype/data/raw/asbp/asbp_tables.json
-  - tmp/research/mf-umtbf-2026-2028/extracts/pdf_pages_clean.json
+  - data/originals/asbp/asbp_tables.json
+  - data/cache/research/mf-umtbf-2026-2028/extracts/pdf_pages_clean.json
   schema: docs/data-spec.md
   screens:
   - S05
@@ -35,17 +35,17 @@ datasets:
   period: 2024–2028
   scope: 'КФП and сектор „Държавно управление“ (S.13): macro framework and fiscal targets'
   unit: млн. €
-  rebuild: .venv-data/bin/python tools/mock/rebuild_v6.py --build-date 2026-11-05
+  rebuild: tmp/venv-data/bin/python pipeline/budget_pipeline/build/rebuild.py --build-date 2026-11-05
   checked: '2026-11-05'
   limitations:
-  - reads pdf_pages_clean.json, which extract_asbp_pages.py makes from the asbp PDF (pinned in sources/registry.yaml)
+  - reads pdf_pages_clean.json, which extract_asbp_pages.py makes from the asbp PDF (pinned in data/sources.yaml)
 - id: gva-sectors
   catalogId: D31
   title: 'Икономиката по отрасли: добавена стойност и БВП 2019–2025'
   status: real
   files:
-  - site/data/gva-sectors.json
-  producer: tools/mock/gva_sectors_v5.py
+  - data/release/gva-sectors.json
+  producer: pipeline/budget_pipeline/build/gva_sectors.py
   inputs:
   - eurostat
   - outlook
@@ -65,10 +65,10 @@ datasets:
   title: Приходи на КФП по видове
   status: real
   files:
-  - site/data/revenue.json
-  producer: tools/mock/bd_fiscal.py (build_revenue)
+  - data/release/revenue.json
+  producer: pipeline/budget_pipeline/build/bd_fiscal.py (build_revenue)
   inputs:
-  - prototype/data/raw/asbp/asbp_tables.json
+  - data/originals/asbp/asbp_tables.json
   schema: docs/data-spec.md
   screens:
   - S05
@@ -76,7 +76,7 @@ datasets:
   period: 2024–2028
   scope: КФП, Приложение 3
   unit: млн. €
-  rebuild: .venv-data/bin/python tools/mock/rebuild_v6.py --build-date 2026-11-05
+  rebuild: tmp/venv-data/bin/python pipeline/budget_pipeline/build/rebuild.py --build-date 2026-11-05
   checked: '2026-11-05'
   limitations: []
 - id: expenditure
@@ -84,14 +84,14 @@ datasets:
   title: 'Разходи на КФП: функции, икономически вид и COFOG'
   status: real
   files:
-  - site/data/expenditure.json
-  producer: tools/mock/bd_fiscal.py (build_expenditure)
+  - data/release/expenditure.json
+  producer: pipeline/budget_pipeline/build/bd_fiscal.py (build_expenditure)
   inputs:
-  - prototype/data/raw/asbp/asbp_tables.json
-  - prototype/src/cofog_bg.json
-  - prototype/src/kfp_functions_2026.json
-  - prototype/src/population.json
-  - tmp/research/mf-umtbf-2026-2028/extracts/pdf_pages_clean.json
+  - data/originals/asbp/asbp_tables.json
+  - data/inputs/cofog_bg.json
+  - data/inputs/kfp_functions_2026.json
+  - data/inputs/population.json
+  - data/cache/research/mf-umtbf-2026-2028/extracts/pdf_pages_clean.json
   schema: docs/data-spec.md
   screens:
   - S05
@@ -100,25 +100,25 @@ datasets:
   period: 2015–2028
   scope: КФП by function (COFOG), Приложение 3
   unit: млн. €
-  rebuild: .venv-data/bin/python tools/mock/rebuild_v6.py --build-date 2026-11-05
+  rebuild: tmp/venv-data/bin/python pipeline/budget_pipeline/build/rebuild.py --build-date 2026-11-05
   checked: '2026-11-05'
   limitations:
-  - prototype/src/cofog_bg.json and kfp_functions_2026.json have no producer (spec, section 4)
+  - data/inputs/cofog_bg.json and kfp_functions_2026.json have no producer (spec, section 4)
 - id: components
   catalogId: D07
   title: Съставни бюджети и трансфери
   status: real
   files:
-  - site/data/components.json
-  producer: tools/mock/bd_components.py (build_components)
+  - data/release/components.json
+  producer: pipeline/budget_pipeline/build/bd_components.py (build_components)
   inputs:
   - execution
   - law
   - municipalities
   - outlook
-  - prototype/data/raw/asbp/asbp_tables.json
-  - prototype/src/kfp_components_2026.json
-  - tmp/research/mf-umtbf-2026-2028/extracts/pdf_pages_clean.json
+  - data/originals/asbp/asbp_tables.json
+  - data/inputs/kfp_components_2026.json
+  - data/cache/research/mf-umtbf-2026-2028/extracts/pdf_pages_clean.json
   - zbdoo
   - zbnzok
   schema: docs/data-spec.md
@@ -127,21 +127,21 @@ datasets:
   period: 2024–2028
   scope: the constituent budgets of the КФП
   unit: хил. €
-  rebuild: .venv-data/bin/python tools/mock/rebuild_v6.py --build-date 2026-11-05
+  rebuild: tmp/venv-data/bin/python pipeline/budget_pipeline/build/rebuild.py --build-date 2026-11-05
   checked: '2026-11-05'
   limitations:
-  - prototype/src/kfp_components_2026.json comes from build_src.py, which no longer runs
+  - data/inputs/kfp_components_2026.json comes from build_src.py, which no longer runs
 - id: ministries
   catalogId: D08
   title: Бюджети на ведомствата за 2026 г.
   status: real
   files:
-  - site/data/ministries.json
-  producer: tools/mock/bd_budgets.py (build_budgets)
+  - data/release/ministries.json
+  producer: pipeline/budget_pipeline/build/bd_budgets.py (build_budgets)
   inputs:
-  - prototype/data/raw/program_budgets/*
-  - prototype/src/program_budgets_2026.json
-  - tools/mock/cache/law_bill.json
+  - data/originals/program_budgets/*
+  - data/inputs/program_budgets_2026.json
+  - data/cache/law_bill.json
   schema: docs/data-spec.md
   screens:
   - S05
@@ -153,7 +153,7 @@ datasets:
   period: '2026'
   scope: state budget (ЗДБ), first-level spending units
   unit: хил. €
-  rebuild: .venv-data/bin/python tools/mock/rebuild_v6.py --build-date 2026-11-05
+  rebuild: tmp/venv-data/bin/python pipeline/budget_pipeline/build/rebuild.py --build-date 2026-11-05
   checked: '2026-11-05'
   limitations: []
 - id: ministries-programs
@@ -161,19 +161,19 @@ datasets:
   title: Програмни бюджети на ведомствата
   status: real
   files:
-  - site/data/ministries/*.json
-  producer: tools/mock/bd_budgets.py (build_budgets)
+  - data/release/ministries/*.json
+  producer: pipeline/budget_pipeline/build/bd_budgets.py (build_budgets)
   inputs:
-  - prototype/data/raw/program_budgets/*
-  - prototype/src/program_budgets_2026.json
-  - tools/mock/cache/law_bill.json
+  - data/originals/program_budgets/*
+  - data/inputs/program_budgets_2026.json
+  - data/cache/law_bill.json
   schema: docs/data-spec.md
   screens:
   - S11
   period: 2023–2028
   scope: state budget, programme budgets of the spending units
   unit: хил. €
-  rebuild: .venv-data/bin/python tools/mock/rebuild_v6.py --build-date 2026-11-05
+  rebuild: tmp/venv-data/bin/python pipeline/budget_pipeline/build/rebuild.py --build-date 2026-11-05
   checked: '2026-11-05'
   limitations: []
 - id: programs
@@ -181,19 +181,19 @@ datasets:
   title: Индекс на програмите
   status: real
   files:
-  - site/data/programs.json
-  producer: tools/mock/bd_budgets.py (build_budgets)
+  - data/release/programs.json
+  producer: pipeline/budget_pipeline/build/bd_budgets.py (build_budgets)
   inputs:
-  - prototype/data/raw/program_budgets/*
-  - prototype/src/program_budgets_2026.json
-  - tools/mock/cache/law_bill.json
+  - data/originals/program_budgets/*
+  - data/inputs/program_budgets_2026.json
+  - data/cache/law_bill.json
   schema: docs/data-spec.md
   screens:
   - S10
   period: 2025–2026
   scope: state budget, programmes
   unit: хил. €
-  rebuild: .venv-data/bin/python tools/mock/rebuild_v6.py --build-date 2026-11-05
+  rebuild: tmp/venv-data/bin/python pipeline/budget_pipeline/build/rebuild.py --build-date 2026-11-05
   checked: '2026-11-05'
   limitations: []
 - id: measures
@@ -201,10 +201,10 @@ datasets:
   title: Мерки в бюджета за 2026 г.
   status: real
   files:
-  - site/data/measures.json
-  producer: tools/mock/bd_measures.py (build_measures)
+  - data/release/measures.json
+  producer: pipeline/budget_pipeline/build/bd_measures.py (build_measures)
   inputs:
-  - prototype/src/measures_2026.json
+  - data/inputs/measures_2026.json
   schema: docs/data-spec.md
   screens:
   - S04
@@ -214,21 +214,21 @@ datasets:
   period: 2026–2028
   scope: КФП, discretionary measures of the 2026 budget
   unit: млн. €
-  rebuild: .venv-data/bin/python tools/mock/rebuild_v6.py --build-date 2026-11-05
+  rebuild: tmp/venv-data/bin/python pipeline/budget_pipeline/build/rebuild.py --build-date 2026-11-05
   checked: '2026-11-05'
   limitations:
-  - prototype/src/measures_2026.json has no producer (spec, section 4)
+  - data/inputs/measures_2026.json has no producer (spec, section 4)
 - id: law
   catalogId: D10
   title: 'Законопроект и закон: как се прие бюджетът'
   status: real
   files:
-  - site/data/law.json
-  producer: tools/mock/bd_law.py (build_law)
+  - data/release/law.json
+  producer: pipeline/budget_pipeline/build/bd_law.py (build_law)
   inputs:
   - ministries
   - parliament
-  - tools/mock/cache/law_bill.json
+  - data/cache/law_bill.json
   - zbdoo
   - zbnzok
   - zdb
@@ -239,7 +239,7 @@ datasets:
   period: 2025-07-17 … 2026-07-31
   scope: 'the three 2026 budget laws: bill against adopted law'
   unit: хил. €
-  rebuild: .venv-data/bin/python tools/mock/rebuild_v6.py --build-date 2026-11-05
+  rebuild: tmp/venv-data/bin/python pipeline/budget_pipeline/build/rebuild.py --build-date 2026-11-05
   checked: '2026-11-05'
   limitations:
   - 'the parliament API is live: a change in its counts stops the build until reviewed (bd_law.py)'
@@ -248,12 +248,12 @@ datasets:
   title: Месечно изпълнение на КФП
   status: real
   files:
-  - site/data/execution.json
-  producer: tools/mock/extract_kfp_full.py
+  - data/release/execution.json
+  producer: pipeline/budget_pipeline/extract/extract_kfp_full.py
   inputs:
   - kfp
-  - prototype/data/raw/asbp/asbp_tables.json
-  - prototype/src/kfp_components_2026.json
+  - data/originals/asbp/asbp_tables.json
+  - data/inputs/kfp_components_2026.json
   schema: docs/data-spec.md
   screens:
   - S01
@@ -264,43 +264,43 @@ datasets:
   period: 2024-01 … 2026-09
   scope: КФП, national budget and EU funds, cash basis
   unit: млн. €
-  rebuild: .venv-data/bin/python tools/mock/rebuild_v6.py --build-date 2026-11-05
+  rebuild: tmp/venv-data/bin/python pipeline/budget_pipeline/build/rebuild.py --build-date 2026-11-05
   checked: '2026-11-05'
   limitations:
-  - prototype/src/kfp_components_2026.json comes from build_src.py, which no longer runs
+  - data/inputs/kfp_components_2026.json comes from build_src.py, which no longer runs
 - id: execution-provenance
   catalogId: execution-provenance
   title: Произход на числата от месечните отчети
   status: real
   files:
-  - site/data/execution-provenance.json
-  producer: tools/mock/extract_kfp_full.py
+  - data/release/execution-provenance.json
+  producer: pipeline/budget_pipeline/extract/extract_kfp_full.py
   inputs:
   - kfp
-  - prototype/data/raw/asbp/asbp_tables.json
+  - data/originals/asbp/asbp_tables.json
   schema: docs/data-spec.md
   screens:
   - S15
   scope: every number of execution.json, and the plan for 2026
-  rebuild: .venv-data/bin/python tools/mock/rebuild_v6.py --build-date 2026-11-05
+  rebuild: tmp/venv-data/bin/python pipeline/budget_pipeline/build/rebuild.py --build-date 2026-11-05
   checked: '2026-11-05'
   limitations:
-  - the national and EU plan (plan2026.nat, plan2026.eu) points into prototype/src/kfp_components_2026.json, whose producer no longer runs
+  - the national and EU plan (plan2026.nat, plan2026.eu) points into data/inputs/kfp_components_2026.json, whose producer no longer runs
 - id: debt
   catalogId: D13
   title: 'Държавен дълг: размер, лихви и лимити'
   status: real
   files:
-  - site/data/debt.json
-  producer: tools/mock/bd_debt.py (build_debt)
+  - data/release/debt.json
+  producer: pipeline/budget_pipeline/build/bd_debt.py (build_debt)
   inputs:
   - bnb
   - eurostat
   - execution
-  - prototype/data/raw/asbp/asbp_tables.json
-  - prototype/src/debt_gdp.json
-  - prototype/src/debt_stock.json
-  - tmp/research/mf-umtbf-2026-2028/extracts/pdf_pages_clean.json
+  - data/originals/asbp/asbp_tables.json
+  - data/inputs/debt_gdp.json
+  - data/inputs/debt_stock.json
+  - data/cache/research/mf-umtbf-2026-2028/extracts/pdf_pages_clean.json
   - zdb
   schema: docs/data-spec.md
   screens:
@@ -310,17 +310,17 @@ datasets:
   period: 2015–2028
   scope: government debt (ЗДД) and Maastricht debt (S.13)
   unit: млн. €
-  rebuild: .venv-data/bin/python tools/mock/rebuild_v6.py --build-date 2026-11-05
+  rebuild: tmp/venv-data/bin/python pipeline/budget_pipeline/build/rebuild.py --build-date 2026-11-05
   checked: '2026-11-05'
   limitations:
-  - prototype/src/debt_gdp.json has no producer; debt_stock.json is a snapshot of an earlier Eurostat answer
+  - data/inputs/debt_gdp.json has no producer; debt_stock.json is a snapshot of an earlier Eurostat answer
 - id: rates
   catalogId: D17
   title: 'Данъци и осигуровки: ставки за 2026 г.'
   status: real
   files:
-  - site/data/rates.json
-  producer: tools/mock/bd_rates.py (build_rates)
+  - data/release/rates.json
+  producer: pipeline/budget_pipeline/build/bd_rates.py (build_rates)
   inputs:
   - bill
   - nap
@@ -332,23 +332,23 @@ datasets:
   period: '2026'
   scope: taxes and social security contributions in force in 2026
   unit: '%'
-  rebuild: .venv-data/bin/python tools/mock/rebuild_v6.py --build-date 2026-11-05
+  rebuild: tmp/venv-data/bin/python pipeline/budget_pipeline/build/rebuild.py --build-date 2026-11-05
   checked: '2026-11-05'
   limitations:
-  - the NAP table (prototype/data/raw/nap/) is downloaded only from Bulgaria; from elsewhere nra.bg may serve a CAPTCHA page
+  - the NAP table (data/originals/nap/) is downloaded only from Bulgaria; from elsewhere nra.bg may serve a CAPTCHA page
 - id: municipalities
   catalogId: D19
   title: 'Общини: трансфери, население и области'
   status: real
   files:
-  - site/data/municipalities.json
-  producer: tools/mock/bd_municipal.py (build_municipalities)
+  - data/release/municipalities.json
+  producer: pipeline/budget_pipeline/build/bd_municipal.py (build_municipalities)
   inputs:
   - eurostat
   - gisco
-  - prototype/src/municipal_transfers_2026.json
-  - prototype/src/population.json
-  - tools/mock/cache/law_bill.json
+  - data/inputs/municipal_transfers_2026.json
+  - data/inputs/population.json
+  - data/cache/law_bill.json
   schema: docs/data-spec.md
   screens:
   - S20
@@ -356,7 +356,7 @@ datasets:
   period: '2026'
   scope: transfers from the state budget to the 265 municipalities
   unit: хил. €
-  rebuild: .venv-data/bin/python tools/mock/rebuild_v6.py --build-date 2026-11-05
+  rebuild: tmp/venv-data/bin/python pipeline/budget_pipeline/build/rebuild.py --build-date 2026-11-05
   checked: '2026-11-05'
   limitations:
   - municipal_transfers_2026.json and population.json come from build_src.py, which no longer reproduces them
@@ -365,21 +365,21 @@ datasets:
   title: Граници на общините (GeoJSON)
   status: real
   files:
-  - site/data/geo/obshtini.json
-  producer: tools/mock/bd_municipal.py (build_municipalities)
+  - data/release/geo/obshtini.json
+  producer: pipeline/budget_pipeline/build/bd_municipal.py (build_municipalities)
   inputs:
   - eurostat
   - gisco
-  - prototype/src/municipal_transfers_2026.json
-  - prototype/src/population.json
-  - tools/mock/cache/law_bill.json
+  - data/inputs/municipal_transfers_2026.json
+  - data/inputs/population.json
+  - data/cache/law_bill.json
   schema: docs/data-spec.md
   screens:
   - S20
   - S21
   period: '2024'
   scope: municipal borders and population (LAU)
-  rebuild: .venv-data/bin/python tools/mock/rebuild_v6.py --build-date 2026-11-05
+  rebuild: tmp/venv-data/bin/python pipeline/budget_pipeline/build/rebuild.py --build-date 2026-11-05
   checked: '2026-11-05'
   limitations:
   - the borders are simplified from the GISCO GeoJSON, which is streamed and not kept
@@ -388,10 +388,10 @@ datasets:
   title: Речник
   status: real
   files:
-  - site/data/glossary.json
-  producer: tools/mock/build_text.py
+  - data/release/glossary.json
+  producer: pipeline/budget_pipeline/build/build_text.py
   inputs:
-  - prototype/src/glossary.json
+  - data/inputs/glossary.json
   - wg
   schema: docs/data-spec.md
   screens:
@@ -400,16 +400,16 @@ datasets:
   - S07
   scope: editorial
   rebuild: null
-  notRebuilt: 'build_text.py stops: tmp/research/guide/guide_raw.txt is missing'
+  notRebuilt: 'build_text.py stops: data/cache/research/guide/guide_raw.txt is missing'
   limitations:
-  - build_text.py reads prototype/src/glossary.json, whose producer needs a PDF of the working group that is missing
+  - build_text.py reads data/inputs/glossary.json, whose producer needs a PDF of the working group that is missing
 - id: guide
   catalogId: D23
   title: Пътеводител
   status: real
   files:
-  - site/data/guide.json
-  producer: tools/mock/build_text.py
+  - data/release/guide.json
+  producer: pipeline/budget_pipeline/build/build_text.py
   inputs:
   - wg
   schema: docs/data-spec.md
@@ -417,7 +417,7 @@ datasets:
   - S04
   scope: editorial
   rebuild: null
-  notRebuilt: 'build_text.py stops: tmp/research/guide/guide_raw.txt is missing'
+  notRebuilt: 'build_text.py stops: data/cache/research/guide/guide_raw.txt is missing'
   limitations:
   - the guide text of the working group is not in the repository
 - id: core
@@ -425,12 +425,12 @@ datasets:
   title: 'Ядро: източници, предстоящи набори и основни числа'
   status: real
   files:
-  - site/data/core.json
-  producer: tools/mock/bd_core.py (build_core)
+  - data/release/core.json
+  producer: pipeline/budget_pipeline/build/bd_core.py (build_core)
   layers:
-  - tools/mock/v5_wording.py
-  - tools/mock/v5_data_active.py
-  - tools/mock/apply_v6_glue.py
+  - pipeline/budget_pipeline/build/wording.py
+  - pipeline/budget_pipeline/build/active_data.py
+  - pipeline/budget_pipeline/build/apply_sources.py
   inputs:
   - execution
   - expenditure
@@ -440,10 +440,10 @@ datasets:
   - municipalities
   - outlook
   - programs
-  - prototype/data/raw/asbp/asbp_tables.json
-  - prototype/src/population.json
+  - data/originals/asbp/asbp_tables.json
+  - data/inputs/population.json
   - revenue
-  - tools/mock/cache/law_bill.json
+  - data/cache/law_bill.json
   schema: docs/data-spec.md
   screens:
   - S01
@@ -475,7 +475,7 @@ datasets:
   period: 2024–2028
   scope: 'the shell of the site: figures copied from the datasets'
   unit: млн. €
-  rebuild: .venv-data/bin/python tools/mock/rebuild_v6.py --build-date 2026-11-05
+  rebuild: tmp/venv-data/bin/python pipeline/budget_pipeline/build/rebuild.py --build-date 2026-11-05
   checked: '2026-11-05'
   limitations:
   - 'after build_core: the v5 wording, the v5 removal of СЕБРА and the generated sets, and the four S34 sources of v6 (layers)'
@@ -484,18 +484,18 @@ datasets:
   title: Новото в данните
   status: real
   files:
-  - site/data/feed.json
-  producer: tools/mock/bd_feed.py (build_feed)
+  - data/release/feed.json
+  producer: pipeline/budget_pipeline/build/bd_feed.py (build_feed)
   layers:
-  - tools/mock/v5_data_active.py
+  - pipeline/budget_pipeline/build/active_data.py
   inputs:
   - debt
   - eurostat
   - execution
   - expenditure
   - law
-  - prototype/src/cofog_bg.json
-  - prototype/src/population.json
+  - data/inputs/cofog_bg.json
+  - data/inputs/population.json
   - rates
   - sebra
   schema: docs/data-spec.md
@@ -503,7 +503,7 @@ datasets:
   - S16
   period: 2026-01-31 … 2026-10-21
   scope: the site
-  rebuild: .venv-data/bin/python tools/mock/rebuild_v6.py --build-date 2026-11-05
+  rebuild: tmp/venv-data/bin/python pipeline/budget_pipeline/build/rebuild.py --build-date 2026-11-05
   checked: '2026-11-05'
   limitations: []
 - id: feed-rss
@@ -511,18 +511,18 @@ datasets:
   title: 'Новото в данните: RSS'
   status: real
   files:
-  - site/data/feed.xml
-  producer: tools/mock/bd_feed.py (build_feed)
+  - data/release/feed.xml
+  producer: pipeline/budget_pipeline/build/bd_feed.py (build_feed)
   layers:
-  - tools/mock/v5_data_active.py
+  - pipeline/budget_pipeline/build/active_data.py
   inputs:
   - debt
   - eurostat
   - execution
   - expenditure
   - law
-  - prototype/src/cofog_bg.json
-  - prototype/src/population.json
+  - data/inputs/cofog_bg.json
+  - data/inputs/population.json
   - rates
   - sebra
   schema: docs/data-spec.md
@@ -530,7 +530,7 @@ datasets:
   - S16
   period: 2026-01-31 … 2026-10-21
   scope: the site
-  rebuild: .venv-data/bin/python tools/mock/rebuild_v6.py --build-date 2026-11-05
+  rebuild: tmp/venv-data/bin/python pipeline/budget_pipeline/build/rebuild.py --build-date 2026-11-05
   checked: '2026-11-05'
   limitations: []
 - id: search-index
@@ -538,11 +538,11 @@ datasets:
   title: Индекс за търсене
   status: real
   files:
-  - site/data/search-index.json
-  producer: tools/mock/build_search.py (build_search)
+  - data/release/search-index.json
+  producer: pipeline/budget_pipeline/build/build_search.py (build_search)
   layers:
-  - tools/mock/v5_wording.py
-  - tools/mock/v5_data_active.py
+  - pipeline/budget_pipeline/build/wording.py
+  - pipeline/budget_pipeline/build/active_data.py
   inputs:
   - execution
   - glossary
@@ -554,7 +554,7 @@ datasets:
   screens:
   - S28
   scope: the site
-  rebuild: .venv-data/bin/python tools/mock/rebuild_v6.py --build-date 2026-11-05
+  rebuild: tmp/venv-data/bin/python pipeline/budget_pipeline/build/rebuild.py --build-date 2026-11-05
   checked: '2026-11-05'
   limitations:
   - 'after build_search: the v5 wording and removals (layers)'
@@ -563,12 +563,12 @@ datasets:
   title: Каталог на данните
   status: real
   files:
-  - site/data/catalog.json
-  producer: tools/mock/build_catalog.py (build_catalog)
+  - data/release/catalog.json
+  producer: pipeline/budget_pipeline/build/build_catalog.py (build_catalog)
   layers:
-  - tools/mock/v5_wording.py
-  - tools/mock/v5_data_active.py
-  - tools/mock/catalog_refresh_v5.py
+  - pipeline/budget_pipeline/build/wording.py
+  - pipeline/budget_pipeline/build/active_data.py
+  - pipeline/budget_pipeline/build/catalog_refresh.py
   inputs:
   - asbp
   - components
@@ -588,7 +588,7 @@ datasets:
   - municipalities
   - outlook
   - programs
-  - prototype/data/raw/MANIFEST.json
+  - data/originals/MANIFEST.json
   - rates
   - revenue
   - sebra
@@ -597,17 +597,17 @@ datasets:
   - S24
   - S25
   scope: the site
-  rebuild: .venv-data/bin/python tools/mock/rebuild_v6.py --build-date 2026-11-05
+  rebuild: tmp/venv-data/bin/python pipeline/budget_pipeline/build/rebuild.py --build-date 2026-11-05
   checked: '2026-11-05'
   limitations:
-  - 'after build_catalog: the v5 wording and removals and catalog_refresh_v5.py (layers)'
+  - 'after build_catalog: the v5 wording and removals and catalog_refresh.py (layers)'
 - id: mock-measure-labels
   catalogId: M06
   title: Дата и правно основание на мерките
   status: mock
   files:
-  - site/data/mock/measure-labels.json
-  producer: tools/mock/build_mock.py (M06)
+  - data/release/mock/measure-labels.json
+  producer: pipeline/budget_pipeline/build/build_examples.py (M06)
   inputs:
   - measures
   - mockgen
@@ -616,7 +616,7 @@ datasets:
   - S08
   - S12
   scope: example labels of the measures
-  rebuild: BUILD_DATE=2026-10-09 .venv-data/bin/python tools/mock/build_mock.py --only M06 --check
+  rebuild: BUILD_DATE=2026-10-09 tmp/venv-data/bin/python pipeline/budget_pipeline/build/build_examples.py --only M06 --check
   checked: '2026-11-05'
   limitations:
   - 'example values: marked mock in the file, the tables, search and exports'
@@ -625,8 +625,8 @@ datasets:
   title: Допускания за косвените данъци
   status: mock
   files:
-  - site/data/mock/tax-assumptions.json
-  producer: tools/mock/build_mock.py (M07)
+  - data/release/mock/tax-assumptions.json
+  producer: pipeline/budget_pipeline/build/build_examples.py (M07)
   inputs:
   - asbp
   - mockgen
@@ -635,10 +635,10 @@ datasets:
   - S18
   scope: example assumptions of the tax calculator
   unit: €
-  rebuild: BUILD_DATE=2026-10-09 .venv-data/bin/python tools/mock/build_mock.py --only M07 --check
+  rebuild: BUILD_DATE=2026-10-09 tmp/venv-data/bin/python pipeline/budget_pipeline/build/build_examples.py --only M07 --check
   checked: '2026-11-05'
   limitations:
-  - 'example values: marked mock; the official rates in it are typed into build_mock.py from Приложение 2 of the motives'
+  - 'example values: marked mock; the official rates in it are typed into build_examples.py from Приложение 2 of the motives'
 - id: p01
   catalogId: P01
   title: Изпълнение по видове данъци
@@ -730,14 +730,14 @@ datasets:
   title: 'СЕБРА: дневни плащания на МИДТ'
   status: real
   files:
-  - site/data/sebra.json
-  producer: tools/mock/bd_sebra.py (build_sebra)
+  - data/release/sebra.json
+  producer: pipeline/budget_pipeline/build/bd_sebra.py (build_sebra)
   inputs:
   - midt-sebra
   schema: docs/data-spec.md
   screens: []
   scope: МИДТ only, 27–31.08.2026
-  rebuild: .venv-data/bin/python tools/mock/rebuild_v6.py --build-date 2026-11-05
+  rebuild: tmp/venv-data/bin/python pipeline/budget_pipeline/build/rebuild.py --build-date 2026-11-05
   checked: '2026-11-05'
   limitations:
   - 'built, but neither listed in catalog.json nor loaded by a screen: three days of one ministry, kept for phase 2'
@@ -746,15 +746,15 @@ datasets:
   title: Проект на бюджетен план 2027
   status: real
   files:
-  - site/data/dbp2027.json
-  producer: tools/mock/build_dbp2027_site.py
+  - data/release/dbp2027.json
+  producer: pipeline/budget_pipeline/build/build_dbp2027_site.py
   inputs:
-  - tmp/research/dbp-2027/dbp2027_figures.json
+  - data/cache/research/dbp-2027/dbp2027_figures.json
   schema: docs/data-spec.md
   screens: []
   scope: сектор „Държавно управление“ (S.13), ESA 2010
   rebuild: null
-  notRebuilt: tmp/research/dbp-2027/dbp2027_figures.json and its PDF are missing
+  notRebuilt: data/cache/research/dbp-2027/dbp2027_figures.json and its PDF are missing
   limitations:
   - not listed in catalog.json (the catalog screen would change)
 - id: releases
@@ -762,14 +762,14 @@ datasets:
   title: Изданията на данните
   status: real
   files:
-  - site/data/releases/*
-  producer: tools/budget.py (build --site)
+  - data/release/releases/*
+  producer: pipeline/budget_pipeline/cli.py (build --site)
   inputs:
   - every output of the release
   schema: docs/release.md
   screens:
   - S15
-  scope: 'the release of site/data: manifest.json and validation.json of every release, current.json points to the current one'
+  scope: 'the release of data/release: manifest.json and validation.json of every release, current.json points to the current one'
   rebuild: ./budget build --build-date 2026-11-05 --site
   checked: '2026-11-05'
   limitations:

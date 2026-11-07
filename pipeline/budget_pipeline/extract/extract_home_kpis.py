@@ -15,31 +15,36 @@
      лист „стартова“, редът с етикет „Капиталови разходи“ (търси се по етикет, не по номер):
      колона B „Консолидирана фискална програма“ (= к.3 национален бюджет + к.4 европейски средства),
      млн. €, натрупано от 1 януари.
-  4. Сверява дефицита (Табл. II-2) и дълга (Табл. VI-1) в docx-а с константите в site/index.html.
-Пише prototype/src/home_kpis_2026.json — стойностите, източниците (файл, таблица, страница, клетка)
-и проверките. gen_inline.py го вгражда в site/index.html като const KPI.
+  4. Сверява дефицита (Табл. II-2) и дълга (Табл. VI-1) в docx-а с константите в apps/web/public/index.html.
+Пише data/inputs/home_kpis_2026.json — стойностите, източниците (файл, таблица, страница, клетка)
+и проверките. gen_inline.py го вгражда в apps/web/public/index.html като const KPI.
 
-Входове: prototype/data/raw/asbp/{UMTBF-2026-2028-motivi.pdf,asbp_tables.json},
-         prototype/data/raw/parliament/52-602-01-19.docx, prototype/data/raw/kfp_2026/*.xls,
-         prototype/site/index.html (само за сверката с KFP_T22)
-Изход:   prototype/src/home_kpis_2026.json
+Входове: data/originals/asbp/{UMTBF-2026-2028-motivi.pdf,asbp_tables.json},
+         data/originals/parliament/52-602-01-19.docx, data/originals/kfp_2026/*.xls,
+         reference/prototype/site/index.html (само за сверката с KFP_T22)
+Изход:   data/inputs/home_kpis_2026.json
 Изисква: pymupdf и xlrd (pip install pymupdf xlrd) — в отделен venv, не в репото на бота.
 Употреба: python3 extract_home_kpis.py   (изходът е 1, ако някоя проверка не мине)
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import datetime, glob, hashlib, json, os, re, sys, zipfile
 import xml.etree.ElementTree as ET
 
 import pymupdf
 import xlrd
 
-P = str(__import__("pathlib").Path(__file__).resolve().parents[2]) + "/prototype"
-RAW = f"{P}/data/raw"
+P = str(__import__("pathlib").Path(__file__).resolve().parents[3])
+RAW = f"{P}/data/originals"
 PDF = f"{RAW}/asbp/UMTBF-2026-2028-motivi.pdf"
 TABLES = f"{RAW}/asbp/asbp_tables.json"
 DOCX = f"{RAW}/parliament/52-602-01-19.docx"
 KFP = sorted(glob.glob(f"{RAW}/kfp_2026/*.xls"))
-HTML = f"{P}/site/index.html"
-OUT = f"{P}/src/home_kpis_2026.json"
+HTML = f"{P}/apps/web/public/index.html"
+OUT = f"{P}/data/inputs/home_kpis_2026.json"
 W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
 YEARS = ["2024", "2025", "2026", "2027", "2028"]
 NUM = re.compile(r"^[−-]?\d{1,3}(?: \d{3})*(?:,\d+)?%?$")
@@ -161,7 +166,7 @@ def main():
         "title": "Лентата „Бюджет 2026 в шест числа“ на началната страница: БВП и капиталови разходи (план и изпълнение)",
         "retrieved": datetime.date.today().isoformat(),
         "unit": "млн. €",
-        "note": "Приходите, разходите и дефицитът (Табл. II-2) и дългът (Табл. VI-1) са в site/index.html (KFP_T22, DEBT_STOCK); тук само се сверяват.",
+        "note": "Приходите, разходите и дефицитът (Табл. II-2) и дългът (Табл. VI-1) са в apps/web/public/index.html (KFP_T22, DEBT_STOCK); тук само се сверяват.",
         "gdp_2026": {
             "what": "Брутен вътрешен продукт, номинален (млн. евро), прогноза на МФ за 2026 г.",
             "mln_eur": g_pdf[2],

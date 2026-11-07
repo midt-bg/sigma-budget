@@ -1,10 +1,16 @@
-"""KFP group of validate_data.py: execution.json against the raw monthly reports of the Ministry of Finance since January 2024
+"""KFP group of base.py: execution.json against the raw monthly reports of the Ministry of Finance since January 2024
 (12 per year, the last year 1..n; the count comes from execution.json and the raw folders, not from the code).
 
 The reports are re-read here with a separate, minimal xlrd reader (cell positions come from the published `rows[].row`, the
 accounting identities are written out again below), so a wrong row map or a wrong conversion in the extractor cannot hide.
 Pure standard library plus xlrd (already in the venv). Nothing here writes a file.
 """
+
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import calendar
 import hashlib
 import os
@@ -12,11 +18,11 @@ import re
 
 import xlrd
 
-import vd_lib as L
-from vd_lib import Check, PROTO, fmt, isnum
+import budget_pipeline.validate.vd_lib as L
+from budget_pipeline.validate.vd_lib import Check, PROTO, fmt, isnum
 
-# the raw reports are NOT in the repository (docs/data-sources.md): without prototype/data/raw the independent re-read is skipped with a warning
-RAW_PRESENT = os.path.isdir(os.path.join(PROTO, "data", "raw"))
+# the raw reports are NOT in the repository (docs/data-sources.md): without data/originals the independent re-read is skipped with a warning
+RAW_PRESENT = os.path.isdir(os.path.join(ROOT, "data", "originals"))
 
 EUR = 1.95583
 SHEET = "стартова"
@@ -134,7 +140,7 @@ def g_kfp(ctx):
         for i, f in enumerate(blk["files"]):
             month = i + 1
             c.ok(f["month"] == month, "%s: files[%d].month %s" % (y, i, f["month"]))
-            path = os.path.join(PROTO, "data", "raw", "kfp_%s" % y, f["file"])
+            path = os.path.join(ROOT, "data", "originals", "kfp_%s" % y, f["file"])
             if not os.path.exists(path):
                 if RAW_PRESENT:
                     c.fail("%s-%02d: raw report %s missing" % (y, month, f["file"]))
@@ -328,9 +334,9 @@ def g_kfp(ctx):
         want_n = sum(data[y]["months"] for y in years)
         c.ok(files_n == want_n, "%d of %d raw reports found" % (files_n, want_n))
         for y in years:                       # a report on disk that execution.json does not have yet: run extract_kfp_full.py
-            on_disk = len([f for f in os.listdir(os.path.join(PROTO, "data", "raw", "kfp_%s" % y)) if f.endswith(".xls")]) \
-                if os.path.isdir(os.path.join(PROTO, "data", "raw", "kfp_%s" % y)) else 0
+            on_disk = len([f for f in os.listdir(os.path.join(ROOT, "data", "originals", "kfp_%s" % y)) if f.endswith(".xls")]) \
+                if os.path.isdir(os.path.join(ROOT, "data", "originals", "kfp_%s" % y)) else 0
             c.ok(on_disk <= data[y]["months"], "%s: %d raw reports on disk, execution.json has %d (extract_kfp_full.py not run?)" % (y, on_disk, data[y]["months"]))
     elif not files_n:
-        c.warn("the raw monthly reports are not in the repository (prototype/data/raw, see docs/data-sources.md): the independent re-read was skipped")
+        c.warn("the raw monthly reports are not in the repository (data/originals, see docs/data-sources.md): the independent re-read was skipped")
     return c

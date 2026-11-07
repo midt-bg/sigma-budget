@@ -21,17 +21,22 @@
 с връзките в PDF-а; slug-овете са уникални.
 
 Вход:    tmp/guide/Budget-na-svetlo-rechnik-64-termina.pdf  (PDF-ът НЕ е в хранилището — поставете го там; папката tmp/ е в .gitignore)
-Изход:   prototype/src/glossary.json (gen_inline.py го вгражда в site/index.html като const GLOSSARY)
+Изход:   data/inputs/glossary.json (gen_inline.py го вгражда в apps/web/public/index.html като const GLOSSARY)
 Изисква: pymupdf (pip install pymupdf) — в отделен venv, не в репото на бота.
 Употреба: python3 extract_glossary.py [--png DIR]   (--png: снимки на с. 1–3 и 13, за да се види оформлението)
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import datetime, hashlib, json, re, sys
 
 import pymupdf
 
-ROOT = str(__import__("pathlib").Path(__file__).resolve().parents[2])
+ROOT = str(__import__("pathlib").Path(__file__).resolve().parents[3])
 PDF = f"{ROOT}/tmp/guide/Budget-na-svetlo-rechnik-64-termina.pdf"
-OUT = f"{ROOT}/prototype/src/glossary.json"
+OUT = f"{ROOT}/data/inputs/glossary.json"
 FOOTER = "Бюджет на светло | Речник с 64 термина"
 EXAMPLE = "Пример:"
 

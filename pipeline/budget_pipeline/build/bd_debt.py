@@ -3,16 +3,21 @@
 Inputs, all READ (nothing is typed in): Табл. VI-1 (asbp_tables.json), Табл. VI-2 and the prose of pp.138-145 (pdf_pages_clean.json,
 via bd_debt_pdf.py), Eurostat gov_10dd_edpt1 (annual, BG + EU27) and gov_10q_ggdebt (quarterly, BG) as JSON-stat, BNB SDMX
 GGD (GGALN_G01_XDC) and CGD (GCALN_G01_AC_XDC), UNIT_MULT 6 = million euro. Every value is cross-checked against a second copy
-(prototype/src/debt_stock.json, debt_gdp.json, Annex 3 GDP, the BNB-Eurostat overlap) and the build fails on a mismatch.
+(data/inputs/debt_stock.json, debt_gdp.json, Annex 3 GDP, the BNB-Eurostat overlap) and the build fails on a mismatch.
 User-facing strings are Bulgarian, keys are English. "zdd" is a legacy key/route value: labels say "държавен дълг (МФ)".
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import math
 from xml.etree import ElementTree as ET
 
-import bd_debt_pdf as pdf
-import lawparse
-from bd_fiscal import VINTAGE, YEARS, zdd_table
-from dlib import RAW, isnum, jsonstat_series, meta, pct, rnd
+import budget_pipeline.build.bd_debt_pdf as pdf
+import budget_pipeline.extract.lawparse as lawparse
+from budget_pipeline.build.bd_fiscal import VINTAGE, YEARS, zdd_table
+from budget_pipeline.build.dlib import RAW, isnum, jsonstat_series, meta, pct, rnd
 
 ASOF_BILL = "2026-07-01"
 LAW_HTML = "dv/zdb2026_dv69_idMat245041.html"
@@ -85,7 +90,7 @@ def _same(a, b, tol, what):
 
 
 # Eurostat revises the annual series with every EDP notification (April, October); the prototype copies it is checked against
-# (prototype/src/debt_gdp.json, debt_stock.json) stay frozen. Each accepted revision is written out under the release ("updated" of
+# (data/inputs/debt_gdp.json, debt_stock.json) stay frozen. Each accepted revision is written out under the release ("updated" of
 # gov_10dd_edpt1) as year: (prototype, Eurostat). Any other difference, or a new release, stops the build until it is reviewed here.
 EUROSTAT_REVISIONS = {"2026-10-21": {
     ("BG", "PC_GDP"): {2020: (24.5, 24.4), 2022: (22.5, 22.4), 2023: (22.9, 22.8), 2024: (23.8, 23.7)},

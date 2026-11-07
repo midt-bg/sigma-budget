@@ -1,5 +1,5 @@
 // The document is sent whole, never streamed in parts: a screen is drawn in its loader, and crawlers and the browser part
-// (site/js/main.js) read the finished HTML.
+// (apps/web/client/main.js) read the finished HTML.
 import type { EntryContext } from 'react-router';
 import { ServerRouter } from 'react-router';
 import { renderToReadableStream } from 'react-dom/server';

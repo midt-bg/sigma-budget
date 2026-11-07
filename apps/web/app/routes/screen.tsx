@@ -1,5 +1,5 @@
-// A screen: its loader draws it from the release of the request (app/lib/screen.server.ts); the component puts the drawn parts into the
-// body of the document, in the same elements as site/index.html, which site/js/main.js expects.
+// A screen: its loader draws it from the release of the request (apps/web/app/lib/screen.server.ts); the component puts the drawn parts into the
+// body of the document, in the same elements as apps/web/public/index.html, which apps/web/client/main.js expects.
 import { data, redirect } from 'react-router';
 import type { Route } from './+types/screen';
 import { renderScreen } from '../lib/screen.server';

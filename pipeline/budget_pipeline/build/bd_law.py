@@ -2,12 +2,12 @@
 legislative path of the three budget laws.
 
 Inputs (no network at build time):
-  * tools/mock/cache/law_bill.json (extract_bill.py): art. 1-47 of the bill (docx) and of the law (Държавен вестник HTML) with the
+  * data/cache/law_bill.json (extract_bill.py): art. 1-47 of the bill (docx) and of the law (Държавен вестник HTML) with the
     line-by-line diff of the five articles that differ (1, 2, 3, 16, 17).
-  * prototype/data/raw/parliament/bill_16715{5,6,7}.json: dates of the reports, readings and proposals. The proposers' names in these
+  * data/originals/parliament/bill_16715{5,6,7}.json: dates of the reports, readings and proposals. The proposers' names in these
     files are never read; only document numbers, dates and file names.
-  * prototype/data/raw/dv/*.html: gazette issue, decree and entry-into-force clauses of the three laws.
-  * the Ministry of Finance motives (prototype/data/raw/asbp/UMTBF-2026-2028-motivi.pdf, pp. 5-7): the pre-history (decisions of the
+  * data/originals/dv/*.html: gazette issue, decree and entry-into-force clauses of the three laws.
+  * the Ministry of Finance motives (data/originals/asbp/UMTBF-2026-2028-motivi.pdf, pp. 5-7): the pre-history (decisions of the
     Council of Ministers, the extension law). Those facts are typed in below with the page they come from.
 
 The build fails when: the two versions of art. 1 do not line up row by row; the changed rows are not exactly the rows of the diff; the
@@ -15,13 +15,18 @@ differences of the four changed budgets do not add up to the difference of art. 
 revenue - expenditure - transfers - EU contribution = balance fails in either version; the 46 budgets do not add up to the totals the
 extraction printed; a number in this file differs from ministries.json; the parliament files disagree with the dates typed here.
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import ast
 import re
 from collections import Counter
 
-import lawparse
-from bd_common import ART_EBK, BUDGET_INFO, SOURCES, fmt_khil, nominative
-from dlib import RAW, isnum, meta, rnd
+import budget_pipeline.extract.lawparse as lawparse
+from budget_pipeline.build.bd_common import ART_EBK, BUDGET_INFO, SOURCES, fmt_khil, nominative
+from budget_pipeline.build.dlib import RAW, isnum, meta, rnd
 
 TOL = 0.051                      # one printed decimal
 ART_FIRST, ART_LAST = 2, 47      # ЗДБ чл. 2-47: 46 budgets
@@ -563,7 +568,7 @@ def build_law(ctx):
         "committees": {"total": len(z["committees"]), "leading": leading[0], "reported": z["reportAuthors"]},
         "opinionsNote": "Становищата са постъпили в комисиите от организации и институции; докладите са на комисиите.",
     }
-    # the wording site/data has carried since d1f0f6c (the plan for 2027 is on the screen S34; the bill comes when it is submitted)
+    # the wording data/release has carried since d1f0f6c (the plan for 2027 is on the screen S34; the bill comes when it is submitted)
     nxt = {"title": "Бюджет 2027", "status": "pending",
            "note": "Бюджетният план за 2027 г. (изпратен на 15.10.2026 г.) е на екрана „Бюджет 2027 (проект)“. Законопроектът за държавния "
                    "бюджет за 2027 г. ще бъде добавен, когато бъде внесен в Народното събрание.",

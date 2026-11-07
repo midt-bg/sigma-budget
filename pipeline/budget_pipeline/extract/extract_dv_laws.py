@@ -8,17 +8,22 @@
   - ЗБДОО 2026 (ДВ бр. 68): чл. 1 — консолидираният бюджет на ДОО; чл. 9 — осигурителен доход;
     чл. 14 и приложение № 2А — вноската за ТЗПБ по дейности; чл. 15 — фонд ГВРС;
   - ЗБНЗОК 2026 (ДВ бр. 68): чл. 1 — бюджетът на НЗОК; чл. 2 — здравноосигурителната вноска.
-Пише prototype/data/raw/dv/dv_laws_2026.json (сурови таблици и цитати).
+Пише data/originals/dv/dv_laws_2026.json (сурови таблици и цитати).
 
-Входове: prototype/data/raw/dv/{zdb2026_dv69_idMat245041,zbdoo2026_dv68_idMat244982,zbnzok2026_dv68_idMat244981}.html
+Входове: data/originals/dv/{zdb2026_dv69_idMat245041,zbdoo2026_dv68_idMat244982,zbnzok2026_dv68_idMat244981}.html
          (сваля ги fetch_sources.py)
-Изход:   prototype/data/raw/dv/dv_laws_2026.json
+Изход:   data/originals/dv/dv_laws_2026.json
 Само stdlib.
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import html, json, re, sys
 from html.parser import HTMLParser
 
-RAW = str(__import__("pathlib").Path(__file__).resolve().parents[2]) + "/prototype/data/raw/dv"
+RAW = str(__import__("pathlib").Path(__file__).resolve().parents[3]) + "/data/originals/dv"
 DOCS = {
     "zdb": ("zdb2026_dv69_idMat245041.html", "Закон за държавния бюджет на Република България за 2026 г.", "ДВ, бр. 69 от 31.07.2026 г.",
             "https://dv.parliament.bg/DVWeb/showMaterialDV.jsp?idMat=245041"),

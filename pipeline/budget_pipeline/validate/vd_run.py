@@ -1,21 +1,27 @@
-"""REBUILD and MOCK groups of validate_data.py: two other programs are run as child processes and a non-zero exit is a violation.
+"""REBUILD and MOCK groups of base.py: two other programs are run as child processes and a non-zero exit is a violation.
 
-REBUILD  build_data.py --check: every file of site/data (except DATA2's mock sets, glossary and guide) is rebuilt in memory and
+REBUILD  build_data.py --check: every file of data/release (except DATA2's mock sets, glossary and guide) is rebuilt in memory and
          compared with the disk, so a file edited by hand, stale or missing is caught (about 30 s).
 MOCK     validate_mock.py (DATA2's validator): the mock sets M01-M07, the glossary and the guide.
 Pure standard library; nothing here writes a file."""
+
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import os
 import subprocess
 import sys
 
-from vd_lib import Check
+from budget_pipeline.validate.vd_lib import Check
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 def _child(c, script, args, what, timeout):
     try:
-        p = subprocess.run([sys.executable, os.path.join(HERE, script)] + list(args), stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        p = subprocess.run([sys.executable, os.path.join(ROOT, "pipeline/budget_pipeline/build" if script == "build_data.py" else "reference/mock", script)] + list(args), stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                            universal_newlines=True, timeout=timeout)
     except subprocess.TimeoutExpired:
         c.fail("%s did not finish in %d s" % (script, timeout))

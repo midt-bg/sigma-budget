@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Build site/data/dbp2027.json (the numbers of the screen S34 "Бюджет 2027 (проект)").
+"""Build data/release/dbp2027.json (the numbers of the screen S34 "Бюджет 2027 (проект)").
 
-Input : tmp/research/dbp-2027/dbp2027_figures.json  (made by tools/mock/extract_dbp2027.py from the PDF of the
+Input : data/cache/research/dbp-2027/dbp2027_figures.json  (made by pipeline/budget_pipeline/extract/extract_dbp2027.py from the PDF of the
         Draft Budgetary Plan 2027, 55 pages, МФ, 15.10.2026) + a few figures added by hand below.
-Output: site/data/dbp2027.json
+Output: data/release/dbp2027.json
 
 Rules (see the task brief):
  * no number without a page: every figure has `p` (page of the PDF) and `b` (basis: ESA_GG, KFP_CASH, ...);
@@ -12,20 +12,25 @@ Rules (see the task brief):
  * nothing here is read from the old mock or from the other screens.
 
 The hand-added figures were read from the PDF text on the page named in `p` (checked again by
-tools/verify_dbp2027_numbers.py, which looks every printed value up on its page).
+pipeline/budget_pipeline/build/verify_dbp2027_numbers.py, which looks every printed value up on its page).
 
-Run: python3 tools/build_dbp2027_site.py
+Run: python3 pipeline/budget_pipeline/build/build_dbp2027_site.py
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import json
 import hashlib
 import re
 import sys
 from pathlib import Path
 
-W = Path(__file__).resolve().parents[2]          # repository root
-SRC = W / 'tmp' / 'research' / 'dbp-2027' / 'dbp2027_figures.json'     # not in the repository: made by extract_dbp2027.py
+W = Path(__file__).resolve().parents[3]          # repository root
+SRC = W / 'data' / 'cache' / 'research' / 'dbp-2027' / 'dbp2027_figures.json'     # not in the repository: made by extract_dbp2027.py
 PDF = W / 'tmp' / 'sources' / 'bud2027_Draft_Budgetary_Plan_of_the_Republic_of_Bulgaria_for_2027.pdf'   # not in the repository: docs/data-sources.md 4.3
-OUT = W / 'site' / 'data' / 'dbp2027.json'
+OUT = W / 'data' / 'release' / 'dbp2027.json'
 
 # figure-id prefixes that the screen uses (everything else in the research file is left out on purpose:
 # macro table, external environment, cash data to 31.08.2026, RRF grants)

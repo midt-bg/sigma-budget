@@ -1,15 +1,19 @@
 """Draw the raster images of the site from HTML: the social card (og.png, 1200x630) and the app icons (icon-192/512.png, apple-touch-icon.png).
 
-    PLAYWRIGHT_BROWSERS_PATH=$PWD/.pw-browsers .venv/bin/python tools/site/make_images.py
+    PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python apps/web/scripts/make_images.py
 
 The images are committed in site/ (index.html and manifest.json name them); run this again after a change of the mark or the colours.
 The card uses the fonts of the site (Charter for the serif; the system mono), so draw it on macOS for the same look.
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 import pathlib
 
 from playwright.sync_api import sync_playwright
 
-SITE = pathlib.Path(__file__).resolve().parents[2] / 'site'
+SITE = pathlib.Path(__file__).resolve().parents[3] / 'site'
 PAPER, INK, CRIMSON, SOFT = '#FDFAF4', '#15110C', '#AC1B18', '#6B6257'
 MARK = (f'<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="17" width="5.4" height="10" fill="{INK}"/><rect x="13.3" y="12" width="5.4" height="15" fill="{INK}"/>'
         f'<rect x="21.6" y="7" width="5.4" height="20" fill="{INK}"/><rect x="4" y="27" width="24" height="1.6" fill="{INK}"/><circle cx="24.3" cy="4.2" r="2.6" fill="{CRIMSON}"/></svg>')

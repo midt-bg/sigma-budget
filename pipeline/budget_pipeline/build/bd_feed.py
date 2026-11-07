@@ -8,14 +8,19 @@ insurance ceilings, Eurostat releases, the СЕБРА publication) - nothing is 
 Runs after the datasets it reads (debt, rates, law, sebra, expenditure) and before core.json. `feed.xml` is the same
 list as RSS 2.0; the site address is a placeholder until the real one is known (env BNS_SITE_URL).
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import calendar
 import datetime
 import os
 from xml.sax.saxutils import escape
 
-from bd_common import PENDING_DEFS, POPULATION_ASOF, fmt_date, fmt_eur, fmt_money, fmt_num, fmt_pct, month_name
-from bd_fiscal import population_latest
-from dlib import BUILD_DATE, jsonstat_series, meta
+from budget_pipeline.build.bd_common import PENDING_DEFS, POPULATION_ASOF, fmt_date, fmt_eur, fmt_money, fmt_num, fmt_pct, month_name
+from budget_pipeline.build.bd_fiscal import population_latest
+from budget_pipeline.build.dlib import BUILD_DATE, jsonstat_series, meta
 
 BASE_URL_DEFAULT = "https://budget-na-svetlo.example/"        # reserved TLD: never resolves, never impersonates a real site
 
@@ -144,11 +149,11 @@ def _eurostat_events(ctx):
     cy = exp["cofog"]["years"][-1]
     pop_src = ctx.src("population")
     pop = population_latest(pop_src)
-    # the population is the one of prototype/src/population.json (release POPULATION_ASOF); the downloaded tps00001 may be a later
-    # release: the event keeps the date of the numbers it shows, as long as the downloaded file still gives the same numbers
+    # the population is the one of data/inputs/population.json (release POPULATION_ASOF); the downloaded tps00001 may be a later
+    # release: the event keeps the date of the numbers it shows, as the downloaded file still gives the same numbers
     tps = jsonstat_series(ctx.raw("eurostat/tps00001_BG.json"), "time", {"geo": "BG"})
     if any(str(y) in tps and int(tps[str(y)][0]) != int(v) for y, v in zip(pop_src["years"], pop_src["persons"])):
-        raise ValueError("feed: Eurostat tps00001 now gives other population numbers than prototype/src/population.json")
+        raise ValueError("feed: Eurostat tps00001 now gives other population numbers than data/inputs/population.json")
     pop_raw = POPULATION_ASOF
     return [
         {"id": "eurostat-gov_10dd_edpt1-" + d_annual, "date": d_annual, "dateKind": "published", "kind": "eurostat",

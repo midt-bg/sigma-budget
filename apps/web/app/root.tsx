@@ -1,13 +1,13 @@
-// The document of every screen (docs/adr/0002-react-router-ssr.md): the skeleton of the static site's site/index.html, with the screen,
-// the shell and the head drawn on the server (app/lib/screen.server.ts). There is no React hydration and no <Scripts/>: the browser part is
-// site/js/main.js, which takes the document over as it took over the prerendered files.
+// The document of every screen (docs/adr/0002-react-router-ssr.md): the skeleton of the static site's apps/web/public/index.html, with the screen,
+// the shell and the head drawn on the server (apps/web/app/lib/screen.server.ts). There is no React hydration and no <Scripts/>: the browser part is
+// apps/web/client/main.js, which takes the document over as it took over the prerendered files.
 import type { ReactNode } from 'react';
 import { Outlet, useMatches } from 'react-router';
 import type { ScreenDoc } from './lib/screen.server';
 import { CSP } from './lib/security';
 
 const SHARED_CSS = ['tokens', 'base', 'layout', 'components', 'charts', 'motion'];
-const FIRST = new Set(['description', 'robots']);            // site/index.html has these two before the site's own meta tags
+const FIRST = new Set(['description', 'robots']);            // apps/web/public/index.html has these two before the site's own meta tags
 
 const docOf = (matches: ReturnType<typeof useMatches>) =>
   matches.map(m => (m.loaderData as { doc?: ScreenDoc } | undefined)?.doc).find(Boolean);

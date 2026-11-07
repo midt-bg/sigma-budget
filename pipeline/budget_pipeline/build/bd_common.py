@@ -5,19 +5,24 @@ registry P01-P07 (`core.pending`), function slugs, revenue groups, the ЕБК co
 Bulgarian number formatting used for ready-made display strings (search index, feed). User-facing strings are
 Bulgarian; code, keys and comments are English.
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import re
 
-from dlib import BUILD_DATE, isnum
+from budget_pipeline.build.dlib import BUILD_DATE, isnum
 
 NBSP = "\u00a0"
 NNBSP = "\u202f"
 MINUS = "\u2212"
-# the Eurostat release of tps00001 that prototype/src/population.json copies (core.json and the feed event both carry it);
+# the Eurostat release of tps00001 that data/inputs/population.json copies (core.json and the feed event both carry it);
 # a later release with the same numbers does not move it, bd_feed.py stops if the numbers change
 POPULATION_ASOF = "2026-09-30"
 
 # --------------------------------------------------------------------------------------------- formatting
-# Mirrors site/js/format.js (group separator = narrow no-break space, decimal comma, typographic minus).
+# Mirrors apps/web/client/format.js (group separator = narrow no-break space, decimal comma, typographic minus).
 
 
 def fmt_num(v, d=0, sign=False):

@@ -1,15 +1,20 @@
 """ministries.json (all 46 budgets of ЗДБ 2026), ministries/<code>.json (the published program budgets) and programs.json.
 
 Facts come from three places and are never mixed silently:
-  * the LAW (tools/mock/cache/law_bill.json, parsed from ДВ бр. 69): name, own revenue, expenditure, transfers, the policies
+  * the LAW (data/cache/law_bill.json, parsed from ДВ бр. 69): name, own revenue, expenditure, transfers, the policies
     (or functional areas) with their amounts - for EVERY budget, so a budget whose program budget is pending still shows
     its policies and total as real numbers;
   * the BILL (same cache): bill -> law differences of the headline figures (чл. 2, 3, 16, 17);
   * the PROGRAM BUDGETS (bd_prb.py): programs per year, only for budgets that pass the checks of bd_prb.
 """
-from bd_common import ART_EBK, BUDGET_INFO, EBK_ART, KIND_LABELS, nominative
-import bd_prb
-from dlib import isnum, meta, pct, rnd
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
+from budget_pipeline.build.bd_common import ART_EBK, BUDGET_INFO, EBK_ART, KIND_LABELS, nominative
+import budget_pipeline.build.bd_prb as bd_prb
+from budget_pipeline.build.dlib import isnum, meta, pct, rnd
 
 ARCHIVE = "архив към законопроекта 52-602-01-19, папка „7. Програмни формати на бюджети на ПРБ с бюджет по ДБ“"
 ARCHIVE_URL = "https://www.parliament.bg/bills/52/52-602-01-19.zip"

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Check that the query lists of site/js/routes.js are complete: the edge cache keys a drawn screen on them alone (workers/app.ts).
+"""Check that the query lists of apps/web/client/routes.js are complete: the edge cache keys a drawn screen on them alone (apps/web/workers/app.ts).
 
-    python tools/site/query_check.py
+    python apps/web/scripts/query_check.py
 
-The server draws a screen from the keys of its route only (`query` in the route table and SCREEN_QUERY, site/js/routes.js
+The server draws a screen from the keys of its route only (`query` in the route table and SCREEN_QUERY, apps/web/client/routes.js
 screenSearch), as СИГМА does (midt-bg/sigma, apps/web/app/lib/query-params.ts and its drift test). A key that a page reads but its
 route does not list still works in the browser, but the first paint from the server ignores it. This check reads every page module
 of a route and finds the keys it reads or writes:
@@ -17,13 +17,17 @@ and the keys of the sample addresses of every route. Each must be in the route's
 ctx.query) is not found here, so the lists stay the source of truth and this check is the floor under them.
 Exit 0 when every key is listed, 1 otherwise.
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 import pathlib
 import re
 import sys
 import urllib.parse
 
-ROOT = pathlib.Path(__file__).resolve().parents[2]
-JS = ROOT / 'site' / 'js'
+ROOT = pathlib.Path(__file__).resolve().parents[3]
+JS = ROOT / 'apps' / 'web' / 'client'
 
 ROUTE = re.compile(r"^\s*R\('(S\d+)', '[^']*', (?:null|'([^']*)'), '([^']+)'(.*)$", re.M)
 LIST = re.compile(r"\bquery: \[([^\]]*)\]")
@@ -57,7 +61,7 @@ def main():
     routes_src = (JS / 'routes.js').read_text(encoding='utf-8')
     m = re.search(r"export const SCREEN_QUERY = \[([^\]]*)\]", routes_src)
     if not m:
-        print('site/js/routes.js: SCREEN_QUERY not found')
+        print('apps/web/client/routes.js: SCREEN_QUERY not found')
         return 1
     every = set(STRINGS.findall(m.group(1)))
     bad, n = [], 0

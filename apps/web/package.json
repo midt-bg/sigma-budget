@@ -1,11 +1,11 @@
 {
-  "name": "sigma-budget-tools",
+  "name": "@sigma-budget/web",
   "private": true,
   "description": "The site (React Router SSR on Cloudflare Workers, docs/adr/0002-react-router-ssr.md) and the Node tools of the repository",
   "scripts": {
     "build": "react-router build",
     "typecheck": "react-router typegen && tsc",
-    "dev": "wrangler dev",
+    "dev": "wrangler dev -c build/server/wrangler.json",
     "registry:local": "wrangler d1 migrations apply DB --local"
   },
   "devDependencies": {
@@ -23,8 +23,5 @@
     "vite": "8.3.4",
     "wrangler": "4.156.0"
   },
-  "type": "module",
-  "overrides": {
-    "undici": "7.30.1"
-  }
+  "type": "module"
 }

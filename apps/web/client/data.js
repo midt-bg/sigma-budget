@@ -1,4 +1,4 @@
-// Lazy JSON loader with a cache, following mock/DATA_SPEC.md.  data.load('execution') -> site/data/execution.json
+// Lazy JSON loader with a cache, following mock/DATA_SPEC.md.  data.load('execution') -> data/release/execution.json
 //   mock/payments -> data/mock/payments.json, ministries/1300 -> data/ministries/1300.json
 // A file that does not exist (404, or an HTML fallback page) is a PENDING state, not an error:
 // pages render the „Предстои“ component for it. A network failure is a LoadError (the „Опитай пак“ state).
@@ -10,7 +10,7 @@ const OK_NAME = /^[A-Za-z0-9_-]+(\/[A-Za-z0-9_-]+)*$/;
 const cache = new Map();   // name -> Promise<json>
 const done = new Map();    // name -> json (sync access after resolve)
 
-// execution.json, contract v2 (tools/mock/exec_contract.py): money as decimal strings ("33898.456"), percentages as numbers. The pages
+// execution.json, contract v2 (pipeline/budget_pipeline/validate/execution_contract.py): money as decimal strings ("33898.456"), percentages as numbers. The pages
 // compute with numbers, so the loader turns the money into numbers once; the file as published stays on `canonical` (not enumerable),
 // for the exports, which must carry the published decimals (docs/approach-specification.md, section 6.1). Version 1 passes unchanged.
 const COLS = ['kfp', 'nat', 'eu'];
@@ -31,7 +31,7 @@ function execNumbers(text) {
   return out;
 }
 const ADAPT = { execution: execNumbers };
-/** the JSON of a data file as the pages read it: the same in the browser and on the server (workers/release-data.ts) */
+/** the JSON of a data file as the pages read it: the same in the browser and on the server (apps/web/workers/release-data.ts) */
 export const parse = (name, text) => (ADAPT[name] ? ADAPT[name](text) : JSON.parse(text));
 
 /* One release for the whole visit (docs/approach-specification.md, section 7.3; docs/adr/0002-react-router-ssr.md): a page drawn by the
@@ -84,10 +84,10 @@ export const data = {
     if (o.demo === 'error') return Promise.reject(new LoadError(name, 'demo'));
     if (o.demo === 'pending') return Promise.reject(new PendingError(name));
     const sc = serverScope();
-    if (sc) {                                                  // the server: the file of the request's release (workers/release-data.ts)
+    if (sc) {                                                  // the server: the file of the request's release (apps/web/workers/release-data.ts)
       if (!OK_NAME.test(name)) return Promise.reject(new PendingError(name));
       if (name === 'releases/current' && sc.releaseId) { const r = releaseRecord(sc.releaseId); sc.data.set(name, r); return Promise.resolve(r); }
-      // a file that could not be read (not a pending one) makes the screen incomplete: workers/app.ts then does not keep it in the cache
+      // a file that could not be read (not a pending one) makes the screen incomplete: apps/web/workers/app.ts then does not keep it in the cache
       return sc.load(name).then(j => { sc.data.set(name, j); return j; }, e => { if (!(e instanceof PendingError)) sc.degraded = true; throw e; });
     }
     let p = cache.get(name);

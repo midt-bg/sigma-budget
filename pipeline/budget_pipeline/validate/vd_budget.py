@@ -1,4 +1,4 @@
-"""LAW (from vd_law), BUDGETS and PROGRAMS groups of validate_data.py.
+"""LAW (from vd_law), BUDGETS and PROGRAMS groups of base.py.
 
 BUDGETS = ministries.json (the 46 budgets of art. 2-47 of the law, their policies, the bill-to-law differences, the tiers of the
 program budgets); PROGRAMS = the 42 ministries/<code>.json files and the search index programs.json built from them.
@@ -6,14 +6,19 @@ Every number is re-derived from other published numbers; tolerances are the roun
 thousand euro; the program tables print each of three summands rounded, so a sum may be off by 0.1).
 Pure standard library.
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import collections
 import os
 import re
 
-import vd_lib as L
-from vd_catalog import INTERNAL
-from vd_law import g_law
-from vd_lib import Check, fmt, isnum
+import budget_pipeline.validate.vd_lib as L
+from budget_pipeline.validate.vd_catalog import INTERNAL
+from budget_pipeline.validate.vd_law import g_law
+from budget_pipeline.validate.vd_lib import Check, fmt, isnum
 
 TOL = 0.06                      # one printed decimal
 TOL_SUM = 0.15                  # a sum of a few printed values

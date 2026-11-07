@@ -25,7 +25,7 @@ const code = t => html`<code>${t}</code>`;
 const sha = s => html`<code class="s35-sha" title="${s}">${short(s)}…</code>`;
 const fileName = p => String(p).split('/').pop();
 const KIND = { publish: 'публикуване', rollback: 'връщане' };
-// the status of a set as datasets/registry.yaml gives it (real, mock, pending); one the site does not know is shown as it is, not as „Предстои“
+// the status of a set as data/datasets.yaml gives it (real, mock, pending); one the site does not know is shown as it is, not as „Предстои“
 const statusCell = v => (UI_STATUS[v] ? statusPill(v) : code(v || '—'));
 
 /** a section: the h2 carries the id (the target of ?to=), so a jump lands on a heading */

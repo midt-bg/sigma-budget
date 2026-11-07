@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
-"""mock_content.py - the editorial tables behind the MOCK sets M01, M02 and M05 (pure data, no logic).
+"""example_content.py - the editorial tables behind the MOCK sets M01, M02 and M05 (pure data, no logic).
 
 Everything here is invented for the prototype and says so in the files that use it: activity names are descriptive and
-carry no ЕБК codes, the weights are priors that build_mock.py turns into exact sums with a seeded Dirichlet draw, the
+carry no ЕБК codes, the weights are priors that build_examples.py turns into exact sums with a seeded Dirichlet draw, the
 indicators and projects are generic examples. Real numbers (the function items of Табл. III-1, the real programs, the real
-capital budget) are NOT stored here; build_mock.py reads them from DATA's files.
+capital budget) are NOT stored here; build_examples.py reads them from DATA's files.
 """
 
 # --------------------------------------------------------------------------------------------------------------- M01
 # function id -> (display name for the groups note, [(group id, group name)], [(activity id, group id, name, prior weight)])
-# The prior weights only fix the rough proportions; the fixed-seed Dirichlet draw in build_mock.py adds the noise and the
+# The prior weights only fix the rough proportions; the fixed-seed Dirichlet draw in build_examples.py adds the noise and the
 # largest-remainder rounding makes the sums exact.
 M01_FUNCTIONS = [
     ("zdraveopazvane", [
@@ -72,7 +72,7 @@ M01_CONCENTRATION = 1500.0      # Dirichlet concentration: shares stay within ro
 # --------------------------------------------------------------------------------------------------------------- M02
 # Result indicators of the real programs of МФ (1000), МТСП (1500) and МОН (1700): program code ->
 # [(indicator, unit, better, target 2024, target 2026, decimals shown)].
-# The programs are real (DATA's programs.json); the indicators and their values are invented. build_mock.py draws
+# The programs are real (DATA's programs.json); the indicators and their values are invented. build_examples.py draws
 # achieved2024 = target2024 +-9% (never above 100 for percentages) with a fixed seed.
 M02_INDICATORS = [
     ("1000.01.01", [

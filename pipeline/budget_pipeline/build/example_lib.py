@@ -1,13 +1,18 @@
 # -*- coding: utf-8 -*-
-"""mock_lib.py - helpers shared by build_mock.py and validate_mock.py (pure Python 3 standard library).
+"""example_lib.py - helpers shared by build_examples.py and validate_mock.py (pure Python 3 standard library).
 
-Layout, deterministic JSON writer (same style as tools/mock/dlib.py: minified UTF-8, keys in insertion order, no NaN, no
+Layout, deterministic JSON writer (same style as pipeline/budget_pipeline/build/dlib.py: minified UTF-8, keys in insertion order, no NaN, no
 "-0.0"), the seeded random streams, exact-sum apportionment, the Bulgarian working-day calendar of the mock payments
 and the ЕИК check-digit rule (the validator uses it to prove that the invented ЕИК numbers are NOT valid ones).
 
 Nothing here reads the clock or the network. The build date is a constant (BUILD_DATE env var, default 2026-11-05; was 2026-10-09 until the 09.2026 rebuild, 2026-10-02 before the KFP 2024 + 08.2026 one) so
 that two builds are byte-identical.
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import datetime
 import json
 import math
@@ -15,16 +20,16 @@ import os
 import random
 import re
 
-HERE = os.path.dirname(os.path.abspath(__file__))    # .../tools/mock
-ROOT = os.path.dirname(os.path.dirname(HERE))        # repository root
-SITE = os.path.join(ROOT, "site")                    # the Mock application
-RAW = os.path.join(ROOT, "prototype", "data", "raw")   # raw sources, NOT in the repository: see docs/data-sources.md
+HERE = os.path.dirname(os.path.abspath(__file__))    # .../pipeline/budget_pipeline
+ROOT = str(__import__("pathlib").Path(__file__).resolve().parents[3])        # repository root
+SITE = os.path.join(ROOT, "apps", "web", "public")                    # the site
+RAW = os.path.join(ROOT, "data", "originals")   # raw sources, NOT in the repository: see docs/data-sources.md
 TMP = os.path.join(ROOT, "tmp")                      # scratch and outputs (gitignored)
-DATA_DIR = os.path.join(SITE, "data")
+DATA_DIR = os.path.join(ROOT, "data", "release")
 OUT_DIR = os.path.join(DATA_DIR, "mock")
-CACHE = os.path.join(HERE, "cache")
-PROTO_SRC = os.path.join(ROOT, "prototype", "src")
-ROUTES_JS = os.path.join(SITE, "js", "routes.js")
+CACHE = os.path.join(ROOT, "data", "cache")
+PROTO_SRC = os.path.join(ROOT, "data", "inputs")
+ROUTES_JS = os.path.join(ROOT, "apps", "web", "client", "routes.js")
 
 SEED = 20261002
 BUILD_DATE = os.environ.get("BUILD_DATE", "2026-11-05")
@@ -37,7 +42,7 @@ TRANSFERS_JSON = os.path.join(PROTO_SRC, "municipal_transfers_2026.json")
 MUNICIPAL_EXP_MLN = 6881.9          # АСБП с. 128: общо разходи на общините 2026 (млн. €)
 CAPEX_PLAN_MLN = 9360.6             # КФП 2026, капиталови разходи (млн. €), core.kpis.capex.planMln
 
-FILES = {                            # dataset id -> published file name under site/data/mock/
+FILES = {                            # dataset id -> published file name under data/release/mock/
     "M01": "activities.json",
     "M02": "indicators.json",
     "M03": "municipal-finance.json",
@@ -85,7 +90,7 @@ def write_text(path, text):
 
 
 def meta(id_, title, source, source_note, unit=None, **extra):
-    """File-level envelope of DATA_SPEC 0.1 for a MOCK set (key order as in tools/mock/dlib.py meta())."""
+    """File-level envelope of DATA_SPEC 0.1 for a MOCK set (key order as in pipeline/budget_pipeline/build/dlib.py meta())."""
     m = {"id": id_, "title": title, "status": "mock", "source": list(source), "sourceNote": source_note,
          "asOf": BUILD_DATE, "retrieved": BUILD_DATE}
     if unit:

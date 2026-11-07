@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""motion_v6.py - the motion checks of site/ (V6, 26.10: css/motion.css + js/ui/motion.js). Project venv only.
+"""motion.py - the motion checks of site/ (V6, 26.10: css/motion.css + js/ui/motion.js). Project venv only.
 
-  PLAYWRIGHT_BROWSERS_PATH=$PWD/.pw-browsers .venv/bin/python tools/mock/motion_v6.py [--frames OUTDIR]
+  PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python tests/e2e/motion.py [--frames OUTDIR]
 
   1. reduced motion: html.mo is never set, nothing is hidden or animated, the final numbers are there at once
   2. motion on: the screen enters (running animations), the numbers count and END on the exact printed value, bars end at full width, nothing is left animating
@@ -12,16 +12,24 @@
   7. SPA navigation releases observed elements from replaced pages (no reload between routes)
   --frames OUTDIR  also saves frames at 0 / 150 / 400 / 900 ms of «Начало» and «Месечни отчети»
 Exit 1 on a failed check."""
+
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
 import http.server, json, os, socketserver, sys, threading
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import expect_v6  # noqa: E402
+import expect  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
-PLAN = expect_v6.plan()                               # the plan percentages of the latest report (site/data/execution.json)
-SITE = ROOT / "site"
-os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(ROOT / ".pw-browsers"))
+PLAN = expect.plan()                               # the plan percentages of the latest report (data/release/execution.json)
+SITE = __import__("static_assets").root()
+os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(ROOT / "tmp" / "pw-browsers"))
 fails, checks = [], 0
 
 

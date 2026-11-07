@@ -1,22 +1,27 @@
 #!/usr/bin/env python3
-"""Checks sources/registry.yaml and datasets/registry.yaml against the repository (stage A of docs/approach-specification.md,
+"""Checks data/sources.yaml and data/datasets.yaml against the repository (stage A of docs/approach-specification.md,
 section 11: a clean checkout describes every input, no hidden absolute paths, every mock and pending set is marked).
 
-  python tools/data/registry.py check          errors make the exit code 1; the report also lists the datasets whose chain
+  python pipeline/budget_pipeline/validate/registry.py check          errors make the exit code 1; the report also lists the datasets whose chain
                                                 to the originals has a gap (known backlog, spec section 4), which is not an error
-  python tools/data/registry.py check --json   the same as JSON
+  python pipeline/budget_pipeline/validate/registry.py check --json   the same as JSON
 
 What it checks, without the raw files (they are not in the repository):
-  * sources: unique ids; every source key of site/data (core.sources, catalog.json) is registered; every file pinned in
-    tools/mock/prototype.sha256 belongs to exactly one source file or intermediate, and every registered file under
-    prototype/data/raw is pinned; a file elsewhere has its own sha256 or says `pinned: false`
+  * sources: unique ids; every source key of data/release (core.sources, catalog.json) is registered; every file pinned in
+    data/originals.sha256 belongs to exactly one source file or intermediate, and every registered file under
+    data/originals is pinned; a file elsewhere has its own sha256 or says `pinned: false`
   * intermediates: unique paths; the producer exists; the inputs are known
-  * datasets: every file of site/data belongs to exactly one dataset; every catalog.json dataset is registered with the same
+  * datasets: every file of data/release belongs to exactly one dataset; every catalog.json dataset is registered with the same
     id, status, screens, period and unit, and nothing else claims to be in the catalog; producers, layers and inputs exist;
     a pending set has a reason and no file; meta.status of every JSON file equals its status
   * the tracked code (tools/, site/, worker/, .github/) has no absolute path of a machine
-Needs PyYAML (requirements-dev.txt, tools/data/requirements.txt).
+Needs PyYAML (tests/requirements-dev.txt, pipeline/requirements.txt).
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import argparse
 import fnmatch
 import json
@@ -27,17 +32,17 @@ from pathlib import Path
 
 import yaml
 
-ROOT = Path(__file__).resolve().parents[2]
-SOURCES = ROOT / "sources" / "registry.yaml"
-DATASETS = ROOT / "datasets" / "registry.yaml"
-SUMS = ROOT / "tools" / "mock" / "prototype.sha256"
-DATA = ROOT / "site" / "data"
+ROOT = Path(__file__).resolve().parents[3]
+SOURCES = ROOT / "data" / "sources.yaml"
+DATASETS = ROOT / "data" / "datasets.yaml"
+SUMS = ROOT / "data" / "originals.sha256"
+DATA = ROOT / "data" / "release"
 ACCESS = {"auto", "auto-bg", "browser-only", "supplied", "reference", "generated"}
 ACQUISITION = {"fetch", "fetch-bg", "import", "supplied", "reference", "generated"}
 STATUS = {"real", "mock", "pending"}
 OTHER_INPUTS = re.compile(r"^(network|git tag mock-v\d+|every output of the release)$")
 ABSOLUTE = re.compile(r"(?<![\w.])(/Users/[^/\s'\"]+/|/home/[a-z][\w-]*/|[A-Za-z]:\\(?:Users|home)\\)")
-CODE = ("tools/", "site/", "worker/", ".github/", "wrangler.jsonc")
+CODE = ("pipeline/", "apps/", "tests/", ".github/")
 
 
 class Report:
@@ -54,7 +59,7 @@ class Report:
 
 
 def script(entry):
-    """'tools/mock/bd_fiscal.py (build_outlook)' -> 'tools/mock/bd_fiscal.py'"""
+    """'pipeline/budget_pipeline/build/bd_fiscal.py (build_outlook)' -> 'pipeline/budget_pipeline/build/bd_fiscal.py'"""
     return entry.split(" ", 1)[0] if entry else entry
 
 
@@ -97,12 +102,12 @@ def check_sources(reg, r):
     pins = pinned()
     for p in pins:
         owners = [o for pat, o, _e in patterns if fnmatch.fnmatchcase(p, pat)]
-        r.ok(len(owners) == 1, "%s is pinned in prototype.sha256 but %s" % (p, "registered nowhere" if not owners else
+        r.ok(len(owners) == 1, "%s is pinned in originals.sha256 but %s" % (p, "registered nowhere" if not owners else
                                                                            "registered %d times (%s)" % (len(owners), ", ".join(owners))))
     for pat, owner, e in patterns:
         hits = [p for p in pins if fnmatch.fnmatchcase(p, pat)]
-        if pat.startswith("prototype/"):
-            r.ok(hits or e.get("pinned") is False, "%s: %s matches no line of prototype.sha256" % (owner, pat))
+        if pat.startswith(("data/originals/", "data/inputs/", "reference/prototype/")):
+            r.ok(hits or e.get("pinned") is False, "%s: %s matches no line of originals.sha256" % (owner, pat))
         else:
             r.ok("sha256" in e or e.get("pinned") is False, "%s: %s has no sha256 and does not say `pinned: false`" % (owner, pat))
     return set(ids), inter
@@ -113,7 +118,7 @@ def catalog_index():
     out = {}
     for d in cat["datasets"]:
         files = [d["file"]] if d.get("file") else [p["file"] for p in d.get("parts", [])]
-        out[d["slug"]] = (d, ["site/" + f for f in files])
+        out[d["slug"]] = (d, ["data/release/" + f.removeprefix("data/") for f in files])
     return out
 
 
@@ -215,7 +220,7 @@ def check_paths(r):
         r.err("git ls-files failed: the absolute-path check needs a git checkout")
         return
     for rel in tracked:
-        if not rel.startswith(CODE) or rel.startswith("site/data/") or rel == "tools/data/registry.py":   # this file holds the pattern
+        if not rel.startswith(CODE) or rel.startswith("data/release/") or rel == "pipeline/budget_pipeline/validate/registry.py":   # this file holds the pattern
             continue
         try:
             text = (ROOT / rel).read_text(encoding="utf-8")
@@ -242,7 +247,7 @@ def main(argv):
         print(json.dumps({"errors": r.errors, "gaps": g}, ensure_ascii=False, indent=1))
     else:
         real = [d for d in ds if d["status"] != "pending"]
-        print("registry: %d sources, %d intermediates, %d datasets (%d pending), %d files in site/data"
+        print("registry: %d sources, %d intermediates, %d datasets (%d pending), %d files in data/release"
               % (len(sreg["sources"]), len(inter), len(ds), len(ds) - len(real), len(data_files())))
         print("\nrebuilt from the pinned inputs: %d of %d datasets" % (sum(1 for d in real if d.get("rebuild")), len(real)))
         for d in real:

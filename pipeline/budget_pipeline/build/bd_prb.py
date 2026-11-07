@@ -1,7 +1,7 @@
 """Program budgets normalised for ministries.json, ministries/<code>.json and programs.json.
 
 Every published figure is READ FROM THE PDF of the program budget by `bd_prb_pdf` (an independent word-stream reader);
-the prototype extraction (prototype/src/program_budgets_2026.json) is used only for the names of the rows and as a
+the prototype extraction (data/inputs/program_budgets_2026.json) is used only for the names of the rows and as a
 tie-break between equally consistent placements of blank cells. It is not trusted for numbers: it filed whole tables
 under the wrong year for several budgets (see bd_prb_pdf). What may be PUBLISHED is decided here:
 
@@ -18,11 +18,16 @@ Per-year completeness (`yearsComplete`) is computed here. Names are cleaned of t
 the PDF extraction; garbled names (stray single letters) are repaired from the law's policy names or fixed by hand in
 NAME_FIXES (each fix checked against the source text).
 """
+
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
+ROOT = _Path(__file__).resolve().parents[3]
 import re
 
-import bd_prb_pdf as pdf
-from bd_common import EBK_ART
-from dlib import isnum, rnd
+import budget_pipeline.build.bd_prb_pdf as pdf
+from budget_pipeline.build.bd_common import EBK_ART
+from budget_pipeline.build.dlib import isnum, rnd
 
 SRC_YEARS = ["Отчет 2023", "Отчет 2024", "Закон 2025", "Проект 2026", "Прогноза 2027", "Прогноза 2028"]
 YEARS = [2023, 2024, 2025, 2026, 2027, 2028]

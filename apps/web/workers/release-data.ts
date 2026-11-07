@@ -1,20 +1,20 @@
 // The data a server request draws its screen from (docs/adr/0002-react-router-ssr.md): the files of the current release, by release_id.
-//   registry   the pointer in D1 names the release; its manifest lists data/<name>.json with a SHA-256; the bytes are in R2 (worker/store.js)
-//   no registry or no current release (local, CI): the files of site/data that the build put in the static assets, under the release that
-//   site/data/releases/current.json names
+//   registry   the pointer in D1 names the release; its manifest lists data/<name>.json with a SHA-256; the bytes are in R2 (apps/web/workers/api/store.js)
+//   no registry or no current release (local, CI): the files of data/release that the build put in the static assets, under the release that
+//   data/release/releases/current.json names
 // A file that is not in the release is PENDING (the „Предстои“ state), as a 404 is in the browser; an unreadable one is an error.
 // Three names are not files of data/ (S35 „Данни и проверка“): release/manifest and release/validation are the manifest and the checks of
 // the release, release/journal is the registry's public journal (PENDING without a registry).
-import { current, manifestOf, readObject } from '../worker/store.js';
-import { publicApi } from '../worker/api.js';
-import { parse, PendingError, LoadError } from '../site/js/data.js';
+import { current, manifestOf, readObject } from './api/store.js';
+import { publicApi } from './api/api.js';
+import { parse, PendingError, LoadError } from '../client/data.js';
 
 export interface ReleaseData {
   /** the release the screen is drawn from */
   releaseId: string;
   /** where the browser loads more files of the same release: /data/releases/<id>/data/ or, from the static assets, /data/ */
   dataBase: string;
-  /** a data file, parsed as the pages read it (site/js/data.js parse) */
+  /** a data file, parsed as the pages read it (apps/web/client/data.js parse) */
   load(name: string): Promise<unknown>;
   /** the bytes of a file of the release (data/catalog.json), for the stable addresses /data/…; null: not from the registry */
   file(path: string): Promise<{ bytes: ArrayBuffer; mime: string; sha256: string } | null>;

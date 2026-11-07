@@ -2,7 +2,7 @@
 // for search engines and for the first paint (docs/adr/0002-react-router-ssr.md). The old hash addresses (#/prihodi/dds) still open: the router
 // reads them and rewrites the address bar to the path.
 // Hash mode: with window.__HASH_ROUTES__ set before boot, the app keeps the hash addresses of V6 (links, the address bar, history).
-// The v6 checks in tools/mock/ run in this mode (they set it with an init script), so their hash expectations stay valid.
+// The v6 checks in pipeline/budget_pipeline/build/ run in this mode (they set it with an init script), so their hash expectations stay valid.
 // Code that builds a link writes the internal form '/prihodi/dds?x=1' (or the old '#/prihodi/dds') and passes it through toHref().
 
 import { serverScope } from './env.js';
