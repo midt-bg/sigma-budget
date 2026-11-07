@@ -1,38 +1,38 @@
 # Спецификация на примерните данни — крайни форми на glossary.json, guide.json и седемте примерни файла
 
-Описва формите на `glossary.json`, `guide.json` и седемте примерни файла под `site/data/`. Допълва `docs/data-spec.md` (§3.16 речник,
+Описва формите на `glossary.json`, `guide.json` и седемте примерни файла под `data/release/`. Допълва `docs/data-spec.md` (§3.16 речник,
 §3.17 пътеводител, §3.22 примерни файлове). Където двата файла се различават, този е по-точен, защото е сверен с файловете на диска.
-`tools/mock/validate_mock.py` проверява описаното. Ако промениш поле, обнови и този файл в същия PR.
+`reference/mock/validate_mock.py` проверява описаното. Ако промениш поле, обнови и този файл в същия PR.
 
 Ключовете в JSON са на английски, а текстовете за потребителя са на български. Всеки файл е чист UTF-8 JSON (без NaN и Infinity),
-минимизиран, с ключове в постоянен ред. Нищо под `site/data/` не назовава членове на работната група, не цитира вътрешни обсъждания
+минимизиран, с ключове в постоянен ред. Нищо под `data/release/` не назовава членове на работната група, не цитира вътрешни обсъждания
 и не споменава чат платформа (`docs/data-spec.md` §0.4). Единственото авторство е „Работна група „Бюджет на светло““. Числата по-долу
 са прочетени от файловете на диска на 2026-10-02.
 
 ---------------------------------------------------------------------------------------------------------
 ## 0. Деветте файла
 
-| id | файл (под `site/data/`) | байтове | екрани | строен от |
+| id | файл (под `data/release/`) | байтове | екрани | строен от |
 |---|---|---|---|---|
-| M01 | `mock/activities.json` | 16 751 | S09 | `tools/mock/build_mock.py` |
-| M02 | `mock/indicators.json` | 39 333 | S11 | `tools/mock/build_mock.py` |
-| M03 | `mock/municipal-finance.json` | 111 655 | S20 S21 | `tools/mock/build_mock.py` |
-| M04 | `mock/payments.json` | 104 645 | S23 | `tools/mock/build_mock.py` |
-| M05 | `mock/projects.json` | 18 287 | S22 | `tools/mock/build_mock.py` |
-| M06 | `mock/measure-labels.json` | 56 969 | S12 S08 S01 | `tools/mock/build_mock.py` |
-| M07 | `mock/tax-assumptions.json` | 10 618 | S18 | `tools/mock/build_mock.py` |
-| D22 | `glossary.json` | 54 660 | S03 и изскачащите обяснения на термини | `tools/mock/build_text.py` |
-| D23 | `guide.json` | 10 196 | S02 | `tools/mock/build_text.py` |
+| M01 | `mock/activities.json` | 16 751 | S09 | `pipeline/budget_pipeline/build/build_examples.py` |
+| M02 | `mock/indicators.json` | 39 333 | S11 | `pipeline/budget_pipeline/build/build_examples.py` |
+| M03 | `mock/municipal-finance.json` | 111 655 | S20 S21 | `pipeline/budget_pipeline/build/build_examples.py` |
+| M04 | `mock/payments.json` | 104 645 | S23 | `pipeline/budget_pipeline/build/build_examples.py` |
+| M05 | `mock/projects.json` | 18 287 | S22 | `pipeline/budget_pipeline/build/build_examples.py` |
+| M06 | `mock/measure-labels.json` | 56 969 | S12 S08 S01 | `pipeline/budget_pipeline/build/build_examples.py` |
+| M07 | `mock/tax-assumptions.json` | 10 618 | S18 | `pipeline/budget_pipeline/build/build_examples.py` |
+| D22 | `glossary.json` | 54 660 | S03 и изскачащите обяснения на термини | `pipeline/budget_pipeline/build/build_text.py` |
+| D23 | `guide.json` | 10 196 | S02 | `pipeline/budget_pipeline/build/build_text.py` |
 
 Всички примерни файлове са ленив и остават под 150 KB суров размер. Двата текстови файла са реални (състояние `real`, източник `wg`).
 
 ### 0.1 Сглобяване, проверка, изходни кодове
 ```
-tools/mock/run_all.sh (DATA)      първо реалните файлове (build_mock.py чете ministries, programs, measures, execution,
+pipeline/budget_pipeline/build/run_all.sh (DATA)      първо реалните файлове (build_examples.py чете ministries, programs, measures, execution,
                                   expenditure, core и municipalities.json)
-python3 tools/mock/build_text.py       glossary.json + guide.json        [--check]
-python3 tools/mock/build_mock.py       site/data/mock/*.json             [--check] [--only M03,M04]
-python3 tools/mock/validate_mock.py    всички проверки по-долу           [--only M03,TEXT] [-v] [--no-rebuild]
+python3 pipeline/budget_pipeline/build/build_text.py       glossary.json + guide.json        [--check]
+python3 pipeline/budget_pipeline/build/build_examples.py       data/release/mock/*.json             [--check] [--only M03,M04]
+python3 reference/mock/validate_mock.py    всички проверки по-долу           [--only M03,TEXT] [-v] [--no-rebuild]
 ```
 Чист Python 3 със стандартната библиотека, детерминиран, независим от работната папка. Семе **20261002** (`meta.seed`); датата на сглобяване на
 `asOf`/`retrieved` е константата 2026-10-02 (променливата `BUILD_DATE` я заменя); без часовник, без мрежа. Две пускания дават
@@ -40,7 +40,7 @@ python3 tools/mock/validate_mock.py    всички проверки по-дол
 диска и не пише нищо. Изходни кодове: `build_*.py` 0 ок / 1 проблем или (с `--check`) разлика / 2 непознат id;
 `validate_mock.py` 0 ок / 1 нарушения / 2 грешна употреба. Валидаторът никога не импортира сглобяващите скриптове: той извежда наново всяко ограничение
 от реалните файлове (`law_bill.json`, `execution.json`, `expenditure.json`, `measures.json`, извлеченото от мотивите,
-таблицата с трансферите, кеша на GISCO), проверява, че прототипът е непроменен (`tools/mock/prototype.sha256`, 111 файла) и сглобява наново.
+таблицата с трансферите, кеша на GISCO), проверява, че прототипът е непроменен (`data/originals.sha256`, 111 файла) и сглобява наново.
 Групите са `M01 … M07, TEXT, PROTO, BUILD`.
 
 ---------------------------------------------------------------------------------------------------------
@@ -240,9 +240,9 @@ python3 tools/mock/validate_mock.py    всички проверки по-дол
 ### 7.3 D22 `glossary.json` (S03 и изскачащите термини) · D23 `guide.json` (S02) — реален текст, не примерен
 И двата са собственият текст на работната група, пренесен в JSON: `status:"real"`, `source:["wg"]`, `mock:false`, `asOf:"2026-10-01"`
 (датата на изходните текстове), `retrieved:"2026-10-02"`, без `label`, без `why`. В тях няма бюджетна цифра (числата в
-примерите от речника са условни, а `intro.disclaimer` го казва). `tools/mock/build_text.py` копира всяка дума програмно
-от по-ранните текстове на групата (`prototype/src/glossary.json`; текстът на пътеводителя) и променя само
-формата; валидаторът (група `TEXT`) проверява номерацията, категориите, връзките между термини, всяка връзка спрямо `site/js/routes.js`,
+примерите от речника са условни, а `intro.disclaimer` го казва). `pipeline/budget_pipeline/build/build_text.py` копира всяка дума програмно
+от по-ранните текстове на групата (`data/inputs/glossary.json`; текстът на пътеводителя) и променя само
+формата; валидаторът (група `TEXT`) проверява номерацията, категориите, връзките между термини, всяка връзка спрямо `apps/web/client/routes.js`,
 авторството и идентичността при наново сглобяване. Авторството е общо: „Работна група „Бюджет на светло““.
 
 ```jsonc
@@ -317,7 +317,7 @@ python3 tools/mock/validate_mock.py    всички проверки по-дол
    `municipalities.json` на DATA (D19) го повтаря, а M03 взема населението от D19 нарочно, за да съвпадат двата общински
    екрана с екрана за реалните общини. Докато DATA не поправи D19 (списъкът с нужди, [за DATA]), M03 наследява
    грешката точно за тези две (стойностите им на жител, собствените приходи и дългът са моделирани върху грешното население и
-   могат да попаднат на грешно място в класация). След поправката пусни `python3 tools/mock/build_mock.py --only M03`; валидаторът пада
+   могат да попаднат на грешно място в класация). След поправката пусни `python3 pipeline/budget_pipeline/build/build_examples.py --only M03`; валидаторът пада
    при остарял M03, така че не може да се забрави.
 2. **Собствените приходи са остатък (M03).** Σ разходи 6 881,9 млн. € (АСБП) − Σ трансфери 4 928,0 (ЗДБ чл. 51) = 1 953,9
    млн. € собствени приходи, докато самият АСБП дава 2 396,3 (разлика 442,4). M03 пази разходите и трансферите реални, така че
@@ -328,9 +328,9 @@ python3 tools/mock/validate_mock.py    всички проверки по-дол
    на диска са авторитетни: `core.json` и `ministries.json` имат 46 бюджета, които ползва M04.)
 4. **Източник на населението.** GISCO LAU 2024 (където `docs/data-spec.md` още казва `POP_2021`, файлът на диска е авторитетен;
    `meta.populationYear` на M03 е 2024). Шест имена на общини са съпоставени на ръка
-   (Добричка, Бобовдол, Марица, Родопи, Тунджа, Столична) и двете „Бяла“ по област; съпоставката е част от `build_mock.py`.
+   (Добричка, Бобовдол, Марица, Родопи, Тунджа, Столична) и двете „Бяла“ по област; съпоставката е част от `build_examples.py`.
 5. **Август в M04** (до 2026-10-09 модел: горната граница следваше юли по отношението август към юли от 2025). Откакто отчетът за август
-   е добавен, `months[7].natExpKind` е `"real"` като месеци 1–7; `build_mock.py` се връща към модела (и белега
+   е добавен, `months[7].natExpKind` е `"real"` като месеци 1–7; `build_examples.py` се връща към модела (и белега
    до тази лента) само когато `execution.json` има по-малко от осем месеца.
 6. **Получатели и видове в M04.** ЕИК са 999xxxxxx с невалидна контролна цифра, а имената започват с „Примерен…“, така че нито един
    не може да е истинска фирма. `byType[].code` са идентификатори на редове от `execution.json`, не ЕБК кодове. В M04 няма реален ред от СЕБРА: реалното

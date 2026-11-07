@@ -1,0 +1,155 @@
+# Историческо съответствие на пътищата
+
+Таблицата описва преместванията от началния commit `8f65861`. Старите пътища са исторически справки. За действащите правила се използва ADR 0003.
+
+| Преди | Сега |
+|---|---|
+| `app/` | `apps/web/app/` |
+| `workers/` | `apps/web/workers/` |
+| `worker/` | `apps/web/workers/api/` |
+| `migrations/` | `apps/web/migrations/` |
+| `site/js/` | `apps/web/client/` |
+| `site/data/` | `data/release/` |
+| `site/ (статични файлове)` | `apps/web/public/` |
+| `prototype/data/raw/` | `data/originals/` |
+| `prototype/src/` | `data/inputs/` |
+| `prototype/site/` | `reference/prototype/site/` |
+| `sources/registry.yaml` | `data/sources.yaml` |
+| `datasets/registry.yaml` | `data/datasets.yaml` |
+| `requirements-dev.*` | `tests/requirements-dev.*` |
+| `package.json и web конфигурация` | `apps/web/; нов коренен npm workspace` |
+| `package-lock.json` | `коренният lockfile, запазени версии` |
+| `budget` | `budget (обновен вход към Python пакета)` |
+| `docs/, .github/, .claude/` | `същите директории, обновени пътища` |
+
+## Историческо съответствие на инструментите
+
+| Преди | Сега |
+|---|---|
+| `tools/budget.py` | `pipeline/budget_pipeline/cli.py` |
+| `tools/compat_check.py` | `tests/release/compat_check.py` |
+| `tools/data/Dockerfile` | `pipeline/Dockerfile` |
+| `tools/data/probe_sources.py` | `pipeline/budget_pipeline/sources/probe_sources.py` |
+| `tools/data/raw_sources.py` | `pipeline/budget_pipeline/sources/raw_sources.py` |
+| `tools/data/registry.py` | `pipeline/budget_pipeline/validate/registry.py` |
+| `tools/data/requirements.lock` | `pipeline/requirements.lock` |
+| `tools/data/requirements.txt` | `pipeline/requirements.txt` |
+| `tools/environments.json` | `pipeline/environments.json` |
+| `tools/mock/accept_v5.py` | `reference/mock/accept_v5.py` |
+| `tools/mock/accept_v6.py` | `tests/e2e/accept.py` |
+| `tools/mock/apply_v6_glue.py` | `pipeline/budget_pipeline/build/apply_sources.py` |
+| `tools/mock/asbp.py` | `pipeline/budget_pipeline/build/asbp.py` |
+| `tools/mock/bd_budgets.py` | `pipeline/budget_pipeline/build/bd_budgets.py` |
+| `tools/mock/bd_common.py` | `pipeline/budget_pipeline/build/bd_common.py` |
+| `tools/mock/bd_components.py` | `pipeline/budget_pipeline/build/bd_components.py` |
+| `tools/mock/bd_core.py` | `pipeline/budget_pipeline/build/bd_core.py` |
+| `tools/mock/bd_ctx.py` | `pipeline/budget_pipeline/build/bd_ctx.py` |
+| `tools/mock/bd_debt.py` | `pipeline/budget_pipeline/build/bd_debt.py` |
+| `tools/mock/bd_debt_pdf.py` | `pipeline/budget_pipeline/build/bd_debt_pdf.py` |
+| `tools/mock/bd_feed.py` | `pipeline/budget_pipeline/build/bd_feed.py` |
+| `tools/mock/bd_fiscal.py` | `pipeline/budget_pipeline/build/bd_fiscal.py` |
+| `tools/mock/bd_law.py` | `pipeline/budget_pipeline/build/bd_law.py` |
+| `tools/mock/bd_measures.py` | `pipeline/budget_pipeline/build/bd_measures.py` |
+| `tools/mock/bd_municipal.py` | `pipeline/budget_pipeline/build/bd_municipal.py` |
+| `tools/mock/bd_prb.py` | `pipeline/budget_pipeline/build/bd_prb.py` |
+| `tools/mock/bd_prb_pdf.py` | `pipeline/budget_pipeline/build/bd_prb_pdf.py` |
+| `tools/mock/bd_rates.py` | `pipeline/budget_pipeline/build/bd_rates.py` |
+| `tools/mock/bd_sebra.py` | `pipeline/budget_pipeline/build/bd_sebra.py` |
+| `tools/mock/build_catalog.py` | `pipeline/budget_pipeline/build/build_catalog.py` |
+| `tools/mock/build_data.py` | `pipeline/budget_pipeline/build/build_data.py` |
+| `tools/mock/build_dbp2027_site.py` | `pipeline/budget_pipeline/build/build_dbp2027_site.py` |
+| `tools/mock/build_mock.py` | `pipeline/budget_pipeline/build/build_examples.py` |
+| `tools/mock/build_search.py` | `pipeline/budget_pipeline/build/build_search.py` |
+| `tools/mock/build_text.py` | `pipeline/budget_pipeline/build/build_text.py` |
+| `tools/mock/calc_check_v5.py` | `reference/mock/calc_check_v5.py` |
+| `tools/mock/calc_check_v6.py` | `tests/e2e/calc_check.py` |
+| `tools/mock/catalog_defs.py` | `pipeline/budget_pipeline/build/catalog_defs.py` |
+| `tools/mock/catalog_refresh_v5.py` | `pipeline/budget_pipeline/build/catalog_refresh.py` |
+| `tools/mock/check_mock.py` | `reference/mock/check_mock.py` |
+| `tools/mock/check_mock_v2.py` | `reference/mock/check_mock_v2.py` |
+| `tools/mock/check_mock_v3.py` | `reference/mock/check_mock_v3.py` |
+| `tools/mock/check_mock_v4.py` | `reference/mock/check_mock_v4.py` |
+| `tools/mock/check_mock_v5.py` | `reference/mock/check_mock_v5.py` |
+| `tools/mock/check_mock_v6.py` | `tests/e2e/screens.py` |
+| `tools/mock/contrast_v2.py` | `reference/mock/contrast_v2.py` |
+| `tools/mock/contrast_v3.py` | `reference/mock/contrast_v3.py` |
+| `tools/mock/diff_json_v5.py` | `reference/mock/diff_json_v5.py` |
+| `tools/mock/diff_routes_v5_v6.py` | `reference/mock/diff_routes_v5_v6.py` |
+| `tools/mock/dlib.py` | `pipeline/budget_pipeline/build/dlib.py` |
+| `tools/mock/exec_contract.py` | `pipeline/budget_pipeline/validate/execution_contract.py` |
+| `tools/mock/expect_v6.py` | `tests/e2e/expect.py` |
+| `tools/mock/extract_bill.py` | `pipeline/budget_pipeline/extract/extract_bill.py` |
+| `tools/mock/extract_dbp2027.py` | `pipeline/budget_pipeline/extract/extract_dbp2027.py` |
+| `tools/mock/extract_kfp_full.py` | `pipeline/budget_pipeline/extract/extract_kfp_full.py` |
+| `tools/mock/fetch_gisco.py` | `pipeline/budget_pipeline/sources/fetch_gisco.py` |
+| `tools/mock/fetch_sebra.py` | `pipeline/budget_pipeline/sources/fetch_sebra.py` |
+| `tools/mock/guide_v5.py` | `pipeline/budget_pipeline/build/guide_base.py` |
+| `tools/mock/guide_v6.py` | `pipeline/budget_pipeline/build/guide.py` |
+| `tools/mock/gva_sectors_v5.py` | `pipeline/budget_pipeline/build/gva_sectors.py` |
+| `tools/mock/hrefs_v5.py` | `reference/mock/hrefs_v5.py` |
+| `tools/mock/hrefs_v6.py` | `tests/e2e/hrefs.py` |
+| `tools/mock/lawparse.py` | `pipeline/budget_pipeline/extract/lawparse.py` |
+| `tools/mock/mock_content.py` | `pipeline/budget_pipeline/build/example_content.py` |
+| `tools/mock/mock_labels.py` | `pipeline/budget_pipeline/build/example_labels.py` |
+| `tools/mock/mock_lib.py` | `pipeline/budget_pipeline/build/example_lib.py` |
+| `tools/mock/motion_v6.py` | `tests/e2e/motion.py` |
+| `tools/mock/overlap_v6.py` | `tests/e2e/overlap.py` |
+| `tools/mock/perf_v6.py` | `tests/e2e/perf.py` |
+| `tools/mock/png_probe_v5.py` | `reference/mock/png_probe_v5.py` |
+| `tools/mock/png_probe_v6.py` | `tests/e2e/png_probe.py` |
+| `tools/mock/prototype.sha256` | `data/originals.sha256` |
+| `tools/mock/prototype_sums.py` | `pipeline/budget_pipeline/build/originals_sums.py` |
+| `tools/mock/rebuild_v6.py` | `pipeline/budget_pipeline/build/rebuild.py` |
+| `tools/mock/redirects_v5.py` | `reference/mock/redirects_v5.py` |
+| `tools/mock/redirects_v6.py` | `tests/e2e/redirects.py` |
+| `tools/mock/run_all.sh` | `pipeline/budget_pipeline/build/run_all.sh` |
+| `tools/mock/share_check_v5.py` | `reference/mock/share_check_v5.py` |
+| `tools/mock/share_check_v6.py` | `tests/e2e/share_check.py` |
+| `tools/mock/shot_v5.py` | `reference/mock/shot_v5.py` |
+| `tools/mock/shot_v6.py` | `tests/e2e/shot.py` |
+| `tools/mock/shots_v2.py` | `reference/mock/shots_v2.py` |
+| `tools/mock/sweep_v5.py` | `reference/mock/sweep_v5.py` |
+| `tools/mock/sweep_v6.py` | `tests/e2e/sweep.py` |
+| `tools/mock/v5_data_active.py` | `pipeline/budget_pipeline/build/active_data.py` |
+| `tools/mock/v5_wording.py` | `pipeline/budget_pipeline/build/wording.py` |
+| `tools/mock/validate_data.py` | `pipeline/budget_pipeline/validate/base.py` |
+| `tools/mock/validate_data_v5.py` | `reference/mock/validate_data_v5.py` |
+| `tools/mock/validate_data_v6.py` | `pipeline/budget_pipeline/validate/datasets.py` |
+| `tools/mock/validate_mock.py` | `reference/mock/validate_mock.py` |
+| `tools/mock/vd_budget.py` | `pipeline/budget_pipeline/validate/vd_budget.py` |
+| `tools/mock/vd_catalog.py` | `pipeline/budget_pipeline/validate/vd_catalog.py` |
+| `tools/mock/vd_comp.py` | `pipeline/budget_pipeline/validate/vd_comp.py` |
+| `tools/mock/vd_contract.py` | `pipeline/budget_pipeline/validate/vd_contract.py` |
+| `tools/mock/vd_core.py` | `pipeline/budget_pipeline/validate/vd_core.py` |
+| `tools/mock/vd_debt.py` | `pipeline/budget_pipeline/validate/vd_debt.py` |
+| `tools/mock/vd_fiscal.py` | `pipeline/budget_pipeline/validate/vd_fiscal.py` |
+| `tools/mock/vd_idx.py` | `pipeline/budget_pipeline/validate/vd_idx.py` |
+| `tools/mock/vd_kfp.py` | `pipeline/budget_pipeline/validate/vd_kfp.py` |
+| `tools/mock/vd_law.py` | `pipeline/budget_pipeline/validate/vd_law.py` |
+| `tools/mock/vd_lib.py` | `pipeline/budget_pipeline/validate/vd_lib.py` |
+| `tools/mock/vd_local.py` | `pipeline/budget_pipeline/validate/vd_local.py` |
+| `tools/mock/vd_other.py` | `pipeline/budget_pipeline/validate/vd_other.py` |
+| `tools/mock/vd_run.py` | `pipeline/budget_pipeline/validate/vd_run.py` |
+| `tools/mock/verify_dbp2027_numbers.py` | `pipeline/budget_pipeline/build/verify_dbp2027_numbers.py` |
+| `tools/prototype/build_2025_json.py` | `reference/prototype/tools/build_2025_json.py` |
+| `tools/prototype/build_src.py` | `reference/prototype/tools/build_src.py` |
+| `tools/prototype/check_render.py` | `reference/prototype/tools/check_render.py` |
+| `tools/prototype/extract_2025.py` | `reference/prototype/tools/extract_2025.py` |
+| `tools/prototype/extract_asbp_pages.py` | `pipeline/budget_pipeline/extract/extract_asbp_pages.py` |
+| `tools/prototype/extract_asbp_tables.py` | `pipeline/budget_pipeline/extract/extract_asbp_tables.py` |
+| `tools/prototype/extract_dv_laws.py` | `pipeline/budget_pipeline/extract/extract_dv_laws.py` |
+| `tools/prototype/extract_glossary.py` | `pipeline/budget_pipeline/extract/extract_glossary.py` |
+| `tools/prototype/extract_home_kpis.py` | `pipeline/budget_pipeline/extract/extract_home_kpis.py` |
+| `tools/prototype/extract_program_budgets.py` | `pipeline/budget_pipeline/extract/extract_program_budgets.py` |
+| `tools/prototype/fetch_sources.py` | `pipeline/budget_pipeline/sources/fetch_sources.py` |
+| `tools/prototype/gen_inline.py` | `reference/prototype/tools/gen_inline.py` |
+| `tools/prototype/gen_literals.py` | `reference/prototype/tools/gen_literals.py` |
+| `tools/release_check.py` | `tests/release/release_check.py` |
+| `tools/restore_drill.py` | `tests/release/restore_drill.py` |
+| `tools/site/build.py` | `apps/web/scripts/build.py` |
+| `tools/site/make_images.py` | `apps/web/scripts/make_images.py` |
+| `tools/site/query_check.py` | `apps/web/scripts/query_check.py` |
+| `tools/site/serve.py` | `apps/web/scripts/serve.py` |
+| `tools/site/ssr_parity.py` | `apps/web/scripts/ssr_parity.py` |
+
+Кешът от `tools/mock/cache/` и входовете от `tmp/research/` се намират съответно в `data/cache/` и `data/cache/research/`. Те са извън git. При този checkout няма локални файлове в старите кешове за преместване.

@@ -11,7 +11,7 @@
 | Оператор | Имейлът ти е в `OPERATORS`, таен ключ на Worker-а на средата (`npx wrangler secret put OPERATORS --env <среда>`). Имейлите не са в хранилището. |
 | Вход | `cloudflared access login https://<адрес на средата>/admin/operations`. Отваря браузъра; влизаш с метода на Zero Trust организацията (One-time PIN или Cloudflare). Командата `budget` после сама взима токена. |
 | Автоматизация | Access service token: Client ID в `SERVICE_TOKENS` на средата, двойката в `CF_ACCESS_CLIENT_ID` и `CF_ACCESS_CLIENT_SECRET`. |
-| Средите | `tools/environments.json`, а своите (собствен акаунт) в `tools/environments.local.json`, който не е в git. Средата се казва винаги изрично. |
+| Средите | `pipeline/environments.json`, а своите (собствен акаунт) в `pipeline/environments.local.json`, който не е в git. Средата се казва винаги изрично. |
 
 `403 „not an operator of this environment“` значи, че Access те е пуснал, но имейлът в токена не е в `OPERATORS`. При вход с Cloudflare
 това е имейлът на Cloudflare акаунта ти, който може да не е служебният. `503` значи, че средата няма `ACCESS_ISSUER` и `ACCESS_AUD`.
@@ -64,7 +64,7 @@
 |---|---|---|
 | `storage incident` в отговор, ред в таблицата `incidents` | Обект в R2 не се хешира до ключа си | Не публикувай. Качи изданието отново: обектът се проверява и подменя само ако качването съвпада. Опиши инцидента. |
 | Сайтът показва „Предстои“ за набор, който е в изданието | Файлът липсва в манифеста или R2 не го дава | `GET /api/releases/<id>/datasets/<набор>`; сравни с манифеста. |
-| Страниците не се изобразяват (500) | Кодът не чете данните | `python tools/compat_check.py --env-url <адрес>`; върни кода или изданието. |
+| Страниците не се изобразяват (500) | Кодът не чете данните | `python tests/release/compat_check.py --env-url <адрес>`; върни кода или изданието. |
 
 ## 6. Резервни копия и възстановяване
 
@@ -81,16 +81,16 @@ npx wrangler d1 time-travel restore DB --env <среда> --timestamp <врем�
 ./budget status --environment <среда>                                      # указател, ревизия, журнал
 ```
 
-От копие: нова база (`npx wrangler d1 create …`), id-то ѝ в `env.<среда>.d1_databases` на `wrangler.jsonc`, после
+От копие: нова база (`npx wrangler d1 create …`), id-то ѝ в `env.<среда>.d1_databases` на `apps/web/wrangler.jsonc`, после
 `npx wrangler d1 execute DB --env <среда> --remote --file registry-….sql`.
 После провери изданието: `./budget reproduce --current <адрес>`.
 
-**Тренировка.** `python tools/restore_drill.py` минава целия път на тестова среда (локален Worker, D1 и R2): копие, промени след него,
+**Тренировка.** `python tests/release/restore_drill.py` минава целия път на тестова среда (локален Worker, D1 и R2): копие, промени след него,
 загуба на регистъра, възстановяване, проверка на указателя, ревизията, журнала и SHA-256 на всеки файл, ново публикуване и връщане
 към по-ранно издание (сценарий 10 на спецификацията, раздел 11).
 
 ## 7. Код и данни са отделни
 
 Deploy на кода (`npx wrangler deploy`) не сменя изданието, а публикуването на данни не сменя кода. Преди deploy на код в среда CI проверява,
-че новият код чете текущото ѝ издание (`tools/compat_check.py --env-url`). Production се качва само по
+че новият код чете текущото ѝ издание (`tests/release/compat_check.py --env-url`). Production се качва само по
 [процедурата](production-procedure.md), не от CI.
