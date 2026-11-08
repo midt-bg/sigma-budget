@@ -1,0 +1,115 @@
+// @vitest-environment jsdom
+import { act } from 'react';
+import { hydrateRoot } from 'react-dom/client';
+import { renderToString } from 'react-dom/server';
+import { expect, it, vi } from 'vitest';
+import { MigratedScreen } from '../migration/registry';
+import { textModel } from '../lib/screens/text';
+import type { MetadataModel } from '../lib/screens/metadata-types';
+import inputs from './__fixtures__/metadata-inputs.json';
+import manifest from './__fixtures__/metadata-manifest.json';
+import { headers, handle } from './proverka';
+vi.mock('../../client/loc.js', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  toHref: (s: string) => s,
+}));
+Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+const release = {
+  id: manifest.releaseId,
+  dataBase: '/data/',
+  origin: manifest.origin,
+  sigmaUrl: '',
+  feedbackEmail: '',
+};
+const docs: Record<string, unknown> = inputs;
+const load = async <T,>(name: string): Promise<T> => {
+  if (!(name in docs)) throw Error(name);
+  return docs[name] as T;
+};
+for (const screen of ['S25', 'S35'] as const)
+  it(`${screen} adopts server nodes and owns its controls`, async () => {
+    const model = await textModel(screen, {}, {}, { release, load });
+    const go = vi.fn(),
+      announce = vi.fn();
+    const errors: unknown[] = [];
+    const tree = <MigratedScreen model={model} navigation={{ go, announce }} />;
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    container.innerHTML = renderToString(tree);
+    const heading = container.querySelector('h1'),
+      section = container.querySelector('section');
+    let root: ReturnType<typeof hydrateRoot>;
+    await act(async () => {
+      root = hydrateRoot(container, tree, { onRecoverableError: (e) => errors.push(e) });
+    });
+    expect(container.querySelector('h1')).toBe(heading);
+    expect(container.querySelector('section')).toBe(section);
+    expect(errors).toEqual([]);
+    if (screen === 'S25') {
+      const select = container.querySelector('select')!;
+      await act(async () => {
+        select.value = 'execution';
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      expect(go).toHaveBeenCalledWith('/api?set=execution');
+    }
+    const details = container.querySelector('details')!;
+    details.open = true;
+    await act(async () => root!.render(tree));
+    expect(details.open).toBe(true);
+    await act(async () => root!.unmount());
+    container.remove();
+  });
+it('journal is live metadata with a short route TTL', () => {
+  expect(handle.cache.ttl).toBe(60);
+  expect(headers()['Cache-Control']).toContain('s-maxage=60');
+});
+it('registry outage differs from an environment without a registry', async () => {
+  const local = (await textModel('S35', {}, {}, { release, load })) as MetadataModel;
+  expect(local.registry).toBe(false);
+  expect(local.failed).not.toContain('release/journal');
+  const registry = (await textModel(
+    'S35',
+    {},
+    {},
+    { release: { ...release, dataBase: `/data/releases/${release.id}/data/` }, load },
+  )) as MetadataModel;
+  expect(registry.registry).toBe(true);
+  expect(registry.failed).toContain('release/journal');
+  expect(
+    renderToString(<MigratedScreen model={registry} navigation={{ go() {}, announce() {} }} />),
+  ).toContain('Журналът на публикуванията не може да се зареди');
+});
+it('an aborted catalogue request cannot render stale data', async () => {
+  await expect(
+    textModel(
+      'S25',
+      {},
+      {},
+      {
+        release,
+        load: async () => {
+          throw new DOMException('cancelled', 'AbortError');
+        },
+      },
+    ),
+  ).rejects.toMatchObject({ name: 'AbortError' });
+});
+it('missing required catalogue is an error; missing file metadata preserves the catalogue', async () => {
+  const absent = await textModel(
+    'S25',
+    {},
+    {},
+    {
+      release,
+      load: async <T,>(name: string): Promise<T> => {
+        if (name === 'catalog') throw Error('offline');
+        return load<T>(name);
+      },
+    },
+  );
+  expect(absent.view).toBe('error');
+  const optional = await textModel('S25', {}, { set: 'revenue' }, { release, load });
+  expect(optional.view).toBe('ready');
+  expect((optional as MetadataModel).fileMeta?.state).toBe('error');
+});

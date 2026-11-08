@@ -220,7 +220,7 @@ async function render(kind) {
   try {
     const seedNode = pre ? document.getElementById('react-screen-seed') : null;
     const seed = seedNode ? JSON.parse(seedNode.textContent) : null;
-    if ((route.id === 'S26' || route.id === 'S30')) {
+    if ((['S26','S30','S25','S35'].includes(route.id))) {
       clearTimeout(timer);
       reactBridge = await import(/* @vite-ignore */ bridgeModule);
       const model = seed?.screen === route.id ? seed : await reactBridge.loadModel(route.id,params,query,signal);
