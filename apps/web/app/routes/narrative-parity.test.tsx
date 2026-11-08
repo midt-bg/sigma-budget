@@ -45,12 +45,13 @@ export function semantics(html: string) {
     x.getAttribute('data-query'),
     x.getAttribute('download'),
   ]);
+  const bodyLayout = [...article.querySelectorAll('.page-body > *')].map((x) => [x.tagName, x.id]);
   article.querySelectorAll('.sr-only,[aria-hidden="true"],script,style').forEach((n) => n.remove());
   const w = document.createTreeWalker(article, 4);
   let n;
   const parts = [];
   while ((n = w.nextNode())) if (n.textContent?.trim()) parts.push(n.textContent);
-  return { headings, links, controls, text: norm(parts.join(' ')) };
+  return { headings, links, controls, bodyLayout, text: norm(parts.join(' ')) };
 }
 afterEach(() => provideScope(() => null));
 for (const c of manifest.cases) {

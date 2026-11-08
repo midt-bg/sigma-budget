@@ -86,9 +86,12 @@ export function NarrativeContent({
       : undefined;
   return (
     <NarrativeNavigation value={navigation}>
-      <PageFrame model={model} lede={parts?.lede} context={context}>
-        <div
-          onClick={(e) => {
+      <PageFrame
+        model={model}
+        lede={parts?.lede}
+        context={context}
+        bodyEvents={{
+          onClick: (e) => {
             const target = e.target as Element;
             const query = target.closest<HTMLElement>('[data-query]');
             if (query) {
@@ -125,21 +128,21 @@ export function NarrativeContent({
               const input = document.getElementById('s16-rss-url') as HTMLInputElement;
               copyOrShow(input.value, 'Адресът е копиран.', 'Адрес на RSS файла', button);
             }
-          }}
-          onChange={(e) => {
+          },
+          onChange: (e) => {
             const t = e.target;
             if (t instanceof HTMLInputElement && t.name === 's14-unit' && t.checked) {
               e.stopPropagation();
               store.set('unit', t.value);
             }
-          }}
-          onFocus={(e) => {
+          },
+          onFocus: (e) => {
             if (e.target instanceof HTMLInputElement && e.target.id === 's16-rss-url')
               e.target.select();
-          }}
-        >
-          {compactText(fixFiles(body, model.release.dataBase))}
-        </div>
+          },
+        }}
+      >
+        {compactText(fixFiles(body, model.release.dataBase))}
       </PageFrame>
     </NarrativeNavigation>
   );

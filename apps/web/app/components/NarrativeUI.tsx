@@ -6,6 +6,7 @@ import { statusPill } from './Status';
 import { date, href, num } from '../lib/legacy';
 import { monthName, NBSP, moneyParts, pct } from '../../client/format.js';
 import { SCOPES } from '../../client/store.js';
+import { toHref } from '../../client/loc.js';
 import * as share from '../../client/share.js';
 import { openSource } from '../../client/ui/source.js';
 import { compactText } from './ScreenTree';
@@ -264,7 +265,7 @@ export function timeline(o: {
             ) : null}
             <span className="tl-title">
               {it.href ? (
-                <a href={it.href.startsWith('#/') ? it.href.slice(1) : it.href}>{it.title}</a>
+                <a href={it.href.startsWith('#/') ? toHref(it.href) : it.href}>{it.title}</a>
               ) : (
                 it.title
               )}

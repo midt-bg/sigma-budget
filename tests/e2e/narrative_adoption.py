@@ -31,6 +31,12 @@ def main():
             page.wait_for_selector('article[data-ready="1"]')
             check(path + ': server DOM adopted', page.evaluate("window.firstArticle === document.querySelector('article.page') && window.firstHeading === document.querySelector('article h1')"))
             check(path + ': no browser or React errors', not errors)
+            for width, margin in [(1280, 48), (400, 32)]:
+                page.set_viewport_size({'width': width, 'height': 900})
+                margins = page.locator('.page-body > * + *').evaluate_all(
+                    'nodes => nodes.map(node => parseFloat(getComputedStyle(node).marginTop))')
+                check(f'{path}: section spacing at {width}px',
+                      bool(margins) and all(value == margin for value in margins))
             page.close()
         page = browser.new_page()
         page.goto(base + '/novo')

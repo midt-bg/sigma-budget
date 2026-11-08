@@ -14,7 +14,7 @@ import manifest from './__fixtures__/narrative-manifest.json';
 import { rejectReactKeyWarnings } from './metadata-test-warnings';
 vi.mock('../../client/loc.js', async (original) => ({
   ...(await original<object>()),
-  toHref: (s: string) => s,
+  toHref: (s: string) => s.replace(/^#(?=\/)/, ''),
 }));
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 const release = {

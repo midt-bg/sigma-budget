@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type HTMLAttributes, type ReactNode } from 'react';
 import type { TextScreenModel } from '../lib/screen-state';
 import { byId, GROUPS, href } from '../lib/legacy';
 import { breadcrumbs } from './Breadcrumbs';
@@ -8,11 +8,13 @@ export function PageFrame({
   children,
   lede,
   context,
+  bodyEvents,
 }: {
   model: TextScreenModel;
   children: ReactNode;
   lede?: ReactNode;
   context?: ReactNode;
+  bodyEvents?: Pick<HTMLAttributes<HTMLDivElement>, 'onClick' | 'onChange' | 'onFocus'>;
 }) {
   const [ready, setReady] = useState(false);
   useEffect(() => setReady(true), []);
@@ -54,7 +56,7 @@ export function PageFrame({
       </h1>
       <p className="lede">{lede ?? r.desc}</p>
       {context}
-      <div className="page-body" data-fk="body">
+      <div className="page-body" data-fk="body" {...bodyEvents}>
         {children}
       </div>
       {first
