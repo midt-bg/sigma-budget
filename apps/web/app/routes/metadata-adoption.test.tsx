@@ -54,6 +54,12 @@ for (const screen of ['S25', 'S35'] as const)
       });
       expect(setQuery).toHaveBeenCalledWith({ set: 'execution' });
       expect(go).not.toHaveBeenCalled();
+    } else {
+      const button = container.querySelector('.png-btn')!;
+      expect(button.getAttribute('aria-label')).toContain(
+        'Изтегли изображение: Наборите в изданието',
+      );
+      expect(button.textContent).toBe('Изображение');
     }
     const details = container.querySelector('details')!;
     details.open = true;
