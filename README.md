@@ -28,7 +28,9 @@ pnpm dev -- --port 8814
 python3 -m apps.web.scripts.serve
 ```
 
-npm зависимостите се инсталират в корена с един `package-lock.json`. Сглобеният сайт е в `apps/web/build/`. Клиентът се публикува под `/js/`, а данните от `data/release/` под `/data/`; публичните адреси са запазени. SSR чете текущото издание от D1/R2; без регистър използва включеното в сглобяването издание.
+Зависимостите на Node се инсталират в корена с един `pnpm-lock.yaml` (pnpm workspace). Сглобеният сайт е в `apps/web/build/`. Клиентът се публикува под `/js/`, а данните от `data/release/` под `/data/`; публичните адреси са запазени. SSR чете текущото издание от D1/R2; без регистър използва включеното в сглобяването издание.
+
+Нужни са Node 24 и pnpm 10.33.0. `pnpm test` пуска тестовете на TypeScript пакетите. Сравнението `budget-ts parity` и фикстурите са описани в [ръководството за разработка](docs/dev-guide.md); `./budget` още изпълнява Python.
 
 ## Среда и проверки
 
@@ -60,7 +62,7 @@ PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.s
 
 `./budget build --build-date ГГГГ-ММ-ДД --site` сглобява издание от commit и записва данните и манифеста в `data/release/`. `./budget reproduce` го възпроизвежда и сравнява байтовете. Слоят за терминология още използва историческите тагове; редът на строителите е запазен. Подробности: [издания](docs/release.md), [придобиване](docs/data-acquisition.md), [операторско ръководство](docs/operator-guide.md).
 
-GitHub Actions проверява PR и сглобява staging. Автоматичното staging публикуване е спряно за миграцията към TypeScript (ADR 0004). Production е отделна контролирана процедура. Конфигурацията е в `apps/web/wrangler.jsonc`; собствена среда използва игнориран `wrangler.local.jsonc`. Готовността е описана в [production-readiness](docs/production-readiness.md).
+GitHub Actions проверява PR и сглобява staging. Push към main може да публикува сайта на staging при конфигурирани Cloudflare секрети. Production е отделна контролирана процедура. Конфигурацията е в `apps/web/wrangler.jsonc`; собствена среда използва игнориран `wrangler.local.jsonc`. Готовността е описана в [production-readiness](docs/production-readiness.md).
 
 ## Документация
 
@@ -80,5 +82,3 @@ GitHub Actions проверява PR и сглобява staging. Автомат
 ## Лиценз
 
 Кодът е под лиценза MIT — виж файла [`LICENSE`](LICENSE). Официалните документи, на които стъпват данните (законите, законопроектът и мотивите, отчетите на министерствата), са публични; текстът им е използван без промяна.
-
-TypeScript основа: Node 24 и pnpm 10.33.0. От корена се изпълняват `pnpm install --frozen-lockfile`, `pnpm typecheck`, `pnpm test` и `pnpm build`. `pnpm dev` стартира сайта. Командата `budget-ts parity` и форматът за фикстури са описани в [ръководството за разработка](docs/dev-guide.md); `./budget` продължава да изпълнява Python.

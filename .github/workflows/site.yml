@@ -156,7 +156,7 @@ jobs:
 
   deploy:
     needs: [build, check, release]
-    if: false # Deployment paused throughout the TypeScript migration (ADR 0004).
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: staging
