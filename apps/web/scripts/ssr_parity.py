@@ -129,13 +129,43 @@ def compare(a, b):
     return out
 
 
+def compare_servers(baseline, current, host=None):
+    """Strict response parity for every runtime route sample, including synthesized samples."""
+    import subprocess
+    root = pathlib.Path(__file__).resolve().parents[3]
+    script = "import {ROUTES} from './apps/web/client/routes.js'; process.stdout.write(JSON.stringify([...new Set(ROUTES.flatMap(r => r.samples).map(s => s.replace(/^#/, '')))]));"
+    routes = json.loads(subprocess.check_output(['node', '--input-type=module', '-e', script], cwd=root))
+
+    def response(base, path):
+        request = urllib.request.Request(base.rstrip('/') + urllib.parse.quote(path, safe='/?=&%'),
+                                         headers={'Host': host} if host else {})
+        try:
+            result = urllib.request.urlopen(request)
+        except urllib.error.HTTPError as error:
+            result = error
+        with result:
+            return result.status, result.read()
+
+    bad = []
+    for path in routes:
+        if response(baseline, path) != response(current, path):
+            bad.append(path)
+            print('DIFFERENT ' + path)
+    print(f'{len(routes)} sample routes · {len(routes) - len(bad)} byte-identical · {len(bad)} different')
+    return 1 if bad or not routes else 0
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
+    ap.add_argument('--baseline-url', help='compare every runtime route sample byte for byte against another Worker')
+    ap.add_argument('--host', help='the same HTTP Host header for both Workers')
     ap.add_argument('--dist', default='dist')
     ap.add_argument('--url', default='http://127.0.0.1:8791')
     ap.add_argument('--limit', type=int, default=0)
     ap.add_argument('--show', type=int, default=8, help='how many differing screens to print in full')
     a = ap.parse_args()
+    if a.baseline_url:
+        return compare_servers(a.baseline_url, a.url, a.host)
     dist = pathlib.Path(a.dist)
     files = sorted(f for f in dist.rglob('*.html') if f.name != 'app.html')
     if a.limit:

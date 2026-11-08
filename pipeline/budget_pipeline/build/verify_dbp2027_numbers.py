@@ -26,7 +26,7 @@ import sys
 from pathlib import Path
 
 W = Path(__file__).resolve().parents[3]       # repository root
-PDF = W / 'tmp' / 'sources' / 'bud2027_Draft_Budgetary_Plan_of_the_Republic_of_Bulgaria_for_2027.pdf'      # the PDF is not in the repository: docs/data-sources.md 4.3
+PDF = W / "data" / "originals" / "budget_2027" / "Draft_Budgetary_Plan_of_the_Republic_of_Bulgaria_for_2027.pdf"
 DATA = W / 'data' / 'release' / 'dbp2027.json'
 SHA = '8c91cdf4778f2864e1eeb167f14b08d1f68a076ea4ad27a8a4305175a73f1182'
 

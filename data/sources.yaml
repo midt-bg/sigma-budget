@@ -5,7 +5,7 @@
 #   id            the key used by data/release (core.sources, catalog.json `source`) and by data/datasets.yaml `inputs`
 #   page          the official page of the family; files[].url is the exact address when there is one
 #   access        auto | auto-bg (answers only from Bulgaria) | browser-only (403 to scripts) | supplied (by the working group)
-#                 | reference (cited, nothing is read) | generated (example values of build_examples.py)
+#                 | reference (cited, nothing is read) | generated (example values of build_mock.py)
 #   acquisition   fetch | fetch-bg | import (a person downloads, pipeline/budget_pipeline/sources/raw_sources.py import checks and records it)
 #                 | supplied | reference | generated
 #   format        the expected kind of file (the magic bytes raw_sources.py checks)
@@ -313,7 +313,7 @@ sources:
 - id: dbp2027
   title: Проект на бюджетен план на Република България за 2027 г. (55 стр.)
   publisher: Министерство на финансите
-  page: https://economy-finance.ec.europa.eu/document/download/efafab61-9647-40f6-8912-6cda9c96964b_bg?filename=2027_dbp_bg_bg.pdf&prefLang=en
+  page: https://www.minfin.bg/bg/1802
   access: browser-only
   acquisition: import
   format: pdf
@@ -322,11 +322,25 @@ sources:
   unit: млн. € and % of GDP
   live: false
   files:
-  - path: tmp/sources/bud2027_Draft_Budgetary_Plan_of_the_Republic_of_Bulgaria_for_2027.pdf
+  - path: data/originals/budget_2027/Draft_Budgetary_Plan_of_the_Republic_of_Bulgaria_for_2027.pdf
+    url: https://www.minfin.bg/upload/65334/Draft+Budgetary+Plan+of+the+Republic+of+Bulgaria+for+2027.pdf
     title: Проект на бюджетен план на Република България за 2027 г., 55 pages
-    sha256: 8c91cdf4778f2864e1eeb167f14b08d1f68a076ea4ad27a8a4305175a73f1182
-  limitations:
-  - not on the machines checked on 05.11.2026, so dbp2027.json cannot be rebuilt here
+- id: budget2027
+  title: 'Законопроект за държавния бюджет 2027 и материалите към него: ПЗДБРБ 2027 и АСБП 2027–2029'
+  publisher: Министерство на финансите
+  page: https://www.minfin.bg/bg/1802
+  access: browser-only
+  acquisition: import
+  format: zip
+  period: the draft State Budget Act 2027 and the medium-term budget forecast 2027–2029, 06.11.2026
+  unit: хил. € (the bill), млн. € and % of GDP (АСБП)
+  live: false
+  files:
+  - path: data/originals/budget_2027/ZDBRB-2027.zip
+    url: https://www.minfin.bg/upload/65611/ZDBRB-2027.zip
+    title: 'Архивът на МФ: доклад, решение, законопроект (3-PZDBRB-2027.pdf), мотиви и АСБП 2027–2029 (4-UMTBF-2027-2029-motivi.pdf), финансова обосновка, прессъобщение'
+  - path: data/originals/budget_2027/acquisition.json
+    title: acquisition record of the files in budget_2027 (address, time, sha256 of the archive and its members)
 - id: wg
   title: 'Работна група „Бюджет на светло“: редакционни текстове'
   publisher: Работна група „Бюджет на светло“
@@ -388,7 +402,7 @@ sources:
   live: false
   files: []
   limitations:
-  - 'not an external source: marks the example values of build_examples.py (seed 20261002)'
+  - 'not an external source: marks the example values of build_mock.py (seed 20261002)'
 intermediates:
 - path: data/originals/MANIFEST.json
   producer: pipeline/budget_pipeline/sources/fetch_sources.py

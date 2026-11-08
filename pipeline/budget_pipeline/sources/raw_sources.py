@@ -124,6 +124,8 @@ def how_to_get(rel):
         return "import", "ръчно през браузър от %s, после `import`" % KFP_PAGE
     if folder == "asbp":
         return "import", "ръчно през браузър от https://www.minfin.bg/bg/legislation1/609, после `import`"
+    if folder == "budget_2027":
+        return "import", "ръчно през браузър от https://www.minfin.bg/bg/1802, после `import`"
     if folder == "nap":
         return "auto-bg", "fetch_sources.py %s, само от България; дойде ли страница вместо PDF: браузър, после `import`" % rel
     return "auto", "fetch_sources.py %s" % rel

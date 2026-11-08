@@ -33,14 +33,14 @@
 
 ## 2. Начало: как се възстановяват данните
 
-Редът е важен. Скриптовете намират хранилището от собственото си местоположение: константите в началото на файла (`ROOT`, `RAW`, `SITE`, `TMP`) сочат към `data/originals/`, `apps/web/` и `tmp/`; кешът на сайта е `data/cache/`. Ръчно доставяните входове, които не са в хранилището, са `tmp/sources/` (PDF на проекта на бюджетния план) и `data/cache/research/` (междинните извлечения).
+Редът е важен. Скриптовете намират хранилището от собственото си местоположение: константите в началото на файла (`ROOT`, `RAW`, `SITE`, `TMP`) сочат към `data/originals/`, `apps/web/` и `tmp/`; кешът на сайта е `data/cache/`. Ръчно доставяните входове, които не са в хранилището, са в `data/cache/research/` (междинните извлечения).
 
 1. **Среда.** Обработката е в `pipeline/requirements.lock` (PyMuPDF 1.26.5, `xlrd`, `pdfplumber`, `python-docx`, `py7zr`, PyYAML, с хешове) или в образа `pipeline/Dockerfile` (Python 3.12.10 по digest). В образа `rebuild.py` дава `data/release` байт по байт (05.11.2026). Проверките и сглобяването на сайта са в `tests/requirements-dev.lock` (`playwright` с Chromium, `xlrd`, PyYAML).
 2. **Автоматичното сваляне.** `python3 pipeline/budget_pipeline/sources/fetch_sources.py` (само стандартна библиотека, иска мрежа) сваля в `data/originals/<папка>/` всичко, отбелязано „автоматично“, и пише `data/originals/MANIFEST.json` (адрес, размер, sha256, HTTP код, дата на сваляне). Неуспешните заявки също се записват в манифеста.
 3. **Ръчните набори.** Месечните отчети по КФП (`kfp_2024/`, `kfp_2025/`, `kfp_2026/`) и PDF-ът на АСБП (`asbp/UMTBF-2026-2028-motivi.pdf`) се получават на ръка (раздел 4) и вече са в хранилището (раздел 5). Нов отчет се добавя там. Проверете файловете със sha256 от таблиците по-долу.
 4. **Извличане.** `extract_asbp_tables.py`, `extract_dv_laws.py`, `extract_program_budgets.py` → `asbp/asbp_tables.json`, `dv/dv_laws_2026.json`, `data/inputs/program_budgets_2026.json` (и разархивираните програмни бюджети).
 5. **Сглобяване на прототипа.** Към 05.11.2026 `build_src.py`, `extract_2025.py`, `build_2025_json.py` и `extract_glossary.py` не минават (`data/sources.yaml`, `intermediates`). `build_src.py` и `extract_home_kpis.py` (+ `extract_2025.py` → `build_2025_json.py` за КФП 2025) → `data/inputs/*.json`; `gen_inline.py` ги вгражда в `reference/prototype/site/index.html`. Речникът (`data/inputs/glossary.json`) идва от PDF на работната група чрез `extract_glossary.py` и е готов в `data/inputs/`.
-6. **сайтът.** `pipeline/budget_pipeline/build/run_all.sh` изпълнява по ред: `fetch_gisco.py`, `fetch_sebra.py`, `extract_kfp_full.py`, `extract_bill.py`, `build_data.py`, `build_text.py`, `build_examples.py`, пак `build_data.py`, и накрая `base.py` и `validate_mock.py`. Ако в `data/cache/` вече има кеширани файлове, сглобяването е без мрежа. Екранът „Бюджет 2027 (проект)“ (v6) се строи отделно с `extract_dbp2027.py` → `build_dbp2027_site.py` и се сверява с `verify_dbp2027_numbers.py`.
+6. **сайтът.** `pipeline/budget_pipeline/build/run_all.sh` изпълнява по ред: `fetch_gisco.py`, `fetch_sebra.py`, `extract_kfp_full.py`, `extract_bill.py`, `build_data.py`, `build_text.py`, `build_mock.py`, пак `build_data.py`, и накрая `validate_data.py` и `validate_mock.py`. Ако в `data/cache/` вече има кеширани файлове, сглобяването е без мрежа. Екранът „Бюджет 2027 (проект)“ (v6) се строи отделно с `extract_dbp2027.py` → `build_dbp2027_site.py` и се сверява с `verify_dbp2027_numbers.py`.
 
 ## 3. Автоматично свалените набори
 
@@ -286,12 +286,12 @@ SDMX файлове на МФ по стандарта SDDS Plus, публику�
 - Има втора версия на АСБП (в законопроекта в парламента). Двете се различават в малки подредове (най-много 4,3 млн. €); разликата е оповестена в данните на сайта.
 
 ### 4.3 „Проект на бюджетен план на Република България за 2027 г.“
-- Файл: `bud2027_Draft_Budgetary_Plan_of_the_Republic_of_Bulgaria_for_2027.pdf` — 1 237 582 байта, sha256 `8c91cdf4778f2864e1eeb167f14b08d1f68a076ea4ad27a8a4305175a73f1182` (55 страници, МФ, 15.10.2026).
+- Файл: `budget_2027/Draft_Budgetary_Plan_of_the_Republic_of_Bulgaria_for_2027.pdf` — 1 237 582 байта, sha256 `8c91cdf4778f2864e1eeb167f14b08d1f68a076ea4ad27a8a4305175a73f1182` (55 страници, МФ, 15.10.2026), от `https://www.minfin.bg/bg/1802`.
 - Обработва се от `extract_dbp2027.py` (всяко число носи страница и цитат) → `build_dbp2027_site.py` → `data/release/dbp2027.json`; `verify_dbp2027_numbers.py` търси всяко отпечатано число на страницата му.
 
 ## 5. Кои сурови данни са в хранилището
 
-- **Файловете от minfin.bg са в хранилището.** 33-те отчета по КФП и PDF-ът с мотивите и АСБП, около 4,9 MB, са в `data/originals/kfp_*/` и `asbp/`. Скрипт не може да ги свали, а МФ понякога записва отчетите наново с други байтове. Без тях чисто копие не сглобява данните. Добавят се по около 45 KB на месец.
+- **Файловете от minfin.bg са в хранилището.** 33-те отчета по КФП, PDF-ът с мотивите и АСБП и материалите за бюджет 2027, около 13 MB, са в `data/originals/kfp_*/`, `asbp/` и `budget_2027/`. Скрипт не може да ги свали, а МФ понякога записва отчетите наново с други байтове. Без тях чисто копие не сглобява данните. Добавят се по около 45 KB на месец.
 - **Останалите не са, заради размера.** Суровите файлове са 105 на брой и около 143 MB; само ZIP архивът на законопроекта е 63 MB, а извлечените от него програмни бюджети — още 70 MB. Хранилището е за код и документация.
 - **Не са нужни за работа.** Прототипът е един самостоятелен файл (`reference/prototype/site/index.html`) с вградени данни, а сайтът зарежда само собствените си `data/release/*.json`. Суровите файлове са входове само на сглобяващите скриптове.
 - **Публични са и се свалят отново.** Всичко, получавано автоматично, е публично; адресите и контролните суми са по-горе.

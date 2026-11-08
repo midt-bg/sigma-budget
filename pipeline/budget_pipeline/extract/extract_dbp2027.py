@@ -37,7 +37,7 @@ from pathlib import Path
 import pymupdf
 
 ROOT = Path(__file__).resolve().parents[3]            # repository root
-PDF = ROOT / "tmp" / "sources" / "bud2027_Draft_Budgetary_Plan_of_the_Republic_of_Bulgaria_for_2027.pdf"      # not in the repository: docs/data-sources.md 4.3
+PDF = ROOT / "data" / "originals" / "budget_2027" / "Draft_Budgetary_Plan_of_the_Republic_of_Bulgaria_for_2027.pdf"
 OUT = ROOT / "data" / "cache" / "research" / "dbp-2027" / "dbp2027_figures.json"
 OUTLOOK = ROOT / "data" / "release" / "outlook.json"
 EXPECT_SHA = "8c91cdf4778f2864e1eeb167f14b08d1f68a076ea4ad27a8a4305175a73f1182"

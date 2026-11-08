@@ -29,7 +29,7 @@ from pathlib import Path
 
 W = Path(__file__).resolve().parents[3]          # repository root
 SRC = W / 'data' / 'cache' / 'research' / 'dbp-2027' / 'dbp2027_figures.json'     # not in the repository: made by extract_dbp2027.py
-PDF = W / 'tmp' / 'sources' / 'bud2027_Draft_Budgetary_Plan_of_the_Republic_of_Bulgaria_for_2027.pdf'   # not in the repository: docs/data-sources.md 4.3
+PDF = W / "data" / "originals" / "budget_2027" / "Draft_Budgetary_Plan_of_the_Republic_of_Bulgaria_for_2027.pdf"
 OUT = W / 'data' / 'release' / 'dbp2027.json'
 
 # figure-id prefixes that the screen uses (everything else in the research file is left out on purpose:

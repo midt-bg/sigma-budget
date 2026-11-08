@@ -11,9 +11,6 @@ id with the table below. Exit 1 when one fails or a console error appears.
 import sys as _sys
 from pathlib import Path as _Path
 _sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
-import sys as _sys
-from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
 import http.server, os, socketserver, sys, threading
 from pathlib import Path
 from urllib.parse import parse_qs
@@ -100,7 +97,7 @@ def main():
             page.close()
         b.close()
     srv.shutdown()
-    print("redirects_v5: %d case(s), %d problem(s)" % (len(CASES), bad))
+    print("redirects: %d case(s), %d problem(s)" % (len(CASES), bad))
     sys.exit(1 if bad else 0)
 
 

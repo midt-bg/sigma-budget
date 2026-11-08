@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""check_mock_v5.py (copy of check_mock_v4.py for the version v6, the redesigned СИГМА-style prototype) - end-to-end checks for the Mock prototype of "Бюджет на светло".
+"""screens_v5.py (copy of screens_v4.py for the version v6, the redesigned СИГМА-style prototype) - end-to-end checks for the site of "Бюджет на светло".
 
-  v4 AMENDMENTS against check_mock_v3.py (kept): SITE -> site/ (version v4); light only (the dark cells and the `theme` family are dropped); the settings
+  v4 AMENDMENTS against screens_v3.py (kept): SITE -> site/ (version v4); light only (the dark cells and the `theme` family are dropped); the settings
     popover and the phone sheet carry no theme option; "wide" for the layout audit is innerWidth >= 961.
 
-  v5 AMENDMENTS against check_mock_v4.py (each one follows a deliberate v5 change from docs/plan.md; nothing else is weakened):
+  v5 AMENDMENTS against screens_v4.py (each one follows a deliberate v5 change from docs/plan.md; nothing else is weakened):
     1. SITE -> site/ (version v6), SHOT_DIR -> render-check-v6.
     2. Bottom bar: three buttons (Начало · Отчет · Бюджет), was five; the old «Още» tab became the «Меню» button of the top bar (#btn-menu, opens the
        drawer). On a screen under «Още» / «Моите данъци» no tab is current (the tab-bar rule of `tour` accepts 0 current items there).
@@ -30,7 +30,7 @@ It serves site/ from a throw-away local http.server, drives headless Chromium (P
 there is no failure (warnings never fail the run, unless --strict); 1 = failures; 2 = the checker itself could not run.
 
   Run (always with the project venv; the chromium build lives in tmp/pw-browsers in the repository root, which this script picks up by itself):
-    PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python reference/mock/check_mock.py [options]
+    PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python tests/e2e/screens.py [options]
 
   Options
     --quick            the final gate, about a minute: the first sample of every route at 1280 px and at 400 px in the light
@@ -4168,7 +4168,7 @@ def plan_theme(args, d, routes, cells):
 
 # =================================================================================================================== CLI
 def parse_args(argv=None):
-    ap = argparse.ArgumentParser(prog='check_mock.py', description='End-to-end checks for the Mock prototype (see the module docstring).',
+    ap = argparse.ArgumentParser(prog='screens.py', description='End-to-end checks for the site (see the module docstring).',
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--quick', action='store_true')
     ap.add_argument('--route', action='append', default=[], metavar='ID|KEY[,..]')
@@ -4453,7 +4453,7 @@ def main(argv=None):
             base = base[:base.rfind('/') + 1] if '.' in base.rsplit('/', 1)[-1] else base + '/'
     else:
         if not (SITE / 'index.html').is_file():
-            print(f'check_mock: {SITE / "index.html"} does not exist', file=sys.stderr)
+            print(f'screens: {SITE / "index.html"} does not exist', file=sys.stderr)
             return 2
         server = Server().start()
         base = server.base
@@ -4484,12 +4484,12 @@ def main(argv=None):
         bad = [Finding(**x) for x in res['findings'] if x['level'] == 'fail'] if res else []
         d = res['extra'] if res and res['extra'].get('routes') else None
         if d is None:
-            print('\ncheck_mock: cannot read the route table', file=sys.stderr)
+            print('\nscreens: cannot read the route table', file=sys.stderr)
             for f in bad:
                 print(f'  [{f.code}] {f.msg}', file=sys.stderr)
             return 2
         findings.extend(Finding(**x) for x in res['findings'])
-        print(f'check_mock: {len(d["routes"])} routes · base {base} · {n} browsers' + (' · QUICK' if args.quick else ''))
+        print(f'screens: {len(d["routes"])} routes · base {base} · {n} browsers' + (' · QUICK' if args.quick else ''))
         jobs = plan(args, d)
         if args.list:
             kinds = defaultdict(int)
