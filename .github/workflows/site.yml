@@ -165,8 +165,7 @@ jobs:
 
   deploy:
     needs: [build, check, release, common-parity]
-    # Migration PRs must not trigger a staging deployment on merge.
-    if: ${{ false }}
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: staging
