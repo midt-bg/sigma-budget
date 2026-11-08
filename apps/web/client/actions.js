@@ -1,5 +1,5 @@
 // Global delegated handlers: one listener per event type for the whole document, so page markup only needs data-attributes.
-//   [data-src="kfp,forecast_tables"] [data-asof]   source card                 [data-share="blockId"]   share menu of a block
+//   [data-src="kfp,asbp"] [data-asof]   source card                 [data-share="blockId"]   share menu of a block
 //   a[data-gl="slug"]                   glossary popover            [data-action="…"]        retry | set-period | legend | search | dismiss-banner | show-mock
 //   [data-query="key"] on input/select  -> ?key=<value> (text inputs commit on Enter/blur)   <button data-query="key=value">
 //       add data-norender when the page updates itself in place (tabs do this)

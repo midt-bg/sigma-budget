@@ -14,12 +14,10 @@ Rules (see the task brief):
 The hand-added figures were read from the PDF text on the page named in `p` (checked again by
 pipeline/budget_pipeline/build/budget_plan_check.py, which looks every printed value up on its page).
 
-Run: python3 pipeline/budget_pipeline/build/budget_plan.py
+Run: python -m budget_pipeline.build.budget_plan
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import json
 import hashlib

@@ -7,9 +7,7 @@ Pure standard library plus xlrd (already in the venv). Nothing here writes a fil
 """
 
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import calendar
 import hashlib
@@ -19,7 +17,7 @@ import re
 import xlrd
 
 import budget_pipeline.validate.checks as L
-from budget_pipeline.validate.checks import Check, PROTO, fmt, isnum
+from budget_pipeline.validate.checks import Check, fmt, isnum
 
 # the raw reports are NOT in the repository (docs/data-sources.md): without data/originals the independent re-read is skipped with a warning
 RAW_PRESENT = os.path.isdir(os.path.join(ROOT, "data", "originals"))

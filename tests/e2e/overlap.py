@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""overlap.py - the final-review sweep of site/ (V6, 27.10): every route x every width, looking for what a visitor would call «a button on a button».  Project venv only.
+"""overlap.py - the final-review sweep of web assets/ (V6, 27.10): every route x every width, looking for what a visitor would call «a button on a button».  Project venv only.
 
-  PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python tests/e2e/overlap.py [--widths 1920,1440,...] [--routes S06,S12] [--no-clicks] [--no-keys] [--quick] [--shots DIR]
+  PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.overlap [--widths 1920,1440,...] [--routes S06,S12] [--no-clicks] [--no-keys] [--quick] [--shots DIR]
 
   LAYOUT (every route x every width, motion off, banner on and off):
     overlap     two visible interactive elements (a, button, [role=tab], input, select, summary, [tabindex]) whose boxes cross by more than 2x2 px (ancestors and the content of a closed <details> are skipped;
@@ -19,14 +19,12 @@ Exit 1 when anything is found; the findings are printed one per line.
 """
 
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
 import http.server, json, os, socketserver, sys, threading
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-SITE = __import__("static_assets").root()
+SITE = __import__("tests.e2e.static_assets", fromlist=["root"]).root()
 os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(ROOT / "tmp" / "pw-browsers"))
 WIDTHS = [1920, 1440, 1280, 1241, 1181, 1024, 768, 390, 320]
 found = []

@@ -1,32 +1,5 @@
 #!/usr/bin/env python3
-"""rebuild.py - rebuild data/release of the current site (v6) from the raw inputs: the donor builders, then the v5/v6 layer.
-
-The files of data/release are not the plain output of datasets.py: v5 renamed «реални данни» to «официални данни», took СЕБРА and the
-generated sets out of the active layer, and v6 added the sources of the screen S34. Run alone, datasets.py writes the donor (v1)
-form and removes all of that. This script runs the steps in the order that gives the published files:
-
-  1. kfp_full.py          data/release/execution.json from data/originals/kfp_*/
-  2. datasets.py                every other dataset of the builders (core.json last)
-  3. wording.py                the v3/v4 wording on catalog.json, core.json and search-index.json (pairs from the tags mock-v2, mock-v4)
-  4. active_data.py site       СЕБРА and the generated sets out of catalog, feed, search-index and core
-  5. apply_sources.py             the four sources of S34 and counts.terms in core.json (the rest of the glue is already in site/)
-  6. catalog_refresh.py        sizes, schemas, screens and counts of catalog.json against the files
-
-Checked on 2026-11-05: with the inputs of the published site (the August 2026 report) the result equals data/release byte for byte, apart
-
-import sys as _sys
-from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
-ROOT = _Path(__file__).resolve().parents[3]
-from the files whose inputs changed since (parliament API, Eurostat, BNB, the access probes) and gzipBytes in catalog.json, which depend
-on the zlib of the machine.
-
-  tmp/venv-data/bin/python pipeline/budget_pipeline/build/rebuild.py --build-date 2026-11-05     the build date goes into meta.retrieved of every file
-  tmp/venv-data/bin/python pipeline/budget_pipeline/build/rebuild.py                             BUILD_DATE from the environment, else the default of data_io.py
-
-Writes data/release/ and tmp/versions/site-v2|site-v4/data/ (the wording pairs). Glossary, guide and the mock sets are not rebuilt
-(editorial.py, examples.py). Stops at the first failing step.
-"""
+"""Rebuild the current release from pinned inputs. The sequence is extraction, dataset builders, terminology from the historical mock-v2/mock-v4 tags, active dataset selection, source records and catalog refresh. budget build executes this sequence in its isolated release environment. --versions-ready uses terminology inputs already exported by the release builder."""
 import argparse
 import os
 import subprocess
@@ -34,7 +7,6 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
-T = "pipeline/budget_pipeline/build/"
 WORDING_FILES = ["catalog.json", "core.json", "search-index.json"]
 
 
@@ -53,7 +25,7 @@ def tag_files(env):
         for f in WORDING_FILES:
             data = subprocess.run(["git", "show", "mock-%s:%s/%s" % (tag, "site" + "/data", f)], cwd=str(ROOT), capture_output=True, env=env)
             if data.returncode:
-                sys.exit("rebuild: no mock-%s:%s/%s (git fetch --tags)" % (tag, f))
+                sys.exit("rebuild: missing historical tag %s file %s (git fetch --tags)" % (tag, f))
             (out / f).write_bytes(data.stdout)
 
 
@@ -73,13 +45,17 @@ def main(argv):
             sys.exit("rebuild: --versions-ready, but missing: " + ", ".join(missing))
     else:
         tag_files(env)
-    run(["pipeline/budget_pipeline/extract/kfp_full.py"], env)
-    run([T + "datasets.py"], env)
+    run(["-m", "budget_pipeline.extract.kfp_full"], env)
+    os.environ.update({k: v for k, v in env.items() if k == "BUILD_DATE"})
+    from budget_pipeline.build import datasets
+    result = datasets.build([])
+    if result:
+        return result
     for f in WORDING_FILES:
-        run([T + "wording.py", f, "data/release"], env)
-    run([T + "active_data.py", "data/release", "--apply"], env)
-    run([T + "apply_sources.py"], env)
-    run([T + "catalog_refresh.py"], env)
+        run(["-m", "budget_pipeline.build.wording", f, "data/release"], env)
+    run(["-m", "budget_pipeline.build.active_data", "data/release", "--apply"], env)
+    run(["-m", "budget_pipeline.build.apply_sources"], env)
+    run(["-m", "budget_pipeline.build.catalog_refresh"], env)
     print("rebuild: done; check with datasets.py and review `git diff --stat data/release`")
     return 0
 

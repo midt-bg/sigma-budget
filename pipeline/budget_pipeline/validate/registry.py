@@ -2,9 +2,9 @@
 """Checks data/sources.yaml and data/datasets.yaml against the repository (stage A of docs/approach-specification.md,
 section 11: a clean checkout describes every input, no hidden absolute paths, every mock and pending set is marked).
 
-  python pipeline/budget_pipeline/validate/registry.py check          errors make the exit code 1; the report also lists the datasets whose chain
+  python -m budget_pipeline.validate.registry check          errors make the exit code 1; the report also lists the datasets whose chain
                                                 to the originals has a gap (known backlog, spec section 4), which is not an error
-  python pipeline/budget_pipeline/validate/registry.py check --json   the same as JSON
+  python -m budget_pipeline.validate.registry check --json   the same as JSON
 
 What it checks, without the raw files (they are not in the repository):
   * sources: unique ids; every source key of data/release (core.sources, catalog.json) is registered; every file pinned in
@@ -14,14 +14,10 @@ What it checks, without the raw files (they are not in the repository):
   * datasets: every file of data/release belongs to exactly one dataset; every catalog.json dataset is registered with the same
     id, status, screens, period and unit, and nothing else claims to be in the catalog; producers, layers and inputs exist;
     a pending set has a reason and no file; meta.status of every JSON file equals its status
-  * the tracked code (tools/, site/, worker/, .github/) has no absolute path of a machine
+  * the tracked production code (pipeline/, apps/, tests/, .github/) has no absolute path of a machine
 Needs PyYAML (tests/requirements-dev.txt, pipeline/requirements.txt).
 """
 
-import sys as _sys
-from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
-ROOT = _Path(__file__).resolve().parents[3]
 import argparse
 import fnmatch
 import json
@@ -59,8 +55,15 @@ class Report:
 
 
 def script(entry):
-    """'pipeline/budget_pipeline/build/fiscal.py (build_outlook)' -> 'pipeline/budget_pipeline/build/fiscal.py'"""
-    return entry.split(" ", 1)[0] if entry else entry
+    """Resolve a registered package command to its source file."""
+    import shlex
+    if not entry:
+        return entry
+    parts = shlex.split(entry)
+    if len(parts) < 3 or parts[:2] != ['python', '-m']:
+        raise ValueError('producer must be a python -m command: ' + entry)
+    module = parts[2]
+    return 'pipeline/' + module.replace('.', '/') + '.py'
 
 
 def pinned():
@@ -83,7 +86,7 @@ def check_sources(reg, r):
         r.ok(s.get("acquisition") in ACQUISITION, "source %s: acquisition %r" % (s["id"], s.get("acquisition")))
         for p in (s.get("parser") or "").split(", "):
             if p:
-                r.ok((ROOT / p).is_file(), "source %s: parser %s does not exist" % (s["id"], p))
+                r.ok((ROOT / script(p)).is_file(), "source %s: parser %s does not exist" % (s["id"], p))
         for f in s.get("files", []):
             patterns.append((f["path"], "source " + s["id"], f))
     inter = reg.get("intermediates", [])
@@ -93,7 +96,7 @@ def check_sources(reg, r):
     for i in inter:
         patterns.append((i["path"], "intermediate", i))
         prod = i.get("producer")
-        r.ok(prod is None or (ROOT / prod).is_file(), "intermediate %s: producer %s does not exist" % (i["path"], prod))
+        r.ok(prod is None or (ROOT / script(prod)).is_file(), "intermediate %s: producer %s does not exist" % (i["path"], prod))
         r.ok(isinstance(i.get("reproducible"), bool), "intermediate %s: reproducible must be true or false" % i["path"])
         r.ok(prod is not None or not i.get("reproducible"), "intermediate %s: reproducible without a producer" % i["path"])
         for x in i.get("inputs", []):
@@ -106,7 +109,7 @@ def check_sources(reg, r):
                                                                            "registered %d times (%s)" % (len(owners), ", ".join(owners))))
     for pat, owner, e in patterns:
         hits = [p for p in pins if fnmatch.fnmatchcase(p, pat)]
-        if pat.startswith(("data/originals/", "data/inputs/", "reference/prototype/")):
+        if pat.startswith(("data/originals/", "data/inputs/")):
             r.ok(hits or e.get("pinned") is False, "%s: %s matches no line of originals.sha256" % (owner, pat))
         else:
             r.ok("sha256" in e or e.get("pinned") is False, "%s: %s has no sha256 and does not say `pinned: false`" % (owner, pat))
@@ -150,7 +153,7 @@ def check_datasets(reg, source_ids, inter, r):
         else:
             r.ok((ROOT / script(d.get("producer", ""))).is_file(), "dataset %s: producer %s does not exist" % (did, d.get("producer")))
             for layer in d.get("layers", []):
-                r.ok((ROOT / layer).is_file(), "dataset %s: layer %s does not exist" % (did, layer))
+                r.ok((ROOT / script(layer)).is_file(), "dataset %s: layer %s does not exist" % (did, layer))
             r.ok(d.get("rebuild") or d.get("notRebuilt"), "dataset %s: neither rebuild nor notRebuilt" % did)
             r.ok(d.get("inputs"), "dataset %s: no inputs" % did)
             for x in d.get("inputs", []):

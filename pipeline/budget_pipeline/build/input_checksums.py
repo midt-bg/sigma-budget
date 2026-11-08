@@ -1,16 +1,12 @@
 #!/usr/bin/env python3
-"""input_checksums.py - refresh data/originals.sha256 after the published prototype/ files changed (pure standard library).
+"""input_checksums.py - refresh data/originals.sha256 after the published pinned input files changed (pure standard library).
 
-  python3 pipeline/budget_pipeline/build/input_checksums.py            rewrite the entries of the files that are in the repository
-  python3 pipeline/budget_pipeline/build/input_checksums.py --check    write nothing; exit 1 when an entry is stale
+  python -m budget_pipeline.build.input_checksums            rewrite the entries of the files that are in the repository
+  python -m budget_pipeline.build.input_checksums --check    write nothing; exit 1 when an entry is stale
 
 The manifest also lists the raw files of data/originals (not in the repository, see docs/data-sources.md): their entries are kept as they are.
 """
 
-import sys as _sys
-from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
-ROOT = _Path(__file__).resolve().parents[3]
 import hashlib
 import os
 import sys

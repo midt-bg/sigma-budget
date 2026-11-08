@@ -1,11 +1,11 @@
 """Build the site for the host and check every screen (docs/adr/0002-react-router-ssr.md).
 
-    PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python apps/web/scripts/build.py
+    PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m apps.web.scripts.build
     ... build.py --origin https://preview.example.org     # the address the canonical links, the sitemap and llms.txt name
     ... build.py --limit 40                                # a quick partial check (the link checks below still run)
     ... build.py --env staging --noindex                   # staging: its Worker config (CLOUDFLARE_ENV), kept out of search engines
 
-How it works. `react-router build` writes build/client (the files of site/, served as they are) and build/server (the Worker that draws
+How it works. `react-router build` writes build/client (the files of web assets/, served as they are) and build/server (the Worker that draws
 every screen from the current release, apps/web/workers/app.ts). The files that depend on this build are stamped in build/client (the RSS links,
 the service worker's cache name). Then the built Worker runs under `wrangler dev` with an empty registry, so it draws the screens from
 the data built from git, and headless Chromium crawls it from the start page: every screen it reaches through a link is checked twice,
@@ -17,9 +17,7 @@ A screen that is not ready, shows an error, logs a console error, links to an ad
 link, or lacks a title, description or canonical link fails the build (exit 1).
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 import argparse
 import asyncio
 import collections

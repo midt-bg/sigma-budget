@@ -12,12 +12,10 @@ Columns: B = к.2 (КФП) = C = к.3 (национален бюджет) + D = 
   converted numbers with the rounding bound of the conversion.  Any violation is an error (exit code 1, nothing is written), except the two
   source-internal differences of the 2024 files listed in KNOWN_SOURCE_DIFFS (reported as warnings, bounded).
 
-Run:  tmp/venv-data/bin/python pipeline/budget_pipeline/extract/kfp_full.py     (needs xlrd; reads only prototype/ and writes only data/release/; raw files: docs/data-sources.md)
+Run:  python -m budget_pipeline.extract.kfp_full     (needs xlrd; reads data/originals/ and data/inputs/ and writes only data/release/; raw files: docs/data-sources.md)
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import calendar
 import glob
@@ -352,9 +350,9 @@ def provenance(by_year, rows_out, plan2026, a3, as_of):
         "originals": originals,
         "plan2026": {"kfp": dict(pdf, rows=plan["kfp"]),
                      "nat": {"source": "data/inputs/kfp_components_2026.json", "rows": plan["nat"],
-                             "note": "made by reference/prototype/tools/build_src.py from the motives (Табл. II-3/II-4); see data/sources.yaml"},
+                             "note": "made by the archived extraction of the motives from the motives (Табл. II-3/II-4); see data/sources.yaml"},
                      "eu": {"source": "data/inputs/kfp_components_2026.json", "rows": plan["eu"],
-                            "note": "made by reference/prototype/tools/build_src.py from the motives (Табл. II-3/II-4); see data/sources.yaml"}},
+                            "note": "made by the archived extraction of the motives from the motives (Табл. II-3/II-4); see data/sources.yaml"}},
     }
 
 

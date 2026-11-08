@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""hrefs_v5.py - every in-app address ('#/...') written in the data files and in the JS of site/ (version v6, tag mock-v6) must reach an ACTIVE screen.
+"""hrefs.py - every in-app address ('#/...') written in the data files and in the JS of the current site must reach an ACTIVE screen.
 
-  PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python tests/e2e/hrefs.py [--all]
+  PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.hrefs [--all]
 
 Collects each '#/path?query' found in data/release/**/*.json and apps/web/client/**/*.js (not in comments), then asks the site's own router
 (js/routes.js match + js/redirects.js redirectHash, loaded in a browser) where it leads:
@@ -12,15 +12,13 @@ Exit 1 when a DEAD address exists.
 """
 
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
 import http.server, json, os, re, socketserver, sys, threading
 from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]            # repository root
-SITE = __import__("static_assets").root()                                 # the site: run this at the tag mock-v6
+SITE = __import__("tests.e2e.static_assets", fromlist=["root"]).root()                                 # the site: current site
 os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(ROOT / "tmp" / "pw-browsers"))
 HREF = re.compile(r"(?<![\w&])#/[A-Za-z0-9_\-/.:%+]*(?:\?[A-Za-z0-9_=&,.%:+\-]*)?")
 

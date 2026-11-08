@@ -1,6 +1,6 @@
 """Compare the screens the SSR app draws (docs/adr/0002-react-router-ssr.md) with the prerendered files of apps/web/scripts/build.py.
 
-    python3 apps/web/scripts/ssr_parity.py --dist dist --url http://127.0.0.1:8791 [--limit 50] [--show 5]
+    python3 -m apps.web.scripts.ssr_parity --dist dist --url http://127.0.0.1:8791 [--limit 50] [--show 5]
 
 For every HTML file of dist/ the same address is fetched from the running SSR app (npx wrangler dev -c build/server/wrangler.json),
 and what a crawler and a reader get is compared: the title, the description, robots, the canonical path, the JSON-LD types, the h1, the
@@ -11,9 +11,7 @@ a widget's state) is reported as a difference to look at, not hidden.
 Exit 0 when every screen matches, 1 when some differ, 2 when the app cannot be reached or --dist has no screen to compare.
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 import argparse
 import html
 import json

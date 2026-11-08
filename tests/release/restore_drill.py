@@ -2,7 +2,7 @@
 """The restore drill of acceptance scenario 10 (docs/approach-specification.md, section 11) on a test environment: the built Worker
 with a local D1 and R2, as tests/release/release_check.py runs it.
 
-    python tests/release/restore_drill.py            (npm ci first; the Worker is built with react-router build)
+    python -m tests.release.restore_drill            (npm ci first; the Worker is built with react-router build)
 
   1  releases A and B are published; B is current at revision 2
   2  backup: the registry as an SQL dump (schema, triggers and rows: what `wrangler d1 export --remote` gives in Cloudflare; locally
@@ -20,9 +20,7 @@ Exit code 0 only when every check passes.
 """
 
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
 import json
 import os
 import sqlite3
@@ -33,8 +31,7 @@ import tempfile
 import time
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from release_check import (AUD, ISSUER, OPERATORS, RESULTS, ROOT, Keys, budget, free_port, jbody, make_release, ok, req,  # noqa: E402
+from tests.release.release_check import (AUD, ISSUER, OPERATORS, RESULTS, ROOT, Keys, budget, free_port, jbody, make_release, ok, req,  # noqa: E402
                            sha)
 
 WRANGLER = ROOT / "node_modules" / ".bin" / "wrangler"

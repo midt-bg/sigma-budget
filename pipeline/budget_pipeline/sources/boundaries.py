@@ -18,9 +18,7 @@ If the network is unavailable and there is no cache the script exits 0 with a wa
 municipality list without population/borders and marks D20/D21 as pending (never with invented numbers).
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import codecs
 import csv

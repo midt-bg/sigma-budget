@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """The acceptance checks of stage C (docs/approach-specification.md, section 11) against the Worker on a local registry.
 
-    python tests/release/release_check.py                  synthetic releases (no raw files needed: this is what CI runs)
-    python tests/release/release_check.py --real DIR       also publish the release of `budget build` in DIR and reproduce it from the Worker
+    python -m tests.release.release_check                  synthetic releases (no raw files needed: this is what CI runs)
+    python -m tests.release.release_check --real DIR       also publish the release of `budget build` in DIR and reproduce it from the Worker
 
 It builds the site (react-router build: the Worker of apps/web/workers/app.ts and the static files, docs/adr/0002-react-router-ssr.md) and starts
 `wrangler dev` on it (node_modules, package-lock.json) with a fresh local D1 and R2, applies migrations/, and signs Cloudflare Access
@@ -21,9 +21,7 @@ Exit code 0 only when every check passes.
 """
 
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
 import argparse
 import base64
 import gzip
@@ -138,7 +136,7 @@ def make_release(root, name, text, commit="a" * 40):
 
 
 def budget(args, env):
-    r = subprocess.run([sys.executable, str(ROOT / "pipeline" / "budget_pipeline" / "cli.py"), "--json"] + args, capture_output=True, text=True, env=env)
+    r = subprocess.run([sys.executable, "-m", "budget_pipeline.cli", "--json"] + args, capture_output=True, text=True, env=env)
     try:
         return r.returncode, json.loads(r.stdout)
     except ValueError:

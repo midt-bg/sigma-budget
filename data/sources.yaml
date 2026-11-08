@@ -1,12 +1,12 @@
 # Source registry (docs/approach-specification.md, sections 4 and 5.1): every original the published data is built from, and every
-# intermediate file between the originals and data/release. Checked by `python pipeline/budget_pipeline/validate/registry.py check` (CI).
+# intermediate file between the originals and data/release. Checked by `python -m budget_pipeline.validate.registry check` (CI).
 #
 # sources[]       one publisher's document family
 #   id            the key used by data/release (core.sources, catalog.json `source`) and by data/datasets.yaml `inputs`
 #   page          the official page of the family; files[].url is the exact address when there is one
 #   access        auto | auto-bg (answers only from Bulgaria) | browser-only (403 to scripts) | supplied (by the working group)
 #                 | reference (cited, nothing is read) | generated (example values of build_mock.py)
-#   acquisition   fetch | fetch-bg | import (a person downloads, pipeline/budget_pipeline/sources/originals.py import checks and records it)
+#   acquisition   fetch | fetch-bg | import (a person downloads, python -m budget_pipeline.sources.originals import checks and records it)
 #                 | supplied | reference | generated
 #   format        the expected kind of file (the magic bytes originals.py checks)
 #   parser        the scripts that read the originals
@@ -30,7 +30,7 @@ sources:
   access: browser-only
   acquisition: import
   format: xls
-  parser: pipeline/budget_pipeline/extract/kfp_full.py
+  parser: python -m budget_pipeline.extract.kfp_full
   period: monthly from January 2024, cumulative since 1 January (the newest is `latest` in data/release/execution.json)
   unit: млн. лв. (2024–2025), млн. € (2026)
   live: false
@@ -42,7 +42,7 @@ sources:
   - path: data/originals/kfp_2026/*.xls
     title: monthly reports for 2026
   limitations:
-  - 'minfin.bg answers 403 to automatic requests: every report is downloaded by a person and imported with pipeline/budget_pipeline/sources/originals.py import, which
+  - 'minfin.bg answers 403 to automatic requests: every report is downloaded by a person and imported with python -m budget_pipeline.sources.originals import, which
     checks the sheet, the period and the unit'
   - the MF release of 02.11.2026 uses a September 2025 base 0.9 млн. € above the archived report (docs/data-sources.md, section 4.1)
 - id: asbp
@@ -52,7 +52,7 @@ sources:
   access: browser-only
   acquisition: import
   format: pdf
-  parser: pipeline/budget_pipeline/extract/asbp_tables.py, pipeline/budget_pipeline/extract/asbp_pages.py
+  parser: python -m budget_pipeline.extract.asbp_tables, python -m budget_pipeline.extract.asbp_pages
   period: 2024–2028 (report 2024, expected 2025, plan 2026, forecast 2027–2028)
   unit: млн. € and % of GDP
   live: false
@@ -72,7 +72,7 @@ sources:
   access: auto
   acquisition: fetch
   format: docx
-  parser: pipeline/budget_pipeline/build/rates.py, pipeline/budget_pipeline/extract/bill.py
+  parser: python -m budget_pipeline.build.rates, python -m budget_pipeline.extract.bill
   period: the 2026 budget bill, submitted 01.07.2026
   unit: хил. €
   live: false
@@ -87,7 +87,7 @@ sources:
   access: auto
   acquisition: fetch
   format: zip
-  parser: pipeline/budget_pipeline/extract/program_budgets.py
+  parser: python -m budget_pipeline.extract.program_budgets
   period: programme budgets 2023–2028 of the 46 first-level spending units
   unit: хил. €
   live: false
@@ -104,7 +104,7 @@ sources:
   access: auto
   acquisition: fetch
   format: json
-  parser: pipeline/budget_pipeline/build/law.py
+  parser: python -m budget_pipeline.build.law
   period: the legislative path of the three 2026 budget laws
   live: true
   files:
@@ -118,7 +118,7 @@ sources:
     url: https://www.parliament.bg/api/v1/bill/167155
     title: ЗБНЗОК 2026 — данни за законопроекта
   limitations:
-  - 'a live API: the answer changes as the parliament updates its records; one НСОРБ opinion is listed twice (pipeline/budget_pipeline/build/law.py, DUPLICATE_OPINIONS)'
+  - 'a live API: the answer changes as the parliament updates its records; one НСОРБ opinion is listed twice (python -m budget_pipeline.build.law, DUPLICATE_OPINIONS)'
 - id: zdb
   title: Закон за държавния бюджет на Република България за 2026 г.
   publisher: Народно събрание; Държавен вестник, бр. 69 от 31.07.2026 г.
@@ -126,7 +126,7 @@ sources:
   access: auto
   acquisition: fetch
   format: html
-  parser: pipeline/budget_pipeline/extract/dv_laws.py, pipeline/budget_pipeline/extract/bill.py
+  parser: python -m budget_pipeline.extract.dv_laws, python -m budget_pipeline.extract.bill
   period: ЗДБ 2026, ДВ бр. 69 от 31.07.2026
   unit: хил. €
   live: false
@@ -141,7 +141,7 @@ sources:
   access: auto
   acquisition: fetch
   format: html
-  parser: pipeline/budget_pipeline/extract/dv_laws.py, pipeline/budget_pipeline/build/rates.py
+  parser: python -m budget_pipeline.extract.dv_laws, python -m budget_pipeline.build.rates
   period: ЗБДОО 2026, ДВ бр. 68 от 28.07.2026
   unit: хил. € and %
   live: false
@@ -156,7 +156,7 @@ sources:
   access: auto
   acquisition: fetch
   format: html
-  parser: pipeline/budget_pipeline/extract/dv_laws.py, pipeline/budget_pipeline/build/rates.py
+  parser: python -m budget_pipeline.extract.dv_laws, python -m budget_pipeline.build.rates
   period: ЗБНЗОК 2026, ДВ бр. 68 от 28.07.2026
   unit: хил. € and %
   live: false
@@ -171,7 +171,7 @@ sources:
   access: auto-bg
   acquisition: fetch-bg
   format: pdf
-  parser: pipeline/budget_pipeline/build/rates.py
+  parser: python -m budget_pipeline.build.rates
   period: social security contributions 2026
   unit: '%'
   live: false
@@ -188,7 +188,7 @@ sources:
   access: auto
   acquisition: fetch
   format: json
-  parser: pipeline/budget_pipeline/build/debt.py, pipeline/budget_pipeline/build/feed.py, reference/prototype/tools/build_src.py
+  parser: python -m budget_pipeline.build.debt, python -m budget_pipeline.build.feed
   period: 2015–2026
   unit: млн. €, % of GDP, persons
   live: true
@@ -206,18 +206,18 @@ sources:
     url: https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/gov_10q_ggdebt?geo=BG&na_item=GD&sector=S13&unit=MIO_EUR&unit=PC_GDP&sinceTimePeriod=2024-Q1
     title: Тримесечен дълг на сектор „Държавно управление“
   - path: data/cache/eurostat_pop_nuts3_bg.json
-    via: pipeline/budget_pipeline/sources/boundaries.py
+    via: python -m budget_pipeline.sources.boundaries
     url: https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/demo_r_pjanaggr3
-    title: population of the 28 oblasts (NUTS 3), written by pipeline/budget_pipeline/sources/boundaries.py
+    title: population of the 28 oblasts (NUTS 3), written by python -m budget_pipeline.sources.boundaries
     sha256: c5869aac65138237d190e14c0389f5688c8e5c85af72ac3edb3f5019cb19fc58
   - path: tmp/sources/eurostat/nama_10_a10_BG.json
     pinned: false
     url: https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/nama_10_a10?format=JSON&lang=EN&geo=BG&unit=CP_MEUR&na_item=B1G&sinceTimePeriod=2019
-    title: gross value added by sector (NAMA.json of pipeline/budget_pipeline/build/gva_sectors.py)
+    title: gross value added by sector (NAMA.json of python -m budget_pipeline.build.gva_sectors)
   - path: tmp/sources/eurostat/nama_10_gdp_BG.json
     pinned: false
     url: https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/nama_10_gdp?format=JSON&lang=EN&geo=BG&unit=CP_MEUR&na_item=B1GQ&na_item=D21X31&sinceTimePeriod=2019
-    title: GDP and taxes on products (GDP.json of pipeline/budget_pipeline/build/gva_sectors.py)
+    title: GDP and taxes on products (GDP.json of python -m budget_pipeline.build.gva_sectors)
   limitations:
   - 'live API: the files change with every revision (the 21.10.2026 debt revision is in the current files)'
   - 'the two national-accounts answers behind gva-sectors.json were not saved, and the current ones are revised: the published dataset cannot
@@ -229,7 +229,7 @@ sources:
   access: auto
   acquisition: fetch
   format: xml
-  parser: pipeline/budget_pipeline/build/debt.py
+  parser: python -m budget_pipeline.build.debt
   period: quarterly debt, 2015–2026
   unit: млн. €
   live: true
@@ -247,13 +247,13 @@ sources:
   access: auto
   acquisition: fetch
   format: json
-  parser: pipeline/budget_pipeline/sources/boundaries.py
+  parser: python -m budget_pipeline.sources.boundaries
   period: LAU 2024
   unit: persons, km²
   live: false
   files:
   - path: data/cache/gisco_lau_bg.json
-    via: pipeline/budget_pipeline/sources/boundaries.py
+    via: python -m budget_pipeline.sources.boundaries
     sha256: b9793b72951e164b5a2bcdbf3004ac13fdbb15a071d5164dfc1d658d58f76208
     url: https://gisco-services.ec.europa.eu/distribution/v2/lau/
     title: '265 municipalities: code, name, population, area, borders (streamed from the 100+ MB GeoJSON)'
@@ -266,7 +266,7 @@ sources:
   access: auto
   acquisition: fetch
   format: xlsx
-  parser: pipeline/budget_pipeline/build/payments.py
+  parser: python -m budget_pipeline.build.payments
   period: 27–31.08.2026, three days
   unit: €
   live: true
@@ -280,11 +280,11 @@ sources:
   - path: data/cache/sebra_27.08.2026.xlsx
     url: https://midt.gov.bg/upload/3789/27.08..2026.xlsx
     sha256: 4a27f0714b8f5812825a9e6181f01dfe91526af8774294a090adb9365774b936
-    title: daily summary for 27.08.2026, written by pipeline/budget_pipeline/sources/payments.py
+    title: daily summary for 27.08.2026, written by python -m budget_pipeline.sources.payments
   - path: data/cache/sebra_28.08.2026.xlsx
     url: https://midt.gov.bg/upload/3790/28.08..2026.xlsx
     sha256: 3d3f09e4db49e75040001c4f262cb8a8f055031624a16988377962bffb10af11
-    title: daily summary for 28.08.2026, written by pipeline/budget_pipeline/sources/payments.py
+    title: daily summary for 28.08.2026, written by python -m budget_pipeline.sources.payments
   limitations:
   - 'three days of one ministry: not national, not annual (sebra.json is built but no screen loads it)'
 - id: dataeuropa
@@ -317,7 +317,7 @@ sources:
   access: browser-only
   acquisition: import
   format: pdf
-  parser: pipeline/budget_pipeline/extract/dbp2027.py
+  parser: python -m budget_pipeline.extract.dbp2027
   period: draft budgetary plan 2027, 15.10.2026
   unit: млн. € and % of GDP
   live: false
@@ -347,7 +347,7 @@ sources:
   access: supplied
   acquisition: supplied
   format: pdf, txt
-  parser: pipeline/budget_pipeline/extract/glossary.py, pipeline/budget_pipeline/build/editorial.py
+  parser: python -m budget_pipeline.extract.glossary, python -m budget_pipeline.build.editorial
   live: false
   files:
   - path: tmp/guide/Budget-na-svetlo-rechnik-64-termina.pdf
@@ -398,20 +398,20 @@ sources:
   publisher: Работна група „Бюджет на светло“
   access: generated
   acquisition: generated
-  parser: pipeline/budget_pipeline/build/examples.py
+  parser: python -m budget_pipeline.build.examples
   live: false
   files: []
   limitations:
   - 'not an external source: marks the example values of build_mock.py (seed 20261002)'
 intermediates:
 - path: data/originals/MANIFEST.json
-  producer: pipeline/budget_pipeline/sources/download.py
+  producer: python -m budget_pipeline.sources.download
   inputs:
   - network
   reproducible: false
   note: the acquisition log of download.py (URL, size, sha256, HTTP status, date of each file); catalog.py copies the dates into catalog.json
 - path: data/originals/asbp/asbp_tables.json
-  producer: pipeline/budget_pipeline/extract/asbp_tables.py
+  producer: python -m budget_pipeline.extract.asbp_tables
   inputs:
   - asbp
   reproducible: true
@@ -419,48 +419,48 @@ intermediates:
     gives byte for byte; the earlier pin (8c1790c4…) was a hand-edited version that is not available, and data/release is identical
     with the new one
 - path: data/originals/dv/dv_laws_2026.json
-  producer: pipeline/budget_pipeline/extract/dv_laws.py
+  producer: python -m budget_pipeline.extract.dv_laws
   inputs:
   - zdb
   - zbdoo
   - zbnzok
   reproducible: true
 - path: data/originals/program_budgets/*
-  producer: pipeline/budget_pipeline/extract/program_budgets.py
+  producer: python -m budget_pipeline.extract.program_budgets
   inputs:
   - prb
   reproducible: true
   note: the PDFs (and the 7z of the judiciary) unpacked from folder 7 of the bill archive
 - path: data/cache/research/mf-umtbf-2026-2028/extracts/pdf_pages_clean.json
-  producer: pipeline/budget_pipeline/extract/asbp_pages.py
+  producer: python -m budget_pipeline.extract.asbp_pages
   inputs:
   - asbp
   reproducible: true
   sha256: 2d80b15c16e0e26f658f057577c1f4bf0badb589cd744781cd94c90a919eeff4
   note: needs PyMuPDF 1.26.5 (pipeline/requirements.txt)
 - path: data/cache/research/dbp-2027/dbp2027_figures.json
-  producer: pipeline/budget_pipeline/extract/dbp2027.py
+  producer: python -m budget_pipeline.extract.dbp2027
   inputs:
   - dbp2027
   reproducible: true
   pinned: false
   note: not on the machines checked on 05.11.2026 (its PDF is missing too)
 - path: tmp/versions/site-v2/data/*
-  producer: pipeline/budget_pipeline/build/rebuild.py
+  producer: python -m budget_pipeline.build.rebuild
   inputs:
   - git tag mock-v2
   reproducible: true
   pinned: false
   note: the old wording of catalog, core and search-index, from the tag mock-v2 (git fetch --tags)
 - path: tmp/versions/site-v4/data/*
-  producer: pipeline/budget_pipeline/build/rebuild.py
+  producer: python -m budget_pipeline.build.rebuild
   inputs:
   - git tag mock-v4
   reproducible: true
   pinned: false
   note: the new wording, from the tag mock-v4
 - path: data/cache/law_bill.json
-  producer: pipeline/budget_pipeline/extract/bill.py
+  producer: python -m budget_pipeline.extract.bill
   inputs:
   - zdb
   - bill
@@ -469,25 +469,26 @@ intermediates:
   reproducible: true
   sha256: a3d0dca8d545fc4acdcfac55be210d395b4170f819fff0b793ea4e7a0d3b2291
 - path: data/inputs/program_budgets_2026.json
-  producer: pipeline/budget_pipeline/extract/program_budgets.py
+  producer: python -m budget_pipeline.extract.program_budgets
   inputs:
   - prb
   - data/inputs/zdb2026.json
   reproducible: true
 - path: data/inputs/zdb2026.json
-  producer: pipeline/budget_pipeline/extract/program_budgets.py
+  producer: python -m budget_pipeline.extract.program_budgets
   inputs:
   - zdb
   - prb
   reproducible: true
 - path: data/inputs/glossary.json
-  producer: pipeline/budget_pipeline/extract/glossary.py
+  producer: python -m budget_pipeline.extract.glossary
   inputs:
   - wg
   reproducible: false
   note: its input PDF (tmp/guide/Budget-na-svetlo-rechnik-64-termina.pdf) is missing
 - path: data/inputs/kfp_components_2026.json
-  producer: reference/prototype/tools/build_src.py
+  producer: null
+  historical_producer: reference/prototype/tools/build_src.py
   inputs:
   - kfp
   - asbp
@@ -496,50 +497,58 @@ intermediates:
   reproducible: false
   note: build_src.py reads 2026-EU_funds_0726_BG_WEB_2.xls, a July version that a later correction replaced
 - path: data/inputs/municipal_transfers_2026.json
-  producer: reference/prototype/tools/build_src.py
+  producer: null
+  historical_producer: reference/prototype/tools/build_src.py
   inputs:
   - zdb
   reproducible: false
   note: build_src.py stops before it (see kfp_components_2026.json)
 - path: data/inputs/population.json
-  producer: reference/prototype/tools/build_src.py
+  producer: null
+  historical_producer: reference/prototype/tools/build_src.py
   inputs:
   - eurostat
   reproducible: false
   note: 'reads the live tps00001 answer: the current answer (updated 2026-10-27) differs from the committed file (2026-09-30)'
 - path: data/inputs/debt_stock.json
-  producer: reference/prototype/tools/build_src.py
+  producer: null
+  historical_producer: reference/prototype/tools/build_src.py
   inputs:
   - eurostat
   reproducible: false
   note: 'reads the live gov_10dd_edpt1 answer: the 21.10.2026 revision changes it'
 - path: data/inputs/rates_2026.json
-  producer: reference/prototype/tools/build_src.py
+  producer: null
+  historical_producer: reference/prototype/tools/build_src.py
   inputs:
   - bill
   - zbdoo
   reproducible: false
   note: 'prototype only: no site builder reads it'
 - path: data/inputs/revenue_structure_2026.json
-  producer: reference/prototype/tools/build_src.py
+  producer: null
+  historical_producer: reference/prototype/tools/build_src.py
   inputs:
   - asbp
   reproducible: false
   note: 'prototype only: no site builder reads it'
 - path: data/inputs/home_kpis_2026.json
-  producer: pipeline/budget_pipeline/extract/home_kpis.py
+  producer: null
+  historical_producer: reference/prototype/tools/home_kpis.py
   inputs:
   - asbp
   reproducible: false
   note: prototype only; the script now writes a different file
 - path: data/inputs/kfp_monthly_2025.json
-  producer: reference/prototype/tools/build_2025_json.py
+  producer: null
+  historical_producer: reference/prototype/tools/build_2025_json.py
   inputs:
   - kfp
   reproducible: false
   note: prototype only; the script stops with IndexError on the current reports
 - path: data/inputs/kfp_monthly_2026.json
-  producer: reference/prototype/tools/extract_2025.py
+  producer: null
+  historical_producer: reference/prototype/tools/extract_2025.py
   inputs:
   - kfp
   reproducible: false
@@ -580,9 +589,3 @@ intermediates:
   inputs: []
   reproducible: false
   note: 'prototype only: the HTML template of reference/prototype/site/index.html'
-- path: reference/prototype/site/index.html
-  producer: reference/prototype/tools/gen_inline.py
-  inputs:
-  - data/inputs/template.html
-  reproducible: false
-  note: the single-file prototype; not part of the site

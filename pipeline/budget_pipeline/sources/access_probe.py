@@ -13,18 +13,16 @@
 Не заобикаля защити: не пуска браузър, не решава проверки, не сменя IP адреса.
 
 Употреба:
-    python3 pipeline/budget_pipeline/sources/access_probe.py                       # таблица в терминала
-    python3 pipeline/budget_pipeline/sources/access_probe.py --label "София, дом"  # бележка къде е пусната пробата
-    python3 pipeline/budget_pipeline/sources/access_probe.py --json probe.json     # и машинночетим отчет
-    python3 pipeline/budget_pipeline/sources/access_probe.py --only minfin nra     # само избрани източници (по префикс на id)
+    python -m budget_pipeline.sources.access_probe                       # таблица в терминала
+    python -m budget_pipeline.sources.access_probe --label "София, дом"  # бележка къде е пусната пробата
+    python -m budget_pipeline.sources.access_probe --json probe.json     # и машинночетим отчет
+    python -m budget_pipeline.sources.access_probe --only minfin nra     # само избрани източници (по префикс на id)
 
-Само стандартна библиотека (Python 3.9+). Не пише нищо освен файла от --json.
+Само стандартна библиотека (Python 3.12+). Не пише нищо освен файла от --json.
 Изход 0 винаги, когато пробата е изпълнена: недостъпният източник е резултат, не грешка.
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import argparse
 import datetime

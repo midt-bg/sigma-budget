@@ -108,7 +108,7 @@ token в `CF_ACCESS_CLIENT_ID` и `CF_ACCESS_CLIENT_SECRET`. Токените н
 
 Издание, което никога не е било текущо, не е публично. Публичните маршрути отговарят `405` на всичко освен GET и HEAD.
 
-**Проверката** `python tests/release/release_check.py` пуска Worker-а с локални D1 и R2 и минава сценариите от раздел 11 със синтетични
+**Проверката** `python -m tests.release.release_check` пуска Worker-а с локални D1 и R2 и минава сценариите от раздел 11 със синтетични
 издания: 9 (достъп), 3 (повредено качване), 4 (прекъсване), 5 (двама оператори), връщане и публичния API. CI я пуска при всеки PR.
 С `--real work/candidate` публикува и истинското издание и го пресъздава с `budget reproduce --current` от оригиналите, които сваля от
 самото издание.
@@ -116,13 +116,13 @@ token в `CF_ACCESS_CLIENT_ID` и `CF_ACCESS_CLIENT_SECRET`. Токените н
 **Среди.** Създаването на среда е отделно от deploy-а на кода и иска Cloudflare акаунта (раздел 12):
 
 ```bash
-npx wrangler d1 create sigma-budget-staging-registry          # id-то влиза в env.staging
-npx wrangler r2 bucket create sigma-budget-staging-objects
-npx wrangler d1 migrations apply DB --env staging --remote
+npx wrangler d1 create sigma-budget-staging-registry -c apps/web/wrangler.jsonc          # id-то влиза в env.staging
+npx wrangler r2 bucket create sigma-budget-staging-objects -c apps/web/wrangler.jsonc
+npx wrangler d1 migrations apply DB --env staging --remote -c apps/web/wrangler.jsonc
 ```
 
 После: Access приложение за `/admin/*` с allow политика за операторите; `ACCESS_ISSUER` и `ACCESS_AUD` в `env.staging.vars`;
-`OPERATORS` като таен ключ на Worker-а (`npx wrangler secret put OPERATORS --env staging`), за да не са имейлите в публичното
+`OPERATORS` като таен ключ на Worker-а (`npx wrangler secret put OPERATORS --env staging -c apps/web/wrangler.jsonc`), за да не са имейлите в публичното
 хранилище; адресът на staging в `pipeline/environments.json`. Production следва същите стъпки по-късно, ръчно (етап E).
 
 Zero Trust организацията има нужда от метод за вход (**Integrations → Identity providers**: One-time PIN или Cloudflare); без него
@@ -131,15 +131,15 @@ Zero Trust организацията има нужда от метод за в�
 „not an operator of this environment“.
 
 **Своя среда.** Средата на организацията е в `apps/web/wrangler.jsonc` и `pipeline/environments.json`. Среда в собствен акаунт (например за проба)
-не влиза в git: `wrangler.local.jsonc` е копие на `apps/web/wrangler.jsonc` с id-тата и адреса на акаунта, а `pipeline/environments.local.json`
+не влиза в git: `apps/web/wrangler.local.jsonc` е копие на `apps/web/wrangler.jsonc` с id-тата и адреса на акаунта, а `pipeline/environments.local.json`
 добавя или заменя среди за `budget`. Двата файла са в `.gitignore`. Сглобяването го чете от `WRANGLER_CONFIG`, а командите на
-wrangler получават `-c wrangler.local.jsonc`:
+wrangler получават `-c apps/web/wrangler.local.jsonc`:
 
 ```bash
-npx wrangler d1 migrations apply DB --env staging --remote -c wrangler.local.jsonc
-CLOUDFLARE_ENV=staging WRANGLER_CONFIG=./wrangler.local.jsonc npm run build    # build/: Worker-ът на staging от собствения акаунт
-npx wrangler deploy -c build/server/wrangler.json
-npx wrangler secret put OPERATORS --env staging -c wrangler.local.jsonc
+npx wrangler d1 migrations apply DB --env staging --remote -c apps/web/wrangler.local.jsonc
+CLOUDFLARE_ENV=staging WRANGLER_CONFIG=apps/web/wrangler.local.jsonc npm run build    # build/: Worker-ът на staging от собствения акаунт
+npx wrangler deploy -c apps/web/build/server/wrangler.json
+npx wrangler secret put OPERATORS --env staging -c apps/web/wrangler.local.jsonc
 ```
 
 Таен ключ не може да носи името на обикновена променлива на качената версия (код 10053), затова `secret put` идва след deploy-а.
@@ -171,7 +171,9 @@ Access приложението покрива само `/admin/*`: сайтът
 - **Сървърният HTML е екранът преди браузъра.** Графиките (ECharts), картата на общините с избраната община и бутоните за PNG се
   добавят в браузъра. Текстът, таблиците, връзките на екрана и връзките към речника (`apps/web/client/glossary-scan.js`, същите правила като в
   браузъра) са в HTML-а от сървъра; `apps/web/scripts/ssr_parity.py` сравнява двата.
-- **Не всичко се сглобява от оригиналите.** `coverage` и `python pipeline/budget_pipeline/validate/registry.py check` казват кои набори се пренасят от git, без
+- **Не всичко се сглобява от оригиналите.** `coverage` и `python -m budget_pipeline.validate.registry check` казват кои набори се пренасят от git, без
   да се сглобяват (речникът, пътеводителят, примерните набори, `gva-sectors`, `dbp2027`), и кои междинни файлове нямат работещ производител.
 - **`refetch` на страниците на Държавен вестник дава `changed`**, защото балансьорът на натоварването вгражда в страницата нов
   токен при всяко сваляне. Текстът на законите е същият. Разликата се отчита, не се крие.
+
+Всички команди тук се изпълняват от корена на хранилището. Конфигурацията за собствен акаунт е `apps/web/wrangler.local.jsonc`, до `apps/web/wrangler.jsonc`, така че относителните `main` и `migrations_dir` запазват значението си. За нея се използва `-c apps/web/wrangler.local.jsonc`, а при сглобяване - `WRANGLER_CONFIG=apps/web/wrangler.local.jsonc`. Vite разрешава тази променлива спрямо корена на хранилището. Deploy на сглобен сайт използва `-c apps/web/build/server/wrangler.json`.

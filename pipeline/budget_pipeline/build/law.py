@@ -16,9 +16,7 @@ revenue - expenditure - transfers - EU contribution = balance fails in either ve
 extraction printed; a number in this file differs from ministries.json; the parliament files disagree with the dates typed here.
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import ast
 import re

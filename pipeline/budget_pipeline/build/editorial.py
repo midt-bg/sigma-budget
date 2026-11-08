@@ -1,26 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""editorial.py - glossary.json (DATA_SPEC 3.16) and guide.json (3.17) for the Mock site.
+"""editorial.py - glossary.json (DATA_SPEC 3.16) and guide.json (3.17) for the example site.
 
 Both files are EDITORIAL TEXT, not data: every word of the glossary terms and of the guide is copied programmatically
 
-import sys as _sys
-from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
-ROOT = _Path(__file__).resolve().parents[3]
 from the original sources and is never retyped here:
 
   glossary  <-  data/inputs/glossary.json            (64 terms, 5 categories, 7 related-term rows, 7 sources)
   guide     <-  data/cache/research/guide/guide_raw.txt   (introduction, 8 steps, "Preди да използваш или споделиш число")
 
 Only the SHAPE changes (slug/categories/aliases/related/see as in DATA_SPEC 3.16, steps/blocks/next/checks as in 3.17).
-The "Виж в бюджета" links of the old single-file prototype are mapped to the route keys of the new router and every
+The "Виж в бюджета" links of the old single-file frozen input are mapped to the route keys of the new router and every
 href is checked against apps/web/client/routes.js (pattern match + route-param registry). A link that cannot be resolved
 stops the build; nothing is guessed.
 
 Deterministic (no clock, no randomness): two runs give byte-identical files. Pure Python 3 standard library.
 
-Usage:  python3 pipeline/budget_pipeline/build/editorial.py [--check]       (--check = build in memory, compare with disk, write nothing)
+Usage:  python -m budget_pipeline.build.editorial [--check]       (--check = build in memory, compare with disk, write nothing)
 Output: data/release/glossary.json, data/release/guide.json     (exit code != 0 on any problem)
 Input not in the repository: data/cache/research/guide/guide_raw.txt (the guide text as supplied; the result is already in data/release/guide.json).
 """
@@ -46,7 +42,7 @@ REVENUE_GROUPS = ["dds", "osiguritelni", "nedanachni", "pomoshti", "ddfl", "akci
 
 SEE_LABEL = "Виж в бюджета"
 
-# "Виж в бюджета": slug -> new href.  Old target (GL_SEE of prototype v3.6 / apps/web/public/index.html) in the comment.
+# "Виж в бюджета": slug -> new href.  Old target (GL_SEE of frozen input v3.6 / apps/web/public/index.html) in the comment.
 # Sub-block anchors of the old single page (ix-komp, ix-mesec, ix-res, dl-*, tx-dop, jul) do not exist in the new router,
 # so those links point to the screen that now holds the block ("approximate").
 SEE = {
@@ -339,7 +335,7 @@ TITLE_RE = re.compile(r"^(.*?)\s*„([^“]+)“\s*$")
 CHECKS_HEADING = "Преди да използваш или споделиш число"
 NEXT_PREFIX = "Следва: "
 CHECK_RE = re.compile(r"^(Провери пет неща:) (.+?)\. (Използвай .+)$")
-CHECK_SHORT = ["Период", "Обхват", "Единица", "Статус", "Източник"]       # editorial short labels (also in the old prototype v3.4)
+CHECK_SHORT = ["Период", "Обхват", "Единица", "Статус", "Източник"]       # editorial short labels (also in the old frozen input v3.4)
 CREDIT = "Работна група „Бюджет на светло“"
 
 
@@ -521,7 +517,11 @@ def verify_guide(out):
 
 # --------------------------------------------------------------------------------------------------------- main
 def main(argv):
-    check_only = "--check" in argv
+    import argparse
+    parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    parser.add_argument("--check", action="store_true")
+    args = parser.parse_args(argv)
+    check_only = args.check
     routes = parse_routes()
     if len(routes) < 20:
         problem("routes.js: only %d routes parsed (expected 30)" % len(routes))

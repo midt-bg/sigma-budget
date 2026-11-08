@@ -1,27 +1,11 @@
 #!/usr/bin/env python3
-"""guide_base.py - keep the 8-step guide texts of site/ (data/guide.json) in line with the screen names of apps/web/client/routes.js (run at the tag mock-v6).
-(V5: the guide is no longer a screen; its notes and the five checks are shown in «Бюджетът за 5 минути» (S04). The texts still name the screens
-they point at, so the check stays: every step names a real route with that title and step number.)
+"""Align and validate the editorial guide against the current screen titles and links."""
 
-The guide text is the working group's own (editorial.py takes it from data/cache/research/guide/guide_raw.txt and checks it against
-the v1 routes.js). V5 renamed three screens the guide points at, so the old check «guide step 1: no route with title
-'Какъв е бюджетът?'» stays red on the donor and is NOT hidden here: this script changes the three titles in the V5 copy of the
-guide (steps 1, 6, 8 and the «Следва» links that name them), says so in the file's own sourceNote, and then CHECKS the result
-against apps/web/client/routes.js exactly the way editorial.py does (route title == quoted screen name, route step == step number,
-href resolves to that route, the «Следва» link of step n names step n+1).
-
-  python3 pipeline/budget_pipeline/build/guide.py            apply the V5 wording (idempotent) and check
-  python3 pipeline/budget_pipeline/build/guide.py --check    check only, write nothing; exit 1 on any problem
-"""
-
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
-ROOT = _Path(__file__).resolve().parents[3]
 import json, os, re, sys
 
 ROOT = str(_Path(__file__).resolve().parents[3])   # repository root
-SITE = os.path.join(ROOT, "apps", "web", "public")                  # the site (run this at the tag mock-v6)
+SITE = os.path.join(ROOT, "apps", "web", "public")                  # the site (current site)
 GUIDE = os.path.join(ROOT, "data", "release", "guide.json")
 ROUTES = os.path.join(ROOT, "apps", "web", "client", "routes.js")
 
@@ -104,7 +88,7 @@ def main():
     if not only and not probs:
         with open(GUIDE, "w", encoding="utf-8") as f:
             json.dump(g, f, ensure_ascii=False, separators=(",", ":"))
-    print("guide_base: %s, %d problem(s)" % ("checked" if only else "applied", len(probs)))
+    print("guide: %s, %d problem(s)" % ("checked" if only else "applied", len(probs)))
     for p in probs:
         print("  PROBLEM", p)
     sys.exit(1 if probs else 0)

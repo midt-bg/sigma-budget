@@ -9,9 +9,7 @@ Runs after the datasets it reads (debt, rates, law, sebra, expenditure) and befo
 list as RSS 2.0; the site address is a placeholder until the real one is known (env BNS_SITE_URL).
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import calendar
 import datetime

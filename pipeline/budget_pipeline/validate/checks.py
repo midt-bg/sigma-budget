@@ -4,9 +4,6 @@ Pure standard library. Nothing here writes a file.
 """
 
 
-import sys as _sys
-from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 import json
 import math
 import os
@@ -16,8 +13,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))     # .../pipeline/budget_pipe
 ROOT = str(__import__("pathlib").Path(__file__).resolve().parents[3])         # repository root
 SITE = os.path.join(ROOT, "apps", "web", "public")                     # the site
 DATA = os.environ.get("BUDGET_DATA_DIR") or os.path.join(ROOT, "data", "release")   # pipeline/budget_pipeline/cli.py validate points it at a release
-PROTO = os.path.join(ROOT, "prototype")
-RAW = os.path.join(ROOT, "data", "originals")              # raw sources, NOT in the repository: see docs/data-sources.md
+RAW = os.path.join(ROOT, "data", "originals")              # raw originals; tracked MF documents and downloaded external sources: see docs/data-sources.md
 TMP = os.path.join(ROOT, "tmp")                       # scratch and outputs (gitignored)
 BUILD_DATE = os.environ.get("BUILD_DATE", "2026-11-05")
 ISO = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -178,7 +174,7 @@ class Ctx(object):
         return self._routes
 
     def proto(self, rel):
-        """A JSON file of the frozen prototype (read only)."""
+        """A JSON file of the frozen frozen input (read only)."""
         with open(os.path.join(ROOT, "data", "inputs", rel.removeprefix("src/")), "r", encoding="utf-8") as fh:
             return json.loads(fh.read())
 

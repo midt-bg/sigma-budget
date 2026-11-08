@@ -9,9 +9,7 @@ The other groups read execution.json through the adapter (money as floats). This
     column, a rule for the computed row, and an Annex 3 locator (page and row) for every plan item.
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import json
 import os

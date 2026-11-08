@@ -1,19 +1,7 @@
 #!/usr/bin/env python3
-"""base.py: the data contract of the Mock prototype (DATA_SPEC section 5). Pure standard library.
+"""Run the shared dataset contract checks. Use python -m budget_pipeline.validate.datasets for the complete current release contract."""
 
-Run from anywhere:  tmp/venv/bin/python pipeline/budget_pipeline/validate/base.py [--only GROUP,...] [-v] [--no-rebuild] [--no-mock] [--list]
-
-  --only     comma separated group names (see --list); default: all
-  -v         print every problem, warning and fact in full
-  --no-rebuild  skip the REBUILD group (an in-process `datasets.py --check`)
-  --no-mock  skip the MOCK group (`python3 reference/mock/validate_mock.py`, DATA2's validator)
-Exit code: 0 all checks passed, 1 at least one violation, 2 usage error.
-Each group prints one line: OK|FAIL, name, number of checks and the key facts it established.
-"""
-
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import argparse
 import os
@@ -22,10 +10,9 @@ import time
 import traceback
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, HERE)
 
 import budget_pipeline.validate.checks as L                                       # noqa: E402
-import budget_pipeline.validate.foundations as foundations, fiscal, budgets, groups           # noqa: E402,E401
+from budget_pipeline.validate import foundations, fiscal, budgets, groups
 
 MODULES = (foundations, fiscal, budgets, groups)
 
@@ -33,7 +20,7 @@ MODULES = (foundations, fiscal, budgets, groups)
 # Run order of the groups (a group missing here still runs, after these): foundations, then the data in the order of the plan,
 # the catalog (which describes everything) near the end, and the two groups that run other programs last.
 ORDER = ("PROTO", "ENVELOPE", "NUMBERS", "SIZES", "PRIVACY", "GLOSSARY", "CORE", "KFP", "ANNEX3", "REVENUE", "EXPENDITURE", "MEASURES",
-         "LAW", "BUDGETS", "PROGRAMS", "DEBT", "MUNIC", "SEBRA", "COMPONENTS", "RATES", "SEARCH", "FEED", "CATALOG", "REBUILD", "MOCK")
+         "LAW", "BUDGETS", "PROGRAMS", "DEBT", "MUNIC", "SEBRA", "COMPONENTS", "RATES", "SEARCH", "FEED", "CATALOG")
 
 
 def all_groups():
@@ -52,8 +39,6 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0], add_help=True)
     ap.add_argument("--only", default="", help="comma separated group names")
     ap.add_argument("-v", "--verbose", action="store_true")
-    ap.add_argument("--no-rebuild", action="store_true")
-    ap.add_argument("--no-mock", action="store_true")
     ap.add_argument("--list", action="store_true", help="list the groups and exit")
     try:
         a = ap.parse_args(argv)
@@ -70,7 +55,7 @@ def main(argv=None):
         if w not in names:
             print("unknown group %r (try --list)" % w, file=sys.stderr)
             return 2
-    ctx = L.Ctx({"no_rebuild": a.no_rebuild, "no_mock": a.no_mock, "verbose": a.verbose})
+    ctx = L.Ctx({"verbose": a.verbose})
     t0 = time.time()
     n_files = len(L.data_files())
     print("base: data/release, %d files, build date %s" % (n_files, L.BUILD_DATE))
@@ -78,12 +63,6 @@ def main(argv=None):
     failed = []
     for name, fn, _doc in groups:
         if wanted and name not in wanted:
-            continue
-        if name == "REBUILD" and a.no_rebuild and not wanted:
-            print("skip  %-11s (--no-rebuild)" % name)
-            continue
-        if name == "MOCK" and a.no_mock and not wanted:
-            print("skip  %-11s (--no-mock)" % name)
             continue
         t1 = time.time()
         try:

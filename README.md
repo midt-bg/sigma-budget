@@ -6,7 +6,7 @@
 
 ```text
 apps/web/       React Router SSR на Cloudflare Workers; app/, workers/api/, client/, public/, migrations/, scripts/
-pipeline/       Python пакет budget_pipeline: sources/, extract/, build/, validate/, release/; Dockerfile и зависимости
+pipeline/       Python пакет budget_pipeline: sources/, extract/, build/, validate/; Dockerfile и зависимости
 data/           originals/, inputs/, cache/ (извън git), release/, sources.yaml, datasets.yaml, originals.sha256
 tests/          e2e/, release/, requirements-dev.txt и requirements-dev.lock
 reference/      исторически prototype/ и mock/; не се сглобяват и изпълняват в CI
@@ -25,7 +25,7 @@ npm run dev -- --port 8814
 # http://127.0.0.1:8814/
 
 # Браузърната част без SSR; временната директория съчетава public/, client/ и data/release/
-python3 apps/web/scripts/serve.py
+python3 -m apps.web.scripts.serve
 ```
 
 npm зависимостите се инсталират в корена с един `package-lock.json`. Сглобеният сайт е в `apps/web/build/`. Клиентът се публикува под `/js/`, а данните от `data/release/` под `/data/`; публичните адреси са запазени. SSR чете текущото издание от D1/R2; без регистър използва включеното в сглобяването издание.
@@ -35,19 +35,21 @@ npm зависимостите се инсталират в корена с ед
 ```bash
 uv venv tmp/venv --python 3.12
 uv pip install --python tmp/venv/bin/python --require-hashes -r tests/requirements-dev.lock
+uv pip install --python tmp/venv/bin/python --no-deps -e pipeline
 PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m playwright install chromium
 uv venv tmp/venv-data --python 3.12
 uv pip install --python tmp/venv-data/bin/python --require-hashes -r pipeline/requirements.lock
+uv pip install --python tmp/venv-data/bin/python --no-deps -e pipeline
 
 npm run typecheck
-tmp/venv/bin/python pipeline/budget_pipeline/validate/registry.py check
+python -m budget_pipeline.validate.registry check
 ./budget validate --site
-tmp/venv/bin/python pipeline/budget_pipeline/validate/datasets.py
-tmp/venv/bin/python tests/release/compat_check.py
-tmp/venv/bin/python apps/web/scripts/query_check.py
-PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python apps/web/scripts/build.py --env staging --noindex
+python -m budget_pipeline.validate.datasets
+tmp/venv/bin/python -m tests.release.compat_check
+tmp/venv/bin/python -m apps.web.scripts.query_check
+PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m apps.web.scripts.build --env staging --noindex
 # След това Worker-ът се стартира с npm run dev; пълната проверка върви срещу него:
-PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python tests/e2e/screens.py --url http://127.0.0.1:8814/
+PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.screens --url http://127.0.0.1:8814/
 ```
 
 Останалите браузърни проверки са `redirects.py`, `calc_check.py`, `share_check.py`, `accept.py` и `motion.py` в `tests/e2e/`. Те използват временния статичен сайт. `overlap.py` и `perf.py` проверяват припокриване и работа при ограничен процесор. Очакваните числа се четат от текущите данни чрез `expect.py`. Интеграционните проверки `tests/release/release_check.py` и `restore_drill.py` изискват Node, OpenSSL и локален Worker.
@@ -62,7 +64,7 @@ GitHub Actions проверява PR и сглобява staging. Push към ma
 
 ## Документация
 
-[Спецификация](docs/approach-specification.md), [ръководство за разработка](docs/dev-guide.md), [данни](docs/data-spec.md), [формати на наборите](docs/data-spec-mock.md), [план](docs/plan.md) и [архитектурни решения](docs/adr/).
+[Спецификация](docs/approach-specification.md), [ръководство за разработка](docs/dev-guide.md), [данни](docs/data-spec.md), [формати на наборите](docs/example-datasets.md), [план](docs/plan.md) и [архитектурни решения](docs/adr/).
 
 ## История и версии
 

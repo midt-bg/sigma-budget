@@ -7,9 +7,7 @@ GGD (GGALN_G01_XDC) and CGD (GCALN_G01_AC_XDC), UNIT_MULT 6 = million euro. Ever
 User-facing strings are Bulgarian, keys are English. "zdd" is a legacy key/route value: labels say "държавен дълг (МФ)".
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import math
 from xml.etree import ElementTree as ET
@@ -89,9 +87,9 @@ def _same(a, b, tol, what):
     return max([abs(x - y) for x, y in zip(a, b)] + [0.0])
 
 
-# Eurostat revises the annual series with every EDP notification (April, October); the prototype copies it is checked against
+# Eurostat revises the annual series with every EDP notification (April, October); the frozen input copies it is checked against
 # (data/inputs/debt_gdp.json, debt_stock.json) stay frozen. Each accepted revision is written out under the release ("updated" of
-# gov_10dd_edpt1) as year: (prototype, Eurostat). Any other difference, or a new release, stops the build until it is reviewed here.
+# gov_10dd_edpt1) as year: (frozen input, Eurostat). Any other difference, or a new release, stops the build until it is reviewed here.
 EUROSTAT_REVISIONS = {"2026-10-21": {
     ("BG", "PC_GDP"): {2020: (24.5, 24.4), 2022: (22.5, 22.4), 2023: (22.9, 22.8), 2024: (23.8, 23.7)},
     ("BG", "MIO_EUR"): {2025: (34634.9, 34797.0)},
@@ -101,7 +99,7 @@ EUROSTAT_REVISIONS = {"2026-10-21": {
 
 
 def _same_revised(new, old, years, key, release, what):
-    """Eurostat (new) against the frozen prototype copy (old), year by year: equal, or exactly the revision listed for the release."""
+    """Eurostat (new) against the frozen frozen input copy (old), year by year: equal, or exactly the revision listed for the release."""
     listed = EUROSTAT_REVISIONS.get(release, {}).get(key, {})
     if len(new) != len(old) or len(new) != len(years):
         raise ValueError("cross-check failed: %s: %d / %d values for %d years" % (what, len(new), len(old), len(years)))

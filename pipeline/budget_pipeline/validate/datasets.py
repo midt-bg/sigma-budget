@@ -1,22 +1,7 @@
 #!/usr/bin/env python3
-"""datasets.py - base.py for the version v6 (data/release at the tag mock-v6) (a thin wrapper; the donor validator and its vd_*.py modules are NOT edited).
+"""Validate the current published datasets. The base contract is supplemented by execution checks and an explicit list of documented compatibility exceptions. Every unmatched problem remains a failure; --no-accepted reports the underlying contract without exceptions."""
 
-Run:  tmp/venv/bin/python pipeline/budget_pipeline/validate/datasets.py [--only GROUP,...] [-v] [--list] [--no-accepted]
-
-What differs from base.py (each point is a deliberate V5 decision, see docs/plan.md):
-  * DATA / SITE of checks are the checked-out site/ (the validators read the paths through the checks module, so nothing else changes).
-  * REBUILD and MOCK are skipped: they run datasets.py --check / validate_mock.py against the v1 donor tree and the
-    donor builders know nothing of the V5 active layer (the generated "C" sets and the daily СЕБРА set are taken out by tools/active_data.py).
-    The same question for V5 is answered by `diff_json_v5.py tmp/versions/site-v1/data data/release` (every differing leaf is classified).
-  * The SEARCH group is run with empty stand-ins for the three mock sets V5 removed (mock/projects, activities, payments); it crashed on them.
-  * Problems that follow ONLY from what V5 removed on purpose are moved out of the failure count into an explicit list (ACCEPTED below: group,
-    pattern, reason). They are printed with the reason at the end - nothing is hidden - and a problem not matched by a pattern stays a failure.
-    --no-accepted turns the list off and shows the donor's raw verdict.
-"""
-
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import json
 import os
@@ -24,18 +9,17 @@ import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, HERE)
 
 import budget_pipeline.validate.checks as L                                    # noqa: E402
 
-# checks.SITE / DATA already point at site/ (the checked-out version; run this at the tag mock-v6)
+# checks.SITE / DATA already point at the site assets/ (the checked-out version; current site)
 
 import budget_pipeline.validate.base as V                             # noqa: E402
 import budget_pipeline.validate.execution as execution                                    # noqa: E402  contract v2 of execution.json (stage B)
 
 GONE_SEBRA = "СЕБРА (daily payments) was taken out of the active interface and of core.sources; data/sebra.json stays on disk, unreferenced, for phase 2"
 GONE_SEARCH = "search shows only active real sets; the 7 pending and 2 mock datasets have no search row (docs/plan.md, search)"
-V6_SRC = "V6 (screen S34): four sources were added to core.sources (dbp2027, ec-edp-bg, ec-fiscal-bg, ec-dbp) that the donor registry does not list"
+SOURCE_EXTENSION = "Screen S34: four sources were added to core.sources (dbp2027, ec-edp-bg, ec-fiscal-bg, ec-dbp) that the donor registry does not list"
 
 def _feed_counts():
     """The donor expects 18 feed events plus one per 2026 report; the feed holds exactly one fewer (the СЕБРА event)."""
@@ -45,17 +29,17 @@ def _feed_counts():
 
 
 FEED_WANT, FEED_HAVE = _feed_counts()
-V6_GLOSS = "V6 (screen S34): five glossary terms (65-69) were added; the donor plan still says 64 terms"
+GLOSSARY_EXTENSION = "Screen S34: five glossary terms (65-69) were added; the donor plan still says 64 terms"
 ACCEPTED = (
-    ("ENVELOPE", r"^core\.sources keys differ from the registry: \['dbp2027', 'ec-dbp', 'ec-edp-bg', 'ec-fiscal-bg', 'sebra'\]$", GONE_SEBRA + "; " + V6_SRC),
-    ("GLOSSARY", r"^glossary has 69 terms \(the plan says 64\)$", V6_GLOSS),
+    ("ENVELOPE", r"^core\.sources keys differ from the registry: \['dbp2027', 'ec-dbp', 'ec-edp-bg', 'ec-fiscal-bg', 'sebra'\]$", GONE_SEBRA + "; " + SOURCE_EXTENSION),
+    ("GLOSSARY", r"^glossary has 69 terms \(the plan says 64\)$", GLOSSARY_EXTENSION),
     ("ENVELOPE", r"^sebra\.json: meta\.source 'sebra' is not in core\.sources$", GONE_SEBRA),
     ("CORE", r"^sources: keys \[", GONE_SEBRA + " (the donor expects the 'sebra' source key)"),
     ("FEED", r"^expected %d events, found %d$" % (FEED_WANT, FEED_HAVE), "the single СЕБРА event of the feed was removed with the daily set"),
     ("FEED", r"^event sebra-2026-09-23 is missing$", "the single СЕБРА event of the feed was removed with the daily set"),
     ("FEED", r"^events: %d, the datasets explain %d$" % (FEED_HAVE, FEED_WANT), "the single СЕБРА event of the feed was removed with the daily set"),
     ("FEED", r"^kinds \[.*\] must be exactly the kinds used by the events$", "the donor derives the 'sebra' kind from sebra.json; V5 feed has no such event"),
-    ("CATALOG", r"^files on disk but not in the catalog: \['dbp2027\.json', 'sebra\.json'\]; in the catalog but not on disk: \[\]$", GONE_SEBRA + "; V6: dbp2027.json is not listed in catalog.json (S24 would change)"),
+    ("CATALOG", r"^files on disk but not in the catalog: \['dbp2027\.json', 'sebra\.json'\]; in the catalog but not on disk: \[\]$", GONE_SEBRA + "; Screen S34: dbp2027.json is not listed in catalog.json (S24 would change)"),
     ("CATALOG", r"^counts \{'datasets': \d+, 'files': \d+, .*'files': \d+, ", GONE_SEBRA + " (the catalog counts the listed files, the folder holds one more: sebra.json)"),
     ("SEARCH", r"^datasets: \d+ rows, the catalog and the mock sets hold \d+$", GONE_SEARCH),
     ("SEARCH", r"^mock rows: 0, expected \d+$", GONE_SEARCH),
@@ -64,7 +48,7 @@ ACCEPTED = (
 
 
 class StubCtx(object):
-    """The donor context, with the three mock files V5 removed answered by empty lists (the SEARCH group sums their rows)."""
+    """The base contract context, with the three mock files the active layer removed answered by empty lists (the SEARCH group sums their rows)."""
     EMPTY = {"mock/projects.json": {"items": []}, "mock/activities.json": {"items": []}, "mock/payments.json": {"recipients": []}}
 
     def __init__(self, ctx):
@@ -98,7 +82,7 @@ def wrap(name, fn, use_accepted):
             else:
                 keep.append(p)
         if len(keep) != len(chk.problems):
-            chk.fact("%d accepted V5 divergence(s)" % (len(chk.problems) - len(keep)))
+            chk.fact("%d accepted documented contract exception(s)" % (len(chk.problems) - len(keep)))
         chk.problems = keep
         return chk
     return run
@@ -107,15 +91,11 @@ def wrap(name, fn, use_accepted):
 def main(argv):
     use_accepted = "--no-accepted" not in argv
     argv = [a for a in argv if a != "--no-accepted"]
-    if "--list" not in argv:
-        for flag in ("--no-rebuild", "--no-mock"):
-            if flag not in argv:
-                argv.append(flag)                      # see the docstring: they test the donor tree
     orig = V.all_groups
     V.all_groups = lambda: [(n, wrap(n, fn, use_accepted), d) for n, fn, d in list(orig()) + list(execution.GROUPS)]
     code = V.main(argv)
     if use_accepted and _used:
-        print("\nACCEPTED V5 DIVERGENCES (%d problems the donor reports; each follows from a deliberate removal, see the docstring):" % len(_used))
+        print("\nDOCUMENTED CONTRACT EXCEPTIONS (%d problems the donor reports; each follows from a deliberate removal, see the docstring):" % len(_used))
         seen = {}
         for g, p, why in _used:
             seen.setdefault((g, why), []).append(p)

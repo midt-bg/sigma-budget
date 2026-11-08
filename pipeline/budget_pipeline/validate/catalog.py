@@ -5,9 +5,7 @@ compared with its owner. CATALOG: catalog.json describes every file of data/rele
 Pure standard library.
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import glob
 import os
@@ -89,7 +87,7 @@ def g_core(ctx):
     c.ok(len(ser["years"]) == len(ser["persons"]) == 7 and ser["years"] == list(range(2020, 2027)) and all(isnum(x) and x > 6e6 for x in ser["persons"]), "population.series shape")
     c.ok(p["persons"] == ser["persons"][-1] and p["year"] == ser["years"][-1] == 2026 and p["date"] == "2026-01-01", "population: persons/year/date vs the series")
     pro = ctx.proto("src/population.json")
-    c.ok([int(x) for x in pro["years"]] == ser["years"] and pro["persons"] == ser["persons"], "population.series must equal the prototype's Eurostat series")
+    c.ok([int(x) for x in pro["years"]] == ser["years"] and pro["persons"] == ser["persons"], "population.series must equal the frozen Eurostat series")
     # --- KPIs copied from their owners
     k = core["kpis"]
     lat = ex["latest"]["kfp"]

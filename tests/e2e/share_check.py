@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""share_check_v5.py - does a shared link of site/ (version v6, tag mock-v6) open the same view?  (project venv only; docs/plan.md)
+"""share_check.py - does a shared link of the current site open the same view?  (project venv only; docs/plan.md)
 
-  PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python tests/e2e/share_check.py
+  PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.share_check
 
 For a set of screens in a non-default state: take every block that has a «Сподели» menu, build its link the way the menu does
 (share.linkFor), open that link in a FRESH browser context (no stored state) and check that
@@ -14,15 +14,13 @@ Exit 1 on any failure; the last line is RESULT: ...
 """
 
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
 import http.server, json, os, socketserver, sys, threading
 from pathlib import Path
 from urllib.parse import parse_qsl, urlsplit
 
 ROOT = Path(__file__).resolve().parents[2]            # repository root
-SITE = __import__("static_assets").root()                                 # the site: run this at the tag mock-v6
+SITE = __import__("tests.e2e.static_assets", fromlist=["root"]).root()                                 # the site: current site
 os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(ROOT / "tmp" / "pw-browsers"))
 
 VIEWS = [

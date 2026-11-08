@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """V5: take the generated "C" sets and the daily СЕБРА set out of the ACTIVE data layer of the v5 tree (pass the tree as the first argument).
 
-Usage: python3 tools/active_data.py SITE_DIR [--apply]
+Usage: python3 historical tools/active_data.py SITE_DIR [--apply]
 
 What it does (idempotent; only touches <SITE_DIR>/data):
   catalog.json   drops D24 (СЕБРА) and M01..M05 (generated activities, indicators, municipal finance, payments,
@@ -16,9 +16,7 @@ What it does (idempotent; only touches <SITE_DIR>/data):
 Without --apply it only prints what would change.
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import gzip, json, re, sys
 from pathlib import Path

@@ -21,15 +21,13 @@
 
 Входове: data/originals/asbp/{UMTBF-2026-2028-motivi.pdf,asbp_tables.json},
          data/originals/parliament/52-602-01-19.docx, data/originals/kfp_2026/*.xls,
-         reference/prototype/site/index.html (само за сверката с KFP_T22)
+         the archived HTML snapshot (само за сверката с KFP_T22)
 Изход:   data/inputs/home_kpis_2026.json
 Изисква: pymupdf и xlrd (pip install pymupdf xlrd) — в отделен venv, не в репото на бота.
 Употреба: python3 home_kpis.py   (изходът е 1, ако някоя проверка не мине)
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import datetime, glob, hashlib, json, os, re, sys, zipfile
 import xml.etree.ElementTree as ET

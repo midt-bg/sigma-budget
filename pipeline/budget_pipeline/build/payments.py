@@ -10,9 +10,7 @@ the organisations add up to the ministry, the period is the day in the file name
 The files hold counts and sums by category and by budget organisation. They carry no recipients and no single payments.
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import html as htmllib
 import re
@@ -25,7 +23,7 @@ M = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
 PAGE_URL = "https://midt.gov.bg/bg/transparency/sebra/2026"
 PAGE_HTML = RAW / "sebra" / "midt_sebra_2026_page.html"
 LATEST = "2026-08-31"
-FILES = {  # day -> path (the prototype archive first, then the cache written by payments.py)
+FILES = {  # day -> path (the frozen input archive first, then the cache written by payments.py)
     "2026-08-27": CACHE / "sebra_27.08.2026.xlsx",
     "2026-08-28": CACHE / "sebra_28.08.2026.xlsx",
     "2026-08-31": RAW / "sebra" / "midt_sebra_31.08.2026.xlsx",

@@ -18,9 +18,9 @@
 ## 1. Създаване на средата (веднъж)
 
 ```bash
-npx wrangler d1 create sigma-budget-registry                 # id-то → apps/web/wrangler.jsonc, горното ниво (d1_databases)
-npx wrangler r2 bucket create sigma-budget-objects
-npx wrangler d1 migrations apply DB --remote
+npx wrangler d1 create sigma-budget-registry -c apps/web/wrangler.jsonc                 # id-то → apps/web/wrangler.jsonc, горното ниво (d1_databases)
+npx wrangler r2 bucket create sigma-budget-objects -c apps/web/wrangler.jsonc
+npx wrangler d1 migrations apply DB --remote -c apps/web/wrangler.jsonc
 ```
 
 - [ ] В `apps/web/wrangler.jsonc`, горното ниво: `routes` с адреса като custom domain, `workers_dev: false`, `preview_urls: false` (Access пази
@@ -35,10 +35,10 @@ npx wrangler d1 migrations apply DB --remote
 
 ```bash
 git switch --detach <commit> && npm ci
-PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python apps/web/scripts/build.py --origin https://<адрес>   # build/ с проверка на всеки екран
-python3 tests/release/compat_check.py
-npx wrangler deploy -c build/server/wrangler.json
-npx wrangler secret put OPERATORS                            # след deploy-а: таен ключ не може да носи името на променлива (код 10053)
+PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m apps.web.scripts.build --origin https://<адрес>   # build/ с проверка на всеки екран
+python3 -m tests.release.compat_check
+npx wrangler deploy -c apps/web/build/server/wrangler.json
+npx wrangler secret put OPERATORS -c apps/web/wrangler.jsonc                            # след deploy-а: таен ключ не може да носи името на променлива (код 10053)
 ```
 
 **Проверка:**
@@ -66,15 +66,15 @@ cloudflared access login https://<адрес>/admin/operations
 ## 4. Следващо качване на кода
 
 1. CI е минал на commit-а в `main`.
-2. `python3 tests/release/compat_check.py --env-url https://<адрес>`: новият код чете текущото издание на production.
-3. `apps/web/scripts/build.py --origin https://<адрес>`, после `npx wrangler deploy -c build/server/wrangler.json`.
+2. `python3 -m tests.release.compat_check --env-url https://<адрес>`: новият код чете текущото издание на production.
+3. `apps/web/scripts/build.py --origin https://<адрес>`, после `npx wrangler deploy -c apps/web/build/server/wrangler.json`.
 4. Проверката от стъпка 2.
 
 ## 5. Връщане назад
 
 | Какво | Как |
 |---|---|
-| Кодът | `npx wrangler deployments list`, после `npx wrangler rollback <version-id>` |
+| Кодът | `npx wrangler deployments list -c apps/web/wrangler.jsonc`, после `npx wrangler rollback <version-id> -c apps/web/wrangler.jsonc` |
 | Данните | `./budget rollback --release-id <по-ранно издание> --environment production` |
 | Регистърът | D1 Time Travel или копие ([ръководството на оператора](operator-guide.md), раздел 6) |
 
@@ -91,3 +91,5 @@ cloudflared access login https://<адрес>/admin/operations
 | 1. Средата | | | |
 | 2. Кодът | | | |
 | 3. Първото издание | | | |
+
+Всички команди тук се изпълняват от корена на хранилището. Конфигурацията за собствен акаунт е `apps/web/wrangler.local.jsonc`, до `apps/web/wrangler.jsonc`, така че относителните `main` и `migrations_dir` запазват значението си. За нея се използва `-c apps/web/wrangler.local.jsonc`, а при сглобяване - `WRANGLER_CONFIG=apps/web/wrangler.local.jsonc`. Vite разрешава тази променлива спрямо корена на хранилището. Deploy на сглобен сайт използва `-c apps/web/build/server/wrangler.json`.

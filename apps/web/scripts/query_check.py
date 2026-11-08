@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check that the query lists of apps/web/client/routes.js are complete: the edge cache keys a drawn screen on them alone (apps/web/workers/app.ts).
 
-    python apps/web/scripts/query_check.py
+    python -m apps.web.scripts.query_check
 
 The server draws a screen from the keys of its route only (`query` in the route table and SCREEN_QUERY, apps/web/client/routes.js
 screenSearch), as СИГМА does (midt-bg/sigma, apps/web/app/lib/query-params.ts and its drift test). A key that a page reads but its
@@ -18,9 +18,7 @@ ctx.query) is not found here, so the lists stay the source of truth and this che
 Exit 0 when every key is listed, 1 otherwise.
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 import pathlib
 import re
 import sys

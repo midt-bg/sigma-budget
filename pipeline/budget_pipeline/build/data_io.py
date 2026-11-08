@@ -1,17 +1,5 @@
-"""Shared helpers for the DATA pipeline (pure stdlib, no third-party imports).
+"""Shared paths, deterministic serialization and numeric helpers for the data pipeline. Inputs live in data/originals, data/inputs and data/cache. Published outputs live in data/release. The budget 2027 PDF is a tracked original in data/originals/budget_2027."""
 
-Every data script in pipeline/budget_pipeline/build/ imports this module. It fixes the directory layout, the deterministic JSON writer
-(minified, UTF-8, keys in insertion order, no NaN/Infinity, no "-0.0") and a few small utilities.
-
-The pipeline reads ONLY from prototype/ (src/, data/raw/ - the raw files are not in the repository, see docs/data-sources.md),
-tmp/sources/, data/cache/research/ and data/cache/ and writes ONLY to data/release/, data/cache/ and tmp/.
-It never touches prototype/.
-"""
-
-import sys as _sys
-from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
-ROOT = _Path(__file__).resolve().parents[3]
 import gzip
 import hashlib
 import json
@@ -28,10 +16,9 @@ DATA = ROOT / "data" / "release"
 TOOLS = ROOT / "pipeline" / "budget_pipeline" / "build"
 CACHE = ROOT / "data" / "cache"                          # fetched inputs (gitignored; boundaries.py, payments.py, bill.py fill it)
 TMP = ROOT / "tmp"                               # scratch and outputs (gitignored)
-PROTO = ROOT / "prototype"
 SRC = ROOT / "data" / "inputs"
-RAW = ROOT / "data" / "originals"                     # raw sources, NOT in the repository: see docs/data-sources.md
-SOURCES = TMP / "sources"                        # documents supplied by hand (the 2027 draft budgetary plan PDF), not in the repository
+RAW = ROOT / "data" / "originals"                     # raw originals; tracked MF documents and downloaded external sources: see docs/data-sources.md
+SOURCES = TMP / "sources"                        # manual acquisition inbox; the tracked budget 2027 PDF lives in RAW / budget_2027
 RESEARCH = ROOT / "data" / "cache" / "research"                      # working extracts, not in the repository
 
 BUILD_DATE = os.environ.get("BUILD_DATE", "2026-11-05")

@@ -1,26 +1,7 @@
 #!/usr/bin/env python3
-"""catalog_refresh.py - bring data/release/catalog.json back in line with the files of data/release (version v5: check out the tag mock-v5) (pure standard library).
+"""Refresh catalog sizes, schemas, source links, screens and counts from the current release files."""
 
-The V5 pass edited several data files after tools/active_data.py had refreshed the catalog (core, feed, guide, search-index). The catalog states
-their sizes, their top-level schema, their meta.source and the screens that read them, and the CATALOG group of base prints each drift.
-This script recomputes exactly what the validator compares and nothing else:
-
-  * bytes / gzipBytes of every dataset file (and of the parts of the multi-file set), schema from the top-level keys (the validator's own rule),
-    source := meta.source when the file says something else;
-  * screens: for every active page whose `export const needs = [...]` is a non-empty list, a dataset lists the page if and only if the page's
-    needs name it (the same rule the validator warns about); a page without a readable needs list (S11 computes its own, S27/S28 load lazily)
-    keeps the entries it had; the pending sets keep core.pending's screens; ids that are no route are dropped;
-  * counts: datasets, listed files, real / mock / pending, primary sources.
-data/sebra.json stays on disk, unreferenced, and is not listed (so counts.files is 64 while the folder holds 65).
-
-  python3 pipeline/budget_pipeline/build/catalog_refresh.py          rewrite catalog.json when something differs
-  python3 pipeline/budget_pipeline/build/catalog_refresh.py --check   write nothing; exit 1 when the catalog is stale
-"""
-
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
-ROOT = _Path(__file__).resolve().parents[3]
 import glob
 import gzip
 import io
@@ -30,7 +11,7 @@ import re
 import sys
 
 ROOT = str(_Path(__file__).resolve().parents[3])   # repository root
-SITE = os.path.join(ROOT, "apps", "web", "public")                  # the site (run this at the tag mock-v5)
+SITE = os.path.join(ROOT, "apps", "web", "public")                  # the site (run this at the tag mock-previous)
 DATA = os.path.join(ROOT, "data", "release")
 UNLISTED = {"sebra.json"}
 

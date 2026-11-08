@@ -1,15 +1,13 @@
 """Static server for the site with path addresses (/prihodi, /razhodi/obrazovanie): the app in the browser, without the server part.
 
-    python3 apps/web/scripts/serve.py              # site/ on http://127.0.0.1:8000/  (every unknown path gets the app shell)
-    python3 apps/web/scripts/serve.py --port 8080 --dir some/folder
+    python3 -m apps.web.scripts.serve              # web assets/ on http://127.0.0.1:8000/  (every unknown path gets the app shell)
+    python3 -m apps.web.scripts.serve --port 8080 --dir some/folder
 
 Every path without a file extension gets apps/web/public/index.html, so the router builds the screen in the browser. The v6 checks (pipeline/budget_pipeline/build/) run
 the app this way. The host itself draws every screen on the server (docs/adr/0002-react-router-ssr.md): npm run build, then npx wrangler dev.
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 import argparse
 import functools
 import http.server

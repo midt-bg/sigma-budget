@@ -6,9 +6,7 @@ the as-submitted III-1 from data/inputs/kfp_functions_2026.json, COFOG from data
 that are read; nothing is typed in. User-facing strings are Bulgarian, keys/comments English.
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import re
 

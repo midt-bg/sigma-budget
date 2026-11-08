@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 """D24 inputs: the two other daily SEBRA summaries that the МИДТ page lists next to the one in data/originals/sebra.
 
-The page https://midt.gov.bg/bg/transparency/sebra/2026 lists three files for August 2026 (27.08, 28.08, 31.08). The prototype archive
+The page https://midt.gov.bg/bg/transparency/sebra/2026 lists three files for August 2026 (27.08, 28.08, 31.08). The frozen input archive
 holds only 31.08; this script downloads the other two (about 12 KB each) into data/cache/ so that sebra.json can show three days.
 The build reads only the cache, so it runs offline once the files exist; a missing cache just means fewer days (never invented ones).
 `--refresh` forces a new download. A network failure is a warning, not an error (exit 0).
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import hashlib
 import sys

@@ -13,9 +13,7 @@ Scenarios other than "employment" are real only where the NAP table has a row fo
 pending (no numbers). The tax side of the self-employed and management-contract scenarios is left out (not in the sources).
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import re
 

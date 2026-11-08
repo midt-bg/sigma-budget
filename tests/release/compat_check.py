@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """The compatibility of code and data (docs/approach-specification.md, sections 10.1 and 11, stage E).
 
-    python3 tests/release/compat_check.py                                 the code against itself and against the releases in data/release/releases
-    python3 tests/release/compat_check.py --env-url https://staging.…     also against the current release of an environment, before a deploy
+    python3 -m tests.release.compat_check                                 the code against itself and against the releases in data/release/releases
+    python3 -m tests.release.compat_check --env-url https://staging.…     also against the current release of an environment, before a deploy
 
 The code says which data contracts it reads in three places, and they must agree:
   apps/web/workers/api/store.js SUPPORTED        what the Worker accepts in a manifest (it refuses to publish anything else)
@@ -14,9 +14,7 @@ Exit 0 when all agree, 1 when not, 2 when the environment cannot be read.
 """
 
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
 import argparse
 import json
 import pathlib

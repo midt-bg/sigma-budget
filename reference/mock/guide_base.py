@@ -14,9 +14,7 @@ href resolves to that route, the «Следва» link of step n names step n+1)
   python3 pipeline/budget_pipeline/build/guide_base.py --check    check only, write nothing; exit 1 on any problem
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import json, os, re, sys
 

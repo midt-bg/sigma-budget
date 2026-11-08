@@ -29,7 +29,7 @@ DEFS = [
              "в млн. € и като дял от БВП, макроикономическата прогноза (БВП, инфлация, безработица) и сравнение на двете "
              "версии на Приложение 3 към мотивите на законопроекта.",
      "screens": ["S01", "S04", "S13", "S17"]},
-    # v5: built by gva_sectors.py from two saved Eurostat answers (catalog.GVA_FILES); its search row has its own words
+    # previous: built by gva_sectors.py from two saved Eurostat answers (catalog.GVA_FILES); its search row has its own words
     {"slug": "gva-sectors", "file": "gva-sectors.json", "group": "budget",
      "title": "Икономиката по отрасли: добавена стойност и БВП 2019–2025",
      "desc": "Добавената стойност на десетте отрасъла на българската икономика (и на преработващата промишленост като част от "

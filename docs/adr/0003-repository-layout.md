@@ -12,8 +12,7 @@
 apps/
   web/                 app/, workers/ (api/), client/, public/, migrations/, scripts/, конфигурация
 pipeline/
-  budget_pipeline/     sources/, extract/, build/, validate/, release/, cli.py
-  tests/               независими проверки на обработката
+  budget_pipeline/     sources/, extract/, build/, validate/, cli.py
   requirements.txt     декларация на Python зависимостите
   requirements.lock    закованата Python среда
   Dockerfile           референтната среда Python 3.12
@@ -52,3 +51,15 @@ docs/
 ## Именуване на Python модулите
 
 Директорията определя слоя, а името на модула определя предмета: `build.fiscal`, `extract.kfp_full`, `validate.execution_reports`. Имената са описателни, в snake_case, без повторение на слоя (`bd_`, `vd_`, `extract_`, `build_`) и без версии. Общите операции по данни са в `build.data_io`, а помощниците за проверки в `validate.checks`. Историческите имена в публикуваните издания остават непроменени.
+
+## Пакетни граници и изпълнение
+
+Поддържаният вход за всеки Python модул на обработката е `python -m budget_pipeline.<слой>.<предмет>`. Средата се инсталира от двата lockfile-а, след което `pip install --no-deps -e pipeline` регистрира пакета. Обвивката `budget` добавя директорията pipeline към PYTHONPATH и изпълнява `python -m budget_pipeline.cli`; Docker задава PYTHONPATH=/repo/pipeline за монтираното хранилище. Изисква се Python 3.12 или по-нов.
+
+`cli.py` запазва обработката на аргументите и операциите по изданията до планирания пренос към TypeScript. Производствената последователност е единствено `build.rebuild`, използвана от `budget build`. Общите строители в `build.datasets` са вътрешна стъпка; изпълнението на модула също насочва към цялата последователност.
+
+Старият shell ред, генерирането на M01–M05 и подгрупите за старото сглобяване са само в reference/. Производственият пакет не ги импортира, изпълнява или чете. Замразените входове без действащ производител имат producer: null и отделна историческа бележка. Единствените останали примерни набори са M06/M07; производителят и независимият валидатор са ограничени точно до тях. Единственият guide модул се използва за текущите редакционни текстове.
+
+Скриптовете за сайта и интеграционните тестове се изпълняват като модули от корена (`python -m apps.web.scripts.build`, `python -m tests.e2e.screens`), без да се включват в дистрибуцията на pipeline.
+
+Празният release пакет и placeholder директорията pipeline/tests са премахнати. Отделяне на Python операциите и нов Python test пакет не се въвеждат преди поетапния пренос към TypeScript.

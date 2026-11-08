@@ -15,13 +15,9 @@
 
 Вход:  data/originals/asbp/UMTBF-2026-2028-motivi.pdf
 Изход: data/cache/research/mf-umtbf-2026-2028/extracts/pdf_pages_clean.json   [{"page": номер в PDF-а, "body": текст}, …]
-Изисква: pymupdf — tmp/venv-data/bin/python pipeline/budget_pipeline/extract/asbp_pages.py
+Изисква: pymupdf — python -m budget_pipeline.extract.asbp_pages
 """
 
-import sys as _sys
-from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
-ROOT = _Path(__file__).resolve().parents[3]
 import json
 import os
 import sys

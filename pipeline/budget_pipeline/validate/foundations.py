@@ -3,9 +3,7 @@
 Pure standard library. Each group is a function `g_x(ctx) -> Check`; `GROUPS` lists (name, function, one-line doc).
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import hashlib
 import os
@@ -22,7 +20,7 @@ SOURCE_KEYS = ("kfp", "asbp", "bill", "zdb", "zbdoo", "zbnzok", "prb", "parliame
 
 # ------------------------------------------------------------------------------------------------------- PROTO
 def g_proto(ctx):
-    """prototype/ is frozen: same file SET and the same SHA-256 of every file as in data/originals.sha256 (raw files may be absent; regenerate the rest with input_checksums.py)."""
+    """Inputs are pinned: same file SET and the same SHA-256 of every file as in data/originals.sha256 (raw files may be absent; regenerate the rest with input_checksums.py)."""
     c = Check("PROTO")
     expected = {}
     with open(os.path.join(L.ROOT, "data", "originals.sha256"), "r", encoding="utf-8") as fh:
@@ -36,7 +34,7 @@ def g_proto(ctx):
             c.ok(m.group(2) not in expected, "originals.sha256: duplicate path %s" % m.group(2))
             expected[m.group(2)] = m.group(1)
     actual = {}
-    for dp, dn, fn in (entry for base in ("data/originals", "data/inputs", "reference/prototype/site") for entry in os.walk(os.path.join(L.ROOT, base))):
+    for dp, dn, fn in (entry for base in ("data/originals", "data/inputs") for entry in os.walk(os.path.join(L.ROOT, base))):
         dn.sort()
         for f in sorted(fn):
             full = os.path.join(dp, f)
@@ -52,10 +50,10 @@ def g_proto(ctx):
     extra = sorted(set(actual) - set(expected))
     if absent:
         c.warn("%d raw files of the manifest are not in the repository (data/originals, see docs/data-sources.md); the files that are present are compared" % len(absent))
-    c.ok(not missing, "prototype/ files missing: %s" % ", ".join(missing[:5]))
-    c.ok(not extra, "prototype/ has files not in the manifest: %s" % ", ".join(extra[:5]))
+    c.ok(not missing, "pinned input files missing: %s" % ", ".join(missing[:5]))
+    c.ok(not extra, "Input directories have files not in the manifest: %s" % ", ".join(extra[:5]))
     changed = sorted(p for p in expected if p in actual and expected[p] != actual[p])
-    c.ok(not changed, "prototype/ files changed: %s" % ", ".join(changed[:5]))
+    c.ok(not changed, "pinned input files changed: %s" % ", ".join(changed[:5]))
     c.fact("%d files, all sha256 equal" % len(expected) if not (missing or extra or changed) else "%d files" % len(expected))
     return c
 
@@ -257,7 +255,7 @@ def g_privacy(ctx):
             if "private channel" in t or "частен канал" in t:
                 hits.append(os.path.relpath(os.path.join(dp, f), L.SITE))
     if hits:
-        c.warn("site/ outside data mentions a private channel: %s" % ", ".join(hits[:5]))
+        c.warn("web assets outside data mentions a private channel: %s" % ", ".join(hits[:5]))
     c.fact("%d files scanned, 0 forbidden words" % scanned)
     return c
 
@@ -296,7 +294,7 @@ def g_glossary(ctx):
 
 
 GROUPS = (
-    ("PROTO", g_proto, "prototype/ file set and every sha256 equal data/originals.sha256"),
+    ("PROTO", g_proto, "pinned input file set and every sha256 equal data/originals.sha256"),
     ("ENVELOPE", g_envelope, "meta envelopes, status/source/pending ids, nested pending blocks carry no numbers"),
     ("NUMBERS", g_numbers, "no NaN/Infinity; null and empty strings only at documented positions"),
     ("SIZES", g_sizes, "size budget of DATA_SPEC section 1"),

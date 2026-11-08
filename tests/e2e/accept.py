@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""accept_v5.py - acceptance tests of docs/plan.md for site/ (version v6, tag mock-v6) (project venv only).
+"""accept.py - acceptance tests of docs/plan.md for the current site (project venv only).
 
-  PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python tests/e2e/accept.py [--shots OUTDIR]
+  PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.accept [--shots OUTDIR]
 
 NUMBERS  Every number of the comparison table of the home and of #/izpalnenie is read from the screen and compared with the value
          computed independently from data/execution.json (млн. € / 1000, rounded to two decimals): the same months of 2025 and 2026 up to the
@@ -16,17 +16,14 @@ Exit 1 on any failure; findings that are only advice are printed as NOTE.
 """
 
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
 import http.server, json, os, re, socketserver, sys, threading
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-import expect                                     # noqa: E402
+from tests.e2e import expect                                     # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]            # repository root
-SITE = __import__("static_assets").root()                                 # the site: run this at the tag mock-v6
+SITE = __import__("tests.e2e.static_assets", fromlist=["root"]).root()                                 # the site: current site
 os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(ROOT / "tmp" / "pw-browsers"))
 FAILS, NOTES, N = [], [], [0]
 
@@ -100,7 +97,7 @@ def part_numbers(browser, port):
     base = f"http://127.0.0.1:{port}/index.html"
 
     # the brief's literal figures on the home and on the comparison screen
-    # V6 (25.10): the home page has the plan block only (the comparison table lives in #/izpalnenie since 10.10); its figures are checked here
+    # Current (25.10): the home page has the plan block only (the comparison table lives in #/izpalnenie since 10.10); its figures are checked here
     page.goto(base + "#/")
     page.wait_for_selector("#s15-b-plan .s15-plan-row", timeout=8000)
     home = re.sub("[\u00a0\u202f\u2009]", " ", page.evaluate("() => document.querySelector('#s15-b-plan').innerText"))
@@ -307,11 +304,11 @@ def main():
             part_layout(b, port)
         b.close()
     srv.shutdown()
-    if not only or "overlap" in only:                           # V6 (27.10): no interactive element on another, no sideways scroll, on every screen (tools/overlap.py --quick)
+    if not only or "overlap" in only:                           # Current (27.10): no interactive element on another, no sideways scroll, on every screen (tests/e2e/overlap.py --quick)
         import subprocess
         print("OVERLAP (overlap.py --quick)")
-        r = subprocess.run([sys.executable, str(Path(__file__).with_name("overlap.py")), "--quick"], capture_output=True, text=True)
-        ok(r.returncode == 0, "overlap --quick found something: " + " | ".join(l.strip() for l in r.stdout.splitlines() if "FOUND" in l)[:600])
+        r = subprocess.run([sys.executable, "-m", "tests.e2e.overlap", "--quick"], capture_output=True, text=True, cwd=ROOT)
+        ok(r.returncode == 0, "overlap --quick found something: " + " | ".join(l.strip() for l in (r.stdout + r.stderr).splitlines() if "FOUND" in l or "Error" in l)[:600])
     print(f"RESULT: {'FAIL' if FAILS else 'PASS'}: {N[0]} checks, {len(FAILS)} failures, {len(NOTES)} notes")
     sys.exit(1 if FAILS else 0)
 

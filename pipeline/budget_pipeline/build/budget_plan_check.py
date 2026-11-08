@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """budget_plan_check.py - look every printed number of the screen S34 up in the PDF of the Draft Budgetary Plan 2027.
 
-  tmp/venv/bin/python pipeline/budget_pipeline/build/budget_plan_check.py         figures + phrase checks (PDF only)
-  PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python pipeline/budget_pipeline/build/budget_plan_check.py --screen
+  python -m budget_pipeline.build.budget_plan_check         figures + phrase checks (PDF only)
+  PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers python -m budget_pipeline.build.budget_plan_check --screen
                                                                 also read the rendered screen and trace every number to a figure
 
 Part 1  every `reported` figure of data/release/dbp2027.json: its value must be printed on the page `p` named in the file
@@ -15,9 +15,7 @@ Part 3  (--screen) the rendered text of #/byudzhet-2027 at 1280 px: every number
 Exit 1 when a reported figure or a phrase is NOT found on its page.
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import hashlib
 import json

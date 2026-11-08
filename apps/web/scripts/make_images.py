@@ -1,14 +1,12 @@
 """Draw the raster images of the site from HTML: the social card (og.png, 1200x630) and the app icons (icon-192/512.png, apple-touch-icon.png).
 
-    PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python apps/web/scripts/make_images.py
+    PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m apps.web.scripts.make_images
 
-The images are committed in site/ (index.html and manifest.json name them); run this again after a change of the mark or the colours.
+The images are committed in web assets/ (index.html and manifest.json name them); run this again after a change of the mark or the colours.
 The card uses the fonts of the site (Charter for the serif; the system mono), so draw it on macOS for the same look.
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 import pathlib
 
 from playwright.sync_api import sync_playwright

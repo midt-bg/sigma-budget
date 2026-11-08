@@ -12,9 +12,7 @@ only the wording of a few synonyms (kw) is typed in. Budget: < 250 KB raw (§6.7
 Runs after core.json (it reads it) and before catalog.json (which lists this file with its size).
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import json
 import re

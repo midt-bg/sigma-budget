@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""calc_check_v5.py - tests of the «Моите данъци» (S18) calculator of site/ (version v6, tag mock-v6) (project venv only).
+"""calc_check.py - tests of the «Моите данъци» (S18) calculator of the current site (project venv only).
 
-  PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python tests/e2e/calc_check.py [--shots OUTDIR]
+  PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.calc_check [--shots OUTDIR]
 
 Part A  the engine: js/pages/s18-danaci.js compute() is run in the browser for many salaries and compared with an independent
         Python model (Decimal, rounded half up to the cent, rates read from data/rates.json):
@@ -16,15 +16,13 @@ Exit 1 on any failure.
 """
 
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
 import http.server, json, os, re, socketserver, sys, threading
 from decimal import Decimal as D, ROUND_HALF_UP
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]            # repository root
-SITE = __import__("static_assets").root()                                 # the site: run this at the tag mock-v6
+SITE = __import__("tests.e2e.static_assets", fromlist=["root"]).root()                                 # the site: current site
 os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(ROOT / "tmp" / "pw-browsers"))
 FAILS = []
 CHECKS = [0]

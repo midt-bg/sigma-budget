@@ -134,8 +134,8 @@ Slug-ове на функциите (Табл. III-1, 9 функции, сбор
 Легенда: **S##** = екраните, които четат файла. Размерите са очаквания, не обещания (валидаторът мери).
 
 > **КАКТО Е ПОСТРОЕНО (2026-10-02).** Формите в §3 са първата чернова. Сглобяващите скриптове (`pipeline/budget_pipeline/build/bd_*.py`, `search.py`, `catalog.py`) са източникът на истината,
-> `python3 pipeline/budget_pipeline/validate/base.py` е договорът (`--list` назовава групите му; проверките от §5 са реализирани там), а примерните файлове са описани в
-> `docs/data-spec-mock.md`. Разликите, които имат значение за екран: `core.pending` е речник с ключове P01–P07; записите в `catalog.json` са по `slug`; всеки набор има
+> `python -m budget_pipeline.validate.base` е договорът (`--list` назовава групите му; проверките от §5 са реализирани там), а примерните файлове са описани в
+> `docs/example-datasets.md`. Разликите, които имат значение за екран: `core.pending` е речник с ключове P01–P07; записите в `catalog.json` са по `slug`; всеки набор има
 > `meta.status/source/asOf`; липсваща стойност е `null` или отсъства, никога 0 (документирани null: `rates.assumptions` пази низовете на НАП дословно; четири от 46-те бюджета
 > нямат приходи/трансфери в закона). Пълният списък с промени е в §6.
 
@@ -431,7 +431,7 @@ GeoJSON `FeatureCollection` (разширението `.json` е нарочно;
 За ECharts `registerMap('bg-obshtini', geojson)` ползвай `nameProperty:'id'` (имената на общините не са уникални).
 
 ### 3.16 `glossary.json` — ленив (предзареждане в свободно време) · D22 · real · източник wg (редакционен, дословно от v3.6) · S03, на място навсякъде
-Строен от `pipeline/budget_pipeline/build/editorial.py`; крайната форма е в `docs/data-spec-mock.md` и тя печели там, където се различава от скицата по-долу (например `intro.disclaimer` е обект).
+Строен от `pipeline/budget_pipeline/build/editorial.py`; крайната форма е в `docs/example-datasets.md` и тя печели там, където се различава от скицата по-долу (например `intro.disclaimer` е обект).
 ```jsonc
 { "meta":{…}, "categories":[{"id":"…","title":"…"}],
   "terms":[ {"n":1,"slug":"dds","title":"ДДС","name":"Данък върху добавената стойност","abbr":"ДДС","cat":"…","def":"…","example":"…","aliases":["…"],
@@ -440,7 +440,7 @@ GeoJSON `FeatureCollection` (разширението `.json` е нарочно;
 ```
 
 ### 3.17 `guide.json` — ленив · D23 · real · източник wg (редакционен) · S02
-Строен от `pipeline/budget_pipeline/build/editorial.py`; крайната форма е в `docs/data-spec-mock.md` и тя печели там, където се различава от скицата по-долу (стъпките носят `next{n,title,href,text}`, последната стъпка няма `next`).
+Строен от `pipeline/budget_pipeline/build/editorial.py`; крайната форма е в `docs/example-datasets.md` и тя печели там, където се различава от скицата по-долу (стъпките носят `next{n,title,href,text}`, последната стъпка няма `next`).
 ```jsonc
 { "meta":{…}, "steps":[ {"n":1,"title":"…","intro":"…","blocks":[{"type":"p|ul|link","text":"…","href":"…"}],"next":{"n":2,"title":"…"}} , … ],   // 8 стъпки
   "checks":{"title":"Петте проверки","items":[{"n":1,"text":"…"}, …]}, "credit":"Работна група „Бюджет на светло“" }
@@ -485,7 +485,7 @@ GeoJSON `FeatureCollection` (разширението `.json` е нарочно;
 Всеки реален набор допринася; елементите, произлезли от примерни данни, носят `status:"mock"`. Както е построено: 912 реда; бюджетите и агенциите са озаглавени `<име> – <съкращение>` (напр. „Министерство на вътрешните работи – МВР“), така че съкращението да подрежда институцията над програмите ѝ; редовете за политики сочат `#/vedomstvo/<код>`, редовете за програми `#/vedomstvo/<код>/<програма>`; адресите може да носят заявка (`#/razhodi?po=vid`, `#/dalg?obhvat=maastricht`); групата `screens` се добавя от клиента.
 
 ### 3.22 `mock/*.json` — ленив · състояние **mock** (всички записи `mock:true` + `why`; `meta.seed`, `meta.constrainedBy`)
-Строени от `pipeline/budget_pipeline/build/examples.py` (проверявани от `reference/mock/validate_mock.py`); крайните форми са в `docs/data-spec-mock.md` и печелят там, където се различават от тази таблица.
+Строени от `pipeline/budget_pipeline/build/examples.py` (проверявани от `reference/mock/validate_mock.py`); крайните форми са в `docs/example-datasets.md` и печелят там, където се различават от тази таблица.
 | файл | id | какво | ограничено от (сумира се до) | екрани |
 |---|---|---|---|---|
 | `mock/activities.json` | M01 | 12–20 дейности на функция за **Здравеопазване** и **Образование** | по елемент от Табл. III-1 за функцията (стойност 2026 = реалният елемент; 2025 = 2026 ÷ реалния растеж ± 3%) | S09 |

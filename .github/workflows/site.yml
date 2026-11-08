@@ -41,25 +41,28 @@ jobs:
           cache: npm
       - name: Install tools
         run: |
-          python -m pip install --require-hashes -r tests/requirements-dev.lock
+          python -m pip install --require-hashes -r tests/requirements-dev.lock -r pipeline/requirements.lock
+          python -m pip install --no-deps -e pipeline
           python -m playwright install --with-deps chromium
           npm ci
       - name: TypeScript
         run: npm run typecheck
       - name: Check the source and dataset registries
-        run: python pipeline/budget_pipeline/validate/registry.py check
+        run: python -m budget_pipeline.validate.registry check
       - name: Check the published release (data/release against its manifest)
         run: ./budget validate --site
       - name: Validate the data
-        run: python pipeline/budget_pipeline/validate/datasets.py
+        run: python -m budget_pipeline.validate.datasets
+      - name: Validate the two published example datasets
+        run: python -m budget_pipeline.validate.examples
       - name: Compatibility of code and data (stage E)
-        run: python tests/release/compat_check.py
+        run: python -m tests.release.compat_check
       - name: The query each screen is drawn and cached by (apps/web/client/routes.js)
-        run: python apps/web/scripts/query_check.py
+        run: python -m apps.web.scripts.query_check
       - name: Build the Worker for staging and check every screen
         env:
           ORIGIN: ${{ vars.STAGING_ORIGIN || 'https://sigma-budget.my-data.bg' }}
-        run: python apps/web/scripts/build.py --env staging --origin "$ORIGIN" --noindex
+        run: python -m apps.web.scripts.build --env staging --origin "$ORIGIN" --noindex
       - uses: actions/upload-artifact@v4
         with:
           name: build
@@ -69,7 +72,7 @@ jobs:
   check:
     # The browser checks of the app (hash mode, the expected figures read from data/release/execution.json): all of them block, and the
     # staging deployment waits for them. The full screens also covers 400 px and keyboard paths; it runs against the built Worker
-    # (the screens drawn on the server, then taken over by the app), the others test the app on the static files of site/.
+    # (the screens drawn on the server, then taken over by the app), the others test the app on the composed static site in tmp/.
     needs: [build]
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -87,7 +90,8 @@ jobs:
           node-version: '22'
           cache: npm
       - run: |
-          python -m pip install --require-hashes -r tests/requirements-dev.lock
+          python -m pip install --require-hashes -r tests/requirements-dev.lock -r pipeline/requirements.lock
+          python -m pip install --no-deps -e pipeline
           python -m playwright install --with-deps chromium
           npm ci
       - uses: actions/download-artifact@v4
@@ -98,17 +102,17 @@ jobs:
         run: |
           npx wrangler dev -c apps/web/build/server/wrangler.json --ip 127.0.0.1 --port 8814 --persist-to "$RUNNER_TEMP/state" > "$RUNNER_TEMP/wrangler.log" 2>&1 &
           for i in $(seq 1 60); do curl -sf -o /dev/null http://127.0.0.1:8814/robots.txt && break; sleep 1; done
-          python tests/e2e/screens.py --url http://127.0.0.1:8814/
+          python -m tests.e2e.screens --url http://127.0.0.1:8814/
       - name: Old addresses
-        run: python tests/e2e/redirects.py
+        run: python -m tests.e2e.redirects
       - name: Tax calculator
-        run: python tests/e2e/calc_check.py
+        run: python -m tests.e2e.calc_check
       - name: Sharing and export
-        run: python tests/e2e/share_check.py
+        run: python -m tests.e2e.share_check
       - name: Acceptance figures
-        run: python tests/e2e/accept.py
+        run: python -m tests.e2e.accept
       - name: Motion
-        run: python tests/e2e/motion.py
+        run: python -m tests.e2e.motion
 
   release:
     # the release registry and the operator API (stage C) on the Worker with local D1 and R2: acceptance scenarios 3, 4, 5, 6 and 9, rollback
@@ -126,8 +130,11 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - run: python tests/release/release_check.py
-      - run: python tests/release/restore_drill.py
+      - run: |
+          python -m pip install --require-hashes -r tests/requirements-dev.lock -r pipeline/requirements.lock
+          python -m pip install --no-deps -e pipeline
+      - run: python -m tests.release.release_check
+      - run: python -m tests.release.restore_drill
 
   data-image:
     # the pinned environment of the data processing (pipeline/Dockerfile): it must build from its digest and hash-locked
@@ -138,7 +145,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker build -t sigma-budget-data pipeline
-      - run: docker run --rm sigma-budget-data python -c "import fitz, xlrd, yaml, docx, pdfplumber, py7zr; print(fitz.VersionBind)"
+      - run: docker run --rm -v "$PWD":/repo:ro sigma-budget-data python -m budget_pipeline.environment
 
   deploy:
     needs: [build, check, release]
@@ -174,5 +181,5 @@ jobs:
             echo "::error::The variable STAGING_ORIGIN is not set: the compatibility check cannot run, so nothing is deployed."
             exit 1
           fi
-          python3 tests/release/compat_check.py --env-url "$STAGING_ORIGIN"
+          python3 -m tests.release.compat_check --env-url "$STAGING_ORIGIN"
           npx wrangler deploy -c apps/web/build/server/wrangler.json      # built with CLOUDFLARE_ENV=staging: the staging Worker, D1 and R2

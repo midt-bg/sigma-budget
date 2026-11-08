@@ -12,9 +12,7 @@ data/inputs/kfp_components_2026.json (a mismatch is a build error):
                       НЗОК, municipalities) is not available in machine-readable form -> pending P02 (no numbers)
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import re
 
@@ -402,7 +400,7 @@ def build_components(ctx):
     if other_khil < 0:
         raise ValueError("components: itemised transfers exceed the provided transfers")
 
-    # cross-check with the hand-curated prototype summary
+    # cross-check with the hand-curated frozen input summary
     S = ctx.src("kfp_components_2026")
     B = S["budgets_2026_law"]
     for what, mine, theirs in (
@@ -426,15 +424,15 @@ def build_components(ctx):
             ("БТА", other["items"][2]["khil"][0], B["other_transfers"]["bta"]),
             ("БАН + universities", other["items"][3]["khil"][0] + other["items"][4]["khil"][0], B["other_transfers"]["ban_and_universities"]),
             ("military universities", other["items"][6]["khil"][0], B["other_transfers"]["military_universities"])):
-        _same("prototype summary: " + what, mine, theirs)
-    # the prototype summary is the report of 31.07.2026: compare it with that month of execution.json (not with the latest report)
+        _same("frozen input summary: " + what, mine, theirs)
+    # the frozen input summary is the report of 31.07.2026: compare it with that month of execution.json (not with the latest report)
     X = S["national_vs_eu_2026"]["exec_2026_07_31"]
     d26 = ctx.execution["data"]["2026"]
     if d26["asOf"][6] != "2026-07-31":
         raise ValueError("components: month 7 of execution.json 2026 is %s, expected 2026-07-31" % d26["asOf"][6])
     for name, key in (("national", "nat"), ("eu", "eu")):
         for out, src_key, rid in (("rev", "rev", "rev"), ("exp", "exp_incl_eu_contribution", "exp.total"), ("balance", "balance", "balance")):
-            _same("prototype summary: execution %s %s at 31.07.2026" % (name, out), rnd(d26[key][rid][6], 1), X[name][src_key], 0.0001)
+            _same("frozen input summary: execution %s %s at 31.07.2026" % (name, out), rnd(d26[key][rid][6], 1), X[name][src_key], 0.0001)
 
     state_out = dict(state, name="Държавен бюджет", unit="хил. €", source=["zdb"],
                      sourceNote="ЗДБ 2026, чл. 1, ал. 1–4 (ДВ бр. 69 от 31.07.2026 г.)")

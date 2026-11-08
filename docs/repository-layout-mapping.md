@@ -217,3 +217,18 @@
 | `pipeline/budget_pipeline/sources/probe_sources.py` | `pipeline/budget_pipeline/sources/access_probe.py` |
 | `pipeline/budget_pipeline/sources/fetch_gisco.py` | `pipeline/budget_pipeline/sources/boundaries.py` |
 | `pipeline/budget_pipeline/sources/fetch_sebra.py` | `pipeline/budget_pipeline/sources/payments.py` |
+
+## Отделяне на историческото сглобяване след прегледа
+
+| Преди | След |
+|---|---|
+| `build/run_all.sh` | `reference/mock/run_all.sh` |
+| `validate/subprocess_groups.py` | `reference/mock/subprocess_groups.py` |
+| `build/examples.py` (M01–M07) | архив в `reference/mock/examples.py`; текущият модул е ограничен до M06/M07 |
+| `build/example_text.py` | `reference/mock/example_text.py` |
+| `build/guide_base.py` | `reference/mock/guide_base.py`; текущият модул е `build.guide` |
+| `extract/home_kpis.py` | `reference/prototype/tools/home_kpis.py`; чете полета от историческия HTML |
+| `docs/data-spec-mock.md` | `reference/mock/data-spec.md`; текущите два набора са в `docs/example-datasets.md` |
+| `cli.py` (операции) | запазени в `cli.py` до преноса към TypeScript |
+
+Всички действащи Python производители и команди в регистрите вече са `python -m budget_pipeline.<слой>.<модул>`.

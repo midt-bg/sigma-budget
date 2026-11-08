@@ -1,22 +1,14 @@
 #!/usr/bin/env python3
-"""redirects_v5.py - every address of the earlier version (v4) that V5 removed or moved must land on the matching new screen with its context.
-
-  PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python tests/e2e/redirects.py
-
-Loads each old address in the V5 site, waits for the screen and compares the final address (path + the query keys that must survive) and the screen
-id with the table below. Exit 1 when one fails or a console error appears.
-"""
+"""Check retired addresses against current routes, preserving their query context."""
 
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
 import http.server, os, socketserver, sys, threading
 from pathlib import Path
 from urllib.parse import parse_qs
 
 ROOT = Path(__file__).resolve().parents[2]            # repository root
-SITE = __import__("static_assets").root()                                 # the site: run this at the tag mock-v6
+SITE = __import__("tests.e2e.static_assets", fromlist=["root"]).root()                                 # the site: current site
 os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(ROOT / "tmp" / "pw-browsers"))
 
 # old address -> (screen id, final path, query keys with their wanted values (None = any value, but present), keys that must be gone)

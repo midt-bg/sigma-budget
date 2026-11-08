@@ -30,8 +30,8 @@
 ```
 pipeline/budget_pipeline/build/run_all.sh (DATA)      първо реалните файлове (examples.py чете ministries, programs, measures, execution,
                                   expenditure, core и municipalities.json)
-python3 pipeline/budget_pipeline/build/editorial.py       glossary.json + guide.json        [--check]
-python3 pipeline/budget_pipeline/build/examples.py       data/release/mock/*.json             [--check] [--only M03,M04]
+python -m budget_pipeline.build.editorial       glossary.json + guide.json        [--check]
+python -m budget_pipeline.build.examples       data/release/mock/*.json             [--check] [--only M03,M04]
 python3 reference/mock/validate_mock.py    всички проверки по-долу           [--only M03,TEXT] [-v] [--no-rebuild]
 ```
 Чист Python 3 със стандартната библиотека, детерминиран, независим от работната папка. Семе **20261002** (`meta.seed`); датата на сглобяване на
@@ -317,7 +317,7 @@ python3 reference/mock/validate_mock.py    всички проверки по-д
    `municipalities.json` на DATA (D19) го повтаря, а M03 взема населението от D19 нарочно, за да съвпадат двата общински
    екрана с екрана за реалните общини. Докато DATA не поправи D19 (списъкът с нужди, [за DATA]), M03 наследява
    грешката точно за тези две (стойностите им на жител, собствените приходи и дългът са моделирани върху грешното население и
-   могат да попаднат на грешно място в класация). След поправката пусни `python3 pipeline/budget_pipeline/build/examples.py --only M03`; валидаторът пада
+   могат да попаднат на грешно място в класация). След поправката пусни `python -m budget_pipeline.build.examples --only M03`; валидаторът пада
    при остарял M03, така че не може да се забрави.
 2. **Собствените приходи са остатък (M03).** Σ разходи 6 881,9 млн. € (АСБП) − Σ трансфери 4 928,0 (ЗДБ чл. 51) = 1 953,9
    млн. € собствени приходи, докато самият АСБП дава 2 396,3 (разлика 442,4). M03 пази разходите и трансферите реални, така че

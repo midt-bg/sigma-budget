@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
 """Orchestrator: builds every dataset DATA owns into data/release/ (core.json last).
 
-  python3 pipeline/budget_pipeline/build/datasets.py            build + write (only files whose content changed are rewritten)
-  python3 pipeline/budget_pipeline/build/datasets.py --check    build in memory and compare with disk (exit 1 on any difference)
-  python3 pipeline/budget_pipeline/build/datasets.py --dry      build in memory, print the size table, write nothing
+  python -m budget_pipeline.build.datasets            build + write (only files whose content changed are rewritten)
+  python -m budget_pipeline.build.datasets --check    build in memory and compare with disk (exit 1 on any difference)
+  python -m budget_pipeline.build.datasets --dry      build in memory, print the size table, write nothing
 
 A builder module that does not exist yet is skipped with a notice, so datasets can land one by one and the script can be
 re-run. It never writes DATA2's files (glossary.json, guide.json, mock/*.json); the catalog and the search index read
 them from disk when they exist.
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import argparse
 import gzip
@@ -20,9 +18,7 @@ import importlib
 import sys
 import time
 import traceback
-from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import budget_pipeline.build.data_io as data_io                        # noqa: E402
 from budget_pipeline.build.definitions import set_kfp_pending  # noqa: E402
@@ -53,9 +49,9 @@ def run_steps(ctx):
     errors, skipped = [], []
     for mod_name, fn_name in STEPS:
         try:
-            mod = importlib.import_module(mod_name)
+            mod = importlib.import_module("budget_pipeline.build." + mod_name)
         except ModuleNotFoundError as exc:
-            if exc.name == mod_name:
+            if exc.name == "budget_pipeline.build." + mod_name:
                 skipped.append(mod_name + "." + fn_name)
                 continue
             raise
@@ -84,11 +80,11 @@ def serialise(ctx):
     return out
 
 
-def main():
+def build(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--check", action="store_true", help="compare with disk, write nothing, exit 1 on a difference")
     ap.add_argument("--dry", action="store_true", help="build and print sizes, write nothing")
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
     if not data_io.RAW.is_dir():
         sys.exit("datasets: data/originals is missing: the MF reports and the ASBP PDF come with the repository, the other raw "
                  "files are fetched with pipeline/budget_pipeline/sources/originals.py status (docs/data-sources.md); data/cache/ is filled by "
@@ -139,8 +135,13 @@ def main():
     if errors:
         for e in errors:
             print("ERROR " + e, file=sys.stderr)
-    sys.exit(1 if (errors or diffs) else 0)
+    return 1 if (errors or diffs) else 0
+
+
+def main():
+    import subprocess
+    return subprocess.call([sys.executable, "-m", "budget_pipeline.build.rebuild", *sys.argv[1:]])
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

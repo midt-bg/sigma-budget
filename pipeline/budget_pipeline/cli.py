@@ -1,61 +1,28 @@
-#!/usr/bin/env python3
-"""budget: build, check and reproduce a data release (docs/approach-specification.md, sections 5, 6.3, 6.4 and 8; docs/release.md).
-
-Public operations, no credentials:
-  budget collect        [--out work/acquisition]               download every source the registry can fetch; snapshot.json lists them
-  budget import-source  --source kfp --file F [--url U]         a file downloaded by a person (pipeline/budget_pipeline/sources/originals.py import)
-  budget build          [--commit REV] [--inputs DIR] [--out work/candidate] [--build-date YYYY-MM-DD] [--site]
-                        the release of one commit: the code of that commit, the inputs of DIR (default: this checkout), the pinned image;
-                        writes data/, validation.json and manifest.json; --site also puts the outputs and the manifest into data/release
-  budget validate       (--release DIR | --site)                the manifest, the bytes and sha256 of every output, the data checks;
-                        --site: the release published in data/release, as CI checks it
-  budget reproduce      (--manifest PATH|URL | --current SITE) [--originals DIR]
-                        rebuild the release from its commit and its originals and compare every output byte for byte
-  budget refetch        (--manifest PATH|URL | --current SITE) [--out DIR]
-                        download the originals again from their official addresses and compare them with the release
-
-Operator operations (stage C; an Access login or a service token, docs/release.md); there is no default environment:
-  budget status         --environment NAME                      the current release, the revision and the last journal entries
-  budget upload         --release DIR --environment NAME        upload a candidate (resumable) and seal it; it does not become current
-  budget publish        --release DIR --environment NAME        check locally, upload, publish on the current revision, read it back
-  budget rollback       --release-id ID --environment NAME      make an earlier release current again (a new revision)
-  --yes skips the question before a change; --dry-run writes nothing remote. Environments: pipeline/environments.json, and your own
-  in pipeline/environments.local.json (not in git).
-
-Every command prints a readable report, or JSON with --json. Exit codes (section 8.3):
-  0 checked, nothing differs   1 differences   2 invalid data or usage   3 missing input or unavailable source (unverified)
-  4 auth refused   5 revision conflict (someone published first)   6 the publish is not confirmed by the read-back
-The build runs in the image of pipeline/Dockerfile (--env docker, the default when docker answers) or in tmp/venv-data (--env local).
-"""
-
-import sys as _sys
-from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
-ROOT = _Path(__file__).resolve().parents[2]
+"""Build, validate, reproduce and operate budget data releases."""
 import argparse
 import hashlib
-import io
 import json
-import os
-import shutil
 import ssl
 import subprocess
-import sys
-import tarfile
-import tempfile
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from fnmatch import fnmatchcase
 from pathlib import Path
+import io
+import os
+import shutil
+import sys
+import tarfile
+import tempfile
+from fnmatch import fnmatchcase
 
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST_SCHEMA = "budget-release/1"
-INPUT_DIRS = ("data/originals", "data/cache")          # inputs that are not in git (data/sources.yaml)
+INPUT_DIRS = ("data/originals", "data/cache")
 WORDING_TAGS = ("mock-v2", "mock-v4")
 WORDING_FILES = ("catalog.json", "core.json", "search-index.json")
-RELEASES = "releases"                                                            # data/release/releases/: the manifests, not outputs
+RELEASES = "releases"
 UA = "budget-na-svetlo-data-pipeline/1.0 (+public data; contact: working group)"
 MIME = {".xls": "application/vnd.ms-excel", ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         ".pdf": "application/pdf", ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -66,17 +33,13 @@ MAGIC = {".pdf": b"%PDF", ".zip": b"PK", ".docx": b"PK", ".xlsx": b"PK", ".xls":
 EXIT_OK, EXIT_DIFF, EXIT_INVALID, EXIT_MISSING, EXIT_AUTH, EXIT_CONFLICT, EXIT_UNCONFIRMED = 0, 1, 2, 3, 4, 5, 6
 RECEIPTS = ROOT / "work" / "receipts"
 
-
 class Fail(Exception):
     def __init__(self, code, msg):
         super().__init__(msg)
         self.code = code
 
-
-# ------------------------------------------------------------------------------------------------------------------------ helpers
 def sha256_bytes(b):
     return hashlib.sha256(b).hexdigest()
-
 
 def sha256_file(p):
     h = hashlib.sha256()
@@ -85,18 +48,15 @@ def sha256_file(p):
             h.update(chunk)
     return h.hexdigest()
 
-
 def canonical_json(obj):
     """the exact bytes of a manifest: UTF-8, sorted keys, no spaces, one final newline"""
     return (json.dumps(obj, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
-
 
 def git(*args, cwd=ROOT, binary=False):
     r = subprocess.run(["git"] + list(args), cwd=str(cwd), capture_output=True)
     if r.returncode:
         raise Fail(EXIT_INVALID, "git %s: %s" % (" ".join(args), r.stderr.decode("utf-8", "replace").strip()))
     return r.stdout if binary else r.stdout.decode("utf-8").strip()
-
 
 def yaml_load(path):
     try:
@@ -105,7 +65,6 @@ def yaml_load(path):
         raise Fail(EXIT_INVALID, "PyYAML is needed (tests/requirements-dev.lock or pipeline/requirements.lock)")
     return yaml.safe_load(Path(path).read_text(encoding="utf-8"))
 
-
 def tls_context():
     """certifi's bundle when it is installed (pipeline/requirements.txt: the Python of uv does not accept the chain of ec.europa.eu)"""
     try:
@@ -113,7 +72,6 @@ def tls_context():
         return ssl.create_default_context(cafile=certifi.where())
     except ImportError:
         return ssl.create_default_context()
-
 
 def fetch(url, timeout=60, tries=3):
     """bytes of a public URL; a plain HTTP client with retries (section 5.1). Raises Fail(EXIT_MISSING) when it cannot."""
@@ -131,7 +89,6 @@ def fetch(url, timeout=60, tries=3):
             time.sleep(2 * (i + 1))
     raise Fail(EXIT_MISSING, "%s: %s" % (url, last))
 
-
 def read_location(loc):
     """a manifest from a path or a URL -> (bytes, base): `base` resolves the outputs listed in it"""
     if urllib.parse.urlparse(loc).scheme in ("http", "https"):
@@ -140,7 +97,6 @@ def read_location(loc):
     if not p.is_file():
         raise Fail(EXIT_MISSING, "no manifest at %s" % loc)
     return p.read_bytes(), str(p.parent) + "/"
-
 
 def current_manifest(site):
     """--current SITE: resolve the public pointer once (section 6.4) and keep to that release. The registry (/api/releases/current) when the
@@ -153,7 +109,6 @@ def current_manifest(site):
         cur = json.loads(fetch(site + "/data/%s/current.json" % RELEASES).decode("utf-8"))
         return site + "/data/" + cur["manifest"].split("data/", 1)[-1], cur["release_id"]
 
-
 def kind_ok(path, head):
     ext = Path(path).suffix.lower()
     if ext in MAGIC:
@@ -165,8 +120,6 @@ def kind_ok(path, head):
         return low.startswith(b"<?xml") and b"<html" not in low
     return True
 
-
-# ------------------------------------------------------------------------------------------------------------------------ inputs
 def registry_inputs(root, inputs_dir):
     """the files the build reads, from the registries: path -> {kind, source, datasets, entry}; and the declared ones that are missing"""
     sreg = yaml_load(root / "data" / "sources.yaml")
@@ -199,7 +152,6 @@ def registry_inputs(root, inputs_dir):
                     rec["datasets"].add(d["id"])
     return found, {k: sorted(v) for k, v in missing.items()}, sources
 
-
 def acquisition_records(inputs_dir):
     """retrieved dates: the log of download.py and the records of originals.py import"""
     out = {}
@@ -216,7 +168,6 @@ def acquisition_records(inputs_dir):
                                                           "method": e.get("mode", "import")}
     return out
 
-
 def pins(root):
     out = {}
     for ln in (root / "data" / "originals.sha256").read_text(encoding="utf-8").splitlines():
@@ -225,8 +176,6 @@ def pins(root):
             out[p] = h
     return out
 
-
-# ------------------------------------------------------------------------------------------------------------------------ build
 def export_commit(commit, dest):
     """the files of the commit, without .git (git archive): the build cannot see uncommitted changes or other branches"""
     data = git("archive", "--format=tar", commit, binary=True)
@@ -237,7 +186,6 @@ def export_commit(commit, dest):
         out.mkdir(parents=True, exist_ok=True)
         for f in WORDING_FILES:
             (out / f).write_bytes(git("show", "%s:%s/%s" % (tag, "site" + "/data", f), binary=True))
-
 
 def stage_inputs(found, inputs_dir, view):
     """only the inputs the registries declare, linked (or copied) into a view the build sees: an input that the registry forgets makes the
@@ -250,13 +198,11 @@ def stage_inputs(found, inputs_dir, view):
         except OSError:
             shutil.copy2(src, dst)
 
-
 def docker_ready():
     try:
         return subprocess.run(["docker", "info"], capture_output=True, timeout=20).returncode == 0
     except (OSError, subprocess.TimeoutExpired):
         return False
-
 
 def run_in_env(env, src, inputs_dir, cmd, extra_env=None):
     """run a python command of the exported tree, with the inputs read-only; returns (returncode, output)"""
@@ -283,9 +229,8 @@ def run_in_env(env, src, inputs_dir, cmd, extra_env=None):
             if (inputs_dir / d).is_dir() and not target.exists():
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.symlink_to((inputs_dir / d).resolve())
-        r = subprocess.run([str(py)] + cmd, cwd=str(src), capture_output=True, env=dict(os.environ, **extra_env))
+        r = subprocess.run([str(py)] + cmd, cwd=str(src), capture_output=True, env=dict(os.environ, PYTHONPATH=str(src / "pipeline"), **extra_env))
     return r.returncode, (r.stdout + r.stderr).decode("utf-8", "replace")
-
 
 def validation_report(output):
     """the lines of datasets.py as data, without the timing (the report is an output and must be the same on every run)"""
@@ -296,8 +241,7 @@ def validation_report(output):
             groups.append({"group": parts[1], "status": parts[0], "summary": parts[2]})
     result = [ln for ln in output.splitlines() if ln.startswith("RESULT")]
     res = result[-1].rsplit(",", 1)[0] if result else "RESULT missing"
-    return {"tool": "pipeline/budget_pipeline/validate/datasets.py", "result": res, "groups": groups}
-
+    return {"tool": "python -m budget_pipeline.validate.datasets", "result": res, "groups": groups}
 
 def build_release(commit, inputs_dir, out, build_date, env, log=print):
     commit = git("rev-parse", commit)
@@ -340,7 +284,7 @@ def build_release(commit, inputs_dir, out, build_date, env, log=print):
             raise Fail(EXIT_INVALID, "inputs differ from their pins (data/originals.sha256, data/sources.yaml):\n  " + "\n  ".join(bad))
         view = work / "inputs"
         stage_inputs(found, inputs_dir, view)
-        args = ["pipeline/budget_pipeline/build/rebuild.py", "--versions-ready"] + (["--build-date", build_date] if build_date else [])
+        args = ["-m", "budget_pipeline.build.rebuild", "--versions-ready"] + (["--build-date", build_date] if build_date else [])
         rc, output = run_in_env(env, src, view, args)
         (work / "build.log").write_text(output, encoding="utf-8")
         if rc:
@@ -350,7 +294,7 @@ def build_release(commit, inputs_dir, out, build_date, env, log=print):
             raise Fail(EXIT_INVALID, "the build failed (exit %d), the whole log is in %s:\n%s" % (rc, keep.relative_to(ROOT), output[-1500:]))
         data = src / "data" / "release"
         shutil.copytree(data, out / "data", ignore=shutil.ignore_patterns(RELEASES))
-        rc, voutput = run_in_env(env, src, view, ["pipeline/budget_pipeline/validate/datasets.py"], {"BUILD_DATE": build_date} if build_date else None)
+        rc, voutput = run_in_env(env, src, view, ["-m", "budget_pipeline.validate.datasets"], {"BUILD_DATE": build_date} if build_date else None)
         report = validation_report(voutput)
         report["passed"] = rc == 0
         (out / "validation.json").write_bytes(canonical_json(report))
@@ -366,7 +310,6 @@ def build_release(commit, inputs_dir, out, build_date, env, log=print):
         return rid, manifest
     finally:
         shutil.rmtree(work, ignore_errors=True)
-
 
 def make_manifest(src, commit, inputs, missing, out, build_date):
     dreg = yaml_load(src / "data" / "datasets.yaml")
@@ -393,7 +336,7 @@ def make_manifest(src, commit, inputs, missing, out, build_date):
             if d.get(k):
                 e[k] = d[k]
         if d["status"] != "pending":
-            e["rebuiltByThisRelease"] = bool(d.get("rebuild") and "rebuild.py" in d["rebuild"])
+            e["rebuiltByThisRelease"] = bool(d.get("rebuild") and "budget_pipeline.build.rebuild" in d["rebuild"])
         if d.get("limitations"):
             e["limitations"] = d["limitations"]
         if d["status"] == "pending":
@@ -408,7 +351,7 @@ def make_manifest(src, commit, inputs, missing, out, build_date):
             "code": {"repository": "https://github.com/midt-bg/sigma-budget", "commit": commit, "tags": tags},
             "environment": {"dockerfile": "pipeline/Dockerfile", "dockerfile_sha256": sha256_file(src / "pipeline" / "Dockerfile"),
                             "lock": "pipeline/requirements.lock", "lock_sha256": sha256_file(src / "pipeline" / "requirements.lock")},
-            "command": "pipeline/budget_pipeline/build/rebuild.py --versions-ready" + (" --build-date " + build_date if build_date else ""),
+            "command": "python -m budget_pipeline.build.rebuild --versions-ready" + (" --build-date " + build_date if build_date else ""),
             "parameters": {"build_date": build_date},
             "registries": {"data/sources.yaml": sha256_file(src / "data" / "sources.yaml"),
                            "data/datasets.yaml": sha256_file(src / "data" / "datasets.yaml")},
@@ -420,7 +363,6 @@ def make_manifest(src, commit, inputs, missing, out, build_date):
         "compatibility": {"execution": ["execution/1", "execution/2"],
                           "readers": "apps/web/client/data.js and pipeline/budget_pipeline/validate/execution_contract.py read both versions"},
     }
-
 
 def publish_to_site(out, rid):
     """--site: the outputs into data/release, the manifest under data/release/releases/<id>/ and the pointer current.json"""
@@ -438,8 +380,6 @@ def publish_to_site(out, rid):
     pointer = {"release_id": rid, "manifest": "data/%s/%s/manifest.json" % (RELEASES, rid), "built": receipt["built"][:10]}
     (data / RELEASES / "current.json").write_text(json.dumps(pointer, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
 
-
-# ------------------------------------------------------------------------------------------------------------------------ checks
 def site_release():
     """the release published in data/release: (manifest path, path of an output -> file)"""
     data = ROOT / "data" / "release"
@@ -447,7 +387,6 @@ def site_release():
     folder = data / RELEASES / cur["release_id"]
     where = lambda rel: folder / rel if rel == "validation.json" else data / rel.removeprefix("data/")      # noqa: E731
     return folder / "manifest.json", where, cur["release_id"]
-
 
 def check_release_dir(release, manifest=None, where=None):
     """the manifest against the files of a release folder (or of data/release with site_release()): [(path, problem)]"""
@@ -473,7 +412,6 @@ def check_release_dir(release, manifest=None, where=None):
             probs.append((rel, "not listed in the manifest"))
     return sha256_bytes(mbytes), m, probs
 
-
 def compare_outputs(m, folder):
     """outputs of a rebuild against the manifest: [(path, problem)] and the first differing value of a JSON file"""
     diffs = []
@@ -487,8 +425,6 @@ def compare_outputs(m, folder):
             diffs.append((o["path"], "sha256 %s…, the release says %s…" % (h[:12], o["sha256"][:12])))
     return diffs
 
-
-# ------------------------------------------------------------------------------------------------------------------------ commands
 def cmd_build(a):
     env = a.env or ("docker" if docker_ready() else "local")
     rid, m = build_release(a.commit, Path(a.inputs), Path(a.out), a.build_date, env, log=(lambda *_: None) if a.json else print)
@@ -496,7 +432,6 @@ def cmd_build(a):
         publish_to_site(Path(a.out).resolve(), rid)
     return EXIT_OK, {"release_id": rid, "out": str(Path(a.out).resolve()), "outputs": len(m["outputs"]), "inputs": len(m["inputs"]),
                      "missingInputs": m["coverage"]["missingInputs"], "site": bool(a.site)}
-
 
 def cmd_validate(a):
     if a.site:
@@ -509,13 +444,12 @@ def cmd_validate(a):
         release = Path(a.release).resolve()
         rid, m, probs = check_release_dir(release)
     env = dict(os.environ, BUDGET_DATA_DIR=str(ROOT / "data/release" if a.site else release / "data"))
-    r = subprocess.run([sys.executable, str(ROOT / "pipeline" / "budget_pipeline" / "validate" / "datasets.py")], capture_output=True, env=env)
+    r = subprocess.run([sys.executable, "-m", "budget_pipeline.validate.datasets"], capture_output=True, env=env)
     report = validation_report((r.stdout + r.stderr).decode("utf-8", "replace"))
     if r.returncode:
         probs.append(("data", report["result"]))
     return (EXIT_INVALID if probs else EXIT_OK), {"release_id": rid, "problems": [{"path": p, "problem": x} for p, x in probs],
                                                   "validation": report["result"]}
-
 
 def resolve_manifest(a):
     if getattr(a, "current", None):
@@ -525,7 +459,6 @@ def resolve_manifest(a):
             raise Fail(EXIT_INVALID, "the manifest at %s does not hash to the current release_id %s" % (url, rid))
         return mbytes, base
     return read_location(a.manifest)
-
 
 def cmd_reproduce(a):
     mbytes, base = resolve_manifest(a)
@@ -581,7 +514,6 @@ def cmd_reproduce(a):
                    "verdict": "reproduced byte for byte" if not diffs and not published else "differs"})
     return (EXIT_DIFF if diffs or published else EXIT_OK), result
 
-
 def cmd_refetch(a):
     mbytes, _base = resolve_manifest(a)
     m = json.loads(mbytes)
@@ -617,7 +549,6 @@ def cmd_refetch(a):
     code = EXIT_DIFF if changed else (EXIT_MISSING if unverified else EXIT_OK)
     return code, {"release_id": sha256_bytes(mbytes), "sources": rows, "changed": len(changed), "unverified": len(unverified)}
 
-
 def cmd_collect(a):
     sreg = yaml_load(ROOT / "data" / "sources.yaml")
     out = Path(a.out).resolve()
@@ -648,17 +579,14 @@ def cmd_collect(a):
     bad = [r for r in rows if r["status"] != "ok"]
     return (EXIT_MISSING if bad else EXIT_OK), {"out": str(out), "ok": len(rows) - len(bad), "notOk": [r["path"] + ": " + r["status"] for r in bad]}
 
-
 def cmd_import_source(a):
     if a.source != "kfp":
         raise Fail(EXIT_INVALID, "import-source handles the monthly КФП reports (--source kfp); other files go by sha256 with "
                                  "pipeline/budget_pipeline/sources/originals.py import")
-    args = [sys.executable, str(ROOT / "pipeline" / "budget_pipeline" / "sources" / "originals.py"), "import", a.file] + (["--url", a.url] if a.url else [])
+    args = [sys.executable, "-m", "budget_pipeline.sources.originals", "import", a.file] + (["--url", a.url] if a.url else [])
     r = subprocess.run(args)
     return (EXIT_OK if r.returncode == 0 else EXIT_INVALID), {"imported": a.file, "exit": r.returncode}
 
-
-# ------------------------------------------------------------------------------------------------------------------------ operator
 def environment(name):
     envs = json.loads((ROOT / "pipeline" / "environments.json").read_text(encoding="utf-8"))
     local = ROOT / "pipeline" / "environments.local.json"  # your own account's environments, not in git
@@ -670,7 +598,6 @@ def environment(name):
     if not url:
         raise Fail(EXIT_INVALID, "%s is not provisioned yet: %s" % (name, envs[name].get("note")))
     return url.rstrip("/")
-
 
 def credentials(url):
     """the Access credentials, never printed: a token (BUDGET_ACCESS_TOKEN, or `cloudflared access token`), or a service token pair"""
@@ -687,7 +614,6 @@ def credentials(url):
     # Cf-Access-Token is what the Access edge reads from a client; it hands the Worker Cf-Access-Jwt-Assertion. `wrangler dev` has no
     # edge, so the Worker gets that header directly. Either way the Worker checks the signature, iss, aud and exp itself.
     return {"Cf-Access-Token": tok, "Cf-Access-Jwt-Assertion": tok}
-
 
 def http(method, url, body=None, headers=None, timeout=120, raw=False):
     """(status, parsed JSON, or the bytes with raw=True); network errors raise Fail(EXIT_MISSING): the caller decides whether a retry is safe"""
@@ -706,13 +632,11 @@ def http(method, url, body=None, headers=None, timeout=120, raw=False):
     except (UnicodeDecodeError, ValueError):
         return status, data
 
-
 def admin(method, base, path, body=None, creds=None, ctype="application/json"):
     status, data = http(method, base + path, body, dict(creds or {}, **({"Content-Type": ctype} if body is not None else {})))
     if status in (401, 403):
         raise Fail(EXIT_AUTH, "%s %s: %s" % (method, path, data.get("error") if isinstance(data, dict) else status))
     return status, data
-
 
 def remote_current(base):
     status, data = http("GET", base + "/api/releases/current", headers={"Cache-Control": "no-cache"})
@@ -721,7 +645,6 @@ def remote_current(base):
     if status != 200:
         raise Fail(EXIT_MISSING, "GET /api/releases/current: %s %s" % (status, data))
     return data
-
 
 def object_file(release, originals, m, sha):
     """the local file of an object of the manifest: the manifest, an output of the release folder, an original"""
@@ -736,20 +659,16 @@ def object_file(release, originals, m, sha):
             return originals / i["path"]
     return None
 
-
 def receipt_path(rid):
     return RECEIPTS / ("%s.json" % rid)
-
 
 def load_receipt(rid):
     p = receipt_path(rid)
     return json.loads(p.read_text(encoding="utf-8")) if p.is_file() else {"release_id": rid}
 
-
 def save_receipt(r):
     RECEIPTS.mkdir(parents=True, exist_ok=True)
     receipt_path(r["release_id"]).write_text(json.dumps(r, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-
 
 def upload_release(release, originals, base, creds, dry_run=False, log=print):
     """resumable: an open operation of this release (the receipt) is continued; objects the server has are not sent again"""
@@ -798,7 +717,6 @@ def upload_release(release, originals, base, creds, dry_run=False, log=print):
         raise Fail(EXIT_INVALID, "seal: %s" % json.dumps(data, ensure_ascii=False)[:600])
     return rid, r["operation"], len(need)
 
-
 def confirm(a, lines):
     """what will change, on stderr (stdout carries the result, JSON with --json), and a question unless --yes or --dry-run"""
     for ln in lines:
@@ -810,7 +728,6 @@ def confirm(a, lines):
     print("Продължи? [y/N] ", end="", file=sys.stderr, flush=True)
     if input().strip().lower() not in ("y", "yes", "д", "да"):
         raise Fail(EXIT_INVALID, "stopped by the operator")
-
 
 def publish_request(base, creds, r, rid, kind, expected):
     """POST /admin/publish once per request_id; a lost response is answered by GET /admin/requests/:id, never by a new request"""
@@ -837,7 +754,6 @@ def publish_request(base, creds, r, rid, kind, expected):
     save_receipt(r)
     return data
 
-
 def read_back(base, rid, m):
     """the public view after the change, without cache: the pointer, the manifest bytes and one output (section 7.2, step 7)"""
     cur = remote_current(base)
@@ -852,14 +768,12 @@ def read_back(base, rid, m):
         raise Fail(EXIT_UNCONFIRMED, "%s does not read back as in the manifest (HTTP %s)" % (o["path"], status))
     return cur
 
-
 def cmd_status(a):
     base = environment(a.environment)
     cur = remote_current(base)
     status, data = http("GET", base + "/api/releases?limit=5")
     return EXIT_OK, {"environment": a.environment, "url": base, "release_id": cur.get("release_id"), "revision": cur.get("revision"),
                      "journal": data.get("items", []) if isinstance(data, dict) else []}
-
 
 def cmd_upload(a):
     base = environment(a.environment)
@@ -871,7 +785,6 @@ def cmd_upload(a):
     rid, op, sent = upload_release(release, Path(a.originals).resolve(), base, creds, a.dry_run, log=(lambda *_: None) if a.json else print)
     return EXIT_OK, {"environment": a.environment, "release_id": rid, "operation": op, "objects": sent, "dryRun": a.dry_run,
                      "state": "would upload" if a.dry_run else "sealed: a candidate, not current"}
-
 
 def cmd_publish(a):
     base = environment(a.environment)
@@ -897,7 +810,6 @@ def cmd_publish(a):
     return EXIT_OK, {"environment": a.environment, "release_id": rid, "revision": after["revision"], "previous_release_id": done.get("previous_release_id"),
                      "replay": bool(done.get("replay")), "receipt": str(receipt_path(rid))}
 
-
 def cmd_rollback(a):
     base = environment(a.environment)
     if not HEX.match(a.release_id or ""):
@@ -917,7 +829,6 @@ def cmd_rollback(a):
     return EXIT_OK, {"environment": a.environment, "release_id": a.release_id, "revision": after["revision"],
                      "previous_release_id": done.get("previous_release_id"), "replay": bool(done.get("replay"))}
 
-
 def report(result, as_json):
     if as_json:
         print(json.dumps(result, ensure_ascii=False, indent=1))
@@ -929,7 +840,6 @@ def report(result, as_json):
                 print("  - " + (", ".join("%s=%s" % kv for kv in x.items()) if isinstance(x, dict) else str(x)))
         else:
             print("%s: %s" % (k, v))
-
 
 def main(argv):
     ap = argparse.ArgumentParser(prog="budget", description=__doc__.split("\n\n")[0], formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -988,7 +898,6 @@ def main(argv):
         code, result = e.code, {"error": str(e)}
     report(dict(result, exit=code), a.json)
     return code
-
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))

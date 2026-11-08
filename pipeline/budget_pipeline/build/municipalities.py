@@ -1,6 +1,6 @@
 """municipalities.json (D19 + D20 + D21) and geo/obshtini.json (D20): transfers, population and borders of the 265 municipalities.
 
-Sources, all read from caches/prototype inputs (no network):
+Sources, all read from caches/frozen input inputs (no network):
   * ЗДБ 2026 чл. 51 (law_bill.json -> municipal.art51; cross-checked row by row against data/inputs/municipal_transfers_2026.json);
   * Eurostat GISCO LAU 2024 (gisco_lau_bg.json): id, official name, population on 01.01.2024, borders;
   * Eurostat demo_r_pjanaggr3 (eurostat_pop_nuts3_bg.json): population of the 28 oblasts, 2025.
@@ -12,9 +12,7 @@ every oblast exactly. The borders are rounded to 3 decimals and thinned (Douglas
 area of every municipality is compared before/after.
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import math
 import re
@@ -199,7 +197,7 @@ def build_municipalities(ctx):
     # ----------------------------------------------------------------------------- the law table, twice
     pk = ["total", "delegated", "equalizing", "winter_roads", "capital", "other_targeted"]
     for r, p in zip(law_rows, proto["municipalities"]):
-        # the prototype table has no oblast for the capital (it is its own oblast), hence the None test
+        # the frozen input table has no oblast for the capital (it is its own oblast), hence the None test
         if (p["region"] is not None and r["region"] != p["region"]) or _norm(r["name"]) != _norm(p["name"]) \
                 or [_num(v) for v in r["values"]] != [_num(p[k]) for k in pk]:
             raise ValueError("art. 51 row %r differs between the law parse and the prototype table" % r["name"])

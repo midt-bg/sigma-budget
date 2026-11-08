@@ -5,9 +5,7 @@ the structure shares against 100, the issuance and limit figures against each ot
 recomputed values. Printed values carry one decimal, so a sum may be off by 0.06 and a share by 0.051. Pure standard library.
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import re
 

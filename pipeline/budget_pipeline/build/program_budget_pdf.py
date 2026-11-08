@@ -1,6 +1,6 @@
 """Independent reader of the program-budget PDFs (PyMuPDF text layer, word stream order).
 
-Why it exists: the prototype extraction (pipeline/budget_pipeline/extract/program_budgets.py, find_tables) takes the year of a table from
+Why it exists: the frozen input extraction (pipeline/budget_pipeline/extract/program_budgets.py, find_tables) takes the year of a table from
 the text above it and stores the table under that year label, overwriting an earlier table with the same label. Where
 a heading is split, mistyped or missing, whole tables end up under the wrong year (checked: 3000, 3900, 1600, 4000,
 5300, 7100, 8600). A published number must be reproducible from the primary document, so this module re-reads every
@@ -16,16 +16,13 @@ Numbers: "157 517,1" (grouped, decimal comma) and "5018.5" (decimal point) both 
 the text layer (so a row can have fewer than nine numbers), "-", "0" and "0,0" are zeros.
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import re
 from itertools import combinations
 
 import fitz  # PyMuPDF (build-time only; not needed to serve the site)
 
-from budget_pipeline.build.data_io import PROTO
 
 PDF_DIR = ROOT / "data" / "originals" / "program_budgets"
 YEAR_LABEL = {2023: "Отчет 2023", 2024: "Отчет 2024", 2025: "Закон 2025", 2026: "Проект 2026",
@@ -746,7 +743,7 @@ def row_labels(filename):
     """{policy code: [label, ...]}: the words printed right after a policy-level code ("1000.05.00 Други бюджетни
     програми 0,0 ...") in the table rows of one PDF, most frequent reading first.
 
-    A fallback for a row whose name the prototype file does not carry. The label ends at the first figure or the next
+    A fallback for a row whose name the frozen input file does not carry. The label ends at the first figure or the next
     code; quote characters are dropped. Wrapped second lines of long labels are not followed, so the caller must treat
     the result as a candidate to be checked, not as a full name."""
     doc = fitz.open(str(PDF_DIR / filename))

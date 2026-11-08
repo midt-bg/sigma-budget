@@ -7,9 +7,7 @@ the `related` links are hand-coded and asserted to carry equal numbers. The edit
 are mock M06, keyed by item id, and live in mock/measure-labels.json (DATA2).
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import re
 

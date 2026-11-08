@@ -22,7 +22,7 @@ Sigma Budget е публичен сайт, който обяснява бюдж�
 - Не забраняваме подход, който постига нужното. Ако нещо не работи, пишем какво точно не работи.
 - Документите се обновяват заедно с кода.
 
-Подробностите са в [плана](plan.md), [договорите за данни](data-spec.md), [примерните набори](data-spec-mock.md), [източниците](data-sources.md) и [ръководството за екраните](dev-guide.md). Ако там процедура или забрана е по-строга от правилата горе, тя е препоръка. Формите на данните и конвенциите за кода важат, докато не ги променим заедно с кода.
+Подробностите са в [плана](plan.md), [договорите за данни](data-spec.md), [примерните набори](example-datasets.md), [източниците](data-sources.md) и [ръководството за екраните](dev-guide.md). Ако там процедура или забрана е по-строга от правилата горе, тя е препоръка. Формите на данните и конвенциите за кода важат, докато не ги променим заедно с кода.
 
 ## 2. Продуктов обхват
 
@@ -341,7 +341,7 @@ CLI дава четим отчет и JSON. Различава успех, ра�
 
 ## 13. Референции
 
-- Прототипът: [README](../README.md), [план](plan.md), [договори за данни](data-spec.md), [примерни набори](data-spec-mock.md), [източници](data-sources.md), [екрани](dev-guide.md).
+- Прототипът: [README](../README.md), [план](plan.md), [договори за данни](data-spec.md), [примерни набори](example-datasets.md), [източници](data-sources.md), [екрани](dev-guide.md).
 - Оригиналната Sigma: [архитектура](https://github.com/midt-bg/sigma/blob/main/docs/architecture.md), [SSR и сигурност](https://github.com/midt-bg/sigma/blob/main/docs/adr/0001-rendering-and-security.md).
 - Cloudflare: [React Router на Workers](https://developers.cloudflare.com/workers/framework-guides/web-apps/react-router/), [Static Assets](https://developers.cloudflare.com/workers/static-assets/), [R2 Workers API](https://developers.cloudflare.com/r2/api/workers/workers-api-reference/), [D1 database API](https://developers.cloudflare.com/d1/worker-api/d1-database/), [D1 read consistency](https://developers.cloudflare.com/d1/best-practices/read-replication/), [Access JWT validation](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/validating-json/).
 

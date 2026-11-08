@@ -1,12 +1,7 @@
 #!/usr/bin/env python3
-"""V5 helper: re-apply the v3/v4 wording edits («реални данни» -> «официални данни», etc.) onto donor JSON text.
-Compares string leaves of the v2 tree (old wording) vs the v4 tree (new wording), both extracted from their tags into tmp/versions/site-v2 and site-v4; for each changed string, replaces the exact
-JSON-encoded old string by the new one in the target file text. Prints strings that did not match (manual work).
-Usage: wording.py FILE_REL TARGET_DIR   (e.g. search-index.json data/release; TARGET_DIR is relative to the repository root)"""
+"""Apply the terminology differences preserved by the historical mock-v2 and mock-v4 tags to a current dataset. The tag dependency is retained until its separate migration."""
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import json, sys, os
 M = str(_Path(__file__).resolve().parents[3])   # repository root
@@ -34,4 +29,5 @@ def main():
     open(p, 'w', encoding='utf-8').write(txt)
     print(rel, 'pairs', len(pairs), 'replaced', n, 'unmatched', len(miss))
     for m in miss: print('   UNMATCHED:', m)
-main()
+if __name__ == '__main__':
+    main()

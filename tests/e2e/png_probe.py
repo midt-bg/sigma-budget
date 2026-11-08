@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""png_probe_v5.py - export the PNG of every shareable block of a screen of site/ (version v6, tag mock-v6) and save the files (project venv only).
+"""png_probe.py - export the PNG of every shareable block of a screen of the current site and save the files (project venv only).
 
-  PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python tests/e2e/png_probe.py OUTDIR WIDTH 'izp=#/izpalnenie' ['nachalo=#/' ...] [--click]
+  PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.png_probe OUTDIR WIDTH 'izp=#/izpalnenie' ['nachalo=#/' ...] [--click]
 
   Each target is name=hash. For every block with a „Сподели“ menu or a „PNG“ button the picture is made the way the page makes it
   (share.renderPng) and saved as OUTDIR/<name>-<width>-<block id>.png; with --click the real menu path is used instead
@@ -10,14 +10,12 @@
 """
 
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
 import base64, http.server, json, os, socketserver, sys, threading
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]            # repository root
-SITE = __import__("static_assets").root()                                 # the site: run this at the tag mock-v6
+SITE = __import__("tests.e2e.static_assets", fromlist=["root"]).root()                                 # the site: current site
 os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(ROOT / "tmp" / "pw-browsers"))
 
 

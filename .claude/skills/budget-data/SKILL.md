@@ -22,6 +22,7 @@ Skill-ът води администратора през месечния ци�
 ```bash
 uv venv tmp/venv-data --python 3.12
 uv pip install --python tmp/venv-data/bin/python --require-hashes -r pipeline/requirements.lock
+uv pip install --python tmp/venv-data/bin/python --no-deps -e pipeline
 ```
 
 Без uv: `python3.12 -m venv tmp/venv-data && tmp/venv-data/bin/pip install --require-hashes -r pipeline/requirements.lock`.
@@ -38,7 +39,7 @@ git switch -c data/kfp-2026-10 upstream/main
 ## 1. Какво има и какво липсва
 
 ```bash
-python3 pipeline/budget_pipeline/sources/originals.py status
+python -m budget_pipeline.sources.originals status
 ```
 
 Обясни на човека кое липсва, кое е различно и кой е следващият отчет по КФП.
@@ -46,13 +47,13 @@ python3 pipeline/budget_pipeline/sources/originals.py status
 Ако липсва целият архив, например на нова машина, поискай архива на суровите файлове от работната група и го внеси. Файловете се разпознават по sha256:
 
 ```bash
-tmp/venv-data/bin/python pipeline/budget_pipeline/sources/originals.py import /път/до/архива/
+python -m budget_pipeline.sources.originals import /път/до/архива/
 ```
 
 ## 2. Откъде може да се тегли от тази мрежа
 
 ```bash
-python3 pipeline/budget_pipeline/sources/access_probe.py
+python -m budget_pipeline.sources.access_probe
 ```
 
 Днес minfin.bg дава `challenge`, затова файловете от него се свалят ръчно. nra.bg и data.egov.bg минават само от България.
@@ -74,7 +75,7 @@ python3 pipeline/budget_pipeline/sources/access_probe.py
 Изчакай човека. После:
 
 ```bash
-tmp/venv-data/bin/python pipeline/budget_pipeline/sources/originals.py import ~/Downloads/2026-EU\ funds_0926_BG_WEB.xls
+python -m budget_pipeline.sources.originals import ~/Downloads/2026-EU\ funds_0926_BG_WEB.xls
 ```
 
 Без аргумент `import` чете `tmp/sources/inbox/`. Скриптът проверява листа, периода от клетка A3 и единицата. Записва файла под името, което очакват скриптовете, добавя реда му в `data/originals.sha256` и пише запис за придобиване в `tmp/sources/ACQUISITIONS.jsonl`. Ако за месеца вече има файл, а новият е коригирана версия (`_1`, `_2`), пусни с `--replace`: старата версия отива в `tmp/sources/replaced/`.
@@ -112,7 +113,7 @@ tmp/venv-data/bin/python pipeline/budget_pipeline/sources/originals.py import ~/
 
 Изданието се сглобява от commit (`docs/release.md`). Затова първо запиши промените в кода и пиновете: заглавните числа от стъпка 5,
 датата на сглобяване по-долу, редът на новия отчет в `data/originals.sha256` (`import` го добави) и редът му в
-`docs/data-sources.md` (стъпка 9). Файловете от minfin.bg са в git (`data/originals/kfp_*/` и `forecast_tables/`), затова новият отчет влиза в същия commit. Останалите сурови файлове не са в git: сглобяването ги чете от локалното копие и сверява всеки с пина му от commit-а.
+`docs/data-sources.md` (стъпка 9). Файловете от minfin.bg са в git (`data/originals/kfp_*/` и `asbp/`), затова новият отчет влиза в същия commit. Останалите сурови файлове не са в git: сглобяването ги чете от локалното копие и сверява всеки с пина му от commit-а.
 
 ```bash
 git add data/originals/kfp_2026/ pipeline/budget_pipeline/extract/kfp_full.py pipeline/budget_pipeline/validate/execution_reports.py pipeline/budget_pipeline/build/data_io.py pipeline/budget_pipeline/validate/checks.py pipeline/budget_pipeline/build/editorial.py pipeline/budget_pipeline/build/example_support.py \
@@ -120,19 +121,19 @@ git add data/originals/kfp_2026/ pipeline/budget_pipeline/extract/kfp_full.py pi
 git commit -m "data(kfp): pin the October 2026 report and its headline"
 ./budget build --build-date ГГГГ-ММ-ДД --site
 ./budget validate --site
-tmp/venv-data/bin/python pipeline/budget_pipeline/validate/registry.py check
+python -m budget_pipeline.validate.registry check
 ```
 
 - `budget build` сглобява commit-а в образа на `pipeline/Dockerfile` (без docker: в `tmp/venv-data`). Той пуска `rebuild.py`: `kfp_full.py`, строителите и слоя v5/v6 (`wording.py`, `active_data.py`, `apply_sources.py`, `catalog_refresh.py`) в реда, който дава публикуваните файлове. С `--site` слага данните в `data/release`, а манифеста на изданието в `data/release/releases/`.
 - Отпечатва `release_id` и `missingInputs`. Кажи на човека кои входове липсват и кои набори засягат.
-- **Не пускай `datasets.py` или `run_all.sh` сами в режим на запис.** Те пишат изхода на строителите от v1 и махат слоя v5/v6.
+- **Производствен вход.** Използвай `./budget build`, който изпълнява цялата последователност `python -m budget_pipeline.build.rebuild`. Историческият shell ред не е вход към текущото сглобяване.
 - **Датата на сглобяване** е денят на сглобяването и влиза във всеки файл. Сложи същата дата като стойност по подразбиране на `BUILD_DATE` в `pipeline/budget_pipeline/build/data_io.py`, `checks.py`, `editorial.py` и `example_support.py`. Иначе CI ще отхвърли новите дати.
 - `budget validate --site` е същата проверка като в CI: манифестът, SHA-256 на всеки файл и `datasets.py`. Трябва да завърши с код 0.
 - `registry.py check` сверява `data/sources.yaml` и `data/datasets.yaml` с хранилището, също като в CI. Новият месец по КФП не иска промяна в регистрите: шаблонът `kfp_2026/*.xls` го покрива. Нов вид източник или нов файл в `data/release` иска запис там.
 
 Ако нещо спре, прочети грешката, обясни я и спри (виж правилата).
 
-Групата PROTO сравнява суровите файлове с `data/originals.sha256`. Ако в стъпка 3 е свалено нещо, `MANIFEST.json` и опреснените живи източници ще се различават. Това е очаквано: обясни го на човека. Не обновявай редовете им в `prototype.sha256`, освен ако новата версия наистина влиза в сглобяването.
+Групата PROTO сравнява суровите файлове с `data/originals.sha256`. Ако в стъпка 3 е свалено нещо, `MANIFEST.json` и опреснените живи източници ще се различават. Това е очаквано: обясни го на човека. Не обновявай редовете им в `originals.sha256`, освен ако новата версия наистина влиза в сглобяването.
 
 ## 8. Преглед на промените
 

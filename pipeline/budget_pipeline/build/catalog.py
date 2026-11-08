@@ -14,9 +14,7 @@ Shape (DATA_SPEC §3.20):
   groups[], counts, traps[], methodology[], files[] (primary sources with sha256), meta
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import json
 import re

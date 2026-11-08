@@ -20,9 +20,7 @@ policy tables agree with data/inputs/zdb2026.json; art. 1 agrees with dv_laws_20
 occurrence of чл. 1/2 equals the law; distribution tables sum to the budget's expenditure; чл. 51 sums to 4 887 464,0.
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import difflib
 import sys
@@ -233,7 +231,7 @@ def build(p):
                 p.check(abs(bal - h["balance"]) < 0.3 or h.get("transfers") is None,
                         "law: art. %d balance %.1f != %.1f" % (a, h["balance"], bal))
 
-    # names + policies against the prototype's own extraction (45 budgets)
+    # names + policies against the frozen input's own extraction (45 budgets)
     z = {r["art"]: r for r in jload(SRC / "zdb2026.json")}
     p.check(len(z) == 45 and 28 not in z, "zdb2026.json: expected 45 budgets without art. 28")
     for a, r in z.items():
@@ -308,7 +306,7 @@ def build(p):
     t51 = mlaw["art51"]["total"]
     for j, k in enumerate(["total", "delegated", "equalizing", "winter", "capital", "other"]):
         p.check(abs(t51[j] - EXPECT_ART51[k]) < TOL, "art. 51 total %s = %s != %s" % (k, t51[j], EXPECT_ART51[k]))
-    # against the prototype's table of art. 51
+    # against the frozen input's table of art. 51
     proto = jload(RAW / "dv" / "dv_laws_2026.json")["zdb"]["art51"]["municipalities"]
     p.check(len(proto) == 265, "dv_laws_2026.json art. 51: %d rows" % len(proto))
     for pr, r in zip(proto, mlaw["art51"]["rows"]):

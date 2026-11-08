@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Суровите файлове на данните: какво има, какво липсва и внасяне на свалените на ръка.
 
-Защо: сглобяването (pipeline/budget_pipeline/build/run_all.sh) чете само data/originals/ и data/cache/. Файловете на МФ (месечните
+Защо: сглобяването (python -m budget_pipeline.build.rebuild) чете само data/originals/ и data/cache/. Файловете на МФ (месечните
 отчети по КФП в kfp_<ГГГГ>/ и PDF-ът с АСБП в asbp/) са в хранилището; останалите се свалят наново (docs/data-sources.md,
 раздел 5). Списъкът на всички със sha256 е в data/originals.sha256. Командата казва
 какво от списъка е налично и вярно, какво липсва и откъде се взима. Внася и ръчно свалените файлове на точното място
@@ -20,19 +20,15 @@
            месец по КФП — само с --replace.
 
 Употреба:
-    python3 pipeline/budget_pipeline/sources/originals.py status
-    tmp/venv-data/bin/python pipeline/budget_pipeline/sources/originals.py import ~/Downloads/2026-EU\\ funds_0926_BG_WEB.xls
-    tmp/venv-data/bin/python pipeline/budget_pipeline/sources/originals.py import /път/до/архива/          # възстановяване по sha256
-    tmp/venv-data/bin/python pipeline/budget_pipeline/sources/originals.py import ФАЙЛ --url АДРЕС --replace --dry-run
+    python -m budget_pipeline.sources.originals status
+    python -m budget_pipeline.sources.originals import ~/Downloads/2026-EU\\ funds_0926_BG_WEB.xls
+    python -m budget_pipeline.sources.originals import /път/до/архива/          # възстановяване по sha256
+    python -m budget_pipeline.sources.originals import ФАЙЛ --url АДРЕС --replace --dry-run
 
-status е само стандартна библиотека (Python 3.9+); import на нов отчет по КФП иска xlrd (pipeline/requirements.txt).
+status е само стандартна библиотека (Python 3.12+); import на нов отчет по КФП иска xlrd (pipeline/requirements.txt).
 Не сваля нищо и не пипа data/release/.
 """
 
-import sys as _sys
-from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
-ROOT = _Path(__file__).resolve().parents[3]
 import argparse
 import calendar
 import datetime
@@ -65,8 +61,8 @@ KFP_NAME = re.compile(r"EU[ _]funds_(\d{2})(\d{2})_")       # „EU funds“ с 
 KFP_SUFFIX = re.compile(r"_BG_WEB(_\d+)?\.xls$", re.I)        # коригирана версия: _1, _2, _4
 
 # производни файлове в raw/: правят ги екстракторите, не се свалят
-DERIVED = {"asbp/asbp_tables.json": "pipeline/budget_pipeline/extract/asbp_tables.py",
-           "dv/dv_laws_2026.json": "pipeline/budget_pipeline/extract/dv_laws.py"}
+DERIVED = {"asbp/asbp_tables.json": "python -m budget_pipeline.extract.asbp_tables",
+           "dv/dv_laws_2026.json": "python -m budget_pipeline.extract.dv_laws"}
 OPTIONAL = {"data_europa"}                                  # метаданни за справка (docs/data-sources.md, 3.7)
 EXPECT = {".pdf": "pdf", ".xls": "xls", ".xlsx": "zip", ".docx": "zip", ".zip": "zip", ".7z": "7z",
           ".json": "json", ".jsonld": "json", ".xml": "xml", ".html": "html"}
@@ -115,11 +111,11 @@ def how_to_get(rel):
     """(режим, как) по docs/data-acquisition.md, 5.2."""
     folder = rel.split("/", 1)[0]
     if folder in OPTIONAL:
-        return "справка", "не е вход на сглобяването (download.py %s)" % folder
+        return "справка", "не е вход на сглобяването (python -m budget_pipeline.sources.download %s)" % folder
     if rel in DERIVED:
         return "extract", DERIVED[rel]
     if folder == "program_budgets":
-        return "extract", "pipeline/budget_pipeline/extract/program_budgets.py (от parliament/52-602-01-19.zip)"
+        return "extract", "python -m budget_pipeline.extract.program_budgets (от parliament/52-602-01-19.zip)"
     if folder.startswith("kfp_"):
         return "import", "ръчно през браузър от %s, после `import`" % KFP_PAGE
     if folder == "asbp":
@@ -127,8 +123,8 @@ def how_to_get(rel):
     if folder == "budget_2027":
         return "import", "ръчно през браузър от https://www.minfin.bg/bg/1802, после `import`"
     if folder == "nap":
-        return "auto-bg", "download.py %s, само от България; дойде ли страница вместо PDF: браузър, после `import`" % rel
-    return "auto", "download.py %s" % rel
+        return "auto-bg", "python -m budget_pipeline.sources.download %s, само от България; дойде ли страница вместо PDF: браузър, после `import`" % rel
+    return "auto", "python -m budget_pipeline.sources.download %s" % rel
 
 
 def read_sums():
@@ -233,7 +229,7 @@ def cmd_status(_args):
             y, m, calendar.monthrange(ny, nm)[1], nm, ny, note, KFP_PAGE))
     if to_fetch:
         print("\nЛипсващите автоматични файлове (от България за nap/):")
-        print("  SSL_CERT_FILE=$(tmp/venv-data/bin/python -m certifi) tmp/venv-data/bin/python pipeline/budget_pipeline/sources/download.py "
+        print("  SSL_CERT_FILE=$(tmp/venv-data/bin/python -m certifi) python -m budget_pipeline.sources.download "
               + " ".join(to_fetch))
     if live:
         print("\n%d файла от живи източници са се променили. Сглобяването може да спре на тях: проверете ги, преди да опреснявате." % live)

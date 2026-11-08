@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""shot_v5.py - serve site/ (version v6, tag mock-v6) locally and take screenshots / quick probes (project venv only).
+"""shot.py - serve the current site locally and take screenshots / quick probes (project venv only).
 
-  PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python tests/e2e/shot.py OUTDIR 1280,390 'home=#/' 'izp=#/izpalnenie' [--full] [--zoom 2]
+  PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.shot OUTDIR 1280,390 'home=#/' 'izp=#/izpalnenie' [--full] [--zoom 2]
   Each target is name=hash (or just a hash). One PNG per target and width: OUTDIR/<name>-<width>.png.
   Prints per shot: console errors, failed requests, horizontal overflow of the page (px), h1 text.
   --full      full-page screenshot (default: first viewport only, 1280x900 / Wx844)
@@ -10,14 +10,12 @@
 """
 
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
 import http.server, json, os, socketserver, sys, threading
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]            # repository root
-SITE = __import__("static_assets").root()                                 # the site: run this at the tag mock-v6
+SITE = __import__("tests.e2e.static_assets", fromlist=["root"]).root()                                 # the site: current site
 os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(ROOT / "tmp" / "pw-browsers"))
 
 

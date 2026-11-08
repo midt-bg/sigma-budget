@@ -8,9 +8,7 @@ Facts come from three places and are never mixed silently:
   * the PROGRAM BUDGETS (program_budgets.py): programs per year, only for budgets that pass the checks of program_budgets.
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 from budget_pipeline.build.definitions import ART_EBK, BUDGET_INFO, EBK_ART, KIND_LABELS, nominative
 import budget_pipeline.build.program_budgets as program_budgets

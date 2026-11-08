@@ -1,13 +1,13 @@
 """Program budgets normalised for ministries.json, ministries/<code>.json and programs.json.
 
 Every published figure is READ FROM THE PDF of the program budget by `program_budget_pdf` (an independent word-stream reader);
-the prototype extraction (data/inputs/program_budgets_2026.json) is used only for the names of the rows and as a
+the frozen input extraction (data/inputs/program_budgets_2026.json) is used only for the names of the rows and as a
 tie-break between equally consistent placements of blank cells. It is not trusted for numbers: it filed whole tables
 under the wrong year for several budgets (see program_budget_pdf). What may be PUBLISHED is decided here:
 
   * a cell is accepted when its nine figures satisfy the four identities of the table (consolidated = departmental +
     administered, and each of the three "total = PRB + other") and its blank cells could be placed without doubt
-    (program_budget_pdf.resolve_row, else the prototype cell with the same non-zero figures);
+    (program_budget_pdf.resolve_row, else the frozen input cell with the same non-zero figures);
   * a budget gets published programs ("real") only when, for 2026, the PRB total (column "consolidated, PRB budget")
     is present, the policies add up to it and every policy's programs add up to the policy, tolerance 0.06 per
     printed decimal; and it either equals the law's expenditure (tier "validated") or differs from it while being
@@ -19,9 +19,7 @@ the PDF extraction; garbled names (stray single letters) are repaired from the l
 NAME_FIXES (each fix checked against the source text).
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 import re
 
@@ -48,7 +46,7 @@ _QUOTES_ANY = "\"'„“”‘’«»`"
 
 
 def classify(code, key, name):
-    """total | policy | program for a key of `programs` in the prototype file."""
+    """total | policy | program for a key of `programs` in the frozen input file."""
     if key == "total" or key.endswith(".00.00"):
         return "total"
     if key.endswith(".00"):
@@ -282,7 +280,7 @@ def _diagnose(struct):
 
 
 def _not_parsed_kind(msg):
-    """Reason key of a document the prototype extraction could not read at all (0100 and 2300 have a text layer, but their
+    """Reason key of a document the frozen input extraction could not read at all (0100 and 2300 have a text layer, but their
     tables carry no programme codes / wrap codes and numbers; checked page by page)."""
     if msg.startswith("няма таблици"):
         return "format"
@@ -321,7 +319,7 @@ def _law_names(law_rec):
 
 
 def _json_pick(code, jprogs, key, cell):
-    """Tie-break for a row whose blank cells could be placed in several consistent ways: the prototype's cell of the
+    """Tie-break for a row whose blank cells could be placed in several consistent ways: the frozen input's cell of the
     same row (any year label) when it is one of the candidates and the only one."""
     row = jprogs.get(key)
     if key == "total":
@@ -344,7 +342,7 @@ def _verified_view(code, b, filename):
     -> {"programs": {key: {"name", "by_year": {label: {col: value}}}}, "pagesByYear": {year: [pages]},
         "unresolved": [(label, key)], "methods": {method: count}, "badLabels": {year labels with a cell that breaks the
         identities in every placement}}
-    `programs` has the shape of the prototype file, so the structure checks below work on either."""
+    `programs` has the shape of the frozen input file, so the structure checks below work on either."""
     rows, _pages = pdf.read_rows(filename)
     cells, conflicts = pdf.cells_of(rows)
     pdf.resolve_by_structure(cells)
@@ -368,7 +366,7 @@ def _verified_view(code, b, filename):
         if key != "total" and not key.endswith(".00"):
             cn = clean_name(raw_name)
             if not cn or suspect(cn):
-                # the prototype file has no usable name (empty, or the column header "Код"): read it from the PDF headings
+                # the frozen input file has no usable name (empty, or the column header "Код"): read it from the PDF headings
                 alt = next((c for c in pdf_names.get(key, []) if clean_name(c) and not suspect(clean_name(c))), "")
                 if alt:
                     raw_name = alt
@@ -429,7 +427,7 @@ def load(ctx):
             if Y26 in view["badLabels"]:
                 rk = "source-sums"                         # a printed row of the budget year breaks the identities in every placement
             elif msg:
-                rk = _not_parsed_kind(msg)                 # the prototype found no table either: the layout is the cause
+                rk = _not_parsed_kind(msg)                 # the frozen input found no table either: the layout is the cause
             else:
                 rk = _diagnose(struct)
             rec.update(tier="pending", reasonKey=rk, reason=REASONS[rk])

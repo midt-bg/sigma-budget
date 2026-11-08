@@ -50,3 +50,5 @@ build/
 work/
 
 data/cache/
+
+*.egg-info/

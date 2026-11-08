@@ -1,103 +1,15 @@
 #!/usr/bin/env python3
-"""screens_v5.py (copy of screens_v4.py for the version v6, the redesigned СИГМА-style prototype) - end-to-end checks for the site of "Бюджет на светло".
+"""Screen, accessibility and layout checks against the current site.
 
-  v4 AMENDMENTS against screens_v3.py (kept): SITE -> site/ (version v4); light only (the dark cells and the `theme` family are dropped); the settings
-    popover and the phone sheet carry no theme option; "wide" for the layout audit is innerWidth >= 961.
-
-  v5 AMENDMENTS against screens_v4.py (each one follows a deliberate v5 change from docs/plan.md; nothing else is weakened):
-    1. SITE -> site/ (version v6), SHOT_DIR -> render-check-v6.
-    2. Bottom bar: three buttons (Начало · Отчет · Бюджет), was five; the old «Още» tab became the «Меню» button of the top bar (#btn-menu, opens the
-       drawer). On a screen under «Още» / «Моите данъци» no tab is current (the tab-bar rule of `tour` accepts 0 current items there).
-    3. Role selector: ROLE_SELECTOR=false in js/store.js (PDF recommendation, restorable) - the settings popover / drawer must list 0 view-for options
-       (was 3); a stored userType is therefore ignored (v5 `user` family expects 'citizen' while ROLE_SELECTOR is false).
-    3c. Tour: a link inside a live map on a touch screen is tapped twice (the map previews on the first tap by design); the S21 step landed on a
-        'click' step after S09/S19/S22/S23 were removed.
-    3b. The `theme` planner returns no jobs (light only, as v4 intended: FAMILIES has no 'theme'); the full run no longer drives the dropped theme matrix.
-    4. The start screen has no period button (periods:'none'): the period steps of the chrome family (popover, phone sheet, theme-chrome job) begin
-       on #/razhodi, where the button exists.
-    5. Share menu: «Изтегли изображение» + «Копирай връзка» (+ the table file as an expert option); copy-text, embed code and the native share sheet
-       are no longer menu items (the UI test of the link copy remains; the code stays in js/share.js). The embed UI-entry test was dropped for that
-       reason; every embed address (S29) is still loaded by the `embed` family.
-    6. The PNG button says «Изображение» (was «PNG»); the downloaded file name check follows.
-    7. VALUE_CHECKS: the concrete numbers are the acceptance values of BRIEF §6 (Jan–Aug 2025/2026 КФП, млрд. €) instead of the old July/plan values.
-    8. Removed screens (S02, S09, S19, S22, S23, S33; S02 and S32 are removed too; the page files of S02 and S32 are deleted) are no longer in the route list; their old addresses are tested by reference/mock/redirects_v5.py.
-    9. working-group feedback (09.10): the guide is merged into «Бюджетът за 5 минути» (S02 gone, six scenes), so the store has no `guide` key any more
-       (the bad-preferences test asserts the key stays out); /patevoditel[/N] addresses are redirect cases of reference/mock/redirects_v5.py.
-
-
-It serves site/ from a throw-away local http.server, drives headless Chromium (Playwright) through every route in
-`window.__ROUTES__` at 1280 px and 400 px, in the light and the dark theme, and prints what is wrong. Exit code 0 only when
-there is no failure (warnings never fail the run, unless --strict); 1 = failures; 2 = the checker itself could not run.
-
-  Run (always with the project venv; the chromium build lives in tmp/pw-browsers in the repository root, which this script picks up by itself):
-    PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python tests/e2e/screens.py [options]
-
-  Options
-    --quick            the final gate, about a minute: the first sample of every route at 1280 px and at 400 px in the light
-                       theme, no deep pass, the demo states of S01/S06/S28/S30 and reduced versions of the other families
-                       (the theme family is left out; a concrete value that is not on the first sample is only a warning).
-                       The default run (no options) covers everything.
-    --route S06,S28    only these routes (id or key, repeatable, comma list). Route-less families (chrome, tour, ...)
-                       still run unless --only/--skip says otherwise.
-    --cells 400-dark   only these viewport/theme cells (comma list of 1280-light 1280-dark 400-light 400-dark).
-    --only a,b         run only these families.     --skip a,b   leave these families out.   (see FAMILIES below)
-    --shots            save one screenshot per base load into tmp/render-check-v6/<route>-<cell>.png (reused names).
-    --url URL          test an already running site (e.g. a deployed copy) instead of the local server.
-    --jobs N           parallel browser processes (default: 5, fewer when the machine is busy).
-    --axe FILE|URL     inject axe-core (fetched here, never by the page) and fail on serious/critical violations.
-    --strict           warnings fail the run too (stub screens count as a failure then).
-    --no-values        skip the concrete-value checks (S01 / S15 August values of BRIEF §6, S18 salary example).
-    -v                 list every warning and every cell/URL of every finding.
-    --timeout MS       per-step timeout (default 15000).     --list   print the plan and exit.
-
-  Families (what runs, in plain words)
-    base      every sample URL of every route x cell: no console error / exception / failed or external request / cookie / CSP
-              violation; one h1; document.title set; the shell layout of the viewport; no horizontal page scroll (except inside
-              .table-wrap); no NaN / undefined / Infinity / null / [object Object] in text or attributes; accessible names,
-              duplicate ids, dangling aria references, contrast, tap-target size; charts ready; "Следва" card and every internal link
-              resolves; source keys, pending ids, glossary terms and share ids exist. A deep pass then opens every <details>
-              and visits every tab (charts in hidden panels must draw) and audits again.
-    demo      ?demo=loading|empty|error|pending (the state component replaces the body) and ?demo=offline (real screen + banner).
-    period    every period a screen supports (?per=...); an unsupported one must show the "no data for this period" state.
-    user      the three user types (citizen / journalist / expert) from stored preferences.
-    prefs     unit=pct, per-person, leva, "only real data" (no mock block/figure/KPI/table may stay visible) from stored prefs.
-    tour      one page, SPA navigation through all routes (links, hash, Back/Forward): title changes, focus on h1, scroll reset,
-              no stale article, aria-current, no leaked overlays / DOM growth.
-    to        ?to=<id> deep links into a hidden tab panel and a closed <details>: revealed, focused, in view.
-    chrome    skip link, search palette (button, "/", Ctrl-K, Escape + focus return), period / user / more popovers, phone "Още"
-              sheet, theme switch, banner dismissal, focus-visible ring, reduced motion.
-    share     the share menu (copy text/link, PNG, CSV, embed code) and the watermark pixel diff of mock charts.
-    embed     every embed address found by `share` loads at 720x440 in the bare layout: chart ready, source line, brand link.
-    gloss     glossary popover (open, Escape, focus return) and the term screen.
-    tabs      tab keyboard model, ?tab= mirrored in the URL and restored on reload.
-    png       (FB3) every statistic has a PNG button; a click downloads a real, wide, non-blank bns-<screen>-<block>.png.
-    views     (FB3) the view switch of charts and treemap-lists (bars / pie / line / table): switches in place, draws inside its box, keyboard.
-    theme     the colour themes: the three dark token blocks agree, the dark theme differs from the light one and stays readable
-              (contrast), no flash of the wrong theme on first paint, a pinned theme beats the OS and "auto" follows it, corrupt or
-              blocked storage is survived, the pressed state of the theme buttons, charts repaint on a switch (also the ones in
-              hidden tabs) and keep their legend choice, the screen is not re-rendered, scrolled or overflowing by a switch, chart
-              labels and placeholders are readable, fields have a boundary (warning), and in forced-colours mode a marked state
-              (pressed / selected / checked) can still be told from an unmarked one (warning).
-    selftest  the checker checks itself: it plants known defects into a page and fails when one of them is no longer detected.
-
-  Not built (dropped when the scope was frozen): the offline-banner events, S28 with / without the search index, unknown-address
-  cases, 320 px reflow, first-load budget, link crawl, real service worker, static file checks.
-
-  Conventions the page workers can rely on
-    - Missing /data/... files are a WARNING ("pending data file"), not a failure: the data side may not have landed them yet.
-    - A stub screen (still the generic "предстои да бъде изграден" text) gets the generic checks only.
-    - Text that must show a literal NaN/null/undefined (e.g. an API sample) goes in <code>/<pre> or under [data-allow-tokens].
-    - The checker never touches data/release, prototype/ or anything outside tmp/ (it only writes screenshots with --shots).
+Run from the repository root with python -m tests.e2e.screens --url URL.
+Expected figures are read from the published execution dataset. Use --help for
+route selection, viewport/theme cells, screenshots and the full check families.
 """
 from __future__ import annotations
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
 
 import argparse
 import concurrent.futures as cf
@@ -121,10 +33,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]            # repository root (this file is tests/e2e/screens.py)
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-import expect                                      # noqa: E402  the plan and comparison figures of the latest report
+from tests.e2e import expect                                      # noqa: E402  the plan and comparison figures of the latest report
 P_ROOT = ROOT                                         # older name of ROOT
-SITE = __import__("static_assets").root()                                  # the site  (version v6: run at the tag mock-v6)
+SITE = __import__("tests.e2e.static_assets", fromlist=["root"]).root()                                  # the site  (version current: run at the tag current release)
 SHOT_DIR = ROOT / 'tmp' / 'render-check-v6'                 # screenshots (gitignored)
 PROTO_SUMS = ROOT / 'data' / 'originals.sha256'
 if 'PLAYWRIGHT_BROWSERS_PATH' not in os.environ and (P_ROOT / 'tmp' / 'pw-browsers').is_dir():
@@ -749,7 +660,7 @@ class Worker:
         o = dict(viewport={'width': extra.get('w', c['w']), 'height': extra.get('h', c['h'])}, color_scheme=c['scheme'],
                  has_touch=c['touch'], locale='bg-BG', timezone_id='Europe/Sofia', service_workers=extra.get('sw', 'block'),
                  accept_downloads=True, permissions=['clipboard-read', 'clipboard-write'])
-        if extra.get('reduced_motion') or not extra.get('motion'):          # V6 (26.10): the checks run with the motion switched off (the final state at once); tools/motion.py drives the motion itself
+        if extra.get('reduced_motion') or not extra.get('motion'):          # Current (26.10): the checks run with the motion switched off (the final state at once); tests/e2e/motion.py drives the motion itself
             o['reduced_motion'] = 'reduce'
         ctx = self.browser.new_context(**o)
         ctx.add_init_script(INIT_JS)
@@ -953,8 +864,8 @@ def deep_pass(page):
 # S15 comparison follow the latest report in data/release/execution.json (expect); they were written in for August 2026.
 _PLAN, _CMP = expect.plan(), expect.compare()
 VALUE_CHECKS = {
-    # V6 (working-group feedback, 25.10): the plan block has two bars per indicator (2026, 2025: 'NN,N%'), the sums read '30,12 от 49,62 млрд. €', the lede is the new sentence; the long note is gone.
-    # v5 (working-group feedback, 10.10): the start page is the v4 opening again: h1, the one button, the plan block (three bars, КФП Jan–Aug 2026 against the annual plan, млрд. €) and the eight question cards;
+    # Current (working-group feedback, 25.10): the plan block has two bars per indicator (2026, 2025: 'NN,N%'), the sums read '30,12 от 49,62 млрд. €', the lede is the new sentence; the long note is gone.
+    # previous (working-group feedback, 10.10): the start page is the v4 opening again: h1, the one button, the plan block (three bars, КФП Jan–Aug 2026 against the annual plan, млрд. €) and the eight question cards;
     # the monthly table (BRIEF §6 values 26,93 / 30,12 / … ) lives in S15 only
     'S01': dict(all=['Държавният бюджет на достъпен език', 'Разгледай бюджета за 5 минути', 'Изпълнение на плана за 2026 г.',
                      'Приходи', 'Разходи с вноската в ЕС', 'Капиталови разходи', *_PLAN['cur'], *_PLAN['prev'],
@@ -1163,14 +1074,14 @@ def vc_period(page, info, j):
 
 
 def vc_user(page, info, j):
-    # v5: with ROLE_SELECTOR=false the store ignores a stored userType on purpose (the role selector is off): the screen must stay on 'citizen'
+    # previous: with ROLE_SELECTOR=false the store ignores a stored userType on purpose (the role selector is off): the screen must stay on 'citizen'
     got, roles = page.evaluate("async () => { const s = await import('./js/store.js'); return [s.store.get('userType'), s.ROLE_SELECTOR]; }")
     want = j['user'] if roles else 'citizen'
     return [] if got == want else [fail('user', f'stored userType "{j["user"]}" gave "{got}", expected "{want}" (role selector {"on" if roles else "off"})', route=j['route'], cell=j['cell'], url=j['hash'])]
 
 
 def vc_prefs(page, info, j):
-    # V6 (26.10, working-group feedback): «Само официални данни», «На човек», «Сумите и в лева» (and the sources tags) have no control and an old stored value is never read: they stay off whatever the blob says.
+    # Current (26.10, working-group feedback): «Само официални данни», «На човек», «Сумите и в лева» (and the sources tags) have no control and an old stored value is never read: they stay off whatever the blob says.
     # The unit («Покажи сумите в: евро / % от БВП») is still a stored preference.
     snap = page.evaluate("async () => (await import('./js/store.js')).store.snapshot()")
     REMOVED = ('perPerson', 'leva', 'onlyReal', 'sources')
@@ -1276,7 +1187,7 @@ def tour_move(page, how, target=None):
         try:
             if loc.count():
                 loc.click(timeout=4000)
-                # v5: a map region on a touch screen previews on the first tap and opens on the second (js/ui/map.js, deliberate); removing four
+                # previous: a map region on a touch screen previews on the first tap and opens on the second (js/ui/map.js, deliberate); removing four
                 # routes moved S21 onto a 'click' step of the tour, so a link inside a live map is tapped again when the address did not change
                 if page.evaluate("t => !!document.querySelector('figure.map a[href=\"' + t + '\"]') && location.hash !== t", target):
                     page.wait_for_timeout(150)
@@ -1326,7 +1237,7 @@ def tour_verify(st, step, prev_title, cell, how):
     if st['overlays']:
         F('tour-overlay', f'{st["overlays"]} dialog/popover element(s) are still open after {how} navigation')
     if not step['bare']:
-        # V6: the header has five group buttons (dropdowns); the screen's group button is current (data-current + aria-current), the red «Бюджет 2027» link is current on S34 only
+        # Current: the header has five group buttons (dropdowns); the screen's group button is current (data-current + aria-current), the red «Бюджет 2027» link is current on S34 only
         secs = st['section']
         if step['nav'] and (len(secs) != 1 or st['sectionBtn'] != 1):
             F('tour-nav', f'the header marks {secs} (buttons with aria-current: {st["sectionBtn"]}) for a screen of the menu (expected exactly one group)')
@@ -1563,7 +1474,7 @@ def ch_skip(w, cell, F, W, j, outs):
     page = o.page
     page.evaluate(BLUR_JS)
     page.keyboard.press('Tab')
-    page.wait_for_timeout(120)                                               # V6: the skip link slides in with a transition; measure after it
+    page.wait_for_timeout(120)                                               # Current: the skip link slides in with a transition; measure after it
     a = act(page)
     if not a.get('skip'):
         F('skip-link', f'the first Tab stop is {a["sig"]}, not the skip link "Към съдържанието" (it must be the first focusable element)')
@@ -1722,7 +1633,7 @@ def ch_palette(w, cell, F, W, j, outs):
         F('palette-focus', f'after following a result the focus is on {n["focus"]}, not on the new screen\'s heading')
     # 4) the address changes while it is open: it goes away with the screen
     page.evaluate(MARK_OLD_JS)
-    page.evaluate("() => { location.hash = '#/'; }")             # V6: the search field lives on the start screen (under the plan block); go back to it
+    page.evaluate("() => { location.hash = '#/'; }")             # Current: the search field lives on the start screen (under the plan block); go back to it
     wait_for(page, NEW_SCREEN_JS, timeout=6000)
     settle(page, 80)
     page.click('#btn-search')
@@ -1738,7 +1649,7 @@ def ch_palette(w, cell, F, W, j, outs):
             F('palette-focus', f'after the address changed under the open palette the focus is on {n["focus"]}, not on the heading')
     # 5) a click on the backdrop closes it
     page.evaluate(MARK_OLD_JS)
-    page.evaluate("() => { location.hash = '#/'; }")             # V6: the search field lives on the start screen (under the plan block); go back to it
+    page.evaluate("() => { location.hash = '#/'; }")             # Current: the search field lives on the start screen (under the plan block); go back to it
     wait_for(page, NEW_SCREEN_JS, timeout=6000)
     settle(page, 80)
     page.click('#btn-search')
@@ -1748,7 +1659,7 @@ def ch_palette(w, cell, F, W, j, outs):
 
 
 def ch_popovers(w, cell, F, W, j, outs):
-    o = begin(w, cell, '#/razhodi', outs)                                   # v5: the start screen has no period button (periods:'none'), the expenditure screen has
+    o = begin(w, cell, '#/razhodi', outs)                                   # previous: the start screen has no period button (periods:'none'), the expenditure screen has
     if not o:
         return
     page = o.page
@@ -1825,7 +1736,7 @@ def ch_popovers(w, cell, F, W, j, outs):
             esc_close('#btn-period', 'period (restricted screen)')
         page.evaluate("() => { location.hash = '#/razhodi'; }")
         wait_for(page, "() => { const a = document.querySelector('#view article.page'); return !!a && a.dataset.route === 'S07' && a.dataset.ready === '1'; }", timeout=6000)
-    # ---- V6 (26.10, working-group feedback): the settings block is gone everywhere: no ⋯ popover, no footer settings button, no switches; «Легенда» stays as a footer entry
+    # ---- Current (26.10, working-group feedback): the settings block is gone everywhere: no ⋯ popover, no footer settings button, no switches; «Легенда» stays as a footer entry
     if present(page, '#footer [data-action="settings"], [data-pref], #btn-more'):
         F('settings-gone', 'a settings control («Настройки», a [data-pref] switch or #btn-more) is still on the screen')
     leg = page.evaluate("() => { const b = document.querySelector('#footer [data-action=\"legend\"]'); return b ? b.textContent.trim() : null; }")
@@ -1838,7 +1749,7 @@ def ch_popovers(w, cell, F, W, j, outs):
     snap = page.evaluate("async () => { const s = (await import('./js/store.js')).store; return ['onlyReal', 'perPerson', 'leva', 'sources'].map(k => s.get(k)); }")
     if any(snap):
         F('settings-gone', f'stored values of the removed switches are still read (onlyReal, perPerson, leva, sources = {snap})')
-    # ---- V6: the five group buttons of the header (dropdowns), the red «Бюджет 2027» link, and nothing else in the button bar
+    # ---- Current: the five group buttons of the header (dropdowns), the red «Бюджет 2027» link, and nothing else in the button bar
     names = page.evaluate("() => [...document.querySelectorAll('#sidenav .nav-main')].map(b => b.textContent.trim())")
     if names != ['Начало', 'Изпълнение', 'Бюджет', 'Данъци и контекст', 'Данни и проект']:
         F('header-nav', f'the header group buttons are {names}, expected Начало · Изпълнение · Бюджет · Данъци и контекст · Данни и проект')
@@ -1884,20 +1795,20 @@ def ch_popovers(w, cell, F, W, j, outs):
 
 
 def ch_phone(w, cell, F, W, j, outs):
-    o = begin(w, cell, '#/razhodi', outs)                                   # v5: a screen with a period button (the start screen has none)
+    o = begin(w, cell, '#/razhodi', outs)                                   # previous: a screen with a period button (the start screen has none)
     if not o:
         return
     page = o.page
     if not page.evaluate("() => matchMedia('(pointer:coarse)').matches"):
         W('touch-emulation', 'the narrow cells should emulate a coarse pointer, but (pointer:coarse) does not match; touch-only CSS is not exercised')
-    # the bottom bar: three targets (v5: Начало · Отчет · Бюджет), each at least 44px
+    # the bottom bar: three targets (previous: Начало · Отчет · Бюджет), each at least 44px
     bar = page.evaluate("""() => [...document.querySelectorAll('#tabbar > *')].map(e => { const r = e.getBoundingClientRect(); return { n: (e.textContent || '').trim(), w: Math.round(r.width), h: Math.round(r.height), vis: r.width > 0 && r.height > 0 }; })""")
     if len(bar) != 3 or not all(b['vis'] for b in bar):
         F('tabbar', f'the bottom bar must show 3 buttons (Начало · Отчет · Бюджет), found {[b["n"] for b in bar if b["vis"]]}')
     for b in bar:
         if b['vis'] and (b['w'] < 44 or b['h'] < 44):
             F('tabbar', f'bottom-bar button "{b["n"]}" is {b["w"]}x{b["h"]}px (minimum 44x44 on a phone)')
-    # «Меню» (v5; the old «Още» tab): the whole menu + settings in a drawer
+    # «Меню» (previous; the old «Още» tab): the whole menu + settings in a drawer
     SH = 'dialog.sheet[open]'
     page.click('#btn-menu')
     if not wait_there(page, SH):
@@ -1911,7 +1822,7 @@ def ch_phone(w, cell, F, W, j, outs):
         F('sheet', 'the phone «Меню» does not start with the red «Бюджет 2027» button')
     if st['links'] < 15:
         F('sheet', f'the "Още" sheet lists only {st["links"]} screens (expected the whole menu)')
-    if st['users'] != 0 or st['themes'] != 0 or st['boxes']:   # V6 (26.10): the whole «Настройки» block is gone from the drawer
+    if st['users'] != 0 or st['themes'] != 0 or st['boxes']:   # Current (26.10): the whole «Настройки» block is gone from the drawer
         F('sheet', f'the phone menu still has settings (user types {st["users"]}, themes {st["themes"]}, toggles {st["boxes"]})')
     if not st['foc']:
         F('sheet-focus', 'the focus is not inside the "Още" sheet after it opened')
@@ -1936,7 +1847,7 @@ def ch_phone(w, cell, F, W, j, outs):
                 F('sheet', 'the "Още" sheet (or html.has-modal) is still there after a link was followed')
             if n['focus'] != 'h1':
                 F('sheet-focus', f'after a link in the "Още" sheet the focus is on {n["focus"]}, not on the heading')
-    # the period switch is a sheet on a phone (v5: on a screen that has the button; the start screen has none)
+    # the period switch is a sheet on a phone (previous: on a screen that has the button; the start screen has none)
     page.evaluate("() => { location.hash = '#/razhodi'; }")
     wait_for(page, "() => { const a = document.querySelector('#view article.page'); return !!a && a.dataset.route === 'S07' && a.dataset.ready === '1'; }", timeout=6000)
     settle(page, 80)
@@ -2210,7 +2121,7 @@ def share_menu(page, sid, F):
 
 
 def expected_acts(s):
-    acts = []                                                               # v5: the image and the link are the menu; the table file is an expert option
+    acts = []                                                               # previous: the image and the link are the menu; the table file is an expert option
     if s['hasChart'] or s['csv'] or s.get('hasStat'):
         acts.append('png')
     acts.append('copy-link')
@@ -3626,7 +3537,7 @@ def job_theme(w, j):
                 problems.append(f'userType={s.get("userType")!r}')
             if s.get('period') not in snap['periods']:
                 problems.append(f'period={s.get("period")!r}')
-            if 'guide' in s:        # v5: the guide run is gone (the guide is merged into «Бюджетът за 5 минути»); an old saved key must not come back into the store
+            if 'guide' in s:        # previous: the guide run is gone (the guide is merged into «Бюджетът за 5 минути»); an old saved key must not come back into the store
                 problems.append(f'guide={s.get("guide")!r} (the key was removed in v5)')
             for k in ('perPerson', 'leva', 'onlyReal', 'sources'):
                 if not isinstance(s.get(k), bool):
@@ -4145,7 +4056,7 @@ def job_theme_chrome(w, j):
 
 @planner
 def plan_theme(args, d, routes, cells):
-    if True or not wants(args, 'theme') or args.quick:      # v5 (as v4): light only, the theme family does not exist
+    if True or not wants(args, 'theme') or args.quick:      # previous (as v4): light only, the theme family does not exist
         return []
     wide = next((c for c in cells if is_wide(c)), cells[0])
     narrow = next((c for c in cells if not is_wide(c) and CELLS[c]['scheme'] != CELLS[wide]['scheme']), None) or next((c for c in cells if not is_wide(c)), cells[0])

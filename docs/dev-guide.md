@@ -4,7 +4,7 @@
 Не би трябвало да е нужно да четеш кода на обвивката: всичко, което викаш, е описано тук с точния му подпис.
 Код, коментари: **английски**. Всичко, което чете посетителят: **български** (прост език, кратки изречения).
 Какво трябва да съдържа всеки екран: `docs/plan.md` (кратко резюме на плана; общите правила за блоковете и достъпността са в разделите 6 и 13 по-долу).
-Как изглеждат данните: `docs/data-spec.md` и `docs/data-spec-mock.md` (само за четене за теб).
+Как изглеждат данните: `docs/data-spec.md` и `docs/example-datasets.md` (само за четене за теб).
 
 Означения за състоянието, използвани по-долу:
 
@@ -23,7 +23,7 @@
 5. Низовете са **текст**. Разметка се получава само с `html\`…\``. Виж 3.5 (правилото, на което се спъват всички).
 6. Парите се пазят в **милиони евро** (`mln`). Печатай ги с `money()`/`view.amount()`; никога не форматирай число на ръка.
 7. Всичко примерно (измислено) носи `mock:true`/`status:'mock'` и е със щриховка ▨ и надпис „Примерни данни“. Компонентите го правят, когато им подадеш флага. Число без източник и без флаг е грешка.
-8. Провери работата си: `PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python reference/mock/check_mock.py --route S06` (раздел 14).
+8. Провери работата си: `PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.screens --route S06` (раздел 14).
 9. Екраните се рисуват наново, когато се смени период, обхват или единица: **`render` трябва да е чиста функция**, а предпочитанията се четат от `ctx.store` в момента на рисуването.
 10. Публичен сайт: никъде под `apps/web/` няма имена на членове на групата, няма споменаване на чат платформи, няма цитати от вътрешни обсъждания. Авторството е общо („Работна група „Бюджет на светло“).
 
@@ -45,8 +45,8 @@
 
 ```
 (корен на хранилището)
-  docs/plan.md  docs/data-spec.md  docs/data-spec-mock.md  docs/dev-guide.md
-  reference/mock/check_mock.py       (SHELL)   проверката
+  docs/plan.md  docs/data-spec.md  docs/example-datasets.md  docs/dev-guide.md
+  tests/e2e/screens.py       (SHELL)   проверката
   apps/web/
     index.html                  (SHELL)   скелетът на обвивката + CSP
     sw.js                       (SHELL)   минимална заготовка на service worker
@@ -936,11 +936,11 @@ html`<a href="${ctx.href('funkciya', { fn:'obrazovanie' })}">Образован�
 
 ```bash
 # от корена на хранилището; средата е tmp/venv, а Chromium е в tmp/pw-browsers (и двете са извън git — виж .gitignore)
-PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python reference/mock/check_mock.py --route S06            # един екран, всички негови примерни адреси
-PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python reference/mock/check_mock.py --route S06 --shots    # + снимки на екрана в tmp/render-check/
-PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python reference/mock/check_mock.py --quick               # финалната проверка, около минута: всеки маршрут, първият пример, 1280 px и 400 px, светла тема
-PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python reference/mock/check_mock.py                       # всичко: 1280 и 400 px × светла и тъмна
-PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python reference/mock/check_mock.py --url http://127.0.0.1:8000/   # вече пуснат сървър
+PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.screens --route S06            # един екран, всички негови примерни адреси
+PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.screens --route S06 --shots    # + снимки на екрана в tmp/render-check/
+PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.screens --quick               # финалната проверка, около минута: всеки маршрут, първият пример, 1280 px и 400 px, светла тема
+PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.screens                       # всичко: 1280 и 400 px × светла и тъмна
+PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.screens --url http://127.0.0.1:8000/   # вече пуснат сървър
 ```
 `--route` приема id (`S06`) или ключ (`prihodi`). Проверката пуска собствен локален сървър върху `apps/web/`. Изходен код 0 само когато всичко е зелено. Пътищата до `apps/web/` и до папката със снимки се изчисляват в началото на скрипта (`ROOT`, `SITE`, `SHOT_DIR`) — вижте бележката за разположението в `README.md`.
 
@@ -960,7 +960,7 @@ Service worker (`sw.js`, кеш `bns-v5-11`) използва `fetch(req, { cach
 
 ## 15. Споделени файлове: правила и записване
 
-Споделено = всичко под `apps/web/`, освен собствените ти `js/pages/sNN-*.js` и `css/pages/sNN-*.css`, плюс това ръководство и `reference/mock/check_mock.py`.
+Споделено = всичко под `apps/web/`, освен собствените ти `js/pages/sNN-*.js` и `css/pages/sNN-*.css`, плюс това ръководство и `tests/e2e/screens.py`.
 
 1. Позволено ти е само да **добавяш** към споделен файл: нов експорт, нова функция, нов блок CSS правила, нова икона, нов ред в маршрутите, нов файл-компонент. **Никога не преименувай, не махай и не променяй поведението на нещо съществуващо.** Ползвай инструмента за редакция със закотвена вмъкване (добавяй в края, под коментар-банер `/* ── added by S06 ── */`); никога не презаписвай цял споделен файл (други автори го редактират едновременно) и препрочети редовете точно преди редакцията.
 2. **Записвай всяка такава редакция** с един добавен ред в дневника на работата:
@@ -998,7 +998,7 @@ Service worker (`sw.js`, кеш `bns-v5-11`) използва `fetch(req, { cach
 | `pages/s28-tarsene.js` (страницата за търсене) | готов | раздели 5.27 и 18 |
 | `pages/s29-embed.js` (+ `css/pages/s29-embed.css`) | готов | раздел 7.5; `share.embedHash` приема `embedParams`, `block({share:{embedParams}})` го предава; `errorState({link:false})` |
 | `pages/s30-404.js` (+ `css/pages/s30-404.css`) | готов | раздел 11: подзаглавието назовава поисканния адрес (и след `ctx.notFound()`), после поле за търсене (`[data-search-field]`, Enter → `#/tarsene?q=`) и шест връзки; нормална рамка, без „Следва“ |
-| `reference/mock/check_mock.py` | готов | раздел 14; `--quick` е финалната проверка |
+| `tests/e2e/screens.py` | готов | раздел 14; `--quick` е финалната проверка |
 | `apps/web/public/dev/components.html` (витрина на компонентите, без маршрут) | не е направена | отпаднала при замразяването на обхвата; живите примери са екраните S28 / S29 / S30 и коментарът в началото на всеки `js/ui/*.js` |
 
 ---

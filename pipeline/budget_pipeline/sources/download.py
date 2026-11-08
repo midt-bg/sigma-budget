@@ -14,10 +14,6 @@ data/originals/MANIFEST.json (адрес, файл, размер, sha256, HTTP �
 - месечните отчети на МФ по КФП (data/raw/kfp_2025, kfp_2026) — прикачени от работната група.
 """
 
-import sys as _sys
-from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
-ROOT = _Path(__file__).resolve().parents[3]
 import datetime, hashlib, json, os, sys, time, urllib.error, urllib.request
 
 ROOT = str(__import__("pathlib").Path(__file__).resolve().parents[3]) + "/data/originals"

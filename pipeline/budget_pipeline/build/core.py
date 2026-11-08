@@ -6,9 +6,7 @@ and the eight revenue groups. Every number here is COPIED from the dataset that 
 `expenditure`, `execution`, VI-1); `base.py` asserts they are identical. Budget: <= 10 KB gzip, <= 40 KB raw.
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 from budget_pipeline.build.definitions import EBK_ART, PENDING_DEFS, POPULATION_ASOF, SOURCES, pending_block
 from budget_pipeline.build.fiscal import population_latest, zdd_table
@@ -20,7 +18,7 @@ VINTAGE = {"2024": "actual", "2025": "prelim", "2026": "plan", "2027": "forecast
 
 
 def _glossary_terms(ctx):
-    """Number of glossary terms: from the file DATA2 writes (data/release/glossary.json), else from the prototype source."""
+    """Number of glossary terms: from the file DATA2 writes (data/release/glossary.json), else from the frozen input source."""
     p = DATA / "glossary.json"
     if p.exists():
         return len(jload(p)["terms"])

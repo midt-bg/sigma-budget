@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
-"""sweep_v5.py - open many hashes of site/ (version v6, tag mock-v6) and print only the problems (console errors, failed requests, h1 missing, overflow).
+"""sweep.py - open many hashes of the current site and print only the problems (console errors, failed requests, h1 missing, overflow).
 
-  PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python tests/e2e/sweep.py WIDTH FILE_OR_HASH...
+  PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.sweep WIDTH FILE_OR_HASH...
   A FILE has one hash per line ('#/izpalnenie'); lines starting with '=' print all rows. Exit code 1 when a problem was found.
 """
 
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "pipeline"))
 import http.server, os, socketserver, sys, threading
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]            # repository root
-SITE = __import__("static_assets").root()                                 # the site: run this at the tag mock-v6
+SITE = __import__("tests.e2e.static_assets", fromlist=["root"]).root()                                 # the site: current site
 os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(ROOT / "tmp" / "pw-browsers"))
 
 

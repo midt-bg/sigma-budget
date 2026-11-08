@@ -8,9 +8,7 @@ parent is verified against its children (tolerance 0.3 млн. €, the source r
 Columns (years): 2024 actual, 2025 preliminary, 2026 project, 2027 forecast, 2028 forecast.
 """
 
-import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "pipeline"))
 ROOT = _Path(__file__).resolve().parents[3]
 from budget_pipeline.build.data_io import RAW, jload
 
