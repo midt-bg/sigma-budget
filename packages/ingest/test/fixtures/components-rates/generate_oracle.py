@@ -11,6 +11,7 @@ from pathlib import Path
 
 os.environ['BUILD_DATE'] = '2026-11-08'
 from budget_pipeline.build import components, rates
+from budget_pipeline.build.data_io import rnd
 from budget_pipeline.extract import budget_law_parser
 
 HERE = Path(__file__).parent
@@ -62,8 +63,13 @@ ctx = Context()
 rates.build_rates(ctx)
 components.build_components(ctx)
 outputs = {name: emit(name, ctx.out[name]) for name in ('components.json', 'rates.json')}
+outputs['social.json'] = emit('social.json', {'doo': components._doo(doo), 'nzok': components._nzok(nzok)})
 state, transfers = components._state(ctx)
+outputs['component-tables.json'] = emit('component-tables.json', {'municipal': components._municipal(ctx, transfers['municipalities']), 'national': components._national_vs_eu(ctx), 'other': components._other(ctx)})
 outputs['state.json'] = emit('state.json', {'state': state, 'transfers': transfers})
+outputs['rounding.json'] = emit('rounding.json', [{'value': value, 'places': places, 'rounded': rnd(value, places)} for value, places in [(2.675, 2), (1.005, 2), (1.25, 1), (-1.25, 1), (0.045, 2), (-0.04, 1)]])
+outputs['rates-law.json'] = emit('rates-law.json', rates._law(doo, nzok))
+outputs['assumptions.json'] = emit('assumptions.json', rates._bill_assumptions())
 funds = {rid: rates._funds(nap[rid]['cells']) for rid in rates.NAP_ROWS}
 outputs['funds.json'] = emit('funds.json', funds)
 fixes = [0]
