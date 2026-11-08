@@ -7,7 +7,7 @@ import tempfile
 import unittest
 
 from budget_pipeline.extract import budget_forecast_2027 as extract
-SCRIPT = extract.__file__
+MODULE = 'budget_pipeline.extract.budget_forecast_2027'
 
 
 class ExtractForecast(unittest.TestCase):
@@ -15,7 +15,7 @@ class ExtractForecast(unittest.TestCase):
     def setUpClass(cls):
         cls.temporary = tempfile.TemporaryDirectory()
         cls.path = Path(cls.temporary.name) / 'first.json'
-        result = subprocess.run([__import__('sys').executable, str(SCRIPT), '--output', str(cls.path)], capture_output=True)
+        result = subprocess.run([__import__('sys').executable, '-m', MODULE, '--output', str(cls.path)], capture_output=True)
         if result.returncode != 0 or not cls.path.exists():
             raise AssertionError(result.stderr.decode())
         cls.bytes = cls.path.read_bytes()
@@ -28,7 +28,7 @@ class ExtractForecast(unittest.TestCase):
     def test_reproduce_and_fail_closed_on_source_conflict(self):
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp) / 'forecast.json'
-            result = subprocess.run([__import__('sys').executable, str(SCRIPT), '--output', str(output)], capture_output=True)
+            result = subprocess.run([__import__('sys').executable, '-m', MODULE, '--output', str(output)], capture_output=True)
             self.assertEqual(result.returncode, 0, result.stderr.decode())
             self.assertEqual(output.read_bytes(), self.bytes)
 
@@ -66,7 +66,7 @@ class ExtractForecast(unittest.TestCase):
         pension=next(r for r in rows if r['page']==185 and 'професионални пенсионни фондове' in r['label'])
         self.assertIn('7 на сто',pension['printed'][0])
         self.assertEqual(pension['continuation_pages'],[186])
-        verification=self.output['independent_verification']
+        verification=self.output['cross_representation_checks']
         self.assertEqual(verification['matched'],42)
         self.assertGreaterEqual(verification['annex2_fragment_cells_matched'],400)
         self.assertEqual(verification['mismatches'],0)
@@ -80,6 +80,78 @@ class ExtractForecast(unittest.TestCase):
         tables=copy.deepcopy(self.output['tables'])
         tables['annex4']['rows'].pop()
         self.assertTrue(any(not c['passed'] and c['name']=='annex4 shape' for c in extract.validate(tables)))
+
+    def test_all_annex2_semantics_against_source_audit(self):
+        fixture=json.loads((Path(__file__).parent/'fixtures/forecast_2027_annex2.json').read_text())
+        self.assertEqual(self.output['source']['pdf_sha256'],fixture['source_pdf_sha256'])
+        rows=self.output['tables']['annex2']['rows']
+        actual=[{k:r[k] for k in fixture['rows'][0]} for r in rows]
+        self.assertEqual(actual,fixture['rows'])
+        self.assertEqual(len({r['source_id'] for r in rows}),100)
+        self.assertEqual(self.output['tables']['annex2']['parse_status'],'checked')
+
+    def test_review_unit_cases(self):
+        rows={r['source_id']:r for r in self.output['tables']['annex2']['rows']}
+        for sid,unit in [('8.7','евро/1000 къса'),('8.19/item3','евро/kW'),
+                         ('8.19/item4','евро/kW'),('10','евро'),('17','евро'),
+                         ('8.16/item1','евро/хектолитър на градус Плато')]:
+            with self.subTest(source_id=sid):
+                self.assertEqual(rows[sid]['units'],[unit]*4)
+
+    def test_subgroups_keep_parent_identity(self):
+        rows={r['source_id']:r for r in self.output['tables']['annex2']['rows']}
+        for sid,parent,fragment in [('8.3/item1','8.3','LPG'),('8.6/item1','8.6','електрическа'),
+                                    ('8.17/item1','8.17','природния'),('8.18/item1','8.18','тежки'),
+                                    ('29.1','29','раждане'),('35.1','35','средно'),
+                                    ('37.1','37','доброволни'),('38.1','38','професионални')]:
+            with self.subTest(source_id=sid):
+                context=rows[sid]['parent_context'][-1]
+                self.assertEqual(context['source_id'],parent)
+                self.assertIn(fragment,context['label'])
+
+    def test_unit_and_parent_mutations_fail(self):
+        for mutation in ('unit','parent','heading'):
+            tables=copy.deepcopy(self.output['tables'])
+            table=tables['annex2']
+            row=next(r for r in table['rows'] if r['source_id']=='8.3/item1')
+            if mutation=='unit':row['units']=['wrong']*4
+            elif mutation=='parent':row['parent_context'][-1]['label']='wrong'
+            else:next(h for h in table['headings'] if h['source_id']=='8.3')['label']='wrong'
+            self.assertTrue(any(not c['passed'] for c in extract.validate(tables)),mutation)
+
+    def test_complete_source_inventory(self):
+        inventory=self.output['inventory']
+        self.assertEqual(len(inventory['numbered_tables']),23)
+        self.assertEqual(len(inventory['annexes']),10)
+        self.assertEqual(self.output['page_text'][-1]['page'],201)
+        for key in inventory['numbered_tables']+[a['id'] for a in inventory['annexes'] if int(a['id'][5:])>=5]:
+            tables=copy.deepcopy(self.output['tables'])
+            del tables[key]
+            failures=extract.validate_inventory(tables,inventory)
+            self.assertTrue(any(not c['passed'] and c['name']=='inventory '+key for c in failures),key)
+
+    def test_all_annex_inventory_entries_are_required(self):
+        for annex in self.output['inventory']['annexes']:
+            key=annex['id']
+            tables={k:v for k,v in self.output['tables'].items() if k!=key and not k.startswith(key+'_')}
+            failures=extract.validate_inventory(tables,self.output['inventory'])
+            self.assertTrue(any(c['name']=='inventory '+key and not c['passed'] for c in failures),key)
+
+    def test_new_table_column_dimensions_and_units(self):
+        tables=self.output['tables']
+        self.assertEqual([c['provider'] for c in tables['I_4']['columns']],['МФ','МФ','ЕК','МФ','ЕК'])
+        self.assertEqual([c['scope'] for c in tables['IV_1']['columns']],['total','local','delegated','total','total'])
+        self.assertEqual([c['measure'] for c in tables['annex7']['columns']],['net','expenditure','transfer']*3)
+        self.assertEqual(tables['I_1']['rows'][2]['units'],['щ.д./евро']*6)
+        self.assertEqual(tables['II_4']['rows'][2]['units'],['% от БВП']*4)
+        self.assertEqual(tables['VII_3']['rows'][1]['units'],['пр.п.']*4)
+
+    def test_new_table_arithmetic_mutation(self):
+        for key,row,col in [('II_7',26,0),('II_8',10,0),('annex7',1,3),
+                            ('annex8',2,1),('annex9',0,0),('annex10',4,1)]:
+            tables=copy.deepcopy(self.output['tables'])
+            tables[key]['rows'][row]['values'][col]+=10
+            self.assertTrue(any(not c['passed'] for c in extract.validate_remaining(tables)),key)
 
     def test_numeric_conversion(self):
         self.assertEqual(extract.number('− 3 492,2'), -3492.2)
