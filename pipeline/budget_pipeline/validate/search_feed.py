@@ -636,13 +636,15 @@ def g_search(ctx):
     for g, n in ((1, len(mi["items"]) + n_prog), (2, len(mu["items"])), (3, len(me["items"])), (4, len(gl["terms"]))):
         c.ok(per[g] == n, "%s: %d rows, the datasets hold %d" % (S_GROUPS[g], per[g], n))
     c.ok(per[0] >= 15, "indicators: only %d rows" % per[0])
-    n_src = len(ctx.get("mock/projects.json")["items"]) + len(ctx.get("mock/activities.json")["items"]) + len(ctx.get("mock/payments.json")["recipients"])
-    n_cat_mock = sum(1 for d in cat["datasets"] if d["status"] == "mock")
-    c.ok(per[5] == len(cat["datasets"]) + n_src, "datasets: %d rows, the catalog and the mock sets hold %d" % (per[5], len(cat["datasets"]) + n_src))
-    c.ok(n_mock == n_src + n_cat_mock, "mock rows: %d, expected %d" % (n_mock, n_src + n_cat_mock))
+    real = [d for d in cat["datasets"] if d["status"] == "real"]
+    c.ok(per[5] == len(real), "datasets: %d rows, the catalog has %d real datasets" % (per[5], len(real)))
+    c.ok(n_mock == 0, "mock rows: %d, expected none" % n_mock)
     for d in cat["datasets"]:
         r = rows5.get("#/danni/%s" % d["slug"])
-        c.ok(r is not None and r[5] == d["status"], "datasets: %s has no row or a different status" % d["slug"])
+        if d["status"] == "real":
+            c.ok(r is not None and r[5] == "real", "datasets: %s has no row or a different status" % d["slug"])
+        else:
+            c.ok(r is None, "datasets: %s is %s and must have no search row" % (d["slug"], d["status"]))
     entries = [entry(S_GROUPS[r[0]], r[1], r[2], r[7], r[4], r[3], r[5], r[6]) for r in items]
     for q in _POPULAR:
         hits, _hidden, _fz = run(entries, parse(q))
@@ -655,5 +657,5 @@ def g_search(ctx):
 
 
 GROUPS = (("FEED", g_feed, "feed.json: events recomputed from the datasets, highlights and sentences vs the latest report, feed.xml vs the events"),
-          ("SEARCH", g_search, "search-index.json: shape, counts and ids tied to the datasets, links resolve, mock rows marked, popular queries find something"))
+          ("SEARCH", g_search, "search-index.json: shape, counts and ids tied to the datasets, links resolve, only real datasets listed, popular queries find something"))
 

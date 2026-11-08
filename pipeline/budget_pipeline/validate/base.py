@@ -19,7 +19,7 @@ MODULES = (foundations, fiscal, budgets, groups)
 
 # Run order of the groups (a group missing here still runs, after these): foundations, then the data in the order of the plan,
 # the catalog (which describes everything) near the end, and the two groups that run other programs last.
-ORDER = ("PROTO", "ENVELOPE", "NUMBERS", "SIZES", "PRIVACY", "GLOSSARY", "CORE", "KFP", "ANNEX3", "REVENUE", "EXPENDITURE", "MEASURES",
+ORDER = ("INPUTS", "ENVELOPE", "NUMBERS", "SIZES", "PRIVACY", "GLOSSARY", "CORE", "KFP", "ANNEX3", "REVENUE", "EXPENDITURE", "MEASURES",
          "LAW", "BUDGETS", "PROGRAMS", "DEBT", "MUNIC", "SEBRA", "COMPONENTS", "RATES", "SEARCH", "FEED", "CATALOG")
 
 

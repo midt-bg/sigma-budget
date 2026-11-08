@@ -47,7 +47,7 @@ RAW = ROOT / "data" / "originals"
 SUMS = ROOT / "data" / "originals.sha256"
 PREFIX = "data/originals/"
 # работните файлове на импорта са в tmp/sources/ (там са и другите ръчни входове, docs/data-sources.md, раздел 2), не в
-# data/originals/: проверката PROTO не допуска там файлове извън data/originals.sha256
+# data/originals/: проверката INPUTS не допуска там файлове извън data/originals.sha256
 WORK = ROOT / "tmp" / "sources"
 INBOX = WORK / "inbox"
 LOG = WORK / "ACQUISITIONS.jsonl"

@@ -177,7 +177,7 @@ def load_file(c, path, dsid_name):
         return doc, text
     if canon != text:
         i = next((k for k in range(min(len(canon), len(text))) if canon[k] != text[k]), min(len(canon), len(text)))
-        c.fail("not the canonical minified form of mock_lib.jdumps (first difference at character %d: %r vs %r)"
+        c.fail("not the canonical minified form of example_support.jdumps (first difference at character %d: %r vs %r)"
                % (i, text[i:i + 24], canon[i:i + 24]))
     return doc, text
 

@@ -18,7 +18,7 @@ import datetime, hashlib, json, os, sys, time, urllib.error, urllib.request
 
 ROOT = str(__import__("pathlib").Path(__file__).resolve().parents[3]) + "/data/originals"
 # the access probes are no data: their pages go to tmp/sources/probes/ (data/originals holds only the pinned files of
-# data/originals.sha256, which the PROTO check enforces); their status stays in MANIFEST.json
+# data/originals.sha256, which the INPUTS check enforces); their status stays in MANIFEST.json
 PROBES = str(__import__("pathlib").Path(__file__).resolve().parents[3]) + "/tmp/sources/probes"
 UA = "budget-na-svetlo-data-pipeline/1.0 (+public data; contact: working group)"   # същият като boundaries.py; не се представяме за браузър
 # първите байтове, които файлът трябва да има (страница за грешка или проверка с код 200 не се записва като данни)

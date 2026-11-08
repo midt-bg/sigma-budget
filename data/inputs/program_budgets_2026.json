@@ -293,7 +293,7 @@
     "policy_amounts_found_in_law": 0,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": true
+    "consistent": true
    },
    "problems": [
     "с. 5 Проект 2026 total: числата не дават сборовете на таблицата ([])",
@@ -1479,7 +1479,7 @@
     "policy_amounts_found_in_law": 6,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": false
+    "consistent": false
    },
    "problems": []
   },
@@ -1738,7 +1738,7 @@
     "policy_amounts_found_in_law": 0,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": true
+    "consistent": true
    },
    "problems": [
     "с. 6 Отчет 2023 total: числата не дават сборовете на таблицата ([])",
@@ -1882,7 +1882,7 @@
    "check": {
     "policies_in_law": 0,
     "policy_amounts_found_in_law": 0,
-    "use_in_prototype": false
+    "consistent": false
    },
    "problems": [
     "с. 9 Отчет 2023 total: числата не дават сборовете на таблицата ([])",
@@ -1963,7 +1963,7 @@
    "check": {
     "policies_in_law": 0,
     "policy_amounts_found_in_law": 0,
-    "use_in_prototype": false
+    "consistent": false
    },
    "problems": [
     "с. 9 Отчет 2023 0600.01.00: числата не дават сборовете на таблицата ([])",
@@ -2566,7 +2566,7 @@
     "policy_amounts_found_in_law": 5,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": true
+    "consistent": true
    },
    "problems": [
     "с. 28 Отчет 2023 total: числата не дават сборовете на таблицата ([])",
@@ -3202,7 +3202,7 @@
     "total_matches_law": true,
     "policies_in_law": 3,
     "policy_amounts_found_in_law": 2,
-    "use_in_prototype": false
+    "consistent": false
    },
    "problems": [
     "с. 11 Отчет 2024 1100.01.12: числата не дават сборовете на таблицата ([65868.1, 65868.1, 65318.5, 549.6, 549.6])",
@@ -4250,7 +4250,7 @@
     "policy_amounts_found_in_law": 2,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": true
+    "consistent": true
    },
    "problems": [
     "с. 8 Отчет 2024 total: числата не дават сборовете на таблицата ([])",
@@ -4996,7 +4996,7 @@
     "total_matches_law": true,
     "policies_in_law": 4,
     "policy_amounts_found_in_law": 1,
-    "use_in_prototype": false
+    "consistent": false
    },
    "problems": []
   },
@@ -5522,7 +5522,7 @@
    "check": {
     "policies_in_law": 3,
     "policy_amounts_found_in_law": 0,
-    "use_in_prototype": false
+    "consistent": false
    },
    "problems": [
     "с. 13: таблица без разпозната година (None)",
@@ -6781,7 +6781,7 @@
     "policy_amounts_found_in_law": 7,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": true
+    "consistent": true
    },
    "problems": [
     "с. 42 Отчет 2023 total: числата не дават сборовете на таблицата ([])",
@@ -7627,7 +7627,7 @@
     "policy_amounts_found_in_law": 4,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": true
+    "consistent": true
    },
    "problems": [
     "с. 27 Прогноза 2027 1600.00.00: числата не дават сборовете на таблицата ([])",
@@ -8741,7 +8741,7 @@
     "policy_amounts_found_in_law": 3,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": true
+    "consistent": true
    },
    "problems": [
     "с. 13 Отчет 2023 total: числата не дават сборовете на таблицата ([])",
@@ -9095,7 +9095,7 @@
    "check": {
     "policies_in_law": 3,
     "policy_amounts_found_in_law": 2,
-    "use_in_prototype": false
+    "consistent": false
    },
    "problems": [
     "с. 15: таблица без разпозната година (Закон 2023)",
@@ -10165,7 +10165,7 @@
     "policy_amounts_found_in_law": 4,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": true
+    "consistent": true
    },
    "problems": [
     "с. 15 Отчет 2023 total: числата не дават сборовете на таблицата ([])",
@@ -10736,7 +10736,7 @@
    "check": {
     "policies_in_law": 3,
     "policy_amounts_found_in_law": 0,
-    "use_in_prototype": false
+    "consistent": false
    },
    "problems": [
     "с. 16 Отчет 2023 2000.00.00: числата не дават сборовете на таблицата ([])",
@@ -11512,7 +11512,7 @@
     "policy_amounts_found_in_law": 3,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": true
+    "consistent": true
    },
    "problems": [
     "с. 27 Отчет 2024 2100.02.01: числата не дават сборовете на таблицата ([1134736.1, 1134736.1, 0.0, 104969.5, 104969.5, 0.0, 1029766.6, 0.0, 0.0])"
@@ -12980,7 +12980,7 @@
     "policy_amounts_found_in_law": 4,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": true
+    "consistent": true
    },
    "problems": []
   },
@@ -13300,7 +13300,7 @@
     "total_matches_law": true,
     "policies_in_law": 2,
     "policy_amounts_found_in_law": 0,
-    "use_in_prototype": false
+    "consistent": false
    },
    "problems": [
     "с. 16 Отчет 2023 2400.01.01: числата не дават сборовете на таблицата ([1159.8, 915.5, 244.3, 915.5, 915.5, 0.0, 244.3, 244.3])",
@@ -13431,7 +13431,7 @@
     "policy_amounts_found_in_law": 0,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": false
+    "consistent": false
    },
    "problems": [
     "с. 3 Отчет 2023 total: числата не дават сборовете на таблицата ([])",
@@ -13694,7 +13694,7 @@
    "check": {
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": false
+    "consistent": false
    },
    "problems": [
     "с. 7 Отчет 2023 total: числата не дават сборовете на таблицата ([])",
@@ -13960,7 +13960,7 @@
     "policy_amounts_found_in_law": 0,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": true
+    "consistent": true
    },
    "problems": [
     "с. 3 Отчет 2023 total: числата не дават сборовете на таблицата ([])",
@@ -14151,7 +14151,7 @@
     "policy_amounts_found_in_law": 0,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": true
+    "consistent": true
    },
    "problems": [
     "с. 5 Отчет 2023 total: числата не дават сборовете на таблицата ([])",
@@ -14381,7 +14381,7 @@
     "policy_amounts_found_in_law": 0,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": true
+    "consistent": true
    },
    "problems": [
     "с. 4 Отчет 2023 total: числата не дават сборовете на таблицата ([])",
@@ -14650,7 +14650,7 @@
     "policy_amounts_found_in_law": 0,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": true
+    "consistent": true
    },
    "problems": [
     "с. 4 Отчет 2023 total: числата не дават сборовете на таблицата ([])",
@@ -14819,7 +14819,7 @@
     "policy_amounts_found_in_law": 0,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": false
+    "consistent": false
    },
    "problems": [
     "с. 5 Отчет 2023 total: числата не дават сборовете на таблицата ([])",
@@ -15087,7 +15087,7 @@
     "policy_amounts_found_in_law": 0,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": true
+    "consistent": true
    },
    "problems": [
     "с. 8 Отчет 2023 total: числата не дават сборовете на таблицата ([])",
@@ -15353,7 +15353,7 @@
     "policy_amounts_found_in_law": 0,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": true
+    "consistent": true
    },
    "problems": [
     "с. 6 Отчет 2023 total: числата не дават сборовете на таблицата ([])",
@@ -15619,7 +15619,7 @@
     "policy_amounts_found_in_law": 0,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": true
+    "consistent": true
    },
    "problems": [
     "с. 4 Отчет 2023 total: числата не дават сборовете на таблицата ([])",
@@ -15884,7 +15884,7 @@
     "policy_amounts_found_in_law": 0,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": true
+    "consistent": true
    },
    "problems": [
     "с. 5 Отчет 2023 total: числата не дават сборовете на таблицата ([])",
@@ -16150,7 +16150,7 @@
     "policy_amounts_found_in_law": 0,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": false
+    "consistent": false
    },
    "problems": [
     "с. 6 Отчет 2023 total: числата не дават сборовете на таблицата ([])",
@@ -16415,7 +16415,7 @@
     "policy_amounts_found_in_law": 0,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": true
+    "consistent": true
    },
    "problems": [
     "с. 7 Отчет 2023 total: числата не дават сборовете на таблицата ([])",
@@ -16681,7 +16681,7 @@
     "policy_amounts_found_in_law": 0,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": true
+    "consistent": true
    },
    "problems": [
     "с. 7 Отчет 2023 total: числата не дават сборовете на таблицата ([])",
@@ -16922,7 +16922,7 @@
     "policy_amounts_found_in_law": 0,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": true
+    "consistent": true
    },
    "problems": [
     "с. 12 Отчет 2023 4700.01.00: числата не дават сборовете на таблицата ([12959.8, 11127.3, 1832.5, 12959.8, 11127.3, 1832.5, 0.0, 0.0])",
@@ -17184,7 +17184,7 @@
     "policy_amounts_found_in_law": 0,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": true
+    "consistent": true
    },
    "problems": [
     "с. 3 Отчет 2023 total: числата не дават сборовете на таблицата ([])",
@@ -17475,7 +17475,7 @@
     "policy_amounts_found_in_law": 1,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": true
+    "consistent": true
    },
    "problems": [
     "с. 7 Отчет 2023 5300.00.00: числата не дават сборовете на таблицата ([56175.2, 56175.2, 0.0, 13571.0, 0.0, 42604.2, 42604.2, 0.0])",
@@ -17776,7 +17776,7 @@
     "policy_amounts_found_in_law": 2,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": true
+    "consistent": true
    },
    "problems": [
     "с. 27 Отчет 2023 7100.00.00: числата не дават сборовете на таблицата ([])",
@@ -18092,7 +18092,7 @@
     "policy_amounts_found_in_law": 0,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": true
+    "consistent": true
    },
    "problems": [
     "с. 3 Отчет 2023 total: числата не дават сборовете на таблицата ([])",
@@ -18786,7 +18786,7 @@
     "policy_amounts_found_in_law": 3,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": true
+    "consistent": true
    },
    "problems": []
   },
@@ -19045,7 +19045,7 @@
     "policy_amounts_found_in_law": 0,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": true
+    "consistent": true
    },
    "problems": [
     "с. 8 Отчет 2023 total: числата не дават сборовете на таблицата ([])",
@@ -19311,7 +19311,7 @@
     "policy_amounts_found_in_law": 1,
     "policies_sum_to_total_2026": true,
     "programs_sum_to_policy_2026": true,
-    "use_in_prototype": true
+    "consistent": true
    },
    "problems": []
   }

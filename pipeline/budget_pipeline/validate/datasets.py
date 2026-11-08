@@ -18,7 +18,6 @@ import budget_pipeline.validate.base as V                             # noqa: E4
 import budget_pipeline.validate.execution as execution                                    # noqa: E402  contract v2 of execution.json (stage B)
 
 GONE_SEBRA = "СЕБРА (daily payments) was taken out of the active interface and of core.sources; data/sebra.json stays on disk, unreferenced, for phase 2"
-GONE_SEARCH = "search shows only active real sets; the 7 pending and 2 mock datasets have no search row (docs/plan.md, search)"
 SOURCE_EXTENSION = "Screen S34: four sources were added to core.sources (dbp2027, ec-edp-bg, ec-fiscal-bg, ec-dbp) that the donor registry does not list"
 
 def _feed_counts():
@@ -41,26 +40,8 @@ ACCEPTED = (
     ("FEED", r"^kinds \[.*\] must be exactly the kinds used by the events$", "the donor derives the 'sebra' kind from sebra.json; V5 feed has no such event"),
     ("CATALOG", r"^files on disk but not in the catalog: \['dbp2027\.json', 'sebra\.json'\]; in the catalog but not on disk: \[\]$", GONE_SEBRA + "; Screen S34: dbp2027.json is not listed in catalog.json (S24 would change)"),
     ("CATALOG", r"^counts \{'datasets': \d+, 'files': \d+, .*'files': \d+, ", GONE_SEBRA + " (the catalog counts the listed files, the folder holds one more: sebra.json)"),
-    ("SEARCH", r"^datasets: \d+ rows, the catalog and the mock sets hold \d+$", GONE_SEARCH),
-    ("SEARCH", r"^mock rows: 0, expected \d+$", GONE_SEARCH),
-    ("SEARCH", r"^datasets: [\w-]+ has no row or a different status$", GONE_SEARCH),
 )
 
-
-class StubCtx(object):
-    """The base contract context, with the three mock files the active layer removed answered by empty lists (the SEARCH group sums their rows)."""
-    EMPTY = {"mock/projects.json": {"items": []}, "mock/activities.json": {"items": []}, "mock/payments.json": {"recipients": []}}
-
-    def __init__(self, ctx):
-        self._ctx = ctx
-
-    def get(self, rel, *a, **k):
-        if rel in self.EMPTY and not L.exists(rel):
-            return self.EMPTY[rel]
-        return self._ctx.get(rel, *a, **k)
-
-    def __getattr__(self, name):
-        return getattr(self._ctx, name)
 
 
 _used = []                                            # [(group, message, reason)]
@@ -69,7 +50,7 @@ _hit = set()
 
 def wrap(name, fn, use_accepted):
     def run(ctx):
-        chk = fn(StubCtx(ctx) if name == "SEARCH" else ctx)
+        chk = fn(ctx)
         if not use_accepted:
             return chk
         keep = []

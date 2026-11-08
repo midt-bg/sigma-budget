@@ -20,17 +20,16 @@
 Изисква: pymupdf, py7zr (pip install pymupdf py7zr) — в отделен venv.
 """
 
-from pathlib import Path as _Path
-ROOT = _Path(__file__).resolve().parents[3]
 import io, json, os, re, sys, zipfile
+from pathlib import Path
 
 import pymupdf
 
-PROTO = str(__import__("pathlib").Path(__file__).resolve().parents[3])
-ZIP = f"{PROTO}/data/originals/parliament/52-602-01-19.zip"
-OUTDIR = f"{PROTO}/data/originals/program_budgets"
-OUT = f"{PROTO}/data/inputs/program_budgets_2026.json"
-ZDB = f"{PROTO}/data/inputs/zdb2026.json"
+ROOT = Path(__file__).resolve().parents[3]
+ZIP = f"{ROOT}/data/originals/parliament/52-602-01-19.zip"
+OUTDIR = f"{ROOT}/data/originals/program_budgets"
+OUT = f"{ROOT}/data/inputs/program_budgets_2026.json"
+ZDB = f"{ROOT}/data/inputs/zdb2026.json"
 
 NUM = re.compile(r"^-?\d{1,3}(?:[ \u00a0\u202f]\d{3})*(?:[.,]\d+)?$|^-?\d+(?:[.,]\d+)?$|^-$")
 CODE = re.compile(r"^(\d{4})\.\s*(\d{2})\.\s*(\d{2})\*?$")
@@ -282,13 +281,13 @@ def main():
             check["programs_sum_to_policy_2026"] = not bad
             if bad:
                 check["policies_with_program_mismatch"] = bad
-        check["use_in_prototype"] = bool(check.get("total_matches_law") and check.get("policies_sum_to_total_2026") and check.get("programs_sum_to_policy_2026"))
+        check["consistent"] = bool(check.get("total_matches_law") and check.get("policies_sum_to_total_2026") and check.get("programs_sum_to_policy_2026"))
         complete = [y for y in out["years"] if progs and all(y in p["by_year"] for p in progs.values())]
         out["budgets"][prb] = {"file": f, "zdb_art": art, "zdb_name": zdb[art]["name"] if art in zdb else None, "pages": pages,
                                "years_complete": complete, "programs": progs, "check": check, "problems": problems}
     json.dump(out, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     ok = [k for k, b in out["budgets"].items() if b["check"].get("total_matches_law")]
-    use = [k for k, b in out["budgets"].items() if b["check"].get("use_in_prototype")]
+    use = [k for k, b in out["budgets"].items() if b["check"].get("consistent")]
     out["validated"] = use
     json.dump(out, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     print(f"ПРБ с таблици: {len(out['budgets'])}; общата сума за 2026 г. съвпада със ЗДБ: {len(ok)}; минават и вътрешните сверки: {len(use)}: {use}")

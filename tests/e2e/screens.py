@@ -37,7 +37,7 @@ from tests.e2e import expect                                      # noqa: E402  
 P_ROOT = ROOT                                         # older name of ROOT
 SITE = __import__("tests.e2e.static_assets", fromlist=["root"]).root()                                  # the site  (version current: run at the tag current release)
 SHOT_DIR = ROOT / 'tmp' / 'render-check-v6'                 # screenshots (gitignored)
-PROTO_SUMS = ROOT / 'data' / 'originals.sha256'
+INPUT_SUMS = ROOT / 'data' / 'originals.sha256'
 if 'PLAYWRIGHT_BROWSERS_PATH' not in os.environ and (P_ROOT / 'tmp' / 'pw-browsers').is_dir():
     os.environ['PLAYWRIGHT_BROWSERS_PATH'] = str(P_ROOT / 'tmp' / 'pw-browsers')
 

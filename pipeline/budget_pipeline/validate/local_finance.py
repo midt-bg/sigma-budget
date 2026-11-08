@@ -137,13 +137,6 @@ def g_munic(ctx):
         n_pts += sum(1 for _ in _coords(g))
         c.ok(not bad, "geo %s: coordinates outside Bulgaria: %s" % (p["id"], bad[:2]))
     c.ok(geo.get("idProperty") == "id", "geo.idProperty")
-    # --- the mock municipal finance (DATA2) must describe the same 265 municipalities
-    if L.exists("mock/municipal-finance.json"):
-        mf = ctx.get("mock/municipal-finance.json")
-        by = dict((i["id"], i) for i in mf["items"])
-        c.ok(set(by) == set(ids), "mock/municipal-finance.json: the same 265 ids")
-        c.ok(all(by[i["id"]]["population"] == i["population"] for i in items if i["id"] in by), "mock/municipal-finance.json: population equals municipalities.json")
-        c.ok(all(by[i["id"]]["region"] == i["region"] and by[i["id"]]["name"] == i["name"] for i in items if i["id"] in by), "mock/municipal-finance.json: names / oblast")
     c.fact("%d municipalities in 28 oblasts, transfers %s thousand euro (+ %s other targeted), population %s, %d boundary points, %d manual name matches" % (
         len(items), L.fmt(tt["transfersKhil"]), L.fmt(tt["otherTargetedKhil"]), L.fmt(pop_sum, 0), n_pts, len(manual)))
     return c

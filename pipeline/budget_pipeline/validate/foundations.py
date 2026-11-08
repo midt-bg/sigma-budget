@@ -1,4 +1,4 @@
-"""Cross-cutting groups of base.py: PROTO, ENVELOPE, NUMBERS, SIZES, PRIVACY, GLOSSARY (CORE and CATALOG live in catalog.py).
+"""Cross-cutting groups of base.py: INPUTS, ENVELOPE, NUMBERS, SIZES, PRIVACY, GLOSSARY (CORE and CATALOG live in catalog.py).
 
 Pure standard library. Each group is a function `g_x(ctx) -> Check`; `GROUPS` lists (name, function, one-line doc).
 """
@@ -18,10 +18,10 @@ SOURCE_KEYS = ("kfp", "asbp", "bill", "zdb", "zbdoo", "zbnzok", "prb", "parliame
                "gisco", "dataeuropa", "minfin", "wg", "mockgen")
 
 
-# ------------------------------------------------------------------------------------------------------- PROTO
-def g_proto(ctx):
+# ------------------------------------------------------------------------------------------------------- INPUTS
+def g_inputs(ctx):
     """Inputs are pinned: same file SET and the same SHA-256 of every file as in data/originals.sha256 (raw files may be absent; regenerate the rest with input_checksums.py)."""
-    c = Check("PROTO")
+    c = Check("INPUTS")
     expected = {}
     with open(os.path.join(L.ROOT, "data", "originals.sha256"), "r", encoding="utf-8") as fh:
         for ln in fh:
@@ -194,8 +194,6 @@ def g_sizes(ctx):
             return 400, "raw"
         if re.match(r"^ministries/\d{4}\.json$", f):
             return 80, "raw"
-        if f == "mock/payments.json":
-            return 150, "raw"
         return 150, "raw"
 
     total_raw = 0
@@ -294,7 +292,7 @@ def g_glossary(ctx):
 
 
 GROUPS = (
-    ("PROTO", g_proto, "pinned input file set and every sha256 equal data/originals.sha256"),
+    ("INPUTS", g_inputs, "pinned input file set and every sha256 equal data/originals.sha256"),
     ("ENVELOPE", g_envelope, "meta envelopes, status/source/pending ids, nested pending blocks carry no numbers"),
     ("NUMBERS", g_numbers, "no NaN/Infinity; null and empty strings only at documented positions"),
     ("SIZES", g_sizes, "size budget of DATA_SPEC section 1"),

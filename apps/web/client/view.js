@@ -1,5 +1,5 @@
 // Small pure helpers for pages (no DOM). Everything honours the viewer's preferences (store) and never returns NaN/undefined:
-// a value that cannot be computed is null (numbers) or an em dash (strings).  See mock/DEV_GUIDE.md §5.22.
+// a value that cannot be computed is null (numbers) or an em dash (strings).
 //   yIndex(years, ctx)                  index of the selected year in a `years` array (or {list:[…]}), -1 when absent
 //   at(arr, years, ctx)                 arr[yIndex] ?? null
 //   change(a, b)                        percent change from b to a, null when not computable
