@@ -49,6 +49,12 @@ describe('law evidence', () => {
 it('retains the pinned fixture bytes', async () => {
   const { createHash } = await import('node:crypto');
   const provenance = fixture('provenance.json');
+  for (const [name, hash] of Object.entries(provenance.frozenInputSha256)) {
+    const bytes = readFileSync(
+      resolve(import.meta.dirname, '../../test/fixtures/law/inputs', name),
+    );
+    expect(createHash('sha256').update(bytes).digest('hex')).toBe(hash);
+  }
   for (const [name, hash] of Object.entries(provenance.fixtureSha256)) {
     const bytes = readFileSync(resolve(import.meta.dirname, '../../test/fixtures/law', name));
     expect(createHash('sha256').update(bytes).digest('hex')).toBe(hash);

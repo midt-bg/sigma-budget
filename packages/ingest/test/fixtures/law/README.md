@@ -1,24 +1,25 @@
 # Law builder fixtures
 
-The input is the release-build archive pinned in `provenance.json` at revision
-`1843be0`, plus `data/release/ministries.json`. Extract that archive into
-`tmp/ts-law-inputs/` and run:
+`inputs/` freezes the law cache, Parliament fields, parsed DV blocks, ministry
+input and source definitions used by the Python builder at revision `1843be0`.
+`original-hashes.json` records the hashes of the original archive members from
+which the parser evidence was captured. `provenance.json` pins both the frozen
+inputs and generated outputs. No live repository data is read by the generator.
+
+Verify that Python 3.12 regenerates every output byte for byte:
 
 ```sh
-PYTHONPATH=pipeline tmp/venv-data/bin/python packages/ingest/test/fixtures/law/generate_oracle.py
+PYTHONPATH=pipeline tmp/venv-data/bin/python packages/ingest/test/fixtures/law/generate_oracle.py --check
 ```
 
-The generator verifies the archive and extracted input hashes, records Python's
-`budget_law_parser.dv_blocks` output and the fields used from the Parliament
-responses, and builds the independent expected results with Python `law.py`.
-The cached Parliament proposals in this release already contain decoded arrays.
-`literal-data.json` additionally records representative Python `ast.literal_eval`
-results; TypeScript accepts decoded data and does not evaluate Python literals.
-The optional Parliament ZIP was absent from the archive, so its size check is
-not exercised by this fixture. The 2027 wording has its own fixture so its later tracking change remains
-isolated. The raw legal parsers remain in Python.
+Remove `--check` to regenerate. The cached Parliament proposals in this release
+already contain decoded arrays. `literal-data.json` additionally records
+representative Python `ast.literal_eval` results; TypeScript accepts decoded
+data and does not evaluate Python literals. The optional Parliament ZIP was
+absent from the input archive, so its real size is not verified. The 2027
+wording has its own fixture. The raw legal parsers remain in Python.
 
-Build and compare the TypeScript candidate:
+Build and compare the TypeScript candidate with the current release:
 
 ```sh
 pnpm --filter @sigma-budget/etl... build
