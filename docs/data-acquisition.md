@@ -326,7 +326,8 @@ handoff. It is an input artifact, not a live-source refresh. Copy it locally as
 uv venv --python 3.12 tmp/venv-data
 uv pip install --python tmp/venv-data/bin/python --require-hashes -r pipeline/requirements.lock -r tests/requirements-dev.lock
 uv pip install --python tmp/venv-data/bin/python --no-deps -e pipeline
-sha256sum /path/to/release-build-inputs.tar.gz # compare with docs/release-build-report.md
+sha256sum /path/to/release-build-inputs.tar.gz
+# Expected: 1fa327738fb8fd2af276bcfca7ca5a4dfdcb6057b516f7f54564a1dd05f1963c
 tar -xzf /path/to/release-build-inputs.tar.gz
 tmp/venv-data/bin/python -m budget_pipeline.sources.prepare_inputs
 ./budget build --env local --build-date 2026-11-05
