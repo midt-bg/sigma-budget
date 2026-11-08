@@ -194,10 +194,60 @@ def municipal():
 
 
 
+METADATA = {'source': 'АСБП 2026–2028, Табл. III-1 „Разходи по функции по КФП за периода 2026-2028 г. с разпределен резерв по функции (без вноска в общия бюджет на ЕС)“; мотиви към законопроекта за държавния бюджет за 2026 г., № 52-602-01-19, внесен от МС на 01.07.2026', 'url': 'https://www.parliament.bg/bills/52/52-602-01-19.docx', 'bill_page': 'https://www.parliament.bg/bg/bills/ID/167157', 'unit': 'млн. евро; % от БВП', 'columns': ['2025 Програма', '2026 Проект', '2027 Прогноза', '2028 Прогноза']}
+
+def functions():
+    """Read the nested Word table III-1 (python-docx top-level tables omit it)."""
+    import zipfile
+    import xml.etree.ElementTree as ET
+    path = RAW / "parliament/52-602-01-19.docx"
+    pins = dict(line.split("  ", 1)[::-1] for line in (ROOT / "data/originals.sha256").read_text().splitlines() if "  " in line)
+    if hashlib.sha256(path.read_bytes()).hexdigest() != pins.get(path.relative_to(ROOT).as_posix()):
+        raise ValueError("bill pin mismatch")
+    with zipfile.ZipFile(path) as archive:
+        document = ET.fromstring(archive.read("word/document.xml"))
+    w = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+    matches = []
+    for table in document.iter(w + "tbl"):
+        rows = [["".join(t.text or "" for t in cell.iter(w + "t")) for cell in row.findall(w + "tc")]
+                for row in table.findall(w + "tr")]
+        if rows and rows[0] == ["ПОКАЗАТЕЛИ", "млн. евро", "% от БВП"]:
+            matches.append(rows)
+    if len(matches) != 1:
+        raise ValueError("expected exactly one III-1 nested table")
+    out = METADATA.copy()
+    result = []
+    for cells in matches[0][3:]:
+        if not cells[0].strip():
+            continue
+        if len(cells) != 9:
+            raise ValueError("III-1: expected 9 cells")
+        values = [float(re.sub(r"[\s%]", "", v).replace(",", ".")) for v in cells[1:]]
+        label = cells[0].strip()
+        part = label.startswith("-")
+        item = {"name": label.removeprefix("-").strip(), "mln": values[:4], "pc_gdp": values[4:]}
+        if part:
+            result[-1]["parts"].append(item)
+        else:
+            item["parts"] = []
+            result.append(item)
+    if len(result) != 9 or sum(len(f["parts"]) for f in result) != 23:
+        raise ValueError("III-1: unexpected classification")
+    # Independent accounting check on the extracted children, one printed decimal.
+    for parent in result:
+        if parent["parts"]:
+            for i in range(4):
+                if abs(sum(p["mln"][i] for p in parent["parts"]) - parent["mln"][i]) > 0.15:
+                    raise ValueError("III-1: parts do not reconcile: " + parent["name"])
+    out["functions"] = result
+    out["retrieved"] = "2026-09-30"
+    save("kfp_functions_2026.json", out)
+
+
 def main(argv=None):
     global A, T, DV
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("item", choices=["population", "debt", "components", "municipal"])
+    ap.add_argument("item", choices=["population", "debt", "components", "municipal", "functions"])
     ap.add_argument("--check", action="store_true")
     args = ap.parse_args(argv)
     pins = dict(line.split("  ", 1)[::-1] for line in (ROOT / "data/originals.sha256").read_text().splitlines() if "  " in line)
@@ -209,7 +259,7 @@ def main(argv=None):
             raise ValueError("missing pin or hash mismatch: " + rel)
         return json.loads(blob)
     globals()["jload"] = read_pinned
-    if args.item != "population":
+    if args.item not in ("population", "functions"):
         A = read_pinned(RAW / "asbp/asbp_tables.json")
         T = A["tables"]
     if args.item in ("municipal", "components"):

@@ -27,6 +27,7 @@ def main(argv):
     for name in ("measure-labels", "tax-assumptions"):
         (ROOT / "data/release/mock" / (name + ".json")).unlink(missing_ok=True)
     run(["-m", "budget_pipeline.extract.legacy_inputs", "municipal", "--check"], env)
+    run(["-m", "budget_pipeline.extract.legacy_inputs", "functions", "--check"], env)
     run(["-m", "budget_pipeline.extract.kfp_full"], env)
     os.environ.update({k: v for k, v in env.items() if k == "BUILD_DATE"})
     run(["-m", "budget_pipeline.build.frozen_editorial"], env)

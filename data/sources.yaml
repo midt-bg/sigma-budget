@@ -602,11 +602,11 @@ intermediates:
   reproducible: false
   note: 'no producer and no saved answer (spec, section 4: needs one, with the raw COFOG answer)'
 - path: data/inputs/kfp_functions_2026.json
-  producer: null
+  producer: python -m budget_pipeline.extract.legacy_inputs functions
   inputs:
-  - asbp
-  reproducible: false
-  note: no producer (spec, section 4)
+  - bill
+  reproducible: true
+  note: Nested DOCX table III-1, byte-identical; child rows reconcile with each function.
 - path: data/inputs/debt_gdp.json
   producer: null
   inputs:
