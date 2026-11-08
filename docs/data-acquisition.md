@@ -313,3 +313,35 @@ python -m budget_pipeline.sources.access_probe --label "София, домашн
 Резултатът от САЩ, 4.11.2026: всички отворени източници са `ok`. БНБ е нестабилна. minfin.bg дава `challenge`, data.egov.bg дава `forbidden`, а nra.bg дава `network`.
 
 Резултатът от България, 4.11.2026: всички отворени източници са `ok`, data.egov.bg също. nra.bg е `ok` с curl и `network` с urllib. minfin.bg пак дава `challenge`.
+
+
+## Restore the release-build snapshot
+
+A fresh machine needs the separately retained `release-build-inputs.tar.gz` archive
+(raw snapshots and offline caches, without credentials), supplied with this build's
+handoff. It is an input artifact, not a live-source refresh. Copy it locally as
+`/path/to/release-build-inputs.tar.gz`, then run from the checkout:
+
+```sh
+uv venv --python 3.12 tmp/venv-data
+uv pip install --python tmp/venv-data/bin/python --require-hashes -r pipeline/requirements.lock -r tests/requirements-dev.lock
+uv pip install --python tmp/venv-data/bin/python --no-deps -e pipeline
+sha256sum /path/to/release-build-inputs.tar.gz # compare with docs/release-build-report.md
+tar -xzf /path/to/release-build-inputs.tar.gz
+tmp/venv-data/bin/python -m budget_pipeline.sources.prepare_inputs
+./budget build --env local --build-date 2026-11-05
+./budget validate --release work/candidate
+```
+
+The archive paths are `data/originals/` and `data/cache/`. The audit handoff's
+`prototype/data/raw/` and `pinned-raw/` map to `data/originals/`,
+`tools/mock/cache/` to `data/cache/`, and `tmp/research/` to
+`data/cache/research/`. Existing tracked originals must be retained when importing
+an older audit archive. The archive supplied here already has the new layout.
+Do not re-fetch on restore: changing live snapshots requires another acquisition,
+derived-data comparison, and reviewed pin change.
+
+The retained published guide/glossary and terminology pairs are tracked frozen
+inputs; their provenance is in `data/sources.yaml`. The missing original editorial
+texts and historical acquisition logs have not been reconstructed. The new ASBP
+sidecar records acquisition from the tracked PDF, not a publisher download.

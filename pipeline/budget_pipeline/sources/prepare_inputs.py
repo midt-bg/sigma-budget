@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Produce missing offline intermediates before budget build; never fetch or replace inputs.
 
-Run with .venv-data/bin/python after raw_sources.py status/import/fetch.
-Existing files are retained; raw_sources.py status and budget build verify pins.
+Run with tmp/venv-data/bin/python -m budget_pipeline.sources.prepare_inputs.
+Existing files are retained; sources.originals status and budget build verify pins.
 """
 import subprocess
 import sys
