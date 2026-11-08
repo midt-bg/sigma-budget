@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Apply the terminology differences preserved by the historical mock-v2 and mock-v4 tags to a current dataset. The tag dependency is retained until its separate migration."""
+"""Apply the terminology differences preserved by the historical mock-v2 and mock-v4 tags to a current dataset. The ordered replacement pairs are frozen in data/inputs/wording.json."""
 
 from pathlib import Path as _Path
 ROOT = _Path(__file__).resolve().parents[3]
@@ -16,10 +16,7 @@ def leaves(a, b, out):
 def enc(s): return json.dumps(s, ensure_ascii=False)[1:-1]   # content between the quotes
 def main():
     rel, tgt = sys.argv[1], sys.argv[2]
-    old = json.load(open(os.path.join(M, 'tmp/versions/site-v2/data', rel))); new = json.load(open(os.path.join(M, 'tmp/versions/site-v4/data', rel)))
-    out = []; leaves(old, new, out)
-    pairs = {}
-    for a, b in out: pairs[a] = b
+    pairs = json.loads((ROOT / 'data/inputs/wording.json').read_text())[rel]
     p = os.path.join(M, tgt, rel); txt = open(p, encoding='utf-8').read(); n = 0; miss = []
     for a, b in pairs.items():
         ea, eb = enc(a), enc(b)
