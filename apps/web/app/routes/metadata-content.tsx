@@ -20,6 +20,7 @@ export function MetadataContent({
   const content = (model.screen === 'S25' ? api : proof)({
     newer,
     origin: model.release.origin,
+    dataBase: model.release.dataBase,
     data: model.documents,
     core: model.core,
     query: model.query,

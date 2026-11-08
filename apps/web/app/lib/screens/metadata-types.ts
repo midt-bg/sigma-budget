@@ -100,6 +100,7 @@ export interface MetadataModel extends Omit<EditorialScreenModel, 'screen'> {
 export interface MetadataContext {
   newer?: string;
   origin?: string;
+  dataBase?: string;
   data: MetadataModel['documents'];
   core: MetadataModel['core'];
   query: Record<string, string>;

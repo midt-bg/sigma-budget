@@ -168,3 +168,28 @@ it('live release notice keeps its server position, the pinned data and abort cle
   }
   expect(signal?.aborted).toBe(true);
 });
+
+for (const [set, file] of [
+  ['execution', 'execution.json'],
+  ['ministries-programs', 'ministries/0200.json'],
+  ['feed-rss', 'feed.xml'],
+])
+  it(`${set} uses the session's non-current release in downloads, copied address and every code example`, async () => {
+    const id = 'a'.repeat(64);
+    expect(id).not.toBe(manifest.releaseId);
+    const pinned = { ...release, id, dataBase: `/data/releases/${id}/data/` };
+    const model = await textModel('S25', {}, { set }, { release: pinned, load });
+    const container = document.createElement('div');
+    container.innerHTML = renderToString(
+      <MigratedScreen model={model} navigation={{ go() {}, announce() {} }} />,
+    );
+    const path = pinned.dataBase + file,
+      url = release.origin + path;
+    expect(container.querySelector('#s25-addr')?.textContent).toBe(url);
+    expect(container.querySelector('.s25-actions a[download]')?.getAttribute('href')).toBe(path);
+    for (const code of ['curl', 'py', 'js'])
+      expect(container.querySelector(`#s25-c-${code}`)?.textContent).toContain(url);
+    expect(container.querySelector('#s25-read')?.textContent).not.toContain(
+      `${release.origin}/data/${file}`,
+    );
+  });

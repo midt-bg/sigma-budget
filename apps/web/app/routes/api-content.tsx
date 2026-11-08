@@ -333,9 +333,11 @@ function excerpt(meta: FileMeta) {
 }
 
 /** the code of the three examples; a set that is not JSON (the RSS feed) is read as text */
-function codes(set: CatalogueSet, origin?: string) {
+function codes(set: CatalogueSet, origin?: string, dataBase = '/data/') {
   const part = isMulti(set) ? set.parts[0] : null;
-  const url = C.fileUrl(part ? part.file : set.file, origin ? origin + '/' : undefined);
+  const file = part ? part.file : set.file;
+  const path = file.startsWith('data/') ? dataBase + file.slice(5) : file;
+  const url = C.fileUrl(path, origin ? origin + '/' : undefined);
   const name = C.dlName(set, part);
   const json = set.ext === 'json';
   const curl = ['# Свали файла', `curl -sSf -o ${name} "${url}"`];
@@ -468,7 +470,7 @@ function mockFacts(meta: FileMeta | null, M: Catalogue) {
 }
 
 function readBlock(ctx: MetadataContext, M: Catalogue, set: CatalogueSet) {
-  const c = codes(set, ctx.origin);
+  const c = codes(set, ctx.origin, ctx.dataBase);
   const { meta, state } = ctx.fileMeta || { meta: null, state: 'skip' };
   const multi = isMulti(set);
   const size = C.sizeLabel(set.bytes),
