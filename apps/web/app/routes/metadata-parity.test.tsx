@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { expect, it, afterEach } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { renderToStaticMarkup } from 'react-dom/server';
+import { renderToString } from 'react-dom/server';
 import { parseHTML } from 'linkedom';
 import { MigratedScreen } from '../migration/registry';
 import { textModel } from '../lib/screens/text';
@@ -65,7 +65,7 @@ for (const c of manifest.cases) {
       c.query as Record<string, string>,
       { release, load },
     );
-    const actual = renderToStaticMarkup(
+    const actual = renderToString(
       <MigratedScreen model={model} navigation={{ go() {}, announce() {} }} />,
     );
     const a = semantics(actual),

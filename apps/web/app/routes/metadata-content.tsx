@@ -1,5 +1,5 @@
 import { glossaryTree } from '../components/GlossaryText';
-import { cloneElement, isValidElement, type ReactNode } from 'react';
+import { Fragment, cloneElement, isValidElement, type ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { PageFrame } from '../components/PageFrame';
 import type { MetadataModel } from '../lib/screens/metadata-types';
@@ -18,6 +18,7 @@ export function MetadataContent({
   const root = useRef<HTMLDivElement>(null),
     [newer, setNewer] = useState('');
   const content = (model.screen === 'S25' ? api : proof)({
+    origin: model.release.origin,
     data: model.documents,
     core: model.core,
     query: model.query,
@@ -76,10 +77,12 @@ export function MetadataContent({
             {newer}
           </p>
         ) : null}
-        {glossaryTree(
-          fixFiles(content.body, model.release.dataBase),
-          model.glossary,
-          navigation.openGlossary,
+        {compactText(
+          glossaryTree(
+            fixFiles(content.body, model.release.dataBase),
+            model.glossary,
+            navigation.openGlossary,
+          ),
         )}
       </div>
     </PageFrame>
@@ -95,4 +98,36 @@ function fixFiles(node: ReactNode, base: string): ReactNode {
     { ...(href?.startsWith('data/') ? { href: base + href.slice(5) } : {}) },
     fixFiles(node.props.children, base),
   );
+}
+
+// Keep adjacent text in one host node, as in the frozen server documents.
+// React otherwise inserts separators which the independent SSR parser observes.
+function compactText(tree: ReactNode): ReactNode[] {
+  const result: ReactNode[] = [];
+  function add(node: ReactNode) {
+    if (Array.isArray(node)) {
+      node.forEach(add);
+      return;
+    }
+    if (node == null || typeof node === 'boolean') return;
+    if (isValidElement<{ children?: ReactNode }>(node)) {
+      if (node.type === Fragment) {
+        add(node.props.children);
+        return;
+      }
+      result.push(
+        cloneElement(node, { key: node.key ?? result.length }, ...compactText(node.props.children)),
+      );
+      return;
+    }
+    const last = result[result.length - 1];
+    if (
+      (typeof node === 'string' || typeof node === 'number') &&
+      (typeof last === 'string' || typeof last === 'number')
+    )
+      result[result.length - 1] = String(last) + String(node);
+    else result.push(node);
+  }
+  add(tree);
+  return result;
 }
