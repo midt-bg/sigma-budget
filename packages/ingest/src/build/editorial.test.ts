@@ -1,6 +1,6 @@
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { expect, it } from 'vitest';
+import { expect, expectTypeOf, it } from 'vitest';
 import {
   buildGlossary,
   buildRawGuide,
@@ -47,6 +47,13 @@ it('matches the frozen Python oracle and the historical glossary transform', () 
     ),
   );
   differences.push(
+    ...compare(
+      json('synthetic-guide-crlf-oracle.json'),
+      buildRawGuide(bytes('inputs/synthetic-guide-crlf.txt').toString('utf8'), routes()),
+      { dataset: 'guide', file: 'synthetic-guide-crlf.json' },
+    ),
+  );
+  differences.push(
     ...compare(json('guide-check.json'), checkGuide(json('inputs/guide.json'), routes()), {
       dataset: 'guide',
       file: 'guide-check.json',
@@ -80,4 +87,33 @@ it('rejects a changed input hash', () => {
   const inputs = snapshots();
   inputs['guide.json'] = Buffer.from(inputs['guide.json'].toString() + ' ');
   expect(() => restoreEditorial(inputs, routes())).toThrow(/hash mismatch/);
+});
+
+it('normalizes CRLF and lone CR as Python text-mode reading does', () => {
+  const expected = json('synthetic-guide-crlf-oracle.json');
+  const crlf = bytes('inputs/synthetic-guide-crlf.txt').toString('utf8');
+  expect(crlf).toContain('\r\n');
+  expect(buildRawGuide(crlf, routes())).toEqual(expected);
+  expect(buildRawGuide(crlf.replace(/\r\n/g, '\r'), routes())).toEqual(expected);
+  expect(buildRawGuide(crlf.replace(/\r\n/, '\n'), routes())).toEqual(expected);
+});
+
+it('exposes structured editorial inputs and results', () => {
+  expectTypeOf<
+    ReturnType<typeof buildRawGuide>['steps'][number]['screen']['href']
+  >().toEqualTypeOf<string>();
+  expectTypeOf<
+    ReturnType<typeof buildGlossary>['terms'][number]['related'][number]['slug']
+  >().toEqualTypeOf<string>();
+  expectTypeOf<
+    Parameters<typeof buildGlossary>[0]['terms'][number]['aliases'][number]['text']
+  >().toEqualTypeOf<string>();
+  if (false) {
+    const guide = buildRawGuide('', routes());
+    // @ts-expect-error A misspelled screen field must not typecheck.
+    guide.steps[0]!.screeen.href;
+    const source = {} as Parameters<typeof buildGlossary>[0];
+    // @ts-expect-error A misspelled glossary source field must not typecheck.
+    source.titlle;
+  }
 });

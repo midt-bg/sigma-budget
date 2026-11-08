@@ -6,19 +6,22 @@ export const EDITORIAL_HASHES = {
   'glossary.json': '0d88665ab18f66da040adfe6ee525d5a7aacfcc72223df5ccfc7b4276c888a77',
 } as const;
 
-type Route = {
-  id: string;
-  key: string;
-  pattern: string | null;
-  title: string;
-  step: number | null;
-};
-type RecordValue = Record<string, any>; // Dynamic editorial JSON, validated at the consuming fields.
+import type {
+  EditorialRoute,
+  GlossarySource,
+  GlossarySourceTerm,
+  GlossaryDataset,
+  GlossaryTerm,
+  GuideDataset,
+  GuideStep,
+} from './editorial-types.js';
+export type * from './editorial-types.js';
+
 function need<T>(value: T | null | undefined, field: string): T {
   if (value === undefined || value === null) throw new Error(`Missing ${field}`);
   return value;
 }
-export function loadEditorialRoutes(catalogue: { routes: unknown[][] }): Route[] {
+export function loadEditorialRoutes(catalogue: { routes: unknown[][] }): EditorialRoute[] {
   if (!Array.isArray(catalogue.routes)) throw new Error('Invalid route catalogue');
   const routes = catalogue.routes.map((record) => {
     if (!Array.isArray(record) || ![7, 8].includes(record.length))
@@ -44,9 +47,9 @@ export function loadEditorialRoutes(catalogue: { routes: unknown[][] }): Route[]
   return routes;
 }
 export function matchEditorialHref(
-  routes: Route[],
+  routes: EditorialRoute[],
   href: string,
-): { route: Route; params: Record<string, string> } | null {
+): { route: EditorialRoute; params: Record<string, string> } | null {
   if (!href.startsWith('#/')) return null;
   const path = href.slice(1).split('?')[0]!;
   const segs = path.split('/').filter(Boolean);
@@ -91,7 +94,7 @@ const revenue = new Set([
   'korporativen',
   'drugi',
 ]);
-export function requireEditorialHref(routes: Route[], href: string): void {
+export function requireEditorialHref(routes: EditorialRoute[], href: string): void {
   const hit = matchEditorialHref(routes, href);
   if (
     !hit ||
@@ -159,18 +162,18 @@ const meta = (id: string, title: string, sourceNote: string, buildDate: string) 
 
 /** The historical glossary transformation; the release uses the frozen snapshot. */
 export function buildGlossary(
-  src: RecordValue,
-  routes: Route[],
+  src: GlossarySource,
+  routes: EditorialRoute[],
   buildDate = '2026-11-08',
-): RecordValue {
-  const terms = need(src.terms, 'terms') as RecordValue[],
-    cats = need(src.categories, 'categories') as RecordValue[],
-    rows = need(src.related?.items, 'related.items') as RecordValue[];
+): GlossaryDataset {
+  const terms = need(src.terms, 'terms'),
+    cats = need(src.categories, 'categories'),
+    rows = need(src.related?.items, 'related.items');
   if (terms.length !== 64) throw new Error('Expected 64 terms');
-  const byN = new Map<number, RecordValue>(),
-    bySlug = new Map<string, RecordValue>();
+  const byN = new Map<number, GlossarySourceTerm>(),
+    bySlug = new Map<string, GlossarySourceTerm>();
   for (const t of terms) {
-    for (const field of ['n', 'slug', 'title', 'name', 'cat', 'def', 'example', 'aliases'])
+    for (const field of ['n', 'slug', 'title', 'name', 'cat', 'def', 'example', 'aliases'] as const)
       need(t[field], `term.${field}`);
     if (byN.has(t.n) || bySlug.has(t.slug)) throw new Error('Duplicate term number or slug');
     byN.set(t.n, t);
@@ -191,9 +194,9 @@ export function buildGlossary(
   }
   for (const row of rows)
     for (const n of row.terms) if (!byN.has(n)) throw new Error('Unknown related term');
-  const related = new Map<string, RecordValue[]>();
+  const related = new Map<string, GlossaryTerm['related']>();
   for (const t of terms) {
-    const list: RecordValue[] = [];
+    const list: GlossaryTerm['related'] = [];
     for (const row of rows)
       if (row.terms.includes(t.n))
         for (const n of row.terms)
@@ -217,9 +220,9 @@ export function buildGlossary(
     cat: t.cat,
     def: t.def,
     example: t.example,
-    aliases: t.aliases.map((a: RecordValue) => need(a.text, 'alias.text')),
-    related: related.get(t.slug),
-    see: SEE[t.slug] ? [{ label: 'Виж в бюджета', href: SEE[t.slug] }] : [],
+    aliases: t.aliases.map((a) => need(a.text, 'alias.text')),
+    related: need(related.get(t.slug), `related.${t.slug}`),
+    see: SEE[t.slug] ? [{ label: 'Виж в бюджета', href: SEE[t.slug]! }] : [],
   }));
   const relations = rows.map((r) => ({
     text: need(r.text, 'relation.text'),
@@ -253,7 +256,7 @@ export function buildGlossary(
     relations,
     sourcesTitle: need(source.title, 'sources.title'),
     sourcesIntro: need(source.intro, 'sources.intro'),
-    sources: source.items.map((s: RecordValue) => ({
+    sources: source.items.map((s) => ({
       name: need(s.name, 'source.name'),
       url: need(s.url, 'source.url'),
     })),
@@ -263,15 +266,17 @@ export function buildGlossary(
 /** Preserve the exact registered input bytes, as build.frozen_editorial does. */
 export function restoreEditorial(
   inputs: Record<keyof typeof EDITORIAL_HASHES, Uint8Array>,
-  routes: Route[],
+  routes: EditorialRoute[],
 ): Record<keyof typeof EDITORIAL_HASHES, Uint8Array> {
   for (const name of Object.keys(EDITORIAL_HASHES) as (keyof typeof EDITORIAL_HASHES)[]) {
     if (createHash('sha256').update(inputs[name]).digest('hex') !== EDITORIAL_HASHES[name])
       throw new Error(`Editorial input hash mismatch: ${name}`);
   }
-  const glossary = JSON.parse(Buffer.from(inputs['glossary.json']).toString('utf8'));
+  const glossary = JSON.parse(
+    Buffer.from(inputs['glossary.json']).toString('utf8'),
+  ) as GlossaryDataset;
   const slugs = new Set<string>();
-  for (const t of need(glossary.terms, 'terms') as RecordValue[]) {
+  for (const t of need(glossary.terms, 'terms')) {
     for (const field of [
       'n',
       'slug',
@@ -283,13 +288,13 @@ export function restoreEditorial(
       'aliases',
       'related',
       'see',
-    ])
+    ] as const)
       need(t[field], `term.${field}`);
     if (slugs.has(t.slug)) throw new Error('Duplicate slug');
     slugs.add(t.slug);
     for (const link of t.see) requireEditorialHref(routes, need(link.href, 'see.href'));
   }
-  const guide = JSON.parse(Buffer.from(inputs['guide.json']).toString('utf8'));
+  const guide = JSON.parse(Buffer.from(inputs['guide.json']).toString('utf8')) as GuideDataset;
   const errors = checkGuide(guide, routes);
   if (errors.length) throw new Error(errors.join('\n'));
   return inputs;
@@ -316,9 +321,9 @@ const sample = (pattern: string) =>
     .split('/')
     .filter((x) => x && !x.startsWith(':'))
     .join('/');
-export function applyGuide(g: RecordValue): RecordValue {
+export function applyGuide(g: GuideDataset): GuideDataset {
   const result = structuredClone(g),
-    steps = new Map<number, RecordValue>(result.steps.map((s: RecordValue) => [s.n, s]));
+    steps = new Map<number, GuideStep>(result.steps.map((s) => [s.n, s]));
   for (const [key, [label, intro, prevNext]] of Object.entries(renamed)) {
     const n = Number(key),
       s = need(steps.get(n), `step ${n}`),
@@ -329,16 +334,17 @@ export function applyGuide(g: RecordValue): RecordValue {
     if (intro) s.intro = intro;
     if (n > 1) {
       const previous = need(steps.get(n - 1), `step ${n - 1}`);
-      previous.next.title = s.title;
-      if (prevNext) previous.next.text = prevNext;
+      const next = need(previous.next, 'previous.next');
+      next.title = s.title;
+      if (prevNext) next.text = prevNext;
     }
   }
   result.meta.sourceNote = NOTE;
   return result;
 }
-export function checkGuide(g: RecordValue, routes: Route[]): string[] {
+export function checkGuide(g: GuideDataset, routes: EditorialRoute[]): string[] {
   const problems: string[] = [],
-    steps = need(g.steps, 'guide.steps') as RecordValue[];
+    steps = need(g.steps, 'guide.steps');
   if (steps.length !== 8) problems.push(`guide: ${steps.length} steps, expected 8`);
   for (let i = 0; i < steps.length; i++) {
     const s = steps[i]!,
@@ -371,8 +377,13 @@ export function checkGuide(g: RecordValue, routes: Route[]): string[] {
 }
 
 /** Parse the supplied raw guide when available. The original is not in this repository. */
-export function buildRawGuide(raw: string, routes: Route[], buildDate = '2026-11-08'): RecordValue {
+export function buildRawGuide(
+  raw: string,
+  routes: EditorialRoute[],
+  buildDate = '2026-11-08',
+): GuideDataset {
   const body = raw
+    .replace(/\r\n?/g, '\n')
     .split('\n')
     .filter((line) => !line.startsWith('#'))
     .join('\n');
@@ -438,7 +449,7 @@ export function buildRawGuide(raw: string, routes: Route[], buildDate = '2026-11
     checksText === null
   )
     throw new Error('Incomplete guide');
-  const out = steps.map((s) => {
+  const out: GuideStep[] = steps.map((s) => {
     const match = /^(.*?)\s*„([^“]+)“\s*$/.exec(s.title);
     if (!match) throw new Error('Guide step title missing screen');
     const label = match[2]!,
@@ -455,7 +466,7 @@ export function buildRawGuide(raw: string, routes: Route[], buildDate = '2026-11
       screen: { id: route.id, label, href },
       intro: s.paras[0]!,
       blocks: [{ type: 'p', role: 'note', text: s.paras[1]! }],
-    } as RecordValue;
+    } satisfies GuideStep;
   });
   for (let i = 0; i < out.length; i++) {
     const o = out[i]!,
@@ -482,9 +493,9 @@ export function buildRawGuide(raw: string, routes: Route[], buildDate = '2026-11
   const checks = {
     title: 'Петте проверки',
     heading: 'Преди да използваш или споделиш число',
-    lead: cm[1],
-    items: items.map((text, i) => ({ n: i + 1, short: short[i], text })),
-    end: cm[3],
+    lead: cm[1]!,
+    items: items.map((text, i) => ({ n: i + 1, short: short[i]!, text })),
+    end: cm[3]!,
     text: checksText,
   };
   const texts: string[] = [
@@ -492,7 +503,7 @@ export function buildRawGuide(raw: string, routes: Route[], buildDate = '2026-11
     lead,
     ...out.flatMap((s) => [
       s.intro,
-      ...s.blocks.map((b: RecordValue) => b.text),
+      ...s.blocks.map((b) => b.text),
       ...(s.next ? [s.next.text] : []),
     ]),
     checksText,

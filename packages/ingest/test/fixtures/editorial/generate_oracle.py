@@ -59,6 +59,14 @@ editorial.verify_guide(parsed_guide)
 if editorial.problems: raise ValueError(editorial.problems)
 outputs['synthetic-guide-oracle.json'] = emit('synthetic-guide-oracle.json', encoded(parsed_guide))
 
+# Read the CRLF fixture through the original Python text-mode parser and verifier.
+editorial.GUIDE_SRC = str(INPUTS / 'synthetic-guide-crlf.txt')
+crlf_guide = editorial.build_guide(routes)
+editorial.verify_guide(crlf_guide)
+if editorial.problems: raise ValueError(editorial.problems)
+outputs['synthetic-guide-crlf-oracle.json'] = emit('synthetic-guide-crlf-oracle.json', encoded(crlf_guide))
+
+
 # The same route catalogue is injected for guide.check; apply does not read inputs.
 guide.load_routes = lambda: routes
 published = json.loads((INPUTS / 'guide.json').read_text())
