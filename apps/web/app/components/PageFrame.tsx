@@ -7,15 +7,24 @@ export function PageFrame({
   model,
   children,
   lede,
+  context,
 }: {
   model: TextScreenModel;
   children: ReactNode;
   lede?: ReactNode;
+  context?: ReactNode;
 }) {
   const [ready, setReady] = useState(false);
   useEffect(() => setReady(true), []);
   const r = byId[model.screen],
-    accent = { S26: 'проекта', S30: 'страница', S25: 'данни', S35: '' }[model.screen],
+    accent = {
+      S26: 'проекта',
+      S30: 'страница',
+      S25: 'данни',
+      S35: '',
+      S14: 'бюджетът',
+      S16: 'ново',
+    }[model.screen],
     i = r.title.lastIndexOf(accent);
   const targets = r.next.map((id: string) => byId[id]);
   const first = targets[0];
@@ -33,11 +42,18 @@ export function PageFrame({
         <p className="eyebrow">{GROUPS.find((g) => g.id === r.group)?.label}</p>
       ) : null}
       <h1 className="page-title" id="page-title" tabIndex={-1}>
-        {r.title.slice(0, i)}
-        {accent ? <em>{accent}</em> : null}
-        {r.title.slice(i + accent.length)}
+        {i < 0 ? (
+          r.title
+        ) : (
+          <>
+            {r.title.slice(0, i)}
+            {accent ? <em>{accent}</em> : null}
+            {r.title.slice(i + accent.length)}
+          </>
+        )}
       </h1>
       <p className="lede">{lede ?? r.desc}</p>
+      {context}
       <div className="page-body" data-fk="body">
         {children}
       </div>
