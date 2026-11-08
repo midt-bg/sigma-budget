@@ -5,7 +5,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { loadAnnex, checkAnnexSums, type AnnexTables } from '../build/annex.js';
-import { BuildContext, executionNumbers } from '../build/context.js';
+import { BuildContext, executionNumbers, pythonFloat } from '../build/context.js';
 import { parseYaml, registries, registryInputs } from '../io/registry.js';
 import {
   clean,
@@ -15,6 +15,8 @@ import {
   readPinned,
   jsonstatCells,
   jsonstatSeries,
+  parseJsonStat,
+  readJsonStat,
 } from '../io/data.js';
 import {
   formatNumber,
@@ -46,6 +48,11 @@ const expectedComparisons = [
   'context-annex.json',
   'context-execution.json',
   'jsonstat.json',
+  'context-loaders.json',
+  'yaml-scalars.json',
+  'money-cases.json',
+  'sparse-jsonstat.json',
+  'annex-cases.json',
 ];
 function parity(name: string, expected: unknown, actual: unknown) {
   const result = compare(expected, actual, { dataset: 'common', file: name });
@@ -75,6 +82,68 @@ describe('common Python parity', () => {
       (row) => row.label.replaceAll(' ', '') !== 'БВП',
     );
     expect(() => loadAnnex(invalid)).toThrow('layout changed');
+  });
+  it('rejects missing identity operands and short series like Python while allowing null children', () => {
+    const base = fixture('annex.json').annex;
+    const results = fixture('annex-cases.json').map((test: any) => {
+      const mutated = structuredClone(base);
+      mutated.mln[test.id] = test.values;
+      try {
+        return { name: test.name, ok: true, value: checkAnnexSums(mutated) };
+      } catch {
+        return { name: test.name, ok: false };
+      }
+    });
+    const expected = fixture('annex-cases.json').map((test: any) => ({
+      name: test.name,
+      ok: test.expected.ok,
+      ...(test.expected.ok ? { value: test.expected.value } : {}),
+    }));
+    parity('annex-cases.json', expected, results);
+  });
+  it('resolves YAML scalars against PyYAML 1.1', () => {
+    const cases = fixture('yaml-scalars.json');
+    parity(
+      'yaml-scalars.json',
+      cases.map((c: any) => c.expected),
+      cases.map((c: any) => (parseYaml('x: ' + c.text) as any).x),
+    );
+    expect(() => parseYaml('x: 1e3\nx: 2')).toThrow('Duplicate YAML key');
+  });
+  it('converts money exactly like the Python numeric adapter', () => {
+    const cases = fixture('money-cases.json');
+    const document = load(join(root, 'data/release/execution.json'));
+    const rowKey = Object.keys(document.data['2026'].kfp)[0]!;
+    const convert = (value: unknown): number | null => {
+      const input = structuredClone(document);
+      input.data['2026'].kfp[rowKey][0] = value;
+      return executionNumbers(input).data['2026'].kfp[rowKey][0];
+    };
+    const result = (fn: () => number | null) => {
+      try {
+        const v = fn();
+        return {
+          ok: true,
+          value:
+            typeof v === 'number' && !Number.isFinite(v)
+              ? Number.isNaN(v)
+                ? 'nan'
+                : v < 0
+                  ? '-inf'
+                  : 'inf'
+              : v,
+        };
+      } catch {
+        return { ok: false };
+      }
+    };
+    const expected = cases.map((c: any) => (c.expected.ok ? c.expected : { ok: false }));
+    parity(
+      'money-cases.json',
+      expected,
+      cases.map((c: any) => result(() => convert(c.input))),
+    );
+    expect(cases.map((c: any) => result(() => pythonFloat(c.input)))).toEqual(expected);
   });
   it('reads both real registries with Python scalar semantics', () => {
     const parsed = ['sources', 'datasets'].map((n) =>
@@ -136,29 +205,102 @@ describe('common Python parity', () => {
   it('reads isolated roots lazily and memoizes inputs and build outputs', () => {
     const temp = mkdtempSync(join(tmpdir(), 'budget-common-'));
     try {
-      for (const dir of ['inputs', 'originals/asbp', 'cache', 'release'])
+      for (const dir of [
+        'inputs',
+        'originals/asbp',
+        'cache/research/mf-umtbf-2026-2028/extracts',
+        'release',
+      ])
         mkdirSync(join(temp, dir), { recursive: true });
-      writeFileSync(
-        join(temp, 'originals/asbp/asbp_tables.json'),
-        readFileSync(join(fixtures, 'asbp-tables.json')),
-      );
-      writeFileSync(join(temp, 'inputs/example.json'), '{"value":1}');
-      writeFileSync(
-        join(temp, 'release/execution.json'),
-        readFileSync(join(root, 'data/release/execution.json')),
-      );
+      const inputs = fixture('context-inputs.json');
+      const files: Record<string, unknown> = {
+        'inputs/example.json': inputs.src,
+        'originals/raw.json': inputs.raw,
+        'cache/cache.json': inputs.cache,
+        'cache/law_bill.json': inputs.law,
+        'cache/research/mf-umtbf-2026-2028/extracts/pdf_pages_clean.json': inputs.pages,
+        'originals/asbp/asbp_tables.json': fixture('asbp-tables.json'),
+        'release/execution.json': load(join(root, 'data/release/execution.json')),
+      };
+      for (const [file, value] of Object.entries(files))
+        writeFileSync(join(temp, file), JSON.stringify(value));
       const ctx = new BuildContext({
         inputs: join(temp, 'inputs'),
         originals: join(temp, 'originals'),
         cache: join(temp, 'cache'),
         release: join(temp, 'release'),
       });
+      const loaded = {
+        src: ctx.src('example'),
+        raw: ctx.raw('raw.json'),
+        cache: ctx.cache('cache.json'),
+        law: ctx.law,
+        pdfPages: ctx.pdfPages,
+        docxCheck: ctx.docxCheck,
+        gdp: ctx.gdp,
+        gdpTies: undefined as unknown,
+      };
+      const tieTables = structuredClone(fixture('asbp-tables.json'));
+      const gdpRow = tieTables.tables.annex3_pct_gdp.rows.find(
+        (r: any) => r.label.replaceAll(' ', '') === 'БВП',
+      );
+      gdpRow.values = [-2.5, -1.5, 0.5, 1.5, 2.5];
+      writeFileSync(join(temp, 'originals/asbp/asbp_tables.json'), JSON.stringify(tieTables));
+      const tieCtx = new BuildContext(ctx.paths);
+      loaded.gdpTies = tieCtx.gdp;
+      writeFileSync(
+        join(temp, 'originals/asbp/asbp_tables.json'),
+        JSON.stringify(files['originals/asbp/asbp_tables.json']),
+      );
+      parity('context-loaders.json', fixture('context-loaders.json'), loaded);
+      for (const [file, getter, original] of [
+        ['originals/raw.json', () => ctx.raw('raw.json'), loaded.raw],
+        ['cache/cache.json', () => ctx.cache('cache.json'), loaded.cache],
+        ['cache/law_bill.json', () => ctx.law, loaded.law],
+        [
+          'cache/research/mf-umtbf-2026-2028/extracts/pdf_pages_clean.json',
+          () => ctx.pdfPages,
+          loaded.pdfPages,
+        ],
+        ['originals/asbp/asbp_tables.json', () => ctx.docxCheck, loaded.docxCheck],
+      ] as [string, () => unknown, unknown][]) {
+        writeFileSync(join(temp, file), '{"changed":true}');
+        expect(getter()).toBe(original);
+        rmSync(join(temp, file));
+        expect(() => {
+          const fresh = new BuildContext(ctx.paths);
+          if (file === 'originals/raw.json') fresh.raw('raw.json');
+          else if (file === 'cache/cache.json') fresh.cache('cache.json');
+          else if (file === 'cache/law_bill.json') fresh.law;
+          else if (file.startsWith('cache/research')) fresh.pdfPages;
+          else fresh.docxCheck;
+        }).toThrow();
+        writeFileSync(join(temp, file), JSON.stringify(files[file]));
+      }
       const first = ctx.src('example');
       writeFileSync(join(temp, 'inputs/example.json'), '{"value":2}');
       expect(ctx.src('example')).toBe(first);
       parity('context-annex.json', fixture('annex.json').annex, ctx.annex);
       parity('context-execution.json', fixture('execution-numbers.json'), ctx.execution);
       expect(ctx.gdp.mlnPrecise).toEqual(ctx.annex.gdp);
+      const missing = new BuildContext({
+        inputs: join(temp, 'missing-inputs'),
+        originals: join(temp, 'missing-originals'),
+        cache: join(temp, 'missing-cache'),
+        release: join(temp, 'missing-release'),
+      });
+      for (const read of [
+        () => missing.src('absent'),
+        () => missing.raw('absent'),
+        () => missing.cache('absent'),
+        () => missing.law,
+        () => missing.pdfPages,
+        () => missing.docxCheck,
+        () => missing.tables,
+        () => missing.annex,
+        () => missing.execution,
+      ])
+        expect(read).toThrow();
       expect(ctx.cacheExists('absent')).toBe(false);
       expect(() => ctx.cache('absent')).toThrow();
       expect(ctx.put('x.json', { a: 1 })).toEqual({ a: 1 });
@@ -227,6 +369,24 @@ describe('common Python parity', () => {
       cells: jsonstatCells(js),
       series: jsonstatSeries(js, 'time', { geo: 'EU' }),
     });
+  });
+  it('preserves sparse JSON-stat source order', async () => {
+    const f = fixture('sparse-jsonstat.json');
+    const parsed = parseJsonStat(f.text);
+    parity(
+      'sparse-jsonstat.json',
+      { cells: f.cells, series: f.series },
+      { cells: jsonstatCells(parsed), series: jsonstatSeries(parsed) },
+    );
+    expect(() => jsonstatCells(JSON.parse(f.text))).toThrow('preserve source order');
+    const temp = mkdtempSync(join(tmpdir(), 'budget-jsonstat-'));
+    try {
+      const file = join(temp, 'sparse.json');
+      writeFileSync(file, f.text);
+      expect(jsonstatCells(await readJsonStat(file))).toEqual(f.cells);
+    } finally {
+      rmSync(temp, { recursive: true, force: true });
+    }
   });
   afterAll(() => {
     const report = process.env.COMMON_PARITY_REPORT;

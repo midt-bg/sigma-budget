@@ -164,7 +164,7 @@ jobs:
       - run: docker run --rm -v "$PWD":/repo:ro sigma-budget-data python -m budget_pipeline.environment
 
   deploy:
-    needs: [build, check, release]
+    needs: [build, check, release, common-parity]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15

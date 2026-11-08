@@ -23,19 +23,38 @@ function read(path: string): any {
   if (!json(value)) throw new Error(`Invalid JSON: ${path}`);
   return value;
 }
+// Match float() on JSON scalar inputs, including whitespace, digit separators,
+// Unicode decimal digits and non-finite spellings. Serialization rejects non-finite values.
+export function pythonFloat(v: unknown): number | null {
+  if (v === null) return null;
+  if (typeof v === 'boolean') return v ? 1 : 0;
+  if (typeof v === 'number') return v;
+  if (typeof v !== 'string') throw new Error('Invalid execution money');
+  const whitespace =
+    /^[\u0009-\u000d\u001c-\u0020\u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+|[\u0009-\u000d\u001c-\u0020\u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+$/g;
+  const digit = /\p{Decimal_Number}/u;
+  const normalized = Array.from(v.replace(whitespace, ''), (ch) => {
+    if (!digit.test(ch)) return ch;
+    const code = ch.codePointAt(0)!;
+    let first = code;
+    while (first > 0 && digit.test(String.fromCodePoint(first - 1))) first--;
+    return String((code - first) % 10);
+  }).join('');
+  if (/^[+-]?(?:inf(?:inity)?|nan)$/i.test(normalized)) {
+    return /nan/i.test(normalized) ? NaN : normalized.startsWith('-') ? -Infinity : Infinity;
+  }
+  const digits = '[0-9](?:_?[0-9])*';
+  const decimal = new RegExp(
+    `^[+-]?(?:${digits}(?:\\.(?:${digits})?)?|\\.${digits})(?:[eE][+-]?${digits})?$`,
+  );
+  if (!decimal.test(normalized)) throw new Error('Invalid execution money');
+  return Number(normalized.replaceAll('_', ''));
+}
 // Convert only execution/2 money fields; percentage fields remain numbers.
 export function executionNumbers(doc: any): any {
   if (!doc || doc.contract?.schema !== 2) return doc;
   const out = structuredClone(doc),
-    convert = (v: unknown) => {
-      if (v === null) return null;
-      if (typeof v !== 'string' && typeof v !== 'number')
-        throw new Error('Invalid execution money');
-      const result = Number(v);
-      if ((typeof v === 'string' && !v.trim()) || !Number.isFinite(result))
-        throw new Error('Invalid execution money');
-      return result;
-    };
+    convert = pythonFloat;
   for (const blockName of ['data', 'monthly'])
     for (const block of Object.values(out[blockName]) as any[])
       for (const col of ['kfp', 'nat', 'eu'])
@@ -120,7 +139,7 @@ export class BuildContext {
       mlnPrinted: a.gdp.map((v) => {
         if (v === null) throw new Error('Missing GDP');
         const floor = Math.floor(v);
-        return v - floor === 0.5 ? floor + (floor % 2) : Math.round(v);
+        return v - floor === 0.5 ? floor + (floor % 2 === 0 ? 0 : 1) : Math.round(v);
       }),
     };
   }

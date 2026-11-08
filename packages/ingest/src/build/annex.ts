@@ -53,7 +53,36 @@ export function loadAnnex(tables: AnnexTables): Annex {
 }
 export function checkAnnexSums(a: Annex, tol = 0.3): string[] {
   const problems: string[] = [];
-  const num = (id: string, i: number) => a.mln[id]![i]!;
+  const requiredIds = new Set([
+    ...Object.keys(sumRules),
+    ...Object.values(sumRules).flat(),
+    'r.total',
+    'x.total',
+    'x.balance',
+    'x.fin',
+    'x.exp',
+    'x.interest',
+    'x.nonint',
+  ]);
+  for (const id of requiredIds) {
+    const values = a.mln[id];
+    if (!Array.isArray(values) || values.length < YEARS.length)
+      throw new Error(`Missing or short annex series: ${id}`);
+  }
+  const num = (id: string, i: number): number | null => {
+    const values = a.mln[id];
+    if (!Array.isArray(values) || values.length < YEARS.length)
+      throw new Error(`Missing or short annex series: ${id}`);
+    const value = values[i];
+    if (value !== null && (typeof value !== 'number' || !Number.isFinite(value)))
+      throw new Error(`Invalid annex value: ${id}[${i}]`);
+    return value;
+  };
+  const required = (id: string, i: number): number => {
+    const value = num(id, i);
+    if (value === null) throw new Error(`Missing annex identity operand: ${id}[${i}]`);
+    return value;
+  };
   for (const [parent, kids] of Object.entries(sumRules))
     YEARS.forEach((year, i) => {
       const pv = num(parent, i);
@@ -65,13 +94,13 @@ export function checkAnnexSums(a: Annex, tol = 0.3): string[] {
         );
     });
   YEARS.forEach((year, i) => {
-    const balance = num('r.total', i) - num('x.total', i),
-      actual = num('x.balance', i);
+    const balance = required('r.total', i) - required('x.total', i),
+      actual = required('x.balance', i);
     if (Math.abs(balance - actual) > tol + 1e-9)
       problems.push(`balance ${year}: ${balance.toFixed(1)} != ${actual.toFixed(1)}`);
-    if (Math.abs(num('x.fin', i) + actual) > 1e-9) problems.push(`fin != -balance ${year}`);
-    const nonint = num('x.exp', i) - num('x.interest', i),
-      printed = num('x.nonint', i);
+    if (Math.abs(required('x.fin', i) + actual) > 1e-9) problems.push(`fin != -balance ${year}`);
+    const nonint = required('x.exp', i) - required('x.interest', i),
+      printed = required('x.nonint', i);
     if (Math.abs(nonint - printed) > tol + 1e-9)
       problems.push(`nonint ${year}: ${nonint.toFixed(1)} != ${printed.toFixed(1)}`);
   });

@@ -3,6 +3,7 @@ import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { json, type Json } from '@sigma-budget/dataset-schema';
+import { isMap, isScalar, parseDocument } from 'yaml';
 
 export async function readJson(path: string): Promise<Json> {
   const value: unknown = JSON.parse(await readFile(path, 'utf8'));
@@ -72,6 +73,30 @@ export interface JsonStat {
   value: Record<string, number | null> | (number | null)[];
   status?: Record<string, string> | null;
 }
+const sparseOrder = new WeakMap<object, string[]>();
+/** Parse JSON-stat from source text so sparse cell order follows the source. */
+export function parseJsonStat(text: string): JsonStat {
+  const value: unknown = JSON.parse(text);
+  if (!json(value) || typeof value !== 'object' || value === null || Array.isArray(value))
+    throw new Error('Invalid JSON-stat');
+  const doc = parseDocument(text, { uniqueKeys: false, schema: 'json' });
+  if (doc.errors.length || !isMap(doc.contents)) throw new Error('Invalid JSON-stat');
+  const pair = doc.contents.items.filter((p) => isScalar(p.key) && p.key.value === 'value').at(-1);
+  const cells = (value as unknown as JsonStat).value;
+  if (cells && !Array.isArray(cells) && isMap(pair?.value)) {
+    const order: string[] = [];
+    for (const item of pair.value.items) {
+      if (!isScalar(item.key) || typeof item.key.value !== 'string')
+        throw new Error('Invalid JSON-stat index');
+      if (!order.includes(item.key.value)) order.push(item.key.value);
+    }
+    sparseOrder.set(cells, order);
+  }
+  return value as unknown as JsonStat;
+}
+export async function readJsonStat(path: string): Promise<JsonStat> {
+  return parseJsonStat(await readFile(path, 'utf8'));
+}
 export function jsonstatCells(
   js: JsonStat,
 ): { coords: Record<string, string>; value: number; status: string | null }[] {
@@ -84,7 +109,13 @@ export function jsonstatCells(
           .map(([key]) => key);
   });
   const result: { coords: Record<string, string>; value: number; status: string | null }[] = [];
-  for (const [index, value] of Object.entries(js.value)) {
+  const order = Array.isArray(js.value) ? Object.keys(js.value) : sparseOrder.get(js.value);
+  if (!order)
+    throw new Error(
+      'Sparse JSON-stat must be read with parseJsonStat or readJsonStat to preserve source order',
+    );
+  for (const index of order) {
+    const value = js.value[index as keyof typeof js.value] as number | null;
     if (value === null) continue;
     let rem = Number(index);
     const coords: Record<string, string> = {};

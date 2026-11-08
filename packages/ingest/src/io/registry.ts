@@ -4,22 +4,52 @@ import { isAbsolute, relative, resolve } from 'node:path';
 import { parseDocument, isAlias, isMap, isScalar, isSeq } from 'yaml';
 import { json, object, type Json } from '@sigma-budget/dataset-schema';
 
-// Registry scalars must remain ordinary JSON values. Ambiguous YAML keys, aliases,
-// timestamps, non-finite values and unsafe integers are rejected instead of coerced.
+// Resolve plain scalars using PyYAML's YAML 1.1 resolver, then enforce the
+// registry's stricter JSON-only, string-key and duplicate-key constraints.
+const pyInt =
+  /^[-+]?(?:0b[0-1_]+|0[0-7_]+|0|[1-9][0-9_]*|0x[0-9a-fA-F_]+|[1-9][0-9_]*(?::[0-5]?[0-9])+)$/;
+const pyFloat =
+  /^(?:[-+]?[0-9][0-9_]*\.[0-9_]*(?:[eE][-+][0-9]+)?|\.[0-9][0-9_]*(?:[eE][-+][0-9]+)?|[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\.[0-9_]*|[-+]?\.(?:inf|Inf|INF)|\.(?:nan|NaN|NAN))$/;
+const pyBool = /^(?:yes|Yes|YES|no|No|NO|true|True|TRUE|false|False|FALSE|on|On|ON|off|Off|OFF)$/;
+const pyNull = /^(?:~|null|Null|NULL|)$/;
+function pyNumber(source: string): number {
+  const stripped = source.replaceAll('_', '');
+  const sign = stripped.startsWith('-') ? -1 : 1;
+  const unsigned = stripped.replace(/^[+-]/, '');
+  if (unsigned.includes(':'))
+    return sign * unsigned.split(':').reduce((n, part) => n * 60 + Number(part), 0);
+  if (/^0b/i.test(unsigned)) return sign * parseInt(unsigned.slice(2), 2);
+  if (/^0x/i.test(unsigned)) return sign * parseInt(unsigned.slice(2), 16);
+  if (pyInt.test(source) && /^0[0-7]+$/.test(unsigned)) return sign * parseInt(unsigned, 8);
+  if (/^\.inf$/i.test(unsigned)) return sign * Infinity;
+  if (/^\.nan$/i.test(unsigned)) return NaN;
+  return Number(stripped);
+}
 export function parseYaml(text: string): Json {
-  const doc = parseDocument(text, { uniqueKeys: true, version: '1.1', schema: 'yaml-1.1' });
+  const doc = parseDocument(text, { uniqueKeys: false, version: '1.1', schema: 'yaml-1.1' });
   if (doc.errors.length || doc.warnings.length)
     throw new Error([...doc.errors, ...doc.warnings].map((e) => e.message).join('\n'));
   function check(node: unknown): void {
     if (isAlias(node)) throw new Error('YAML aliases are not supported');
-    if (isMap(node))
+    if (isMap(node)) {
+      const keys = new Set<string>();
       for (const pair of node.items) {
+        check(pair.key);
         if (!isScalar(pair.key) || typeof pair.key.value !== 'string')
           throw new Error('YAML keys must be strings');
+        if (keys.has(pair.key.value)) throw new Error('Duplicate YAML key: ' + pair.key.value);
+        keys.add(pair.key.value);
         check(pair.value);
       }
-    else if (isSeq(node)) for (const item of node.items) check(item);
+    } else if (isSeq(node)) for (const item of node.items) check(item);
     else if (isScalar(node)) {
+      if (node.type === 'PLAIN' && !node.tag && typeof node.source === 'string') {
+        const raw = node.source;
+        if (pyBool.test(raw)) node.value = /^(?:yes|true|on)$/i.test(raw);
+        else if (pyNull.test(raw)) node.value = null;
+        else if (pyFloat.test(raw) || pyInt.test(raw)) node.value = pyNumber(raw);
+        else if (typeof node.value !== 'object') node.value = raw;
+      }
       const v = node.value;
       if (
         typeof v === 'number' &&
