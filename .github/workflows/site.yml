@@ -165,7 +165,8 @@ jobs:
 
   deploy:
     needs: [build, check, release, common-parity]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Migration PRs must not trigger a staging deployment on merge.
+    if: ${{ false }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: staging
@@ -218,6 +219,18 @@ jobs:
         env:
           COMMON_PARITY_REPORT: ${{ github.workspace }}/tmp/ts-migration/candidates/02/diff.json
         run: pnpm --filter @sigma-budget/ingest exec vitest run src/common/common.test.ts
+      - name: Law builder and scoped parity
+        run: |
+          pnpm --filter @sigma-budget/ingest exec vitest run src/build/law-evidence.test.ts src/build/law-articles.test.ts src/build/law-changes.test.ts src/build/law.test.ts
+          pnpm --filter @sigma-budget/etl... build
+          pnpm exec budget-ts build --inputs packages/ingest/test/fixtures/law --out tmp/ts-migration/candidates/04 --scope law --build-date 2026-11-08
+          pnpm exec budget-ts parity --oracle data/release --candidate tmp/ts-migration/candidates/04/data --scope law --policy packages/ingest/test/fixtures/law/policy.json --report tmp/ts-migration/candidates/04/diff.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: law-parity
+          path: tmp/ts-migration/candidates/04/diff.json
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         if: always()
         with:
