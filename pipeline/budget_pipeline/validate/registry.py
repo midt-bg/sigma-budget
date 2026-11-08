@@ -19,6 +19,7 @@ Needs PyYAML (tests/requirements-dev.txt, pipeline/requirements.txt).
 """
 
 import argparse
+import hashlib
 import fnmatch
 import json
 import re
@@ -95,6 +96,16 @@ def check_sources(reg, r):
     known = set(ids) | set(paths)
     for i in inter:
         patterns.append((i["path"], "intermediate", i))
+        if i.get("category") is not None:
+            r.ok(i["category"] == "described-input", "unknown intermediate category: " + i["path"])
+            r.ok(i["path"] in {"data/inputs/editorial/guide.json", "data/inputs/editorial/glossary.json"},
+                 "described inputs must be explicitly reviewed editorial text: " + i["path"])
+            r.ok(i.get("decision") and (ROOT / i["decision"]).is_file(), "missing described-input decision: " + i["path"])
+            path = ROOT / i["path"]
+            r.ok(path.is_file() and hashlib.sha256(path.read_bytes()).hexdigest() == i.get("sha256"),
+                 "described-input hash mismatch: " + i["path"])
+            r.ok(bool(i.get("provenance")) and not i.get("producer") and not i.get("inputs"),
+                 "described-input requires provenance and no producer/dependencies: " + i["path"])
         prod = i.get("producer")
         r.ok(prod is None or (ROOT / script(prod)).is_file(), "intermediate %s: producer %s does not exist" % (i["path"], prod))
         r.ok(isinstance(i.get("reproducible"), bool), "intermediate %s: reproducible must be true or false" % i["path"])
@@ -207,7 +218,7 @@ def gaps(ds, inter):
             seen.add(x)
             if x in by_path:
                 i = by_path[x]
-                if not i.get("reproducible"):
+                if not i.get("reproducible") and i.get("category") != "described-input":
                     found.append(x)
                 todo.extend(i.get("inputs", []))
             elif x in by_id and x != d["id"]:
@@ -246,8 +257,9 @@ def main(argv):
     ds = check_datasets(dreg, source_ids, inter, r)
     check_paths(r)
     g = gaps(ds, inter)
+    described = [i["path"] for i in inter if i.get("category") == "described-input"]
     if a.json:
-        print(json.dumps({"errors": r.errors, "gaps": g}, ensure_ascii=False, indent=1))
+        print(json.dumps({"errors": r.errors, "gaps": g, "describedInputs": described}, ensure_ascii=False, indent=1))
     else:
         real = [d for d in ds if d["status"] != "pending"]
         print("registry: %d sources, %d intermediates, %d datasets (%d pending), %d files in data/release"
@@ -261,6 +273,8 @@ def main(argv):
         for k, v in g.items():
             if v:
                 print("  %-22s %s" % (k, ", ".join(x.split("/")[-1] for x in v)))
+        print("\ndescribed editorial inputs: %d (see docs/reproducibility.md)" % len(described))
+        print("chains closed: %d of %d" % (sum(not v for v in g.values()), len(g)))
         for e in r.errors:
             print("ERROR " + e)
         print("\nRESULT: %s · %d error(s)" % ("OK" if not r.errors else "FAIL", len(r.errors)))
