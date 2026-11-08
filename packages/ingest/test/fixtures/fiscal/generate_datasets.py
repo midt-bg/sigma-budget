@@ -52,6 +52,7 @@ outputs['debt-text-oracle.json'] = emit('debt-text-oracle.json', {
     'interest': debt_pdf.parse_interest(ctx),
     'guaranteed': debt_pdf.parse_guaranteed(ctx),
     'newDebt': debt_pdf.parse_new_debt(ctx),
+    'lawLimits': debt_pdf.parse_law_limits([text for kind, text in json.loads((ROOT / 'dv-blocks.json').read_text())['zdb'] if kind == 'p']),
 })
 files = sorted(p for p in ROOT.rglob('*') if p.is_file())
 inputs = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
@@ -61,6 +62,7 @@ emit('datasets-provenance.json', {
     'buildDate': '2026-11-08',
     'archiveSha256': '9430d8acfe5bd178a1675041aaae22295c89f2768474ebd27af347b465ace5e3',
     'frozenInputSha256': inputs, 'oracleSha256': outputs, 'publishedSnapshotSha256': published,
+    'policySha256': hashlib.sha256((HERE / 'policy.json').read_bytes()).hexdigest(),
     'sourceLimits': 'Cleaned page and table evidence supplied by Python extraction; historical raw DOCX and authored excerpts are not independently re-extracted here.',
 })
 print('fiscal donor and annual oracle: byte-identical' if CHECK else 'fiscal donor and annual oracle: regenerated')

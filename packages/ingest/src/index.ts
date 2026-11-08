@@ -29,3 +29,9 @@ export {
   type PublishedProgrammeRecord,
 } from './build/programmes.js';
 export { verifyProgrammeInputs } from './build/programme-fixture.js';
+export * from './build/fiscal-expenditure.js';
+export * from './build/fiscal-annual.js';
+export * from './build/fiscal-build.js';
+export * from './build/fiscal-fixture.js';
+export * from './build/measures.js';
+export * from './build/debt-text.js';

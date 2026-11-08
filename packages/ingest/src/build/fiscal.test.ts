@@ -27,3 +27,40 @@ it('rejects missing, non-numeric, and inconsistent debt cells', () => {
   inconsistent.rows.find((row) => row.label === 'Външен дълг, млн. евро')!.values[0]! += 1;
   expect(() => stateDebtTable(inconsistent)).toThrow(/external \+ domestic/);
 });
+
+import { loadAnnex } from './annex.js';
+import { buildOutlook, buildRevenue, type FiscalEvidence } from './fiscal.js';
+function fiscalEvidence(): FiscalEvidence {
+  const source = JSON.parse(bytes('inputs/data/originals/asbp/asbp_tables.json').toString());
+  return {
+    annex: loadAnnex(source.tables),
+    tables: source.tables,
+    differingRows: source.docx_check.differing_rows,
+    pages: JSON.parse(
+      bytes(
+        'inputs/data/cache/research/mf-umtbf-2026-2028/extracts/pdf_pages_clean.json',
+      ).toString(),
+    ),
+  };
+}
+it('builds outlook and revenue from the frozen source evidence', () => {
+  const e = fiscalEvidence();
+  expect(buildOutlook(e, '2026-11-08')).toEqual(JSON.parse(bytes('donor/outlook.json').toString()));
+  expect(buildRevenue(e, '2026-11-08')).toEqual(JSON.parse(bytes('donor/revenue.json').toString()));
+});
+import { buildExpenditure, type ExpenditureEvidence } from './fiscal-expenditure.js';
+function expenditureEvidence(): ExpenditureEvidence {
+  const readInput = (name: string) =>
+    JSON.parse(bytes(`inputs/data/inputs/${name}.json`).toString());
+  return {
+    ...fiscalEvidence(),
+    functions: readInput('kfp_functions_2026').functions,
+    cofog: readInput('cofog_bg'),
+    population: readInput('population'),
+  };
+}
+it('builds expenditure from the frozen source evidence', () => {
+  expect(buildExpenditure(expenditureEvidence(), '2026-11-08')).toEqual(
+    JSON.parse(bytes('donor/expenditure.json').toString()),
+  );
+});

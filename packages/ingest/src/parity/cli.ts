@@ -167,7 +167,7 @@ export async function parityCli(
       value = args[i + 1];
     if (
       !key ||
-      !["--oracle", "--candidate", "--scope", "--policy", "--report"].includes(
+      !["--oracle", "--candidate", "--scope", "--policy", "--report", "--registry"].includes(
         key,
       ) ||
       !value ||
@@ -205,7 +205,7 @@ export async function parityCli(
     if (rel === "" || (!rel.startsWith("..") && !isAbsolute(rel)))
       throw new Error("Report must be outside input roots and data/release");
   }
-  const registry = parseRegistry(await readFile(registryPath, "utf8"));
+  const registry = parseRegistry(await readFile(flags["--registry"] ?? registryPath, "utf8"));
   const policy = parsePolicy(
     JSON.parse(await readFile(flags["--policy"]!, "utf8")),
   );
