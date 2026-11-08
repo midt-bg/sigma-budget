@@ -4,8 +4,8 @@
 Run:  tmp/venv/bin/python pipeline/budget_pipeline/validate/datasets.py [--only GROUP,...] [-v] [--list] [--no-accepted]
 
 What differs from base.py (each point is a deliberate V5 decision, see docs/plan.md):
-  * DATA / SITE of vd_lib are the checked-out site/ (the validators read the paths through the vd_lib module, so nothing else changes).
-  * REBUILD and MOCK are skipped: they run build_data.py --check / validate_mock.py against the v1 donor tree and the
+  * DATA / SITE of checks are the checked-out site/ (the validators read the paths through the checks module, so nothing else changes).
+  * REBUILD and MOCK are skipped: they run datasets.py --check / validate_mock.py against the v1 donor tree and the
     donor builders know nothing of the V5 active layer (the generated "C" sets and the daily СЕБРА set are taken out by tools/active_data.py).
     The same question for V5 is answered by `diff_json_v5.py tmp/versions/site-v1/data data/release` (every differing leaf is classified).
   * The SEARCH group is run with empty stand-ins for the three mock sets V5 removed (mock/projects, activities, payments); it crashed on them.
@@ -26,12 +26,12 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
-import budget_pipeline.validate.vd_lib as L                                    # noqa: E402
+import budget_pipeline.validate.checks as L                                    # noqa: E402
 
-# vd_lib.SITE / DATA already point at site/ (the checked-out version; run this at the tag mock-v6)
+# checks.SITE / DATA already point at site/ (the checked-out version; run this at the tag mock-v6)
 
 import budget_pipeline.validate.base as V                             # noqa: E402
-import budget_pipeline.validate.vd_contract as vd_contract                                    # noqa: E402  contract v2 of execution.json (stage B)
+import budget_pipeline.validate.execution as execution                                    # noqa: E402  contract v2 of execution.json (stage B)
 
 GONE_SEBRA = "СЕБРА (daily payments) was taken out of the active interface and of core.sources; data/sebra.json stays on disk, unreferenced, for phase 2"
 GONE_SEARCH = "search shows only active real sets; the 7 pending and 2 mock datasets have no search row (docs/plan.md, search)"
@@ -112,7 +112,7 @@ def main(argv):
             if flag not in argv:
                 argv.append(flag)                      # see the docstring: they test the donor tree
     orig = V.all_groups
-    V.all_groups = lambda: [(n, wrap(n, fn, use_accepted), d) for n, fn, d in list(orig()) + list(vd_contract.GROUPS)]
+    V.all_groups = lambda: [(n, wrap(n, fn, use_accepted), d) for n, fn, d in list(orig()) + list(execution.GROUPS)]
     code = V.main(argv)
     if use_accepted and _used:
         print("\nACCEPTED V5 DIVERGENCES (%d problems the donor reports; each follows from a deliberate removal, see the docstring):" % len(_used))

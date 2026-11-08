@@ -22,7 +22,7 @@ datasets:
   status: real
   files:
   - data/release/outlook.json
-  producer: pipeline/budget_pipeline/build/bd_fiscal.py (build_outlook)
+  producer: pipeline/budget_pipeline/build/fiscal.py (build_outlook)
   inputs:
   - data/originals/asbp/asbp_tables.json
   - data/cache/research/mf-umtbf-2026-2028/extracts/pdf_pages_clean.json
@@ -38,7 +38,7 @@ datasets:
   rebuild: tmp/venv-data/bin/python pipeline/budget_pipeline/build/rebuild.py --build-date 2026-11-05
   checked: '2026-11-05'
   limitations:
-  - reads pdf_pages_clean.json, which extract_asbp_pages.py makes from the asbp PDF (pinned in data/sources.yaml)
+  - reads pdf_pages_clean.json, which asbp_pages.py makes from the asbp PDF (pinned in data/sources.yaml)
 - id: gva-sectors
   catalogId: D31
   title: 'Икономиката по отрасли: добавена стойност и БВП 2019–2025'
@@ -66,7 +66,7 @@ datasets:
   status: real
   files:
   - data/release/revenue.json
-  producer: pipeline/budget_pipeline/build/bd_fiscal.py (build_revenue)
+  producer: pipeline/budget_pipeline/build/fiscal.py (build_revenue)
   inputs:
   - data/originals/asbp/asbp_tables.json
   schema: docs/data-spec.md
@@ -85,7 +85,7 @@ datasets:
   status: real
   files:
   - data/release/expenditure.json
-  producer: pipeline/budget_pipeline/build/bd_fiscal.py (build_expenditure)
+  producer: pipeline/budget_pipeline/build/fiscal.py (build_expenditure)
   inputs:
   - data/originals/asbp/asbp_tables.json
   - data/inputs/cofog_bg.json
@@ -110,7 +110,7 @@ datasets:
   status: real
   files:
   - data/release/components.json
-  producer: pipeline/budget_pipeline/build/bd_components.py (build_components)
+  producer: pipeline/budget_pipeline/build/components.py (build_components)
   inputs:
   - execution
   - law
@@ -137,7 +137,7 @@ datasets:
   status: real
   files:
   - data/release/ministries.json
-  producer: pipeline/budget_pipeline/build/bd_budgets.py (build_budgets)
+  producer: pipeline/budget_pipeline/build/budgets.py (build_budgets)
   inputs:
   - data/originals/program_budgets/*
   - data/inputs/program_budgets_2026.json
@@ -162,7 +162,7 @@ datasets:
   status: real
   files:
   - data/release/ministries/*.json
-  producer: pipeline/budget_pipeline/build/bd_budgets.py (build_budgets)
+  producer: pipeline/budget_pipeline/build/budgets.py (build_budgets)
   inputs:
   - data/originals/program_budgets/*
   - data/inputs/program_budgets_2026.json
@@ -182,7 +182,7 @@ datasets:
   status: real
   files:
   - data/release/programs.json
-  producer: pipeline/budget_pipeline/build/bd_budgets.py (build_budgets)
+  producer: pipeline/budget_pipeline/build/budgets.py (build_budgets)
   inputs:
   - data/originals/program_budgets/*
   - data/inputs/program_budgets_2026.json
@@ -202,7 +202,7 @@ datasets:
   status: real
   files:
   - data/release/measures.json
-  producer: pipeline/budget_pipeline/build/bd_measures.py (build_measures)
+  producer: pipeline/budget_pipeline/build/measures.py (build_measures)
   inputs:
   - data/inputs/measures_2026.json
   schema: docs/data-spec.md
@@ -224,7 +224,7 @@ datasets:
   status: real
   files:
   - data/release/law.json
-  producer: pipeline/budget_pipeline/build/bd_law.py (build_law)
+  producer: pipeline/budget_pipeline/build/law.py (build_law)
   inputs:
   - ministries
   - parliament
@@ -242,14 +242,14 @@ datasets:
   rebuild: tmp/venv-data/bin/python pipeline/budget_pipeline/build/rebuild.py --build-date 2026-11-05
   checked: '2026-11-05'
   limitations:
-  - 'the parliament API is live: a change in its counts stops the build until reviewed (bd_law.py)'
+  - 'the parliament API is live: a change in its counts stops the build until reviewed (law.py)'
 - id: execution
   catalogId: D06
   title: Месечно изпълнение на КФП
   status: real
   files:
   - data/release/execution.json
-  producer: pipeline/budget_pipeline/extract/extract_kfp_full.py
+  producer: pipeline/budget_pipeline/extract/kfp_full.py
   inputs:
   - kfp
   - data/originals/asbp/asbp_tables.json
@@ -274,7 +274,7 @@ datasets:
   status: real
   files:
   - data/release/execution-provenance.json
-  producer: pipeline/budget_pipeline/extract/extract_kfp_full.py
+  producer: pipeline/budget_pipeline/extract/kfp_full.py
   inputs:
   - kfp
   - data/originals/asbp/asbp_tables.json
@@ -292,7 +292,7 @@ datasets:
   status: real
   files:
   - data/release/debt.json
-  producer: pipeline/budget_pipeline/build/bd_debt.py (build_debt)
+  producer: pipeline/budget_pipeline/build/debt.py (build_debt)
   inputs:
   - bnb
   - eurostat
@@ -320,7 +320,7 @@ datasets:
   status: real
   files:
   - data/release/rates.json
-  producer: pipeline/budget_pipeline/build/bd_rates.py (build_rates)
+  producer: pipeline/budget_pipeline/build/rates.py (build_rates)
   inputs:
   - bill
   - nap
@@ -342,7 +342,7 @@ datasets:
   status: real
   files:
   - data/release/municipalities.json
-  producer: pipeline/budget_pipeline/build/bd_municipal.py (build_municipalities)
+  producer: pipeline/budget_pipeline/build/municipalities.py (build_municipalities)
   inputs:
   - eurostat
   - gisco
@@ -366,7 +366,7 @@ datasets:
   status: real
   files:
   - data/release/geo/obshtini.json
-  producer: pipeline/budget_pipeline/build/bd_municipal.py (build_municipalities)
+  producer: pipeline/budget_pipeline/build/municipalities.py (build_municipalities)
   inputs:
   - eurostat
   - gisco
@@ -389,7 +389,7 @@ datasets:
   status: real
   files:
   - data/release/glossary.json
-  producer: pipeline/budget_pipeline/build/build_text.py
+  producer: pipeline/budget_pipeline/build/editorial.py
   inputs:
   - data/inputs/glossary.json
   - wg
@@ -400,16 +400,16 @@ datasets:
   - S07
   scope: editorial
   rebuild: null
-  notRebuilt: 'build_text.py stops: data/cache/research/guide/guide_raw.txt is missing'
+  notRebuilt: 'editorial.py stops: data/cache/research/guide/guide_raw.txt is missing'
   limitations:
-  - build_text.py reads data/inputs/glossary.json, whose producer needs a PDF of the working group that is missing
+  - editorial.py reads data/inputs/glossary.json, whose producer needs a PDF of the working group that is missing
 - id: guide
   catalogId: D23
   title: Пътеводител
   status: real
   files:
   - data/release/guide.json
-  producer: pipeline/budget_pipeline/build/build_text.py
+  producer: pipeline/budget_pipeline/build/editorial.py
   inputs:
   - wg
   schema: docs/data-spec.md
@@ -417,7 +417,7 @@ datasets:
   - S04
   scope: editorial
   rebuild: null
-  notRebuilt: 'build_text.py stops: data/cache/research/guide/guide_raw.txt is missing'
+  notRebuilt: 'editorial.py stops: data/cache/research/guide/guide_raw.txt is missing'
   limitations:
   - the guide text of the working group is not in the repository
 - id: core
@@ -426,7 +426,7 @@ datasets:
   status: real
   files:
   - data/release/core.json
-  producer: pipeline/budget_pipeline/build/bd_core.py (build_core)
+  producer: pipeline/budget_pipeline/build/core.py (build_core)
   layers:
   - pipeline/budget_pipeline/build/wording.py
   - pipeline/budget_pipeline/build/active_data.py
@@ -485,7 +485,7 @@ datasets:
   status: real
   files:
   - data/release/feed.json
-  producer: pipeline/budget_pipeline/build/bd_feed.py (build_feed)
+  producer: pipeline/budget_pipeline/build/feed.py (build_feed)
   layers:
   - pipeline/budget_pipeline/build/active_data.py
   inputs:
@@ -512,7 +512,7 @@ datasets:
   status: real
   files:
   - data/release/feed.xml
-  producer: pipeline/budget_pipeline/build/bd_feed.py (build_feed)
+  producer: pipeline/budget_pipeline/build/feed.py (build_feed)
   layers:
   - pipeline/budget_pipeline/build/active_data.py
   inputs:
@@ -539,7 +539,7 @@ datasets:
   status: real
   files:
   - data/release/search-index.json
-  producer: pipeline/budget_pipeline/build/build_search.py (build_search)
+  producer: pipeline/budget_pipeline/build/search.py (search)
   layers:
   - pipeline/budget_pipeline/build/wording.py
   - pipeline/budget_pipeline/build/active_data.py
@@ -557,14 +557,14 @@ datasets:
   rebuild: tmp/venv-data/bin/python pipeline/budget_pipeline/build/rebuild.py --build-date 2026-11-05
   checked: '2026-11-05'
   limitations:
-  - 'after build_search: the v5 wording and removals (layers)'
+  - 'after search: the v5 wording and removals (layers)'
 - id: catalog
   catalogId: D25
   title: Каталог на данните
   status: real
   files:
   - data/release/catalog.json
-  producer: pipeline/budget_pipeline/build/build_catalog.py (build_catalog)
+  producer: pipeline/budget_pipeline/build/catalog.py (catalog)
   layers:
   - pipeline/budget_pipeline/build/wording.py
   - pipeline/budget_pipeline/build/active_data.py
@@ -600,14 +600,14 @@ datasets:
   rebuild: tmp/venv-data/bin/python pipeline/budget_pipeline/build/rebuild.py --build-date 2026-11-05
   checked: '2026-11-05'
   limitations:
-  - 'after build_catalog: the v5 wording and removals and catalog_refresh.py (layers)'
+  - 'after catalog: the v5 wording and removals and catalog_refresh.py (layers)'
 - id: mock-measure-labels
   catalogId: M06
   title: Дата и правно основание на мерките
   status: mock
   files:
   - data/release/mock/measure-labels.json
-  producer: pipeline/budget_pipeline/build/build_examples.py (M06)
+  producer: pipeline/budget_pipeline/build/examples.py (M06)
   inputs:
   - measures
   - mockgen
@@ -616,7 +616,7 @@ datasets:
   - S08
   - S12
   scope: example labels of the measures
-  rebuild: BUILD_DATE=2026-10-09 tmp/venv-data/bin/python pipeline/budget_pipeline/build/build_examples.py --only M06 --check
+  rebuild: BUILD_DATE=2026-10-09 tmp/venv-data/bin/python pipeline/budget_pipeline/build/examples.py --only M06 --check
   checked: '2026-11-05'
   limitations:
   - 'example values: marked mock in the file, the tables, search and exports'
@@ -626,7 +626,7 @@ datasets:
   status: mock
   files:
   - data/release/mock/tax-assumptions.json
-  producer: pipeline/budget_pipeline/build/build_examples.py (M07)
+  producer: pipeline/budget_pipeline/build/examples.py (M07)
   inputs:
   - asbp
   - mockgen
@@ -635,10 +635,10 @@ datasets:
   - S18
   scope: example assumptions of the tax calculator
   unit: €
-  rebuild: BUILD_DATE=2026-10-09 tmp/venv-data/bin/python pipeline/budget_pipeline/build/build_examples.py --only M07 --check
+  rebuild: BUILD_DATE=2026-10-09 tmp/venv-data/bin/python pipeline/budget_pipeline/build/examples.py --only M07 --check
   checked: '2026-11-05'
   limitations:
-  - 'example values: marked mock; the official rates in it are typed into build_examples.py from Приложение 2 of the motives'
+  - 'example values: marked mock; the official rates in it are typed into examples.py from Приложение 2 of the motives'
 - id: p01
   catalogId: P01
   title: Изпълнение по видове данъци
@@ -731,7 +731,7 @@ datasets:
   status: real
   files:
   - data/release/sebra.json
-  producer: pipeline/budget_pipeline/build/bd_sebra.py (build_sebra)
+  producer: pipeline/budget_pipeline/build/payments.py (build_sebra)
   inputs:
   - midt-sebra
   schema: docs/data-spec.md
@@ -747,7 +747,7 @@ datasets:
   status: real
   files:
   - data/release/dbp2027.json
-  producer: pipeline/budget_pipeline/build/build_dbp2027_site.py
+  producer: pipeline/budget_pipeline/build/budget_plan.py
   inputs:
   - data/cache/research/dbp-2027/dbp2027_figures.json
   schema: docs/data-spec.md

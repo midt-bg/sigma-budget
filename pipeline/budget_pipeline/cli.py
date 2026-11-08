@@ -3,7 +3,7 @@
 
 Public operations, no credentials:
   budget collect        [--out work/acquisition]               download every source the registry can fetch; snapshot.json lists them
-  budget import-source  --source kfp --file F [--url U]         a file downloaded by a person (pipeline/budget_pipeline/sources/raw_sources.py import)
+  budget import-source  --source kfp --file F [--url U]         a file downloaded by a person (pipeline/budget_pipeline/sources/originals.py import)
   budget build          [--commit REV] [--inputs DIR] [--out work/candidate] [--build-date YYYY-MM-DD] [--site]
                         the release of one commit: the code of that commit, the inputs of DIR (default: this checkout), the pinned image;
                         writes data/, validation.json and manifest.json; --site also puts the outputs and the manifest into data/release
@@ -201,7 +201,7 @@ def registry_inputs(root, inputs_dir):
 
 
 def acquisition_records(inputs_dir):
-    """retrieved dates: the log of fetch_sources.py and the records of raw_sources.py import"""
+    """retrieved dates: the log of download.py and the records of originals.py import"""
     out = {}
     m = inputs_dir / "data" / "originals" / "MANIFEST.json"
     if m.is_file():
@@ -652,8 +652,8 @@ def cmd_collect(a):
 def cmd_import_source(a):
     if a.source != "kfp":
         raise Fail(EXIT_INVALID, "import-source handles the monthly КФП reports (--source kfp); other files go by sha256 with "
-                                 "pipeline/budget_pipeline/sources/raw_sources.py import")
-    args = [sys.executable, str(ROOT / "pipeline" / "budget_pipeline" / "sources" / "raw_sources.py"), "import", a.file] + (["--url", a.url] if a.url else [])
+                                 "pipeline/budget_pipeline/sources/originals.py import")
+    args = [sys.executable, str(ROOT / "pipeline" / "budget_pipeline" / "sources" / "originals.py"), "import", a.file] + (["--url", a.url] if a.url else [])
     r = subprocess.run(args)
     return (EXIT_OK if r.returncode == 0 else EXIT_INVALID), {"imported": a.file, "exit": r.returncode}
 

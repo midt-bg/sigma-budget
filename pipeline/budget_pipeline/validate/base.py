@@ -5,7 +5,7 @@ Run from anywhere:  tmp/venv/bin/python pipeline/budget_pipeline/validate/base.p
 
   --only     comma separated group names (see --list); default: all
   -v         print every problem, warning and fact in full
-  --no-rebuild  skip the REBUILD group (an in-process `build_data.py --check`)
+  --no-rebuild  skip the REBUILD group (an in-process `datasets.py --check`)
   --no-mock  skip the MOCK group (`python3 reference/mock/validate_mock.py`, DATA2's validator)
 Exit code: 0 all checks passed, 1 at least one violation, 2 usage error.
 Each group prints one line: OK|FAIL, name, number of checks and the key facts it established.
@@ -24,10 +24,10 @@ import traceback
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
-import budget_pipeline.validate.vd_lib as L                                       # noqa: E402
-import budget_pipeline.validate.vd_core as vd_core, vd_fiscal, vd_budget, vd_other           # noqa: E402,E401
+import budget_pipeline.validate.checks as L                                       # noqa: E402
+import budget_pipeline.validate.foundations as foundations, fiscal, budgets, groups           # noqa: E402,E401
 
-MODULES = (vd_core, vd_fiscal, vd_budget, vd_other)
+MODULES = (foundations, fiscal, budgets, groups)
 
 
 # Run order of the groups (a group missing here still runs, after these): foundations, then the data in the order of the plan,

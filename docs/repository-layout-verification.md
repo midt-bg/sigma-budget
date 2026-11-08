@@ -38,7 +38,7 @@
 | `docker build -t sigma-budget-layout pipeline` | успешно |
 | `Docker import smoke: fitz, xlrd, yaml, docx, pdfplumber, py7zr` | успешно; PyMuPDF 1.26.5 |
 | `python apps/web/scripts/ssr_parity.py --baseline-url http://127.0.0.1:8815 --url http://127.0.0.1:8814 --host sigma-budget.my-data.bg` | 41 sample routes · 41 byte-identical · 0 different |
-| `python pipeline/budget_pipeline/build/originals_sums.py --check` | 0 stale entries |
+| `python pipeline/budget_pipeline/build/input_checksums.py --check` | 0 stale entries |
 | `python -m compileall -q pipeline tests apps/web/scripts` | успешно |
 | `git diff --check` | успешно |
 

@@ -59,7 +59,7 @@ class Report:
 
 
 def script(entry):
-    """'pipeline/budget_pipeline/build/bd_fiscal.py (build_outlook)' -> 'pipeline/budget_pipeline/build/bd_fiscal.py'"""
+    """'pipeline/budget_pipeline/build/fiscal.py (build_outlook)' -> 'pipeline/budget_pipeline/build/fiscal.py'"""
     return entry.split(" ", 1)[0] if entry else entry
 
 

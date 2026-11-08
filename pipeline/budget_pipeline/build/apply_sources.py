@@ -154,7 +154,7 @@ if not any(t['slug'] == 'ess-2010' for t in g['terms']):
 else:
     print('  skip (already)   data/glossary.json')
 
-# ---------------------------------------------------------------------------------------------- search index (same row rule as tools build_search._terms)
+# ---------------------------------------------------------------------------------------------- search index (same row rule as tools search._terms)
 def _clean(x):
     return re.sub(r'[ \t\r\n]+', ' ', str(x if x is not None else '')).strip()
 
@@ -217,7 +217,7 @@ if 'dbp2027' not in core['sources']:
         'url': 'https://economy-finance.ec.europa.eu/economic-governance-framework/stability-and-growth-pact/annual-draft-budgetary-plans-dbps-euro-area-countries/draft-budgetary-plans-2027_en',
         'kind': 'html', 'access': 'open',
         'note': 'Списък на проектите на бюджетни планове за 2027 г. (там е и проектът на България). Комисията ги оценява като съответстващи, съответстващи до голяма степен или с риск от несъответствие (описание на страницата за годишните проекти на бюджетни планове).'}
-    # 64 on the v5 tree; 69 when build_data.py rebuilt core.json and already counted the v6 glossary on disk
+    # 64 on the v5 tree; 69 when datasets.py rebuilt core.json and already counted the v6 glossary on disk
     assert core['counts']['terms'] in (64, 69)
     core['counts']['terms'] = 69
     wr('data/core.json', json.dumps(core, ensure_ascii=False, separators=(',', ':')) + ('\n' if raw_core.endswith('\n') else ''))

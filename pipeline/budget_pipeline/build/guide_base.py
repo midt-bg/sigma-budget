@@ -3,11 +3,11 @@
 (V5: the guide is no longer a screen; its notes and the five checks are shown in «Бюджетът за 5 минути» (S04). The texts still name the screens
 they point at, so the check stays: every step names a real route with that title and step number.)
 
-The guide text is the working group's own (build_text.py takes it from data/cache/research/guide/guide_raw.txt and checks it against
+The guide text is the working group's own (editorial.py takes it from data/cache/research/guide/guide_raw.txt and checks it against
 the v1 routes.js). V5 renamed three screens the guide points at, so the old check «guide step 1: no route with title
 'Какъв е бюджетът?'» stays red on the donor and is NOT hidden here: this script changes the three titles in the V5 copy of the
 guide (steps 1, 6, 8 and the «Следва» links that name them), says so in the file's own sourceNote, and then CHECKS the result
-against apps/web/client/routes.js exactly the way build_text.py does (route title == quoted screen name, route step == step number,
+against apps/web/client/routes.js exactly the way editorial.py does (route title == quoted screen name, route step == step number,
 href resolves to that route, the «Следва» link of step n names step n+1).
 
   python3 pipeline/budget_pipeline/build/guide_base.py            apply the V5 wording (idempotent) and check

@@ -87,7 +87,7 @@ async function fallback(request: Request, env: Env, res: Response): Promise<Resp
   return file.status === 404 ? res : file;
 }
 
-/* data/feed.xml of a release links to a placeholder host (pipeline/budget_pipeline/build/bd_feed.py: a reserved name that never resolves), as the hash
+/* data/feed.xml of a release links to a placeholder host (pipeline/budget_pipeline/build/feed.py: a reserved name that never resolves), as the hash
    addresses of the prototype. apps/web/scripts/build.py writes the site's origin into the static copy (stamp_files); the stable address of a
    registry release gets the same links here. The file of the release itself (/data/releases/<id>/data/feed.xml) keeps its bytes. */
 const FEED = 'data/feed.xml';

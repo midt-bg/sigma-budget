@@ -218,7 +218,7 @@ ctx.data.revenue                                                // разобр�
 | примерни | `mock/*.json`, записи с `mock:true` + `why` | `status:'mock'`/`mock:true`: щриховка ▨ (`data-mock="true"`), значка и етикет „Примерни данни“, текст `why`, изключва се при „само реални“ |
 | предстои | `core.pending` P01–P07 или липсващ файл | `pendingState({id:'P01'})`: пунктирана сива бележка, **никога число** |
 
-CSS куки (компонентите ги задават; задавай ги сам само върху ръчно написана разметка): `data-mock="true"` върху малка лента/ред/запълване я щрихова. Контейнерите ползват `data-block-mock`, `data-kpi-mock`, `data-mock-fig`, `data-mock-table` (иначе общото правило би щриховало целия текст). `data-src="kfp,asbp"` (+ `data-asof="2026-07-31"`) върху всеки бутон/връзка отваря картата на източника; `sourceBtn()`, `srcTag()`, `val()` я произвеждат.
+CSS куки (компонентите ги задават; задавай ги сам само върху ръчно написана разметка): `data-mock="true"` върху малка лента/ред/запълване я щрихова. Контейнерите ползват `data-block-mock`, `data-kpi-mock`, `data-mock-fig`, `data-mock-table` (иначе общото правило би щриховало целия текст). `data-src="kfp,forecast_tables"` (+ `data-asof="2026-07-31"`) върху всеки бутон/връзка отваря картата на източника; `sourceBtn()`, `srcTag()`, `val()` я произвеждат.
 
 ### 4.3 Какво съдържат файловете (подробности: `docs/data-spec.md`)
 
@@ -246,7 +246,7 @@ CSS куки (компонентите ги задават; задавай ги 
 | `mock/municipal-finance` | S20 S21 | `mock/projects` | S22 |
 | `mock/measure-labels` | S12 S08 S01 | `mock/tax-assumptions` | S18 |
 
-Идентификатори в маршрутите: групи приходи `dds osiguritelni nedanachni pomoshti ddfl akcizi korporativen drugi`; функции `obshti-sluzhbi otbrana-sigurnost obrazovanie zdraveopazvane sotsialni zhilishtno-sreda kultura-sport ikonomika drugi`; код на ведомство = 4-цифрен ЕБК (`1300`), програма `1300.01.01`; мерки `kr1…kr8 kx1…kx9 kn1… d8-1… d9-1… p8-1…p8-8`; общини `BLG03`; проекти `pr-01…`; плащания по измислен ЕИК `999…`; набори по slug. Ключове на източниците: `kfp asbp bill zdb zbdoo zbnzok prb parliament eurostat bnb nap sebra gisco dataeuropa minfin wg mockgen`.
+Идентификатори в маршрутите: групи приходи `dds osiguritelni nedanachni pomoshti ddfl akcizi korporativen drugi`; функции `obshti-sluzhbi otbrana-sigurnost obrazovanie zdraveopazvane sotsialni zhilishtno-sreda kultura-sport ikonomika drugi`; код на ведомство = 4-цифрен ЕБК (`1300`), програма `1300.01.01`; мерки `kr1…kr8 kx1…kx9 kn1… d8-1… d9-1… p8-1…p8-8`; общини `BLG03`; проекти `pr-01…`; плащания по измислен ЕИК `999…`; набори по slug. Ключове на източниците: `kfp forecast_tables bill zdb zbdoo zbnzok prb parliament eurostat bnb nap sebra gisco dataeuropa minfin wg mockgen`.
 Идентификатори на „предстои“: P01 (изпълнение по вид данък) S06 S15 · P02 S15 · P03 (програми на ~15 ведомства) S10 S11 · P04 S15 S16 · P05 S15 · P06 S17 · P07 S14.
 
 Населението за „на човек“ е `ctx.core.population.persons`. Курсът евро/лев е `format.EUR_RATE`.

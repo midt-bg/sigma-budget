@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # One command that rebuilds every dataset of the Mock prototype and validates it.
 #
-#   pipeline/budget_pipeline/build/run_all.sh            fetch (cached) -> extract -> build_data -> build_text + build_examples (DATA2) -> build_data again -> validate
+#   pipeline/budget_pipeline/build/run_all.sh            fetch (cached) -> extract -> datasets -> editorial + examples (DATA2) -> datasets again -> validate
 #   pipeline/budget_pipeline/build/run_all.sh --check    writes nothing: every builder in --check mode, then validate (what CI would run)
 #
 # Order matters: DATA2's builders read my files (ministries, programs, measures, ...) and my catalog, search index and core read
-# DATA2's files (glossary, guide, mock/*.json), so build_data runs twice. data/release/mock/, glossary.json and guide.json are never
+# DATA2's files (glossary, guide, mock/*.json), so datasets runs twice. data/release/mock/, glossary.json and guide.json are never
 # cleaned or deleted by anything here. Needs tmp/venv-data (pipeline/requirements.txt: xlrd, PyMuPDF 1.26.5, python-docx) and the raw files in data/originals (docs/data-sources.md). The fetchers use the network only when their cache
 # in data/cache is missing; the build itself is offline. Exit status 0 only when every step and the validator passed.
 set -uo pipefail
@@ -26,18 +26,18 @@ must() { echo; echo "== $*"; "$@" 2>&1 | grep -v -i deprecat | grep -v pymupdf_l
 try()  { echo; echo "== $*"; "$@" 2>&1 | grep -v -i deprecat | grep -v pymupdf_layout; local rc=${PIPESTATUS[0]}; if [ "$rc" -ne 0 ]; then echo "!! failed (exit $rc): $*"; FAILED+=("$*"); fi; }
 
 if [ "$MODE" = "build" ]; then
-  must "$PY" "pipeline/budget_pipeline/sources/fetch_gisco.py"
-  must "$PY" "pipeline/budget_pipeline/sources/fetch_sebra.py"
-  must "$PY" "pipeline/budget_pipeline/extract/extract_kfp_full.py"
-  must "$PY" "pipeline/budget_pipeline/extract/extract_bill.py"
-  must "$PY" "$T/build_data.py"
-  try  "$PY" "$T/build_text.py"
-  try  "$PY" "$T/build_examples.py"
-  must "$PY" "$T/build_data.py"                # again: catalog, search index and core now see glossary, guide and the mock sets
+  must "$PY" "pipeline/budget_pipeline/sources/boundaries.py"
+  must "$PY" "pipeline/budget_pipeline/sources/payments.py"
+  must "$PY" "pipeline/budget_pipeline/extract/kfp_full.py"
+  must "$PY" "pipeline/budget_pipeline/extract/bill.py"
+  must "$PY" "$T/datasets.py"
+  try  "$PY" "$T/editorial.py"
+  try  "$PY" "$T/examples.py"
+  must "$PY" "$T/datasets.py"                # again: catalog, search index and core now see glossary, guide and the mock sets
 else
-  try  "$PY" "$T/build_data.py" --check
-  try  "$PY" "$T/build_text.py" --check
-  try  "$PY" "$T/build_examples.py" --check
+  try  "$PY" "$T/datasets.py" --check
+  try  "$PY" "$T/editorial.py" --check
+  try  "$PY" "$T/examples.py" --check
 fi
 try "$PY" "pipeline/budget_pipeline/validate/base.py" --no-rebuild --no-mock    # the REBUILD and MOCK groups are run by the steps above
 try "$PY" "reference/mock/validate_mock.py"

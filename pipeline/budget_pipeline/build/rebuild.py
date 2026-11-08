@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """rebuild.py - rebuild data/release of the current site (v6) from the raw inputs: the donor builders, then the v5/v6 layer.
 
-The files of data/release are not the plain output of build_data.py: v5 renamed «реални данни» to «официални данни», took СЕБРА and the
-generated sets out of the active layer, and v6 added the sources of the screen S34. Run alone, build_data.py writes the donor (v1)
+The files of data/release are not the plain output of datasets.py: v5 renamed «реални данни» to «официални данни», took СЕБРА and the
+generated sets out of the active layer, and v6 added the sources of the screen S34. Run alone, datasets.py writes the donor (v1)
 form and removes all of that. This script runs the steps in the order that gives the published files:
 
-  1. extract_kfp_full.py          data/release/execution.json from data/originals/kfp_*/
-  2. build_data.py                every other dataset of the builders (core.json last)
+  1. kfp_full.py          data/release/execution.json from data/originals/kfp_*/
+  2. datasets.py                every other dataset of the builders (core.json last)
   3. wording.py                the v3/v4 wording on catalog.json, core.json and search-index.json (pairs from the tags mock-v2, mock-v4)
   4. active_data.py site       СЕБРА and the generated sets out of catalog, feed, search-index and core
   5. apply_sources.py             the four sources of S34 and counts.terms in core.json (the rest of the glue is already in site/)
@@ -22,10 +22,10 @@ from the files whose inputs changed since (parliament API, Eurostat, BNB, the ac
 on the zlib of the machine.
 
   tmp/venv-data/bin/python pipeline/budget_pipeline/build/rebuild.py --build-date 2026-11-05     the build date goes into meta.retrieved of every file
-  tmp/venv-data/bin/python pipeline/budget_pipeline/build/rebuild.py                             BUILD_DATE from the environment, else the default of dlib.py
+  tmp/venv-data/bin/python pipeline/budget_pipeline/build/rebuild.py                             BUILD_DATE from the environment, else the default of data_io.py
 
 Writes data/release/ and tmp/versions/site-v2|site-v4/data/ (the wording pairs). Glossary, guide and the mock sets are not rebuilt
-(build_text.py, build_examples.py). Stops at the first failing step.
+(editorial.py, examples.py). Stops at the first failing step.
 """
 import argparse
 import os
@@ -59,7 +59,7 @@ def tag_files(env):
 
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--build-date", help="YYYY-MM-DD for meta.retrieved and build.dataVersion (else BUILD_DATE or the dlib.py default)")
+    ap.add_argument("--build-date", help="YYYY-MM-DD for meta.retrieved and build.dataVersion (else BUILD_DATE or the data_io.py default)")
     ap.add_argument("--versions-ready", action="store_true",
                     help="tmp/versions/site-v2|v4/data are already in place (pipeline/budget_pipeline/cli.py writes them from the tags before a build without git)")
     args = ap.parse_args(argv)
@@ -73,8 +73,8 @@ def main(argv):
             sys.exit("rebuild: --versions-ready, but missing: " + ", ".join(missing))
     else:
         tag_files(env)
-    run(["pipeline/budget_pipeline/extract/extract_kfp_full.py"], env)
-    run([T + "build_data.py"], env)
+    run(["pipeline/budget_pipeline/extract/kfp_full.py"], env)
+    run([T + "datasets.py"], env)
     for f in WORDING_FILES:
         run([T + "wording.py", f, "data/release"], env)
     run([T + "active_data.py", "data/release", "--apply"], env)
