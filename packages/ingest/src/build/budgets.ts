@@ -1,4 +1,5 @@
 import { artEbk, budgetInfo, nomFirst } from './law-definitions.js';
+import type { ProgrammeBudgetDifference, ProgrammePolicy } from './programmes.js';
 import {
   loadProgrammes,
   lawPolicyName,
@@ -10,6 +11,126 @@ import {
 } from './programmes.js';
 import { isNumber, roundNumber } from '../io/data.js';
 import { metadata } from '../common/metadata.js';
+export interface BudgetMetadata {
+  id: string;
+  title: string;
+  status: string;
+  source: string[];
+  sourceNote?: string;
+  asOf: string;
+  retrieved: string;
+  unit?: string;
+  pending?: string[];
+  mock: boolean;
+}
+export interface BudgetLawPolicy {
+  n: string | number;
+  name: string;
+  khil: number | null;
+  parts?: { n: string; name: string; khil: number | null }[];
+}
+export interface BudgetItem {
+  id: string;
+  art: number;
+  name: string;
+  lawName: string;
+  short: string;
+  kind: string;
+  revKhil?: number;
+  expKhil: number;
+  transfersKhil?: number;
+  policyTotalKhil?: number;
+  policiesKind: string;
+  policies: BudgetLawPolicy[];
+  bodies?: { name: string; khil: number | null }[];
+  programs:
+    | { status: 'pending'; id: string; reasonKind: string; reason: string }
+    | {
+        status: 'real';
+        tier: 'validated' | 'program-budget-differs';
+        count: number;
+        policyCount: number;
+        file: string;
+      };
+  exp2025Khil?: number;
+  change?: { pct: number; basis: 'law' | 'program-budget' };
+  billVsLaw?: { lines: Record<string, number> } & Partial<
+    Record<'revKhil' | 'expKhil' | 'transfersKhil', { bill: number; law: number; diff: number }>
+  >;
+  programBudgetVsLaw?: ProgrammeBudgetDifference;
+}
+export interface MinistriesDataset {
+  meta: BudgetMetadata;
+  totals: { count: number; revKhil: number; expKhil: number };
+  kinds: Record<string, string>;
+  tiers: Record<string, string>;
+  programTotals: {
+    budgets: number;
+    policies: number;
+    programs: number;
+    pending: number;
+    differ: number;
+  };
+  scopeNote: string;
+  items: BudgetItem[];
+}
+export interface MinistryProgrammeDataset {
+  meta: BudgetMetadata;
+  id: string;
+  art: number;
+  name: string;
+  short: string;
+  tier: 'validated' | 'program-budget-differs';
+  years: number[];
+  yearLabels: string[];
+  vintage: string[];
+  cols: string[];
+  policiesKind: string;
+  total: Record<string, number[]>;
+  policies: ProgrammePolicy[];
+  yearsComplete: number[];
+  check: {
+    prbTotal2026: number;
+    zdbExp: number | null;
+    matchesLaw: boolean;
+    policiesSumToTotal: true;
+    programsSumToPolicies: true;
+    diffKhil?: number | null;
+  };
+  skipped: string[];
+  skippedTotal: number;
+  doc: {
+    file: string;
+    pages: number[];
+    pagesByYear: Record<string, number[]>;
+    archive: string;
+    archiveUrl: string;
+  };
+}
+export type ProgrammeIndexRow = [
+  string,
+  string,
+  string,
+  string,
+  string,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+];
+export interface ProgrammeIndexDataset {
+  meta: BudgetMetadata;
+  fields: string[];
+  sentinels: { noData: number; noGrowth: number };
+  note: string;
+  items: ProgrammeIndexRow[];
+}
+export type BudgetOutputs = {
+  'ministries.json': MinistriesDataset;
+  'programs.json': ProgrammeIndexDataset;
+} & { [file: `ministries/${string}.json`]: MinistryProgrammeDataset };
 const ARCHIVE =
   'архив към законопроекта 52-602-01-19, папка „7. Програмни формати на бюджети на ПРБ с бюджет по ДБ“';
 const ARCHIVE_URL = 'https://www.parliament.bg/bills/52/52-602-01-19.zip';
@@ -92,7 +213,7 @@ function row(code: string, node: any, level: string, parent: string): any[] {
     pick(t25, 1),
   ];
 }
-export function buildBudgets(e: ProgrammeEvidence, buildDate: string): Record<string, any> {
+export function buildBudgets(e: ProgrammeEvidence, buildDate: string): BudgetOutputs {
   const recs = loadProgrammes(e),
     law = e.law.law,
     byCode = Object.fromEntries(Object.entries(artEbk).map(([art, code]) => [code, Number(art)]));
@@ -101,8 +222,8 @@ export function buildBudgets(e: ProgrammeEvidence, buildDate: string): Record<st
     totExp = 0;
   for (const code of Object.keys(byCode).sort()) {
     const art = byCode[code]!,
-      L = law[String(art)],
-      rec = recs[code],
+      L = law[String(art)]!,
+      rec = recs[code]!,
       h = L.headline,
       lawExp = h.exp,
       [short, kind] = budgetInfo[code]!;
@@ -139,7 +260,8 @@ export function buildBudgets(e: ProgrammeEvidence, buildDate: string): Record<st
       };
     const bvl = billVsLaw(e.law, art);
     if (bvl) it.billVsLaw = bvl;
-    if (rec.programBudgetVsLaw) it.programBudgetVsLaw = rec.programBudgetVsLaw;
+    if ('programBudgetVsLaw' in rec && rec.programBudgetVsLaw)
+      it.programBudgetVsLaw = rec.programBudgetVsLaw;
     items.push(it);
   }
   if (!isNumber(e.law.sums.expKhil) || !isNumber(e.law.sums.revKhil))
@@ -191,9 +313,9 @@ export function buildBudgets(e: ProgrammeEvidence, buildDate: string): Record<st
   };
   const rows: any[] = [];
   for (const code of Object.keys(recs).sort()) {
-    const rec = recs[code];
+    const rec = recs[code]!;
     if (rec.tier === 'pending') continue;
-    const L = law[String(rec.art)],
+    const L = law[String(rec.art)]!,
       check: any = {
         prbTotal2026: rec.check.prbTotal2026,
         zdbExp: rec.check.lawExp,
@@ -201,7 +323,7 @@ export function buildBudgets(e: ProgrammeEvidence, buildDate: string): Record<st
         policiesSumToTotal: true,
         programsSumToPolicies: true,
       };
-    if (!rec.check.matchesLaw) check.diffKhil = rec.programBudgetVsLaw.diffKhil;
+    if (!rec.check.matchesLaw) check.diffKhil = rec.programBudgetVsLaw!.diffKhil;
     out[`ministries/${code}.json`] = {
       meta: meta('D09', 'Програмен бюджет: ' + nominative(L.name), ['prb'], PRB_NOTE, '2026-07-01'),
       id: code,
@@ -259,5 +381,5 @@ export function buildBudgets(e: ProgrammeEvidence, buildDate: string): Record<st
     note: 'y2026 и y2025 са консолидираните разходи (колона „общо“: бюджетът на разпоредителя плюс европейските и другите средства), prb2026 и prb2025 — само по бюджета на разпоредителя (колоната, която съвпада със закона). −1 = няма данни; growthPct −101 = не може да се изчисли; isNew 1 = нямало е средства през 2025 г.',
     items: rows,
   };
-  return out;
+  return out as BudgetOutputs;
 }

@@ -1,5 +1,12 @@
 import { artEbk } from './law-definitions.js';
 import { isNumber, roundNumber } from '../io/data.js';
+import type {
+  LawArticleEvidence,
+  LawAmount,
+  LawHeadlineKey,
+  ParsedLawEvidence,
+  LawDiffEvidence,
+} from './law-types.js';
 
 export const SRC_YEARS = [
   'Отчет 2023',
@@ -51,8 +58,8 @@ const reasons: Record<string, string> = {
   'no-rows': 'В документа не бяха намерени политики и програми за бюджетната година.',
 };
 // The reader's resolved cells and names are independent evidence, not builder output.
-type Cell = Record<string, number>;
-type Row = { name: string; by_year: Record<string, Cell> };
+type Cell = Record<string, number | null>;
+type Row = { name: string; by_year: Record<string, Cell | null> };
 type EvidenceCell = { values: number[] | null; method: string; cands: number[][]; pages: number[] };
 type PdfEvidence = {
   cells: [[string, string], EvidenceCell][];
@@ -62,12 +69,74 @@ type PdfEvidence = {
 };
 // Data is produced by Python's pinned source parsers. Runtime checks at the boundaries
 // still reject missing budgets, cells and duplicate source keys.
+export interface ProgrammeLawArticle extends LawArticleEvidence {
+  policiesKind?: string | null;
+  policyTotal?: LawAmount;
+}
+export interface ProgrammeLawDiff extends LawDiffEvidence {
+  headline?: Partial<Record<LawHeadlineKey, { bill: LawAmount; law: LawAmount }>>;
+}
+export interface ProgrammeLawEvidence extends Omit<ParsedLawEvidence, 'law' | 'diff'> {
+  law: Record<string, ProgrammeLawArticle>;
+  diff: Record<string, ProgrammeLawDiff>;
+}
+export interface ProgrammeNode {
+  code: string;
+  name: string;
+  values: Record<string, number[]>;
+}
+export interface ProgrammePolicy extends ProgrammeNode {
+  kind: 'policy' | 'program';
+  programs?: ProgrammeNode[];
+}
+export interface ProgrammeBudgetDifference {
+  prbKhil: number;
+  lawKhil: number | null;
+  diffKhil: number | null;
+  billKhil?: number;
+  matchesBill?: boolean;
+}
+interface ProgrammeRecordBase {
+  code: string;
+  art: number;
+  lawExpKhil: number | null;
+  file: string;
+  yearsComplete: number[];
+  skipped: string[];
+  exp2025Khil?: number;
+  pagesByYear?: Record<string, number[]>;
+  pages?: number[];
+  readMethods?: Record<string, number>;
+}
+export interface PendingProgrammeRecord extends ProgrammeRecordBase {
+  tier: 'pending';
+  reasonKey: string;
+  reason: string;
+}
+export interface PublishedProgrammeRecord extends ProgrammeRecordBase {
+  tier: 'validated' | 'program-budget-differs';
+  pagesByYear: Record<string, number[]>;
+  pages: number[];
+  total: Record<string, number[]>;
+  policies: ProgrammePolicy[];
+  policyCount: number;
+  programCount: number;
+  check: {
+    prbTotal2026: number;
+    lawExp: number | null;
+    matchesLaw: boolean;
+    policiesSumToTotal: true;
+    programsSumToPolicies: true;
+  };
+  programBudgetVsLaw?: ProgrammeBudgetDifference;
+}
+export type ProgrammeRecord = PendingProgrammeRecord | PublishedProgrammeRecord;
 export interface ProgrammeEvidence {
   source: {
     budgets: Record<string, { file: string; programs: Record<string, Row> }>;
     not_parsed: Record<string, string>;
   };
-  law: Record<string, any>;
+  law: ProgrammeLawEvidence;
   pdfs: Record<string, PdfEvidence>;
 }
 type Entry = [string, string, Row];
@@ -105,12 +174,12 @@ function outer(s: string): string {
 export function cleanName(raw: string): string {
   let s = (raw || '').replace(/\s+/gu, ' ').trim();
   const cut =
-    /\s(?:\d{4}\.\d{2}\.\d{2}(?=\b|$)|Код\s*\*|Консолидирани разходи|ОБЛАСТИ НА(?=\s|$)|\d{1,3}(?: \d{3})*,\d(?:\s|$)|0, 0(?=\s|$))/u.exec(
+    /\s(?:\d{4}\.\d{2}\.\d{2}(?![\p{L}\p{N}_])|Код\s*\*|Консолидирани разходи|ОБЛАСТИ НА(?![\p{L}\p{N}_])|\d{1,3}(?: \d{3})*,\d(?:\s|$)|0, 0(?![\p{L}\p{N}_]))/u.exec(
       s,
     );
   if (cut) s = s.slice(0, cut.index);
   const next =
-    /\s(?=(?:Бюджетна програма|Политика в областта|Област на политика|Функционална област)(?=\s|$))/gu;
+    /\s(?=(?:Бюджетна програма|Политика в областта|Област на политика|Функционална област)(?![\p{L}\p{N}_]))/gu;
   next.lastIndex = 12;
   const match = next.exec(s);
   if (match) s = s.slice(0, match.index);
@@ -295,7 +364,7 @@ function verifiedView(
       const candidates = new Set(c.cands.map((v) => JSON.stringify(v.map(round))));
       const hits = new Set(
         Object.values(jr.by_year || {})
-          .filter((v) => COLS.every((k) => isNumber(v[k])))
+          .filter((v): v is Cell => !!v && COLS.every((k) => isNumber(v[k])))
           .map((v) => JSON.stringify(COLS.map((k) => round(v[k]!))))
           .filter((v) => candidates.has(v)),
       );
@@ -355,7 +424,7 @@ function diagnose(s: Structure): string {
     ? 'missing-policies'
     : 'missing-programs';
 }
-export function loadProgrammes(e: ProgrammeEvidence): Record<string, any> {
+export function loadProgrammes(e: ProgrammeEvidence): Record<string, ProgrammeRecord> {
   const records: Record<string, any> = {};
   const byCode = Object.fromEntries(
     Object.entries(artEbk).map(([art, code]) => [code, Number(art)]),
@@ -367,7 +436,7 @@ export function loadProgrammes(e: ProgrammeEvidence): Record<string, any> {
     const art = byCode[code]!,
       L = e.law.law[String(art)];
     if (!L) throw new Error(`missing law ministry ${code}`);
-    const lawExp = L.headline.exp,
+    const lawExp = L.headline.exp ?? null,
       b = e.source.budgets[code],
       pair = b ? [b.file, null] : notParsedByCode[code];
     if (!pair) throw new Error(`missing ministry code ${code}`);

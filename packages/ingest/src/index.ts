@@ -17,5 +17,14 @@ export {
   cleanName,
   lawPolicyName,
   type ProgrammeEvidence,
+  type ProgrammeLawArticle,
+  type ProgrammeLawDiff,
+  type ProgrammeLawEvidence,
+  type ProgrammeNode,
+  type ProgrammePolicy,
+  type ProgrammeBudgetDifference,
+  type ProgrammeRecord,
+  type PendingProgrammeRecord,
+  type PublishedProgrammeRecord,
 } from './build/programmes.js';
 export { verifyProgrammeInputs } from './build/programme-fixture.js';

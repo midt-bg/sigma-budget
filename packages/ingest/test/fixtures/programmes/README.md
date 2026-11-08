@@ -15,7 +15,9 @@ originals. Verify byte-for-byte regeneration with Python 3.12:
 PYTHONPATH=pipeline tmp/venv-data/bin/python packages/ingest/test/fixtures/programmes/generate_oracle.py --check
 ```
 
-The required tests compare all 44 scoped files with the Python oracle, verify
+The generator also records Python expectations for a null source year cell and
+Unicode word boundaries in names. The required tests compare all 44 scoped
+files, including the null-cell case, with the Python oracle, verify
 input and oracle hashes, and exercise damaged inputs. There are no accepted
 differences. The current published release can be compared separately:
 

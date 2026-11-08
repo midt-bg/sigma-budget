@@ -3,6 +3,7 @@
 PYTHONPATH=pipeline tmp/venv-data/bin/python packages/ingest/test/fixtures/programmes/generate_oracle.py --check
 PDF evidence was captured separately by capture_pdf.py from the pinned originals.
 """
+import copy
 import hashlib
 import json
 import os
@@ -56,6 +57,28 @@ class Context:
 ctx = Context()
 budgets.build_budgets(ctx)
 outputs = {'oracle.json': emit('oracle.json', ctx.outputs)}
+# A null source cell is ignored when resolving ambiguous PDF cells.
+source = copy.deepcopy(source)
+source['budgets']['1800']['programs']['1800.02.03']['by_year']['Отчет 2023'] = None
+ctx = Context()
+budgets.build_budgets(ctx)
+outputs['null-cell-oracle.json'] = emit('null-cell-oracle.json', ctx.outputs)
+name_inputs = [
+    'Дълго име на политика Бюджетна програма: Допълнителен текст',
+    'Дълго име на политика ОБЛАСТИ НА: Допълнителен текст',
+    'Дълго име на политика Бюджетна програма-допълнение',
+    'Дълго име на политика Бюджетна програмаЖ допълнение',
+    'Дълго име на политика Бюджетна програма_допълнение',
+    'Дълго име на политика Бюджетна програма2 допълнение',
+    'Дълго име на политика Бюджетна програма',
+    'Дълго име на политика ОБЛАСТИ НАЖ допълнение',
+    'Дълго име на политика 1800.02.03: Допълнителен текст',
+    'Дълго име на политика 1800.02.03Ж Допълнителен текст',
+    'Дълго име на политика 0, 0: Допълнителен текст',
+]
+outputs['name-oracle.json'] = emit('name-oracle.json', [
+    {'input': name, 'expected': programmes.clean_name(name)} for name in name_inputs
+])
 inputs = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(INPUTS.iterdir()) if p.is_file()}
 emit('provenance.json', {'baseline': 'e2954c9', 'buildDate': '2026-11-08',
     'sourceArchiveSha256': '5f8e6a98b05919dc776fb68f40615a544b585e1a1690e29cf2f6f3b0e0648701',
