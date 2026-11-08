@@ -336,7 +336,7 @@ tmp/venv-data/bin/python -m budget_pipeline.sources.prepare_inputs
 
 ### Снимки за националните сметки (08.11.2026)
 
-Нов архив `release-build-inputs-2026-11-08-national-accounts.tar.gz` (SHA-256 `50729231c46a82d61c68646b008edfa69f736faf755019cdab7232b25758fe6d`) запазва всички байтове от предишния архив и добавя двата текущи отговора `nama_10_a10_BG.json` и `nama_10_gdp_BG.json`. Те не заменят липсващите исторически отговори зад публикувания `gva-sectors`; разликите са в [отчета](reproducibility.md).
+Нов архив `release-build-inputs-2026-11-08-national-accounts.tar.gz` (SHA-256 `6e02341236a6d9ff4ce514825880edd0fc7933a3b4e7c99eefc185a0585e19f2`) запазва всички байтове от предишния архив и добавя парламентарния ZIP с вече закования хеш и двата текущи отговора `nama_10_a10_BG.json` и `nama_10_gdp_BG.json`. Те не заменят липсващите исторически отговори зад публикувания `gva-sectors`; разликите са в [отчета](reproducibility.md).
 
 `./budget collect --seed /path/to/restored-input-tree --out work/acquired` копира ръчните и историческите входове от възстановеното дърво и придобива всички автоматични източници, включително редуцираните GISCO и NUTS3 снимки. Изходът трябва да е нова празна директория. `./budget build --inputs work/acquired --env local` чете само нея и входовете в Git. Ревизиран жив отговор изисква отделен преглед на pin; build спира при несъответствие. При същото издание се използват историческите живи снимки от архива.
 

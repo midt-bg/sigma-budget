@@ -1,4 +1,5 @@
 """Acquire all registered automatic sources into a separate snapshot; never update pins."""
+import datetime
 import json
 import shutil
 from pathlib import Path
@@ -11,6 +12,8 @@ def collect(root, out, seed, fetch, kind_ok, sha256_file, sha256_bytes, yaml_loa
     root, out, seed = map(Path, (root, out, seed))
     if out.resolve() == root.resolve() or out.resolve() == seed.resolve():
         raise ValueError("collect output must be separate from the checkout and seed")
+    if any(out.resolve().is_relative_to((seed / folder).resolve()) for folder in ("data/originals", "data/cache")):
+        raise ValueError("collect output cannot be inside the seed input directories")
     if out.exists() and any(out.iterdir()):
         raise ValueError("collect output must be empty (snapshots are immutable)")
     out.mkdir(parents=True, exist_ok=True)
@@ -57,11 +60,14 @@ def collect(root, out, seed, fetch, kind_ok, sha256_file, sha256_bytes, yaml_loa
                     digest = sha256_file(target)
                     expected = pins.get(rel, entry.get("sha256"))
                     row.update(status="ok", sha256=digest, expected=expected,
+                               retrieved=datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                                drift="same" if digest == expected else "changed" if expected else "un-pinned")
                 except Exception as exc:
                     target.unlink(missing_ok=True)
                     row.update(status="unavailable", error=str(exc))
                 rows.append(row)
+                (out / "snapshot.json").write_text(json.dumps({"collected": rows}, ensure_ascii=False, indent=1) + "\n")
+                print("collect: %s: %s" % (rel, row.get("drift", row["status"])), flush=True)
     finally:
         boundaries.GISCO_CACHE, boundaries.EUROSTAT_CACHE = old_gisco, old_eurostat
     (out / "snapshot.json").write_text(json.dumps({"collected": rows}, ensure_ascii=False, indent=1) + "\n")

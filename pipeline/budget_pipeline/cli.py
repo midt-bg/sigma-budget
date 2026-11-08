@@ -167,6 +167,11 @@ def acquisition_records(inputs_dir):
     if m.is_file():
         for rel, e in json.loads(m.read_text(encoding="utf-8")).items():
             out["data/originals/" + rel] = {"retrieved": e.get("retrieved"), "url": e.get("url"), "method": "fetch"}
+    snapshot = inputs_dir / "snapshot.json"
+    if snapshot.is_file():
+        for entry in json.loads(snapshot.read_text(encoding="utf-8"))["collected"]:
+            if entry.get("status") == "ok":
+                out[entry["path"]] = {"retrieved": entry.get("retrieved"), "url": entry.get("url"), "method": "fetch"}
     log = inputs_dir / "tmp" / "sources" / "ACQUISITIONS.jsonl"
     if log.is_file():
         for ln in log.read_text(encoding="utf-8").splitlines():
