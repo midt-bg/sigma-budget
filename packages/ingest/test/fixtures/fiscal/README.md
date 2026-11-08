@@ -15,8 +15,10 @@ The cleaned ASBP page and table evidence came from
 is recorded in provenance. The original historical DOCX used to author the
 measure transcription and excerpts is not available here; those authored
 inputs and their source excerpts are identified as such, rather than claimed
-as a fresh extraction. Adopted-law paragraphs are the Python-extracted blocks
-from the frozen law fixture. No raw PDF, DOCX or law HTML reader is ported.
+as a fresh extraction. The COFOG and population JSON files are frozen inputs;
+the corresponding historical raw responses have not been recovered or
+independently re-extracted here. Adopted-law paragraphs are the Python-extracted
+blocks from the frozen law fixture. No raw PDF, DOCX or law HTML reader is ported.
 
 Regenerate and verify from these copies with Python 3.12:
 

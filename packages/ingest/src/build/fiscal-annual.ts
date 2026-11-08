@@ -79,7 +79,11 @@ function decimalSum(values: number[]): number {
   });
   const scale = Math.max(0, ...pieces.map((p) => p.scale));
   const total = pieces.reduce((sum, p) => sum + p.integer * 10n ** BigInt(scale - p.scale), 0n);
-  return Number(total) / 10 ** scale;
+  const sign = total < 0n ? '-' : '';
+  const digits = (total < 0n ? -total : total).toString().padStart(scale + 1, '0');
+  return Number(
+    scale ? `${sign}${digits.slice(0, -scale)}.${digits.slice(-scale)}` : sign + digits,
+  );
 }
 
 /** Pure projection of the independently extracted 2027 forecast tables. */
