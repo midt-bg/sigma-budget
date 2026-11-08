@@ -40,8 +40,11 @@ export async function metadataModel(
       stem = part && !set?.file ? C.stemOf(part.file) : set?.stem;
     const bytes = part && !set?.file ? part.bytes : set?.bytes;
     model.fileMeta = { meta: null, state: 'skip' };
-    if (stem && (bytes == null || bytes <= 120000)) {
-      const document = await load<{ meta?: import('./metadata-types').FileMeta }>(stem);
+    const cached = stem
+      ? reader.get?.<{ meta?: import('./metadata-types').FileMeta }>(stem)
+      : undefined;
+    if (stem && (cached || bytes == null || bytes <= 120000)) {
+      const document = cached || (await load<{ meta?: import('./metadata-types').FileMeta }>(stem));
       model.fileMeta = { meta: document?.meta || null, state: document ? 'ok' : 'error' };
     }
   } else {

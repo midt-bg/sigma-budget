@@ -121,3 +121,19 @@ it('missing required catalogue is an error; missing file metadata preserves the 
   expect(optional.view).toBe('ready');
   expect((optional as MetadataModel).fileMeta?.state).toBe('error');
 });
+
+it('already cached metadata remains available for a large selected file', async () => {
+  const model = (await textModel(
+    'S25',
+    {},
+    { set: 'search-index' },
+    {
+      release,
+      load,
+      get: <T,>(name: string) =>
+        name === 'search-index' ? ({ meta: inputs.core.meta } as T) : undefined,
+    },
+  )) as MetadataModel;
+  expect(model.fileMeta?.state).toBe('ok');
+  expect(model.fileMeta?.meta).toEqual(inputs.core.meta);
+});
