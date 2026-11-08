@@ -96,6 +96,33 @@ class ReproducibilityTests(unittest.TestCase):
             self.assertEqual([r['drift'] for r in rows], ['same', 'same'])
             self.assertEqual((root / "data/originals.sha256").read_text(), digest + "  " + path + "\n")
 
+    def test_success_then_invalid_response_preserves_immutable_receipt(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "data").mkdir()
+            path = "data/originals/sample.json"
+            digest = hashlib.sha256(b'{}').hexdigest()
+            (root / "data/originals.sha256").write_text(digest + "  " + path + "\n")
+            reg = {"sources": [{"id": "s", "acquisition": "fetch", "files": [
+                {"path": path, "url": "https://example.org/file"}]}]}
+            def acquire(blob):
+                return collect(root, root / "out", root, lambda *a, **k: blob, cli.kind_ok,
+                               cli.sha256_file, cli.sha256_bytes, lambda p: reg)
+            acquire(b'{}')
+            previous = json.loads((root / "out/snapshot.json").read_text())
+            receipt = root / "out" / previous["receipt"]
+            original_bytes = receipt.read_bytes()
+            good = json.loads(original_bytes)["collected"][0]
+            self.assertEqual(good["sha256"], digest)
+            self.assertTrue(good["retrieved"])
+            acquire(b'invalid json')
+            latest = json.loads((root / "out/snapshot.json").read_text())
+            self.assertNotEqual(latest["receipt"], previous["receipt"])
+            self.assertEqual(latest["collected"][0]["status"], "unavailable")
+            self.assertEqual(receipt.read_bytes(), original_bytes)
+            self.assertEqual((root / "out" / good["file"]).read_bytes(), b'{}')
+            self.assertEqual(len(list((root / "out/receipts").glob("*.json"))), 2)
+
     def test_failed_acquisition_does_not_retain_seed(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)

@@ -3,6 +3,7 @@ import datetime
 import json
 import shutil
 import tempfile
+import uuid
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -29,6 +30,8 @@ def collect(root, out, seed, fetch, kind_ok, sha256_file, sha256_bytes, yaml_loa
     pin_file = root / "data/originals.sha256"
     pins = dict(line.split("  ", 1)[::-1] for line in (pin_file.read_text() if pin_file.exists() else "").splitlines() if "  " in line)
     rows = []
+    started = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    run_id = uuid.uuid4().hex
     old_gisco, old_eurostat = boundaries.GISCO_CACHE, boundaries.EUROSTAT_CACHE
     scratch = tempfile.TemporaryDirectory(prefix="budget-collect-")
     temporary = Path(scratch.name)
@@ -73,10 +76,19 @@ def collect(root, out, seed, fetch, kind_ok, sha256_file, sha256_bytes, yaml_loa
                 except Exception as exc:
                     row.update(status="unavailable", error=str(exc))
                 rows.append(row)
-                (out / "snapshot.json").write_text(json.dumps({"collected": rows}, ensure_ascii=False, indent=1) + "\n")
                 print("collect: %s: %s" % (rel, row.get("drift", row["status"])), flush=True)
     finally:
         scratch.cleanup()
         boundaries.GISCO_CACHE, boundaries.EUROSTAT_CACHE = old_gisco, old_eurostat
-    (out / "snapshot.json").write_text(json.dumps({"collected": rows}, ensure_ascii=False, indent=1) + "\n")
+    receipt = "receipts/" + run_id + ".json"
+    payload = {"started": started, "completed": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+               "collected": rows}
+    target = out / receipt
+    target.parent.mkdir(exist_ok=True)
+    # Exclusive creation: later attempts can never replace an earlier run's evidence.
+    with target.open("x", encoding="utf-8") as fh:
+        fh.write(json.dumps(payload, ensure_ascii=False, indent=1) + "\n")
+    latest = out / ("snapshot." + run_id + ".tmp")
+    latest.write_text(json.dumps({"receipt": receipt, **payload}, ensure_ascii=False, indent=1) + "\n")
+    latest.replace(out / "snapshot.json")
     return rows
