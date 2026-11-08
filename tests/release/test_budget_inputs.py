@@ -1,5 +1,4 @@
 """Regression: local release builds must see the same staged inputs as Docker."""
-import importlib.util
 import tempfile
 import unittest
 from pathlib import Path
