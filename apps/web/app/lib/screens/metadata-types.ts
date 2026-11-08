@@ -98,6 +98,7 @@ export interface MetadataModel extends Omit<EditorialScreenModel, 'screen'> {
   registry: boolean;
 }
 export interface MetadataContext {
+  newer?: string;
   origin?: string;
   data: MetadataModel['documents'];
   core: MetadataModel['core'];

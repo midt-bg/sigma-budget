@@ -137,3 +137,34 @@ it('already cached metadata remains available for a large selected file', async 
   expect(model.fileMeta?.state).toBe('ok');
   expect(model.fileMeta?.meta).toEqual(inputs.core.meta);
 });
+
+it('live release notice keeps its server position, the pinned data and abort cleanup', async () => {
+  const current = 'f'.repeat(64);
+  let signal: AbortSignal | undefined;
+  vi.stubGlobal('fetch', async (_url: string, options: RequestInit) => {
+    signal = options.signal as AbortSignal;
+    return new Response(JSON.stringify({ release_id: current, revision: 2 }));
+  });
+  const model = (await textModel('S35', {}, {}, { release, load })) as MetadataModel;
+  model.registry = true;
+  const tree = <MigratedScreen model={model} navigation={{ go() {}, announce() {} }} />;
+  const container = document.createElement('div');
+  document.body.appendChild(container);
+  container.innerHTML = renderToString(tree);
+  let root: ReturnType<typeof hydrateRoot>;
+  try {
+    await act(async () => {
+      root = hydrateRoot(container, tree);
+    });
+    const notice = container.querySelector<HTMLElement>('[data-s35-newer]')!;
+    expect(notice.hidden).toBe(false);
+    expect(notice.textContent).toContain(current.slice(0, 12));
+    expect(notice.closest('section')?.getAttribute('aria-labelledby')).toBe('s35-release');
+    expect(container.querySelector('.s35-rid')?.textContent).toBe(release.id);
+  } finally {
+    await act(async () => root!.unmount());
+    container.remove();
+    vi.unstubAllGlobals();
+  }
+  expect(signal?.aborted).toBe(true);
+});

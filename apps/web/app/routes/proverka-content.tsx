@@ -73,6 +73,7 @@ function releaseBlock(
   m: Manifest,
   journal: JournalEntry[] | null,
   journalFailed: boolean,
+  newer = '',
 ) {
   const mine = (journal || []).filter((e) => e.release_id === rid);
   const first = mine.length ? mine[mine.length - 1] : null;
@@ -120,7 +121,9 @@ function releaseBlock(
         },
       ])}
 
-      <p className="s35-newer" data-s35-newer="" hidden={true}></p>
+      <p className="s35-newer" data-s35-newer="" hidden={!newer}>
+        {newer}
+      </p>
 
       <p>
         {
@@ -565,7 +568,7 @@ export function render(ctx: MetadataContext) {
     answer: `Данните са от издание ${short(rid)}: ${num(ins)} оригинала и ${num(outs)} файла с данни, сглобени от commit ${short(m.processing?.code?.commit)} и проверими байт по байт.`,
     body: (
       <>
-        {releaseBlock(rid, m, journal, journalFailed)}
+        {releaseBlock(rid, m, journal, journalFailed, ctx.newer)}
         {coverageBlock(m)}
         {filesBlock(rid, m)}
         {codeBlock(m)}

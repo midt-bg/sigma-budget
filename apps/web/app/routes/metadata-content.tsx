@@ -18,6 +18,7 @@ export function MetadataContent({
   const root = useRef<HTMLDivElement>(null),
     [newer, setNewer] = useState('');
   const content = (model.screen === 'S25' ? api : proof)({
+    newer,
     origin: model.release.origin,
     data: model.documents,
     core: model.core,
@@ -73,11 +74,6 @@ export function MetadataContent({
             else navigation.go(href('api', {}, { ...model.query, set: control.value }));
         }}
       >
-        {newer ? (
-          <p className="s35-newer" role="status">
-            {newer}
-          </p>
-        ) : null}
         {compactText(
           glossaryTree(
             fixFiles(content.body, model.release.dataBase),
