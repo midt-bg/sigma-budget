@@ -23,7 +23,7 @@ RAW = ORIGINALS / 'budget_2027'
 OUT = SRC / 'budget_forecast_2027.json'
 MEMBER = 'ZDBRB-2027/4-UMTBF-2027-2029-motivi.pdf'
 NUMBER = re.compile(r'^[−-]?\s*\d+(?:\s+\d{3})*(?:,\d+)?%?$')
-VINTAGES = {2024: 'отчет', 2025: 'отчет', 2026: 'очаквано', 2027: 'проект', 2028: 'прогноза', 2029: 'прогноза'}
+
 
 
 def number(s):
@@ -157,7 +157,7 @@ def make_row(page,label,cells,unit):
 
 
 def year_columns(heads, unit):
-    return [{'year':int(h['text'][:4]), 'vintage':VINTAGES[int(h['text'][:4])], 'unit':unit} for h in heads]
+    return [{'year':int(h['text'][:4]), 'unit':unit} for h in heads]
 
 
 def extract(doc):
@@ -205,8 +205,6 @@ def extract(doc):
             for r,g in zip(rows,groups): r['label']=' '.join(s['text'] for s in g)
         cols=year_columns([h for h in heads if h['text'].startswith('202')],unit)
         if key=='I_2':
-            for c in cols:
-                if c['year']>=2026: c['vintage']='прогноза'
             for r in rows: r['units']=['млн. €' if 'млн.' in r['label'] else ('% от БВП' if '% от БВП' in r['label'] else '%')]*len(heads)
         if key=='II_5':
             for i,c in enumerate(cols):
@@ -278,6 +276,7 @@ def extract(doc):
     tables['annex2']['parse_note']='Year-header columns and paragraph bands (centered labels on p.183 handled explicitly); dated rates and page continuations retained. Fragment cells checked internally across rawdict and words.'
     tables['annex3_pct_gdp']['rows'][-1]['units']=['млн. €']*5
     tables.update(extract_remaining(doc))
+    apply_vintages(doc,tables)
     return tables
 
 
@@ -305,6 +304,7 @@ def validate(tables):
             check(f'Annex2 fragment alignment {i}/{c}',r['printed'][c]==printed and r['values'][c]==(number(printed) if printed else None))
     checks.extend(validate_annex2(tables['annex2']))
     checks.extend(validate_remaining(tables))
+    checks.extend(validate_metadata(tables))
     def values(key,index): return tables[key]['rows'][index]['values']
     anchors=[('I_2',0,[104767,116018,130459,141302,150819,160013]),
         ('II_1',0,[44016.4,49615.3,51065.2,53963.3,56927.2]),
@@ -564,6 +564,7 @@ def extract_remaining(doc):
     ]
     for key,pages,first,unit,edge in configs:
         rows=[]; cols=None
+        scenario_headers=[]
         for j,pn in enumerate(pages):
             p=doc[pn-1]; sp=spans(p)
             caption=(f"ПРИЛОЖЕНИЕ № {key[5:]}:" if key.startswith('annex')
@@ -585,8 +586,17 @@ def extract_remaining(doc):
                     hy=max(s['y'] for s in heads)
                 elif key=='II_6':
                     heads=[dict(h,x=h['x']+dx) for h in heads for dx in (-22,22)]
+                    header_cells=[[] for _ in heads]
+                    for token in sp:
+                        if hy+3<token['y']<hy+50 and token['x0']>160:
+                            c=min(range(8),key=lambda c:abs(token['x']-heads[c]['x']))
+                            header_cells[c].append(token)
+                    printed=[' '.join(s['text'] for s in sorted(cell,key=lambda s:s['y'])) for cell in header_cells]
+                    if printed!=['Базисен сценарий','Изменение спрямо основния сценарий, %']*4:
+                        raise ValueError(f'II_6 p{pn}: scenario header changed: {printed}')
+                    scenario_headers.append({'page':pn,'printed':printed})
                     hy+=40
-                    cols=[{'year':first+c//2,'measure':'baseline' if c%2==0 else 'annual_change_or_gdp_share','unit':'млн. €' if c%2==0 else '%'} for c in range(8)]
+                    cols=[{'year':first+c//2,'measure':'baseline' if c%2==0 else MAIN_SCENARIO_DIFFERENCE,'unit':'млн. €' if c%2==0 else '%'} for c in range(8)]
                 elif key=='IV_1':
                     # Three 2027 columns: total, local and delegated activities.
                     detail=sorted([s for s in sp if abs(s['y']-hy)<4 and s['text'] in ('местни','делегирани')],key=lambda s:s['x'])
@@ -636,10 +646,17 @@ def extract_remaining(doc):
                         r['units']=[label_unit(r['label'])]*len(cols)
                 if key=='II_6' and r['label'].startswith(('17.','18.')):
                     r['units']=['млн. €' if c%2==0 else '% от БВП' for c in range(8)]
+                    r['measures']=['baseline' if c%2==0 else 'gdp_share_pct' for c in range(8)]
             if key=='annex10':
                 pr[-1]['units']=['% от БВП']*2
             rows+=pr
         out[key]={'caption':caption,'pages':pages,'columns':cols,'rows':rows}
+        if key=='II_6':
+            out[key]['scenario_headers']=scenario_headers
+            share_headers=sorted([s for s in sp if s['text']=='% от БВП'],key=lambda s:s['x'])
+            if len(share_headers)!=4:
+                raise ValueError('II_6 GDP-share subheader changed')
+            out[key]['gdp_share_headers']={'page':pn,'printed':[s['text'] for s in share_headers]}
     return out
 
 
@@ -787,6 +804,114 @@ def validate_remaining(tables):
               actual=actual,expected=vals('annex10',4)[c],tolerance=0.5*5)
     for c in range(2):
         check(f'annex10 GDP ratio/{c}',abs(vals('annex10',4)[c]/vals('annex10',5)[c]*100-vals('annex10',6)[c])<=0.005)
+    return checks
+
+
+# A vintage is a source heading, never a property of the calendar year.
+TABLE_VINTAGES = {
+    'I_1': ('отчет', 'отчет', 'прогноза', 'прогноза', 'прогноза', 'прогноза'),
+    'I_2': ('отчет', 'отчет', 'прогноза', 'прогноза', 'прогноза', 'прогноза'),
+    'II_1': ('отчет', 'очаквано', 'проект', 'прогноза', 'прогноза'),
+    'II_2': ('отчет', 'очаквано', 'проект', 'прогноза', 'прогноза'),
+    'II_3': ('отчет', 'очаквано', 'проект', 'прогноза', 'прогноза'),
+    # The amount/change pair belongs to the same printed year heading.
+    'II_5': ('очаквано', 'очаквано', 'проект', 'проект', 'прогноза', 'прогноза', 'прогноза', 'прогноза'),
+    'III_1': ('очаквано', 'проект', 'прогноза', 'прогноза') * 2,
+    'III_2': ('програма', 'проект', 'прогноза', 'прогноза'),
+    # Local/delegated subcolumns inherit the printed 2027 project heading.
+    'IV_1': ('проект', 'проект', 'проект', 'прогноза', 'прогноза'),
+    'VI_1': ('отчет', 'очаквано', 'проект', 'прогноза', 'прогноза'),
+    'VI_2': ('отчет', 'очаквано', 'проект', 'прогноза', 'прогноза'),
+    'annex1_execution2025': ('програма', 'отчет', 'отчет', 'отчет', None),
+    'annex1_execution2026': ('програма', 'отчет', 'отчет', 'отчет', None),
+    'annex3_mln': ('отчет', 'очаквано', 'проект', 'прогноза', 'прогноза'),
+    'annex3_pct_gdp': ('отчет', 'очаквано', 'проект', 'прогноза', 'прогноза'),
+    'annex10': ('отчет', 'проект'),
+}
+# Exact printed tokens in left-to-right order; the same assertions run on
+# continuation pages. Merged headings can cover several numeric columns.
+STATUS_HEADERS = {
+    'I_1': ['Отчетни данни', 'Прогноза'],
+    'I_2': ['Отчетни данни', 'Прогноза'],
+    'II_1': ['Отчет', 'Очакв.', 'Проект', 'Прогноза', 'Прогноза'],
+    'II_2': ['Отчет', 'Очакв.', 'Проект', 'Прогноза', 'Прогноза'],
+    'II_3': ['Отчет', 'Очакв.', 'Проект', 'Прогноза', 'Прогноза'],
+    'II_5': ['Очакв.', 'Проект', 'Прогноза', 'Прогноза'],
+    'III_1': ['Очаквано', 'Проект', 'Прогноза', 'Прогноза'] * 2,
+    'III_2': ['Програма', 'Проект', 'Прогноза', 'Прогноза'],
+    'IV_1': ['Проект', 'Прогноза', 'Прогноза'],
+    'VI_1': ['Отчет', 'Очаквано', 'Проект', 'Прогноза', 'Прогноза'],
+    'VI_2': ['Отчет', 'Очаквано', 'Проект', 'Прогноза', 'Прогноза'],
+    'annex1_execution2025': ['Програма', 'Отчет', 'Програма'],
+    'annex1_execution2026': ['Програма', 'Отчет', 'Програма'],
+    'annex3_mln': ['Отчет', 'Очаквано', 'Проект', 'Прогноза', 'Прогноза'],
+    'annex3_pct_gdp': ['Отчет', 'Очаквано', 'Проект', 'Прогноза', 'Прогноза'],
+    'annex10': ['Отчет', 'Проект'],
+}
+STATUS_TOKEN = re.compile(r'Отчетни данни|Отчет|Очакв\.|Очаквано|Проект|Прогноза|Програма')
+MAIN_SCENARIO_DIFFERENCE = 'difference_from_main_scenario_pct'
+
+
+def apply_vintages(doc, tables):
+    """Apply only audited printed statuses and preserve their source evidence."""
+    for key, table in tables.items():
+        statuses = TABLE_VINTAGES.get(key, (None,) * len(table['columns']))
+        if len(statuses) != len(table['columns']):
+            raise ValueError(f'{key}: status column count')
+        for column, status in zip(table['columns'], statuses):
+            column.pop('vintage', None)
+            if status is not None:
+                column['vintage'] = status
+        evidence = []
+        for pn in table['pages']:
+            page = doc[pn-1]
+            sp = spans(page)
+            if key.startswith('annex1_'):
+                hy = max(s['y'] for s in sp if s['text'].startswith('к.'))
+                lo, hi = hy-55, hy-15
+            elif 'year' in table['columns'][0]:
+                cy = 0
+                if not key.startswith('annex3_') and pn == table['pages'][0]:
+                    cy = page.search_for(table['caption'])[0].y1
+                heads = columns(sp, [table['columns'][0]['year']], cy)
+                hy = heads[0]['y']
+                lo, hi = hy-25, hy+19
+            else:
+                # VII-1 has providers and indicators, not year/status columns.
+                continue
+            tokens = [m.group() for s in sorted(sp, key=lambda s:s['x'])
+                      if lo < s['y'] < hi for m in STATUS_TOKEN.finditer(s['text'])]
+            expected = STATUS_HEADERS.get(key, [])
+            if tokens != expected:
+                raise ValueError(f'{key} p{pn}: status headers {tokens!r} != {expected!r}')
+            evidence.append({'page': pn, 'band': [lo,hi], 'printed': tokens})
+        table['status_headers'] = evidence
+
+
+def validate_metadata(tables):
+    checks = []
+    for key, table in tables.items():
+        expected = TABLE_VINTAGES.get(key, (None,) * len(table['columns']))
+        checks.append(dict(name=key+' printed vintages',
+                           passed=[c.get('vintage') for c in table['columns']] == list(expected)))
+        checks.append(dict(name=key+' status headers',
+                           passed=all(h['printed']==STATUS_HEADERS.get(key, [])
+                                      for h in table['status_headers'])))
+    table = tables['II_6']
+    checks.append(dict(name='II_6 comparison dimension',
+                       passed=[c.get('measure') for c in table['columns']] ==
+                       ['baseline', MAIN_SCENARIO_DIFFERENCE]*4))
+    for header in table['scenario_headers']:
+        checks.append(dict(name=f"II_6 printed scenario header p{header['page']}",
+                           passed=header['printed']==['Базисен сценарий',
+                               'Изменение спрямо основния сценарий, %']*4))
+    checks.append(dict(name='II_6 printed GDP-share headers',
+                       passed=table['gdp_share_headers']['printed']==['% от БВП']*4))
+    for row in table['rows']:
+        is_gdp_share = row['label'].startswith(('17.', '18.'))
+        expected_measures = ['baseline', 'gdp_share_pct']*4 if is_gdp_share else None
+        checks.append(dict(name='II_6 row measure '+row['label'],
+                           passed=row.get('measures')==expected_measures))
     return checks
 
 

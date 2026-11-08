@@ -6004,6 +6004,386 @@
       "passed": true
     },
     {
+      "name": "I_2 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "I_2 status headers",
+      "passed": true
+    },
+    {
+      "name": "II_1 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "II_1 status headers",
+      "passed": true
+    },
+    {
+      "name": "II_2 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "II_2 status headers",
+      "passed": true
+    },
+    {
+      "name": "II_3 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "II_3 status headers",
+      "passed": true
+    },
+    {
+      "name": "II_5 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "II_5 status headers",
+      "passed": true
+    },
+    {
+      "name": "III_1 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "III_1 status headers",
+      "passed": true
+    },
+    {
+      "name": "VI_1 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "VI_1 status headers",
+      "passed": true
+    },
+    {
+      "name": "VI_2 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "VI_2 status headers",
+      "passed": true
+    },
+    {
+      "name": "annex1_execution2025 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "annex1_execution2025 status headers",
+      "passed": true
+    },
+    {
+      "name": "annex1_execution2026 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "annex1_execution2026 status headers",
+      "passed": true
+    },
+    {
+      "name": "annex2 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "annex2 status headers",
+      "passed": true
+    },
+    {
+      "name": "annex3_mln printed vintages",
+      "passed": true
+    },
+    {
+      "name": "annex3_mln status headers",
+      "passed": true
+    },
+    {
+      "name": "annex3_pct_gdp printed vintages",
+      "passed": true
+    },
+    {
+      "name": "annex3_pct_gdp status headers",
+      "passed": true
+    },
+    {
+      "name": "annex4 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "annex4 status headers",
+      "passed": true
+    },
+    {
+      "name": "I_1 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "I_1 status headers",
+      "passed": true
+    },
+    {
+      "name": "I_3 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "I_3 status headers",
+      "passed": true
+    },
+    {
+      "name": "I_4 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "I_4 status headers",
+      "passed": true
+    },
+    {
+      "name": "II_4 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "II_4 status headers",
+      "passed": true
+    },
+    {
+      "name": "II_6 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "II_6 status headers",
+      "passed": true
+    },
+    {
+      "name": "II_7 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "II_7 status headers",
+      "passed": true
+    },
+    {
+      "name": "II_8 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "II_8 status headers",
+      "passed": true
+    },
+    {
+      "name": "II_9 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "II_9 status headers",
+      "passed": true
+    },
+    {
+      "name": "III_2 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "III_2 status headers",
+      "passed": true
+    },
+    {
+      "name": "IV_1 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "IV_1 status headers",
+      "passed": true
+    },
+    {
+      "name": "V_1 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "V_1 status headers",
+      "passed": true
+    },
+    {
+      "name": "V_2 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "V_2 status headers",
+      "passed": true
+    },
+    {
+      "name": "VII_1 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "VII_1 status headers",
+      "passed": true
+    },
+    {
+      "name": "VII_2 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "VII_2 status headers",
+      "passed": true
+    },
+    {
+      "name": "VII_3 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "VII_3 status headers",
+      "passed": true
+    },
+    {
+      "name": "annex5 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "annex5 status headers",
+      "passed": true
+    },
+    {
+      "name": "annex6 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "annex6 status headers",
+      "passed": true
+    },
+    {
+      "name": "annex7 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "annex7 status headers",
+      "passed": true
+    },
+    {
+      "name": "annex8 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "annex8 status headers",
+      "passed": true
+    },
+    {
+      "name": "annex9 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "annex9 status headers",
+      "passed": true
+    },
+    {
+      "name": "annex10 printed vintages",
+      "passed": true
+    },
+    {
+      "name": "annex10 status headers",
+      "passed": true
+    },
+    {
+      "name": "II_6 comparison dimension",
+      "passed": true
+    },
+    {
+      "name": "II_6 printed scenario header p43",
+      "passed": true
+    },
+    {
+      "name": "II_6 printed scenario header p44",
+      "passed": true
+    },
+    {
+      "name": "II_6 printed GDP-share headers",
+      "passed": true
+    },
+    {
+      "name": "II_6 row measure 1. Данъци върху производството и вноса",
+      "passed": true
+    },
+    {
+      "name": "II_6 row measure 2. Текущи данъци върху доходите, богатството и др.",
+      "passed": true
+    },
+    {
+      "name": "II_6 row measure 2a. - в т.ч. платени от домакинствата",
+      "passed": true
+    },
+    {
+      "name": "II_6 row measure 2b. - в т.ч. платени от фирмите",
+      "passed": true
+    },
+    {
+      "name": "II_6 row measure 3. Социално- осигурителни вноски",
+      "passed": true
+    },
+    {
+      "name": "II_6 row measure 3a. - в т.ч. действително платени вноски",
+      "passed": true
+    },
+    {
+      "name": "II_6 row measure 4. Други приходи, вкл. приходи от продажби",
+      "passed": true
+    },
+    {
+      "name": "II_6 row measure 5. Общо текущи приходи",
+      "passed": true
+    },
+    {
+      "name": "II_6 row measure 6. Компенсация на наетите лица",
+      "passed": true
+    },
+    {
+      "name": "II_6 row measure 7. Междинно потребление",
+      "passed": true
+    },
+    {
+      "name": "II_6 row measure 8. Социални трансфери в натура",
+      "passed": true
+    },
+    {
+      "name": "II_6 row measure 9. Социални трансфери без тези в натура",
+      "passed": true
+    },
+    {
+      "name": "II_6 row measure 10. Лихвени разходи",
+      "passed": true
+    },
+    {
+      "name": "II_6 row measure 11. Субсидии",
+      "passed": true
+    },
+    {
+      "name": "II_6 row measure 12. Други текущи плащания",
+      "passed": true
+    },
+    {
+      "name": "II_6 row measure 13. Общо текущи разходи",
+      "passed": true
+    },
+    {
+      "name": "II_6 row measure 14. Капиталови трансфери, получени",
+      "passed": true
+    },
+    {
+      "name": "II_6 row measure 15. Брутообразуване на основен капитал",
+      "passed": true
+    },
+    {
+      "name": "II_6 row measure 16. Други капиталови разходи",
+      "passed": true
+    },
+    {
+      "name": "II_6 row measure 17. Общи правителствени приходи",
+      "passed": true
+    },
+    {
+      "name": "II_6 row measure 18. Общи правителствени разходи",
+      "passed": true
+    },
+    {
       "actual": [
         104767.0,
         116018.0,
@@ -15688,6 +16068,25 @@
           ],
           "y": 753.62
         }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            132.4224624633789,
+            176.4224624633789
+          ],
+          "page": 73,
+          "printed": [
+            "Очаквано",
+            "Проект",
+            "Прогноза",
+            "Прогноза",
+            "Очаквано",
+            "Проект",
+            "Прогноза",
+            "Прогноза"
+          ]
+        }
       ]
     },
     "III_2": {
@@ -15695,7 +16094,7 @@
       "columns": [
         {
           "unit": "млн. €",
-          "vintage": "очаквано",
+          "vintage": "програма",
           "year": 2026
         },
         {
@@ -15832,6 +16231,21 @@
             84.3
           ],
           "y": 744.21
+        }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            603.2684936523438,
+            647.2684936523438
+          ],
+          "page": 89,
+          "printed": [
+            "Програма",
+            "Проект",
+            "Прогноза",
+            "Прогноза"
+          ]
         }
       ]
     },
@@ -16257,6 +16671,22 @@
             2.4
           ],
           "y": 516.39
+        }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            242.1385040283203,
+            286.1385040283203
+          ],
+          "page": 35,
+          "printed": [
+            "Отчет",
+            "Очакв.",
+            "Проект",
+            "Прогноза",
+            "Прогноза"
+          ]
         }
       ]
     },
@@ -16735,6 +17165,22 @@
           ],
           "y": 364.21
         }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            72.09846115112305,
+            116.09846115112305
+          ],
+          "page": 36,
+          "printed": [
+            "Отчет",
+            "Очакв.",
+            "Проект",
+            "Прогноза",
+            "Прогноза"
+          ]
+        }
       ]
     },
     "II_3": {
@@ -17030,6 +17476,22 @@
           ],
           "y": 686.22
         }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            465.6284942626953,
+            509.6284942626953
+          ],
+          "page": 36,
+          "printed": [
+            "Отчет",
+            "Очакв.",
+            "Проект",
+            "Прогноза",
+            "Прогноза"
+          ]
+        }
       ]
     },
     "II_4": {
@@ -17037,22 +17499,18 @@
       "columns": [
         {
           "unit": "row-specific",
-          "vintage": "очаквано",
           "year": 2026
         },
         {
           "unit": "row-specific",
-          "vintage": "проект",
           "year": 2027
         },
         {
           "unit": "row-specific",
-          "vintage": "прогноза",
           "year": 2028
         },
         {
           "unit": "row-specific",
-          "vintage": "прогноза",
           "year": 2029
         }
       ],
@@ -17197,6 +17655,16 @@
             0.1
           ],
           "y": 356.29
+        }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            164.4625015258789,
+            208.4625015258789
+          ],
+          "page": 38,
+          "printed": []
         }
       ]
     },
@@ -18127,6 +18595,21 @@
           ],
           "y": 696.03
         }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            84.386474609375,
+            128.386474609375
+          ],
+          "page": 42,
+          "printed": [
+            "Очакв.",
+            "Проект",
+            "Прогноза",
+            "Прогноза"
+          ]
+        }
       ]
     },
     "II_6": {
@@ -18138,7 +18621,7 @@
           "year": 2026
         },
         {
-          "measure": "annual_change_or_gdp_share",
+          "measure": "difference_from_main_scenario_pct",
           "unit": "%",
           "year": 2026
         },
@@ -18148,7 +18631,7 @@
           "year": 2027
         },
         {
-          "measure": "annual_change_or_gdp_share",
+          "measure": "difference_from_main_scenario_pct",
           "unit": "%",
           "year": 2027
         },
@@ -18158,7 +18641,7 @@
           "year": 2028
         },
         {
-          "measure": "annual_change_or_gdp_share",
+          "measure": "difference_from_main_scenario_pct",
           "unit": "%",
           "year": 2028
         },
@@ -18168,11 +18651,20 @@
           "year": 2029
         },
         {
-          "measure": "annual_change_or_gdp_share",
+          "measure": "difference_from_main_scenario_pct",
           "unit": "%",
           "year": 2029
         }
       ],
+      "gdp_share_headers": {
+        "page": 44,
+        "printed": [
+          "% от БВП",
+          "% от БВП",
+          "% от БВП",
+          "% от БВП"
+        ]
+      },
       "pages": [
         43,
         44
@@ -18845,6 +19337,16 @@
         },
         {
           "label": "17. Общи правителствени приходи",
+          "measures": [
+            "baseline",
+            "gdp_share_pct",
+            "baseline",
+            "gdp_share_pct",
+            "baseline",
+            "gdp_share_pct",
+            "baseline",
+            "gdp_share_pct"
+          ],
           "page": 44,
           "printed": [
             "49 486,5",
@@ -18880,6 +19382,16 @@
         },
         {
           "label": "18. Общи правителствени разходи",
+          "measures": [
+            "baseline",
+            "gdp_share_pct",
+            "baseline",
+            "gdp_share_pct",
+            "baseline",
+            "gdp_share_pct",
+            "baseline",
+            "gdp_share_pct"
+          ],
           "page": 44,
           "printed": [
             "57 505,6",
@@ -18913,6 +19425,52 @@
           ],
           "y": 301.78
         }
+      ],
+      "scenario_headers": [
+        {
+          "page": 43,
+          "printed": [
+            "Базисен сценарий",
+            "Изменение спрямо основния сценарий, %",
+            "Базисен сценарий",
+            "Изменение спрямо основния сценарий, %",
+            "Базисен сценарий",
+            "Изменение спрямо основния сценарий, %",
+            "Базисен сценарий",
+            "Изменение спрямо основния сценарий, %"
+          ]
+        },
+        {
+          "page": 44,
+          "printed": [
+            "Базисен сценарий",
+            "Изменение спрямо основния сценарий, %",
+            "Базисен сценарий",
+            "Изменение спрямо основния сценарий, %",
+            "Базисен сценарий",
+            "Изменение спрямо основния сценарий, %",
+            "Базисен сценарий",
+            "Изменение спрямо основния сценарий, %"
+          ]
+        }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            389.57647705078125,
+            433.57647705078125
+          ],
+          "page": 43,
+          "printed": []
+        },
+        {
+          "band": [
+            56.7664794921875,
+            100.7664794921875
+          ],
+          "page": 44,
+          "printed": []
+        }
       ]
     },
     "II_7": {
@@ -18920,17 +19478,14 @@
       "columns": [
         {
           "unit": "млн. €",
-          "vintage": "проект",
           "year": 2027
         },
         {
           "unit": "млн. €",
-          "vintage": "прогноза",
           "year": 2028
         },
         {
           "unit": "млн. €",
-          "vintage": "прогноза",
           "year": 2029
         }
       ],
@@ -19480,6 +20035,32 @@
           ],
           "y": 208.82
         }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            212.0185089111328,
+            256.0185089111328
+          ],
+          "page": 47,
+          "printed": []
+        },
+        {
+          "band": [
+            54.0785026550293,
+            98.0785026550293
+          ],
+          "page": 48,
+          "printed": []
+        },
+        {
+          "band": [
+            54.0785026550293,
+            98.0785026550293
+          ],
+          "page": 49,
+          "printed": []
+        }
       ]
     },
     "II_8": {
@@ -19487,17 +20068,14 @@
       "columns": [
         {
           "unit": "млн. €",
-          "vintage": "проект",
           "year": 2027
         },
         {
           "unit": "млн. €",
-          "vintage": "прогноза",
           "year": 2028
         },
         {
           "unit": "млн. €",
-          "vintage": "прогноза",
           "year": 2029
         }
       ],
@@ -19725,6 +20303,16 @@
           ],
           "y": 583.75
         }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            245.3784942626953,
+            289.3784942626953
+          ],
+          "page": 50,
+          "printed": []
+        }
       ]
     },
     "II_9": {
@@ -19890,6 +20478,16 @@
           ],
           "y": 451.49
         }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            332.8884735107422,
+            376.8884735107422
+          ],
+          "page": 51,
+          "printed": []
+        }
       ]
     },
     "IV_1": {
@@ -19898,26 +20496,31 @@
         {
           "scope": "total",
           "unit": "хил. €",
+          "vintage": "проект",
           "year": 2027
         },
         {
           "scope": "local",
           "unit": "хил. €",
+          "vintage": "проект",
           "year": 2027
         },
         {
           "scope": "delegated",
           "unit": "хил. €",
+          "vintage": "проект",
           "year": 2027
         },
         {
           "scope": "total",
           "unit": "хил. €",
+          "vintage": "прогноза",
           "year": 2028
         },
         {
           "scope": "total",
           "unit": "хил. €",
+          "vintage": "прогноза",
           "year": 2029
         }
       ],
@@ -20055,6 +20658,20 @@
           ],
           "y": 637.15
         }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            507.38848876953125,
+            551.3884887695312
+          ],
+          "page": 136,
+          "printed": [
+            "Проект",
+            "Прогноза",
+            "Прогноза"
+          ]
+        }
       ]
     },
     "I_1": {
@@ -20072,12 +20689,12 @@
         },
         {
           "unit": "row-specific",
-          "vintage": "очаквано",
+          "vintage": "прогноза",
           "year": 2026
         },
         {
           "unit": "row-specific",
-          "vintage": "проект",
+          "vintage": "прогноза",
           "year": 2027
         },
         {
@@ -20268,6 +20885,19 @@
             2.3
           ],
           "y": 456.77
+        }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            330.2484893798828,
+            374.2484893798828
+          ],
+          "page": 26,
+          "printed": [
+            "Отчетни данни",
+            "Прогноза"
+          ]
         }
       ]
     },
@@ -20773,6 +21403,19 @@
           ],
           "y": 619.39
         }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            333.6084747314453,
+            377.6084747314453
+          ],
+          "page": 27,
+          "printed": [
+            "Отчетни данни",
+            "Прогноза"
+          ]
+        }
       ]
     },
     "I_3": {
@@ -20780,27 +21423,22 @@
       "columns": [
         {
           "unit": "%",
-          "vintage": "отчет",
           "year": 2025
         },
         {
           "unit": "%",
-          "vintage": "очаквано",
           "year": 2026
         },
         {
           "unit": "%",
-          "vintage": "проект",
           "year": 2027
         },
         {
           "unit": "%",
-          "vintage": "прогноза",
           "year": 2028
         },
         {
           "unit": "%",
-          "vintage": "прогноза",
           "year": 2029
         }
       ],
@@ -20859,6 +21497,16 @@
             -0.4
           ],
           "y": 321.77
+        }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            266.52845764160156,
+            310.52845764160156
+          ],
+          "page": 32,
+          "printed": []
         }
       ]
     },
@@ -20972,6 +21620,16 @@
             2.6
           ],
           "y": 625.51
+        }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            558.1484985351562,
+            602.1484985351562
+          ],
+          "page": 32,
+          "printed": []
         }
       ]
     },
@@ -21118,29 +21776,26 @@
           ],
           "y": 605.23
         }
-      ]
+      ],
+      "status_headers": []
     },
     "VII_2": {
       "caption": "Табл. VII-2:",
       "columns": [
         {
           "unit": "row-specific",
-          "vintage": "очаквано",
           "year": 2026
         },
         {
           "unit": "row-specific",
-          "vintage": "проект",
           "year": 2027
         },
         {
           "unit": "row-specific",
-          "vintage": "прогноза",
           "year": 2028
         },
         {
           "unit": "row-specific",
-          "vintage": "прогноза",
           "year": 2029
         }
       ],
@@ -21240,6 +21895,16 @@
           ],
           "y": 335.93
         }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            240.45851135253906,
+            284.45851135253906
+          ],
+          "page": 162,
+          "printed": []
+        }
       ]
     },
     "VII_3": {
@@ -21247,22 +21912,18 @@
       "columns": [
         {
           "unit": "row-specific",
-          "vintage": "очаквано",
           "year": 2026
         },
         {
           "unit": "row-specific",
-          "vintage": "проект",
           "year": 2027
         },
         {
           "unit": "row-specific",
-          "vintage": "прогноза",
           "year": 2028
         },
         {
           "unit": "row-specific",
-          "vintage": "прогноза",
           "year": 2029
         }
       ],
@@ -21619,6 +22280,16 @@
           ],
           "y": 412.49
         }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            124.17848205566406,
+            168.17848205566406
+          ],
+          "page": 163,
+          "printed": []
+        }
       ]
     },
     "VI_1": {
@@ -21809,6 +22480,22 @@
             5.8
           ],
           "y": 196.58
+        }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            73.1784782409668,
+            117.1784782409668
+          ],
+          "page": 150,
+          "printed": [
+            "Отчет",
+            "Очаквано",
+            "Проект",
+            "Прогноза",
+            "Прогноза"
+          ]
         }
       ]
     },
@@ -22339,6 +23026,22 @@
           ],
           "y": 692.26
         }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            274.32850646972656,
+            318.32850646972656
+          ],
+          "page": 151,
+          "printed": [
+            "Отчет",
+            "Очаквано",
+            "Проект",
+            "Прогноза",
+            "Прогноза"
+          ]
+        }
       ]
     },
     "V_1": {
@@ -22346,17 +23049,14 @@
       "columns": [
         {
           "unit": "млн. €",
-          "vintage": "проект",
           "year": 2027
         },
         {
           "unit": "млн. €",
-          "vintage": "прогноза",
           "year": 2028
         },
         {
           "unit": "млн. €",
-          "vintage": "прогноза",
           "year": 2029
         }
       ],
@@ -22424,6 +23124,16 @@
           ],
           "y": 231.14
         }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            138.0984649658203,
+            182.0984649658203
+          ],
+          "page": 142,
+          "printed": []
+        }
       ]
     },
     "V_2": {
@@ -22431,17 +23141,14 @@
       "columns": [
         {
           "unit": "млн. €",
-          "vintage": "проект",
           "year": 2027
         },
         {
           "unit": "млн. €",
-          "vintage": "прогноза",
           "year": 2028
         },
         {
           "unit": "млн. €",
-          "vintage": "прогноза",
           "year": 2029
         }
       ],
@@ -22508,6 +23215,16 @@
             22.2
           ],
           "y": 544.99
+        }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            454.94850158691406,
+            498.94850158691406
+          ],
+          "page": 142,
+          "printed": []
         }
       ]
     },
@@ -22648,6 +23365,19 @@
           ],
           "y": 412.9
         }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            283.82850646972656,
+            327.82850646972656
+          ],
+          "page": 201,
+          "printed": [
+            "Отчет",
+            "Проект"
+          ]
+        }
       ]
     },
     "annex1_execution2025": {
@@ -22656,7 +23386,7 @@
         {
           "scope": "КФП",
           "unit": "млн. €",
-          "vintage": "закон",
+          "vintage": "програма",
           "year": 2025
         },
         {
@@ -22680,7 +23410,6 @@
         {
           "scope": "КФП",
           "unit": "% от закона",
-          "vintage": "отчет",
           "year": 2025
         }
       ],
@@ -23157,6 +23886,32 @@
           ],
           "y": 174.25
         }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            266.87249755859375,
+            306.87249755859375
+          ],
+          "page": 169,
+          "printed": [
+            "Програма",
+            "Отчет",
+            "Програма"
+          ]
+        },
+        {
+          "band": [
+            63.18250274658203,
+            103.18250274658203
+          ],
+          "page": 170,
+          "printed": [
+            "Програма",
+            "Отчет",
+            "Програма"
+          ]
+        }
       ]
     },
     "annex1_execution2026": {
@@ -23165,7 +23920,7 @@
         {
           "scope": "КФП",
           "unit": "млн. €",
-          "vintage": "закон",
+          "vintage": "програма",
           "year": 2026
         },
         {
@@ -23189,7 +23944,6 @@
         {
           "scope": "КФП",
           "unit": "% от закона",
-          "vintage": "отчет",
           "year": 2026
         }
       ],
@@ -23666,6 +24420,20 @@
           ],
           "y": 357.27
         }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            99.54251861572266,
+            139.54251861572266
+          ],
+          "page": 174,
+          "printed": [
+            "Програма",
+            "Отчет",
+            "Програма"
+          ]
+        }
       ]
     },
     "annex2": {
@@ -23673,22 +24441,18 @@
       "columns": [
         {
           "unit": "row-specific",
-          "vintage": "очаквано",
           "year": 2026
         },
         {
           "unit": "row-specific",
-          "vintage": "проект",
           "year": 2027
         },
         {
           "unit": "row-specific",
-          "vintage": "прогноза",
           "year": 2028
         },
         {
           "unit": "row-specific",
-          "vintage": "прогноза",
           "year": 2029
         }
       ],
@@ -48846,6 +49610,96 @@
             "евро"
           ]
         }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            132.09400939941406,
+            176.09400939941406
+          ],
+          "page": 180,
+          "printed": []
+        },
+        {
+          "band": [
+            53.73402404785156,
+            97.73402404785156
+          ],
+          "page": 181,
+          "printed": []
+        },
+        {
+          "band": [
+            53.73402404785156,
+            97.73402404785156
+          ],
+          "page": 182,
+          "printed": []
+        },
+        {
+          "band": [
+            53.73402404785156,
+            97.73402404785156
+          ],
+          "page": 183,
+          "printed": []
+        },
+        {
+          "band": [
+            53.73402404785156,
+            97.73402404785156
+          ],
+          "page": 184,
+          "printed": []
+        },
+        {
+          "band": [
+            53.73402404785156,
+            97.73402404785156
+          ],
+          "page": 185,
+          "printed": []
+        },
+        {
+          "band": [
+            53.73402404785156,
+            97.73402404785156
+          ],
+          "page": 186,
+          "printed": []
+        },
+        {
+          "band": [
+            53.73402404785156,
+            97.73402404785156
+          ],
+          "page": 187,
+          "printed": []
+        },
+        {
+          "band": [
+            53.73402404785156,
+            97.73402404785156
+          ],
+          "page": 188,
+          "printed": []
+        },
+        {
+          "band": [
+            53.73402404785156,
+            97.73402404785156
+          ],
+          "page": 189,
+          "printed": []
+        },
+        {
+          "band": [
+            53.73402404785156,
+            97.73402404785156
+          ],
+          "page": 190,
+          "printed": []
+        }
       ]
     },
     "annex3_mln": {
@@ -50519,6 +51373,36 @@
             3878.4
           ],
           "y": 492.17
+        }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            106.6637954711914,
+            150.6637954711914
+          ],
+          "page": 191,
+          "printed": [
+            "Отчет",
+            "Очаквано",
+            "Проект",
+            "Прогноза",
+            "Прогноза"
+          ]
+        },
+        {
+          "band": [
+            38.86318397521973,
+            82.86318397521973
+          ],
+          "page": 192,
+          "printed": [
+            "Отчет",
+            "Очаквано",
+            "Проект",
+            "Прогноза",
+            "Прогноза"
+          ]
         }
       ]
     },
@@ -52220,6 +53104,36 @@
           ],
           "y": 503.35
         }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            62.74184036254883,
+            106.74184036254883
+          ],
+          "page": 193,
+          "printed": [
+            "Отчет",
+            "Очаквано",
+            "Проект",
+            "Прогноза",
+            "Прогноза"
+          ]
+        },
+        {
+          "band": [
+            38.85012626647949,
+            82.85012626647949
+          ],
+          "page": 194,
+          "printed": [
+            "Отчет",
+            "Очаквано",
+            "Проект",
+            "Прогноза",
+            "Прогноза"
+          ]
+        }
       ]
     },
     "annex4": {
@@ -52227,17 +53141,14 @@
       "columns": [
         {
           "unit": "хил. €",
-          "vintage": "проект",
           "year": 2027
         },
         {
           "unit": "хил. €",
-          "vintage": "прогноза",
           "year": 2028
         },
         {
           "unit": "хил. €",
-          "vintage": "прогноза",
           "year": 2029
         }
       ],
@@ -53247,6 +54158,24 @@
           ],
           "y": 365.11
         }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            137.6485137939453,
+            181.6485137939453
+          ],
+          "page": 195,
+          "printed": []
+        },
+        {
+          "band": [
+            38.13850021362305,
+            82.13850021362305
+          ],
+          "page": 196,
+          "printed": []
+        }
       ]
     },
     "annex5": {
@@ -53254,17 +54183,14 @@
       "columns": [
         {
           "unit": "хил. €",
-          "vintage": "проект",
           "year": 2027
         },
         {
           "unit": "хил. €",
-          "vintage": "прогноза",
           "year": 2028
         },
         {
           "unit": "хил. €",
-          "vintage": "прогноза",
           "year": 2029
         }
       ],
@@ -53312,6 +54238,16 @@
           ],
           "y": 180.41
         }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            121.89851379394531,
+            165.8985137939453
+          ],
+          "page": 197,
+          "printed": []
+        }
       ]
     },
     "annex6": {
@@ -53319,17 +54255,14 @@
       "columns": [
         {
           "unit": "хил. €",
-          "vintage": "проект",
           "year": 2027
         },
         {
           "unit": "хил. €",
-          "vintage": "прогноза",
           "year": 2028
         },
         {
           "unit": "хил. €",
-          "vintage": "прогноза",
           "year": 2029
         }
       ],
@@ -53537,6 +54470,16 @@
           ],
           "y": 507.48
         }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            301.94850158691406,
+            345.94850158691406
+          ],
+          "page": 197,
+          "printed": []
+        }
       ]
     },
     "annex7": {
@@ -53705,6 +54648,16 @@
             139671.3
           ],
           "y": 397.18
+        }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            155.4085235595703,
+            199.4085235595703
+          ],
+          "page": 198,
+          "printed": []
         }
       ]
     },
@@ -53951,6 +54904,16 @@
           ],
           "y": 407.02
         }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            155.4085235595703,
+            199.4085235595703
+          ],
+          "page": 199,
+          "printed": []
+        }
       ]
     },
     "annex9": {
@@ -53958,17 +54921,14 @@
       "columns": [
         {
           "unit": "хил. €",
-          "vintage": "проект",
           "year": 2027
         },
         {
           "unit": "хил. €",
-          "vintage": "прогноза",
           "year": 2028
         },
         {
           "unit": "хил. €",
-          "vintage": "прогноза",
           "year": 2029
         }
       ],
@@ -54135,6 +55095,16 @@
             184704.3
           ],
           "y": 362.11
+        }
+      ],
+      "status_headers": [
+        {
+          "band": [
+            138.24851989746094,
+            182.24851989746094
+          ],
+          "page": 200,
+          "printed": []
         }
       ]
     }

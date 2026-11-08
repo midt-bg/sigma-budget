@@ -126,6 +126,7 @@ class ExtractForecast(unittest.TestCase):
         self.assertEqual(self.output['page_text'][-1]['page'],201)
         for key in inventory['numbered_tables']+[a['id'] for a in inventory['annexes'] if int(a['id'][5:])>=5]:
             tables=copy.deepcopy(self.output['tables'])
+            self.assertIn(key,tables, f'Missing source table: {key}')
             del tables[key]
             failures=extract.validate_inventory(tables,inventory)
             self.assertTrue(any(not c['passed'] and c['name']=='inventory '+key for c in failures),key)
@@ -152,6 +153,61 @@ class ExtractForecast(unittest.TestCase):
             tables=copy.deepcopy(self.output['tables'])
             tables[key]['rows'][row]['values'][col]+=10
             self.assertTrue(any(not c['passed'] for c in extract.validate_remaining(tables)),key)
+
+    def test_scenario_comparison_header(self):
+        table=self.output['tables']['II_6']
+        self.assertEqual([h['page'] for h in table['scenario_headers']],[43,44])
+        for header in table['scenario_headers']:
+            self.assertEqual(header['printed'],
+                ['Базисен сценарий','Изменение спрямо основния сценарий, %']*4)
+        self.assertEqual([c['measure'] for c in table['columns']][1::2],
+                         ['difference_from_main_scenario_pct']*4)
+        self.assertEqual(table['gdp_share_headers'],{'page':44,'printed':['% от БВП']*4})
+        for row in table['rows']:
+            if row['label'].startswith(('17.','18.')):
+                self.assertEqual(row['measures'],['baseline','gdp_share_pct']*4)
+            else:
+                self.assertNotIn('measures',row)
+        social=next(r for r in table['rows'] if r['label'].startswith('9.'))
+        self.assertEqual(social['values'][5],9.2)
+
+    def test_vintages_follow_printed_headers(self):
+        tables=self.output['tables']
+        self.assertEqual(tables['I_1']['status_headers'][0]['printed'],['Отчетни данни','Прогноза'])
+        self.assertEqual([c['vintage'] for c in tables['I_1']['columns']],
+                         ['отчет','отчет','прогноза','прогноза','прогноза','прогноза'])
+        self.assertEqual(tables['III_2']['status_headers'][0]['printed'],
+                         ['Програма','Проект','Прогноза','Прогноза'])
+        self.assertEqual([c['vintage'] for c in tables['III_2']['columns']],
+                         ['програма','проект','прогноза','прогноза'])
+        self.assertEqual([c['vintage'] for c in tables['IV_1']['columns']],
+                         ['проект','проект','проект','прогноза','прогноза'])
+        for key in ('annex1_execution2025','annex1_execution2026'):
+            self.assertEqual(tables[key]['columns'][0]['vintage'],'програма')
+            self.assertNotIn('vintage',tables[key]['columns'][-1])
+            for header in tables[key]['status_headers']:
+                self.assertEqual(header['printed'],['Програма','Отчет','Програма'])
+
+    def test_tables_without_status_headers_have_no_vintages(self):
+        for key in ('I_3','I_4','II_4','II_6','II_7','II_8','II_9','V_1','V_2',
+                    'VII_1','VII_2','VII_3','annex2','annex4','annex5','annex6',
+                    'annex7','annex8','annex9'):
+            with self.subTest(table=key):
+                table=self.output['tables'][key]
+                self.assertTrue(all('vintage' not in c for c in table['columns']))
+                self.assertTrue(all(h['printed']==[] for h in table['status_headers']))
+
+    def test_column_metadata_mutations_fail(self):
+        for key,mutation in [
+            ('I_1',lambda t:t['columns'][2].update(vintage='очаквано')),
+            ('III_2',lambda t:t['columns'][0].update(vintage='очаквано')),
+            ('I_3',lambda t:t['columns'][0].update(vintage='отчет')),
+            ('II_6',lambda t:t['columns'][1].update(measure='annual_change_or_gdp_share')),
+            ('II_6',lambda t:t['rows'][-1]['measures'].__setitem__(1,'annual_change')),
+            ('III_2',lambda t:t['status_headers'][0]['printed'].__setitem__(0,'Очаквано'))]:
+            tables=copy.deepcopy(self.output['tables'])
+            mutation(tables[key])
+            self.assertTrue(any(not c['passed'] for c in extract.validate_metadata(tables)),key)
 
     def test_numeric_conversion(self):
         self.assertEqual(extract.number('− 3 492,2'), -3492.2)
