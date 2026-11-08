@@ -1,5 +1,5 @@
-import { readFile } from 'node:fs/promises';
-import { resolve, relative, isAbsolute, sep } from 'node:path';
+import { lstat, readFile, realpath } from 'node:fs/promises';
+import { resolve, relative, isAbsolute, sep, join } from 'node:path';
 import { readPinned } from '../io/data.js';
 import { loadAnnex, type AnnexTables } from './annex.js';
 import type { FiscalBuildInput } from './fiscal-build.js';
@@ -22,8 +22,18 @@ function child(root: string, name: string): string {
 }
 export async function verifyFiscalInputs(root: string): Promise<void> {
   root = resolve(root);
+  if ((await realpath(root)) !== root) throw new Error('Symlink in fiscal fixture root');
+  const checked = async (name: string): Promise<string> => {
+    const target = child(root, name);
+    let current = root;
+    for (const part of relative(root, target).split(sep)) {
+      current = join(current, part);
+      if ((await lstat(current)).isSymbolicLink()) throw new Error('Symlink in fiscal fixture');
+    }
+    return target;
+  };
   const manifest = JSON.parse(
-    await readFile(child(root, 'datasets-provenance.json'), 'utf8'),
+    await readFile(await checked('datasets-provenance.json'), 'utf8'),
   ) as Provenance;
   const inputNames = [
     'data/cache/research/mf-umtbf-2026-2028/extracts/pdf_pages_clean.json',
@@ -53,13 +63,13 @@ export async function verifyFiscalInputs(root: string): Promise<void> {
     !exactly(Object.keys(manifest.publishedSnapshotSha256), names)
   )
     throw new Error('Incomplete fiscal fixture inventory');
-  await readPinned(child(root, 'policy.json'), manifest.policySha256);
+  await readPinned(await checked('policy.json'), manifest.policySha256);
   for (const [name, hash] of Object.entries(manifest.frozenInputSha256))
-    await readPinned(child(root, `inputs/${name}`), hash);
+    await readPinned(await checked(`inputs/${name}`), hash);
   for (const [name, hash] of Object.entries(manifest.oracleSha256))
-    await readPinned(child(root, name), hash);
+    await readPinned(await checked(name), hash);
   for (const [name, hash] of Object.entries(manifest.publishedSnapshotSha256))
-    await readPinned(child(root, `published/${name}`), hash);
+    await readPinned(await checked(`published/${name}`), hash);
 }
 export async function loadFiscalFixture(root: string): Promise<FiscalBuildInput> {
   await verifyFiscalInputs(root);

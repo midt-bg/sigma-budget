@@ -1,4 +1,12 @@
-import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, cpSync, rmSync } from 'node:fs';
+import {
+  readFileSync,
+  writeFileSync,
+  mkdirSync,
+  mkdtempSync,
+  cpSync,
+  rmSync,
+  symlinkSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { expect, it } from 'vitest';
@@ -36,6 +44,18 @@ it('rejects a changed source and its hash', async () => {
     cpSync(root, temp, { recursive: true });
     writeFileSync(resolve(temp, 'inputs/data/inputs/population.json'), '{}');
     await expect(verifyFiscalInputs(temp)).rejects.toThrow(/Input hash mismatch/);
+  } finally {
+    rmSync(temp, { recursive: true, force: true });
+  }
+});
+it('rejects a fixture symlink even when its target has the expected bytes', async () => {
+  const temp = mkdtempSync(resolve(tmpdir(), 'fiscal-fixture-'));
+  try {
+    cpSync(root, temp, { recursive: true });
+    const target = resolve(temp, 'published/outlook.json');
+    rmSync(target);
+    symlinkSync(resolve(root, 'published/outlook.json'), target);
+    await expect(verifyFiscalInputs(temp)).rejects.toThrow(/Symlink in fiscal fixture/);
   } finally {
     rmSync(temp, { recursive: true, force: true });
   }
