@@ -102,21 +102,25 @@ function fixFiles(node: ReactNode, base: string): ReactNode {
 
 // Keep adjacent text in one host node, as in the frozen server documents.
 // React otherwise inserts separators which the independent SSR parser observes.
-function compactText(tree: ReactNode): ReactNode[] {
+function compactText(tree: ReactNode, path: readonly (string | number)[] = []): ReactNode[] {
   const result: ReactNode[] = [];
-  function add(node: ReactNode) {
+  function add(node: ReactNode, path: readonly (string | number)[]) {
     if (Array.isArray(node)) {
-      node.forEach(add);
+      node.forEach((child, i) => add(child, [...path, i]));
       return;
     }
     if (node == null || typeof node === 'boolean') return;
     if (isValidElement<{ children?: ReactNode }>(node)) {
       if (node.type === Fragment) {
-        add(node.props.children);
+        add(node.props.children, [...path, 'fragment', node.key ?? '']);
         return;
       }
       result.push(
-        cloneElement(node, { key: node.key ?? result.length }, ...compactText(node.props.children)),
+        cloneElement(
+          node,
+          { key: JSON.stringify([...path, node.key ?? '']) },
+          ...compactText(node.props.children, [...path, 'children']),
+        ),
       );
       return;
     }
@@ -128,6 +132,6 @@ function compactText(tree: ReactNode): ReactNode[] {
       result[result.length - 1] = String(last) + String(node);
     else result.push(node);
   }
-  add(tree);
+  add(tree, path);
   return result;
 }

@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { rejectReactKeyWarnings } from './metadata-test-warnings';
 import { act } from 'react';
 import { hydrateRoot } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
@@ -168,6 +169,8 @@ it('live release notice keeps its server position, the pinned data and abort cle
   }
   expect(signal?.aborted).toBe(true);
 });
+
+rejectReactKeyWarnings();
 
 for (const [set, file] of [
   ['execution', 'execution.json'],

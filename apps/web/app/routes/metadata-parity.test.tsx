@@ -1,3 +1,4 @@
+import { rejectReactKeyWarnings } from './metadata-test-warnings';
 import { createHash } from 'node:crypto';
 import { expect, it, afterEach } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -107,3 +108,5 @@ it('frozen server documents and inputs match their recorded checksums', () => {
       .digest('hex'),
   ).toBe(manifest.inputsSha256);
 });
+
+rejectReactKeyWarnings();
