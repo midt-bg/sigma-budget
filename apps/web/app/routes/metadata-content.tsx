@@ -69,7 +69,8 @@ export function MetadataContent({
         onChange={(e) => {
           const control = e.target;
           if (control instanceof HTMLSelectElement && control.id === 's25-set')
-            navigation.go(href('api', {}, { ...model.query, set: control.value }));
+            if (navigation.setQuery) navigation.setQuery({ set: control.value });
+            else navigation.go(href('api', {}, { ...model.query, set: control.value }));
         }}
       >
         {newer ? (

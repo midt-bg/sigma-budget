@@ -29,10 +29,11 @@ const load = async <T,>(name: string): Promise<T> => {
 for (const screen of ['S25', 'S35'] as const)
   it(`${screen} adopts server nodes and owns its controls`, async () => {
     const model = await textModel(screen, {}, {}, { release, load });
-    const go = vi.fn(),
+    const setQuery = vi.fn(),
+      go = vi.fn(),
       announce = vi.fn();
     const errors: unknown[] = [];
-    const tree = <MigratedScreen model={model} navigation={{ go, announce }} />;
+    const tree = <MigratedScreen model={model} navigation={{ go, announce, setQuery }} />;
     const container = document.createElement('div');
     document.body.appendChild(container);
     container.innerHTML = renderToString(tree);
@@ -51,7 +52,8 @@ for (const screen of ['S25', 'S35'] as const)
         select.value = 'execution';
         select.dispatchEvent(new Event('change', { bubbles: true }));
       });
-      expect(go).toHaveBeenCalledWith('/api?set=execution');
+      expect(setQuery).toHaveBeenCalledWith({ set: 'execution' });
+      expect(go).not.toHaveBeenCalled();
     }
     const details = container.querySelector('details')!;
     details.open = true;

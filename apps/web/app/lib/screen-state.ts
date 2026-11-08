@@ -11,6 +11,7 @@ export interface EditorialScreenModel {
   release: ReleaseIdentity;
 }
 export interface Navigation {
+  setQuery?(values: Record<string, string>): void;
   go(href: string): void;
   retry?(): void;
   openGlossary?(anchor: HTMLElement, slug: string): void;
