@@ -1,0 +1,459 @@
+#!/usr/bin/env python3
+"""Extract the pinned 2027 MF forecast PDF directly from its ZIP, without DOCX.
+
+Coordinates select columns relative to discovered year headers; captions select
+pages. Output retains printed cells (including blanks and textual assumptions).
+Validation is fail-closed: an inconsistent source still produces an inspectable
+JSON with failed checks, and the command exits 1. No builders are run.
+"""
+import argparse
+import hashlib
+import json
+from pathlib import Path
+import re
+import sys
+import zipfile
+import tempfile
+from budget_pipeline.build.forecast_tables import REVENUE, EXPENDITURE, SUM_RULES
+
+import pymupdf
+
+from budget_pipeline.build.data_io import ROOT, RAW as ORIGINALS, SRC, jload
+RAW = ORIGINALS / 'budget_2027'
+OUT = SRC / 'budget_forecast_2027.json'
+MEMBER = 'ZDBRB-2027/4-UMTBF-2027-2029-motivi.pdf'
+NUMBER = re.compile(r'^[−-]?\s*\d+(?:\s+\d{3})*(?:,\d+)?%?$')
+VINTAGES = {2024: 'отчет', 2025: 'отчет', 2026: 'очаквано', 2027: 'проект', 2028: 'прогноза', 2029: 'прогноза'}
+
+
+def number(s):
+    s = re.sub(r'\s', '', s).replace('−', '-').replace('%', '')
+    return float(s.replace(',', '.')) if NUMBER.fullmatch(s) else None
+
+
+def spans(page):
+    out = []
+    for b in page.get_text('rawdict')['blocks']:
+        for line in b.get('lines', []):
+            for s in line['spans']:
+                chars=s['chars']
+                text=''.join(c['c'] for c in chars)
+                for m in re.finditer(r'\S(?:.*?\S)?(?=\s{2,}|\s*$)',text):
+                    part=chars[m.start():m.end()]
+                    t=m.group().strip()
+                    if t and t!=str(page.number+1) and not (s['flags'] & 1 and t.isdigit()):
+                        out.append({'text':t,'x':(part[0]['bbox'][0]+part[-1]['bbox'][2])/2,
+                                    'x0':part[0]['bbox'][0], 'bold':bool(s['flags'] & 16), 'y':(s['bbox'][1]+s['bbox'][3])/2})
+    return out
+
+
+def locate(doc, caption):
+    hits = [p.number for p in doc if caption in p.get_text() and p.number > 4]
+    if len(hits) != 1:
+        raise ValueError(f'caption {caption!r}: {hits}')
+    return hits[0]
+
+
+def columns(sp, years, after=0):
+    candidates = [s for s in sp if s['text'] == str(years[0]) or s['text'] == f'{years[0]} г.']
+    candidates = [s for s in candidates if s['y'] > after]
+    if not candidates:
+        raise ValueError(f'no year header {years}')
+    y = min(s['y'] for s in candidates)
+    heads = sorted([s for s in sp if abs(s['y']-y)<3 and re.fullmatch(r'202\d(?: г\.)?', s['text'])], key=lambda s:s['x'])
+    return heads
+
+
+def extract_rows(page, heads, ymin, ymax, label_edge, unit='млн. €', text_cells=False):
+    sp = [s for s in spans(page) if ymin < s['y'] < ymax]
+    centers = [h['x'] for h in heads]
+    data = [s.copy() for s in sp if s['x0'] > label_edge]
+    for s in data:
+        s['col'] = min(range(len(centers)), key=lambda i:abs(s['x']-centers[i]))
+    if text_cells:
+        data=[s for s in data if s['x0']>400]
+        # Assumption paragraphs are separated by a larger leading than wrapped
+        # lines. Numbered and dash-led paragraphs explicitly start a new row.
+        labels = sorted([s for s in sp if 84 < s['x0'] < 330],key=lambda s:(s['y'],s['x']))
+        starts=[s['y'] for s in sp if s['x0']<85 and re.fullmatch(r'\d+(?:\.\d+)*\.',s['text'])]
+        starts += [s['y'] for s in labels if s['text'].startswith('- ')]
+        starts=sorted(max((s['y'] for s in labels if y-9<=s['y']<=y+1),default=y) for y in starts)
+        groups=[]
+        for s in labels:
+            if not groups or any(groups[-1][-1]['y']+1 < y <= s['y']+1 for y in starts):
+                groups.append([])
+            groups[-1].append(s)
+        # Most labels are top-aligned. On p.183 four labels are vertically
+        # centered against six-line dated rates; account for that geometry.
+        bounds=[g[0]['y']-2 for g in groups]
+        if page.number+1==183:
+            for i,g in enumerate(groups):
+                label=' '.join(s['text'] for s in g)
+                if label.startswith(('Акциз на течност','Акциз на нагреваемо изделие')):
+                    bounds[i]-=23
+                elif label.startswith(('- съдържащ никотин до','- съдържащ никотин над')):
+                    bounds[i]-=29
+        rows=[]
+        if data and min(s['y'] for s in data)<bounds[0]:
+            # A page begins with a value-cell continuation and no label text.
+            cells=[[s for s in data if s['col']==k and s['y']<bounds[0]] for k in range(len(heads))]
+            row=make_row(page,'(continued)',cells,unit)
+            row['continuation']=True
+            row['band']=[ymin,bounds[0]]
+            rows.append(row)
+        for i,g in enumerate(groups):
+            lo=bounds[i]
+            hi=bounds[i+1] if i+1<len(groups) else ymax
+            cells=[[s for s in data if s['col']==k and lo<=s['y']<hi] for k in range(len(heads))]
+            row=make_row(page,' '.join(s['text'] for s in g),cells,unit)
+            row['band']=[round(lo,2),round(hi,2)]
+            row['continuation']=not any(abs(y-g[0]['y'])<2 for y in starts)
+            if any(cells): rows.append(row)
+        return rows
+    # Join a wrapped thousands prefix only where the same column contains a
+    # decimal suffix on the next line. Never interpret missing cells as zero.
+    used = set()
+    for i,s in enumerate(data):
+        if re.fullmatch(r'\d{1,2}',s['text']):
+            nxt = [ (j,t) for j,t in enumerate(data) if t['col']==s['col'] and 2<t['y']-s['y']<13 and re.fullmatch(r'\d{3},\d+', t['text'])]
+            if len(nxt)==1:
+                j,t=nxt[0]; t['text']=s['text']+' '+t['text']; used.add(i)
+    data=[s for i,s in enumerate(data) if i not in used and (number(s['text']) is not None or s['text']=='-' or ' г. и ' in s['text'])]
+    groups=[]
+    for s in sorted(data,key=lambda s:(s['y'],s['x'])):
+        if not groups or s['y']-groups[-1][0]['y']>3:
+            groups.append([])
+        groups[-1].append(s)
+    labels=[s for s in sp if s['x0']<=label_edge]
+    ignored={'млн. евро','млн. eвро','Брутен вътрешен продукт','Пазар на труда и цени','Платежен баланс','Паричен сектор'}
+    rows=[]
+    for i,g in enumerate(groups):
+        y=sum(s['y'] for s in g)/len(g)
+        lo=ymin if not i else (groups[i-1][0]['y']+g[0]['y'])/2
+        hi=ymax if i+1==len(groups) else (g[0]['y']+groups[i+1][0]['y'])/2
+        lab=' '.join(s['text'] for s in sorted(labels,key=lambda s:(s['y'],s['x'])) if lo<=s['y']<hi and s['text'] not in ignored)
+        cells=[[s for s in g if s['col']==k] for k in range(len(heads))]
+        rows.append(make_row(page,lab,cells,unit))
+    return rows
+
+
+def make_row(page,label,cells,unit):
+    printed=[' '.join(s['text'] for s in sorted(c,key=lambda s:(s['y'],s['x']))) or None for c in cells]
+    return {'label':label,'page':page.number+1,'y':round(min((s['y'] for c in cells for s in c),default=0),2),'printed':printed,
+            'values':[number(t) if t else None for t in printed],
+            'units':['% от БВП' if t and t.endswith('%') and unit!='%' else unit for t in printed]}
+
+
+def year_columns(heads, unit):
+    return [{'year':int(h['text'][:4]), 'vintage':VINTAGES[int(h['text'][:4])], 'unit':unit} for h in heads]
+
+
+def extract(doc):
+    tables={}
+    for key,caption,years,unit,edge in [
+        ('I_2','Табл. I-2:',list(range(2024,2030)),'row-specific',260),
+        ('II_1','Табл. II-1:',list(range(2025,2030)),'млн. €',295),
+        ('II_2','Табл. II-2:',list(range(2025,2030)),'млн. €',295),
+        ('II_3','Табл. II-3:',list(range(2025,2030)),'млн. €',295),
+        ('II_5','Табл. II-5:',list(range(2026,2030)),'млн. €',165),
+        ('III_1','Табл. III-1:',list(range(2026,2030)),'млн. €',215),
+        ('VI_1','Табл. VI-1:',list(range(2025,2030)),'млн. €',215),
+        ('VI_2','Табл. VI-2:',list(range(2025,2030)),'%',245)]:
+        p=doc[locate(doc,caption)]; sp=spans(p)
+        cy=p.search_for(caption)[0].y0
+        heads=columns(sp,years,cy)
+        hy=max(s['y'] for s in heads)
+        end=min([s['y'] for s in sp if s['y']>hy and (s['text'].startswith('Източник:') or s['text'].startswith('Забележка:'))]+[p.rect.height-35])
+        # Header vintages end before the first numeric body row.
+        start=hy+19 if key not in ('I_2',) else hy+8
+        if key=='II_5':
+            # Four value/growth pairs, discovered from the growth headers.
+            # Value/growth pairs are centred either side of the year header.
+            heads=[dict(h,x=h['x']+dx) for h in heads for dx in (-21,24)]
+            start=hy+25
+            end=min(end, min(s['y'] for s in sp if 'Поради закръгление' in s['text']))
+        rows=extract_rows(p,heads,start,end,edge,unit)
+        if key=='II_5':
+            labs=sorted([s for s in sp if s['x0']<edge and start<s['y']<end],key=lambda s:s['y'])
+            groups=[]
+            for s in labs:
+                if re.match(r'^\d+[ab]?\.',s['text']): groups.append([])
+                if groups: groups[-1].append(s['text'])
+            if len(groups)!=len(rows): raise ValueError('ESA row labels')
+            for r,g in zip(rows,groups): r['label']=' '.join(x for x in g if not x.isdigit())
+
+        if key=='III_1':
+            labs=sorted([s for s in sp if s['x0']<=edge and start<s['y']<end],key=lambda s:s['y'])
+            groups=[]
+            for s in labs:
+                if not groups or s['text'].startswith('- ') or (s['bold'] and (not groups[-1][-1]['bold'] or s['y']-groups[-1][-1]['y']>10)):
+                    groups.append([])
+                groups[-1].append(s)
+            if len(groups)!=len(rows): raise ValueError(f'function labels {len(groups)} != {len(rows)}')
+            for r,g in zip(rows,groups): r['label']=' '.join(s['text'] for s in g)
+        cols=year_columns([h for h in heads if h['text'].startswith('202')],unit)
+        if key=='I_2':
+            for c in cols:
+                if c['year']>=2026: c['vintage']='прогноза'
+            for r in rows: r['units']=['млн. €' if 'млн.' in r['label'] else ('% от БВП' if '% от БВП' in r['label'] else '%')]*len(heads)
+        if key=='II_5':
+            for i,c in enumerate(cols):
+                if i%2: c.update(unit='%',measure='annual_change_or_gdp_share')
+        if key=='II_5':
+            for i,r in enumerate(rows):
+                r['units']=['млн. €' if j%2==0 else ('%' if i<20 else '% от БВП') for j in range(8)]
+        if key=='III_1':
+            for i,c in enumerate(cols): c['unit']='млн. €' if i<4 else '% от БВП'
+        tables[key]={'caption':caption,'pages':[p.number+1],'columns':cols,'rows':rows}
+    for annex in [1,2,3,4]:
+        begin=locate(doc,f'ПРИЛОЖЕНИЕ № {annex}:')
+        end=locate(doc,f'ПРИЛОЖЕНИЕ № {annex+1}:')
+        if annex==1:
+            for section,year,date in [('execution2025',2025,'31.12.2025'),('execution2026',2026,'30.09.2026')]:
+                pages=[i for i in range(begin,end) if f'Отчет {date}' in doc[i].get_text()]
+                rows=[]
+                for i in pages:
+                    p=doc[i];sp=spans(p)
+                    headers=sorted([s for s in sp if s['text'].startswith('к.')],key=lambda s:s['x'])
+                    heads=headers[1:]
+                    if len(heads)!=5: raise ValueError('Annex 1 headers')
+                    hy=max(s['y'] for s in heads)
+                    stop=min([s['y'] for s in sp if s['y']>hy and s['text'].startswith('*')]+[p.rect.height-75])
+                    rows+=extract_rows(p,heads,hy+6,stop,390,'млн. €')
+                cols=[{'year':year,'vintage':v,'unit':u,'scope':scope} for v,u,scope in [
+                    ('закон','млн. €','КФП'),('отчет','млн. €','КФП'),('отчет','млн. €','национален бюджет'),
+                    ('отчет','млн. €','ЕС'),('отчет','% от закона','КФП')]]
+                tables[f'annex1_{section}']={'caption':'ПРИЛОЖЕНИЕ № 1:','pages':[i+1 for i in pages],'columns':cols,'rows':rows}
+        if annex==3:
+            for suffix,offset,unit in [('mln',0,'млн. €'),('pct_gdp',2,'% от БВП')]:
+                rows=[]
+                for i in range(begin+offset,begin+offset+2):
+                    p=doc[i];sp=spans(p);heads=columns(sp,list(range(2025,2030)))
+                    hy=heads[0]['y']; stop=min([s['y'] for s in sp if s['text'].startswith('Забележка:')]+[p.rect.height-35])
+                    rows+=extract_rows(p,heads,hy+22,stop,450,unit)
+                tables[f'annex3_{suffix}']={'caption':'ПРИЛОЖЕНИЕ № 3:','pages':[begin+offset+1,begin+offset+2],'columns':year_columns(heads,unit),'rows':rows}
+        if annex in (2,4):
+            rows=[]; unit='row-specific' if annex==2 else 'хил. €'
+            for i in range(begin,end):
+                p=doc[i];sp=spans(p);heads=columns(sp,list(range(2026 if annex==2 else 2027,2030)))
+                hy=heads[0]['y']; stop=min([s['y'] for s in sp if s['text'].startswith('* Забележка:')]+[p.rect.height-65])
+                pr=extract_rows(p,heads,hy+(34 if annex==2 else 8),stop,400 if annex==2 else 450,unit,text_cells=annex==2)
+                if annex==2:
+                    for row in pr:
+                        row['fragments']=[{'page':row['page'],'band':row['band'],'printed':row['printed'][:]}]
+                    units=[s for s in sp if 330<s['x0']<400 and s['y']>hy+30]
+                    for r in pr:
+                        r['unit_context']=[{'text':s['text'],'y':round(s['y'],2)} for s in units]
+                        r['units']=[min(units,key=lambda s:abs(s['y']-r['y']))['text'] if units else 'see unit_context']*len(heads)
+                if annex==2 and pr and pr[0].get('continuation') and rows:
+                    continuation=pr.pop(0)
+                    previous=rows[-1]
+                    previous['label']+=(' '+continuation['label']) if continuation['label']!='(continued)' else ''
+                    previous.setdefault('continuation_pages',[]).append(continuation['page'])
+                    previous['fragments']+=continuation['fragments']
+                    for c,t in enumerate(continuation['printed']):
+                        if t:
+                            previous['printed'][c]=((previous['printed'][c] or '')+' '+t).strip()
+                            previous['values'][c]=number(previous['printed'][c])
+                rows+=pr
+            tables[f'annex{annex}']={'caption':f'ПРИЛОЖЕНИЕ № {annex}:','pages':list(range(begin+1,end+1)),'columns':year_columns(heads,unit),'rows':rows}
+    tables['annex1_execution2026']['note']='Програма: разчети към ЗДБРБ 2026; printed percentages compare September execution with this law. The estimate discussion is prose, preserved in page_text.'
+    # Preserve the complete coordinate layer as well as the cell interpretation
+    # for Annex 2: several assumptions span pages or contain multiple dated rates.
+    tables['annex2']['page_spans']=[{'page':i+1,'spans':spans(doc[i])} for i in range(locate(doc,'ПРИЛОЖЕНИЕ № 2:'),locate(doc,'ПРИЛОЖЕНИЕ № 3:'))]
+    tables['annex2']['parse_status']='verified'
+    tables['annex2']['parse_note']='Year-header columns and paragraph bands (centered labels on p.183 handled explicitly); dated rates and page continuations retained. All fragment cells independently checked with words.'
+    tables['annex3_pct_gdp']['rows'][-1]['units']=['млн. €']*5
+    return tables
+
+
+def validate(tables):
+    """Rounding bound is half a last printed digit per operand and result.
+
+    Currency amounts have one decimal; ratios one decimal percentage point.
+    Only the exact documented GDP discrepancy is accepted; other conflicts fail.
+    """
+    checks=[]
+    def check(name,ok,**detail):
+        checks.append(dict(name=name,passed=bool(ok),**detail))
+    def close(name,actual,expected,tolerance):
+        check(name,abs(actual-expected)<=tolerance+1e-8,actual=actual,expected=expected,tolerance=tolerance)
+    counts={'I_2':(16,6),'II_1':(15,5),'II_2':(17,5),'II_3':(10,5),'II_5':(25,8),'III_1':(32,8),
+            'VI_1':(6,5),'VI_2':(19,5),'annex1_execution2025':(18,5),'annex1_execution2026':(18,5),
+            'annex3_mln':(63,5),'annex3_pct_gdp':(64,5),'annex4':(50,3),'annex2':(100,4)}
+    for key,(nr,nc) in counts.items():
+        t=tables[key]
+        check(key+' shape',len(t['rows'])==nr and len(t['columns'])==nc and all(len(r['values'])==nc and r['label'] for r in t['rows']))
+    for i,r in enumerate(tables['annex2']['rows']):
+        for c in range(4):
+            parts=[f['printed'][c] for f in r['fragments'] if f['printed'][c]]
+            printed=' '.join(parts) or None
+            check(f'Annex2 fragment alignment {i}/{c}',r['printed'][c]==printed and r['values'][c]==(number(printed) if printed else None))
+    check('Annex2 cell alignment',tables['annex2'].get('parse_status')=='verified',reason=tables['annex2'].get('parse_note'))
+    def values(key,index): return tables[key]['rows'][index]['values']
+    anchors=[('I_2',0,[104767,116018,130459,141302,150819,160013]),
+        ('II_1',0,[44016.4,49615.3,51065.2,53963.3,56927.2]),
+        ('II_1',5,[47508.7,56807.2,55972.1,58692.2,60805.7]),
+        ('II_1',11,[-3492.2,-7191.9,-4907.0,-4728.8,-3878.4]),
+        ('VI_1',0,[31428.9,37699.0,44343.9,50657.3,56747.8])]
+    for key,i,expected in anchors: check(f'{key} anchor {i}',values(key,i)==expected,expected=expected,actual=values(key,i))
+    def identity(key,total,parts,columns=None):
+        for c in columns or range(len(tables[key]['columns'])):
+            a=values(key,total)[c]; vv=[]
+            for p in parts:
+                v=values(key,p)[c]
+                # The shared hierarchy omits these explicitly blank cells.
+                # Assert the exact blank locations instead of coercing any null.
+                if key=='annex3_mln' and (p,c) in {(20,2),(20,3),(20,4),(54,0)}:
+                    check(f'Annex3 structural blank {p}/{c}',v is None and tables[key]['rows'][p]['printed'][c] is None)
+                    continue
+                vv.append(v)
+            check(f'{key} numeric {total}/{c}',a is not None and all(v is not None for v in vv))
+            if a is not None and all(v is not None for v in vv): close(f'{key} sum {total}/{c}',sum(vv),a,0.05*(len(vv)+1))
+    for key in ['II_1','II_2']:
+        for total,parts in [(0,[2,3,4]),(5,[7,10]),(7,[8,9])]: identity(key,total,parts)
+    identity('VI_1',0,[2,4])
+    for total,parts in [(0,[1,2,3]),(4,list(range(5,10))),(12,[13,14,15]),(16,[17,18]),(19,[20,21,22,23]),(24,list(range(25,31)))]: identity('III_1',total,parts,range(4))
+    for c in range(5): close(f'II_1 revenue-expenditure {2025+c}',values('II_1',0)[c]-values('II_1',5)[c],values('II_1',11)[c],0.15)
+    for c in range(5):
+        for main,national,eu in [(0,0,0),(5,5,2),(11,13,6),(13,15,8)]:
+            close(f'CFP national+EU {main}/{2025+c}',values('II_2',national)[c]+values('II_3',eu)[c],values('II_1',main)[c],0.15)
+        for key,expense,transfer,balance in [('II_2',5,11,13),('II_3',2,4,6)]:
+            close(f'{key} revenue-expenditure+transfer {2025+c}',values(key,0)[c]-values(key,expense)[c]+values(key,transfer)[c],values(key,balance)[c],0.2)
+        for a,b in [(0,4),(4,8),(8,10),(10,14),(14,18)]:
+            parts=[values('VI_2',i)[c] for i in range(a,b)]
+            # A dash denotes no lev-denominated debt after euro adoption.
+            parts=[0 if v is None and tables['VI_2']['rows'][a+i]['printed'][c]=='-' else v for i,v in enumerate(parts)]
+            check(f'VI_2 numeric {a}/{c}',all(v is not None for v in parts))
+            if all(v is not None for v in parts): close(f'VI_2 shares {a}/{c}',sum(parts),100,0.05*(len(parts)+1))
+    # Every repeated amount/percentage in the overview must occur, unchanged,
+    # in the full Annex 3. Labels disambiguate identical value vectors in tests.
+    for i,r in enumerate(tables['II_1']['rows']):
+        key='annex3_pct_gdp' if r['printed'][0].endswith('%') else 'annex3_mln'
+        check(f'II_1 vs {key} row {i}',r['values'] in [a['values'] for a in tables[key]['rows']])
+    # Ratios use the GDP printed locally in Annex 3.
+    gdp=values('annex3_pct_gdp',63)
+    for i,(a,p) in enumerate(zip(tables['annex3_mln']['rows'],tables['annex3_pct_gdp']['rows'])):
+        check(f'Annex3 paired label {i}',a['label']==p['label'])
+        for c,(v,pct) in enumerate(zip(a['values'],p['values'])):
+            check(f'Annex3 blank pattern {i}/{c}',(v is None)==(pct is None))
+            if v is not None and pct is not None: close(f'Annex3 GDP local {i}/{2025+c}',v/gdp[c]*100,pct,0.0501)
+    spec=REVENUE+EXPENDITURE
+    indices={rid:i for i,(rid,*_) in enumerate(spec)}
+    for i,(rid,label,*_) in enumerate(spec):
+        check('Annex3 hierarchy label '+rid,tables['annex3_mln']['rows'][i]['label']==label)
+    # The hierarchy omits four explicitly blank cells, verified below.
+    for parent,kids in SUM_RULES.items():
+        identity('annex3_mln',indices[parent],[indices[k] for k in kids])
+    for c in range(5):
+        close(f'Annex3 balance {2025+c}',values('annex3_mln',0)[c]-values('annex3_mln',31)[c],values('annex3_mln',61)[c],0.15)
+        close(f'Annex3 financing {2025+c}',values('annex3_mln',61)[c]+values('annex3_mln',62)[c],0,0.1)
+        close(f'Annex3 noninterest {2025+c}',values('annex3_mln',32)[c]-values('annex3_mln',57)[c],values('annex3_mln',33)[c],0.15)
+    for c in range(4):
+        close(f'ESA revenue-expenditure {2026+c}',values('II_5',20)[c*2]-values('II_5',21)[c*2],values('II_5',22)[c*2],0.15)
+        for i,r in enumerate(tables['III_1']['rows']): close(f'functions GDP {i}/{2026+c}',r['values'][c]/gdp[c+1]*100,r['values'][c+4],0.0501)
+    for key in ['annex1_execution2025','annex1_execution2026']:
+        for r in tables[key]['rows']:
+            if r['printed'][-1] and r['printed'][-1].endswith('%'): r['units'][-1]='% от закона'
+    fiscal_gdp=values('annex3_pct_gdp',63)
+    gdp=values('I_2',0)[1:]
+    for c in range(5):
+        if c==0:
+            check('GDP I-2 vs Annex3 2025 known discrepancy',
+                  gdp[c]==116018 and fiscal_gdp[c]==116548.5,
+                  pages=[27,194], source_discrepancy=True,
+                  actual=gdp[c],expected=fiscal_gdp[c],
+                  reason='2025 GDP differs between I-2 and Annex 3; ratios use the GDP printed in their own table.')
+        else:
+            close(f'GDP I-2 vs Annex3 {2025+c}',gdp[c],fiscal_gdp[c],0.55)
+    for key in ['annex1_execution2025','annex1_execution2026']:
+        for i,r in enumerate(tables[key]['rows']):
+            law,actual,national,eu,pct=r['values']
+            if actual is not None and national is not None and eu is not None: close(f'{key} national+EU {i}',national+eu,actual,0.15)
+            if law and actual is not None and pct is not None: close(f'{key} percent law {i}',actual/law*100,pct,0.05+100*(0.05/abs(law)+abs(actual)*0.05/(abs(law)*(abs(law)-0.05))))
+    return checks
+
+
+def verify_words(doc,tables):
+    """Three spaced row samples per table via words, independent of rawdict.
+
+    Match the complete printed numeric token on its physical baseline.
+    Every table must supply three successful samples; absence fails closed.
+    """
+    samples=[]
+    for key,table in tables.items():
+        candidates=[]
+        for row in table['rows']:
+            if row.get('continuation_pages'): continue
+            for col,(printed,value) in enumerate(zip(row['printed'],row['values'])):
+                if value is not None and printed:
+                    candidates.append((row,col,printed,value))
+                    break
+        selected=[candidates[i] for i in (0,len(candidates)//2,len(candidates)-1)]
+        for row,col,printed,value in selected:
+            words=doc[row['page']-1].get_text('words')
+            baseline=[w for w in words if abs((w[1]+w[3])/2-row['y'])<3]
+            text=' '.join(w[4] for w in sorted(baseline,key=lambda w:w[0]))
+            pattern=r'(?<![\d,])'+r'\s*'.join(re.escape(t) for t in printed.replace('−','-').split())+r'(?![\d,])'
+            if not re.search(pattern,text.replace('−','-')):
+                raise ValueError(f"words verification {key} page {row['page']}: {printed!r} absent at baseline {row['y']}")
+            samples.append(dict(table=key,page=row['page'],row=row['label'],column=col,
+                                printed=printed,value=value,y=row['y']))
+    annex_cells=0
+    for row in tables['annex2']['rows']:
+        for fragment in row['fragments']:
+            page=doc[fragment['page']-1]
+            heads=columns(spans(page),list(range(2026,2030)))
+            for c,printed in enumerate(fragment['printed']):
+                words=[w for w in page.get_text('words')
+                       if fragment['band'][0] <= (w[1]+w[3])/2 < fragment['band'][1]
+                       and (w[0]+w[2])/2>400
+                       and min(range(4),key=lambda k:abs((w[0]+w[2])/2-heads[k]['x']))==c]
+                text=' '.join(w[4] for w in sorted(words,key=lambda w:(round((w[1]+w[3])/4),w[0])))
+                norm=lambda t:re.sub(r'\s','',t or '').replace('−','-')
+                if norm(text)!=norm(printed):
+                    raise ValueError(f"Annex2 words page {fragment['page']} col {c}: {text!r} != {printed!r}")
+                annex_cells+=1
+    return {'annex2_fragment_cells_matched':annex_cells,
+            'method':'PyMuPDF words baseline samples vs rawdict extraction; first, middle and last numeric rows of every table; all Annex 2 fragment cells by year and vertical band',
+
+            'samples':samples,'matched':len(samples),'mismatches':0}
+
+
+def main():
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--output',type=Path,default=OUT);parser.add_argument('--check',action='store_true');args=parser.parse_args()
+    acquisition=jload(RAW/'acquisition.json')
+    pin=next(x for x in acquisition if x['file']=='ZDBRB-2027.zip')
+    archive=(RAW/pin['file']).read_bytes()
+    if hashlib.sha256(archive).hexdigest()!=pin['sha256']: raise ValueError('ZIP pin mismatch')
+    with zipfile.ZipFile(RAW/pin['file']) as z: pdf=z.read(MEMBER)
+    member=next(x for x in pin['members'] if x['name']==MEMBER)
+    if hashlib.sha256(pdf).hexdigest()!=member['sha256']: raise ValueError('PDF pin mismatch')
+    with pymupdf.open(stream=pdf,filetype='pdf') as doc:
+        if len(doc)!=201: raise ValueError('expected 201 PDF pages')
+        tables=extract(doc)
+        verification=verify_words(doc,tables)
+        page_text=[{'page':p.number+1,'text':p.get_text()} for p in doc if 168<=p.number<196]
+    result={'limitations':['Annex 2 mixed/date/formula cells retain printed text; null numeric values do not imply zero. Unit_context retains the printed page units.'], 'source':{'archive':str((RAW/pin['file']).relative_to(ROOT)), 'archive_sha256':pin['sha256'],'member':MEMBER,'pdf_sha256':member['sha256'],'pages':201},'tables':tables,'page_text':page_text,'checks':validate(tables)}
+    result['independent_verification']=verification
+    result['diagnostics']=[c for c in result['checks'] if c.get('source_discrepancy')]
+    if args.check:
+        with tempfile.TemporaryDirectory() as tmp:
+            regenerated=Path(tmp)/'forecast.json'
+            regenerated.write_text(json.dumps(result,ensure_ascii=False,sort_keys=True,indent=2)+'\n')
+            if regenerated.read_bytes()!=args.output.read_bytes():
+                print('frozen extraction differs',file=sys.stderr)
+                return 1
+    else:
+        args.output.parent.mkdir(parents=True,exist_ok=True)
+        args.output.write_text(json.dumps(result,ensure_ascii=False,sort_keys=True,indent=2)+'\n')
+    for diagnostic in result['diagnostics']:
+        print('SOURCE DISCREPANCY '+json.dumps(diagnostic,ensure_ascii=False))
+    for k,t in tables.items(): print(k,t['pages'],len(t['rows']))
+    failed=[c for c in result['checks'] if not c['passed']]
+    print(f"{len(result['checks'])-len(failed)}/{len(result['checks'])} checks passed; {len(failed)} failed")
+    for c in failed: print(json.dumps(c,ensure_ascii=False),file=sys.stderr)
+    return 1 if failed else 0
+
+if __name__=='__main__':
+    sys.exit(main())
