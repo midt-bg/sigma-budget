@@ -136,8 +136,8 @@ function samePage(
 ): boolean {
   return !!a && a.docx === b.docx && a.to === b.to;
 }
-function quote(s: Quotation) {
-  const from = date(s.quote);
+function quote(s: Quotation, inferDate = true) {
+  const from = inferDate ? date(s.quote) : undefined;
   return { quote: ws(s.quote), page: page(s.page), stage: 'bill', ...(from ? { from } : {}) };
 }
 
@@ -277,7 +277,8 @@ export function buildMeasures(
       name: ws(s.name),
       text: ws(s.what),
       hasEstimate: false,
-      ...quote(s),
+      // Part VIII preserves the legal quotation without inferring a date.
+      ...quote(s, false),
     }),
   );
   const byid = Object.fromEntries(items.map((x) => [x.id, x]));

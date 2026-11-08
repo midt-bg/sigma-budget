@@ -9,7 +9,17 @@ const getPage = (pages: CleanPage[], n: number): string => {
   return p.body;
 };
 const flat = (s: string) => s.replace(/\s+/gu, ' ');
-const num = (s: string) => Number(s.replaceAll(' ', '').replace(',', '.'));
+function decimalNumber(s: string, field = 'number'): number {
+  const token = s.trim();
+  // Python float accepts decimal/exponent spellings and digit separators,
+  // but not JavaScript's empty, hexadecimal, binary or octal number strings.
+  if (!/^[+-]?(?:\d(?:_?\d)*(?:\.(?:\d(?:_?\d)*)?)?|\.\d(?:_?\d)*)(?:[eE][+-]?\d(?:_?\d)*)?$/.test(token))
+    throw new Error(`invalid ${field} ${s}`);
+  const value = Number(token.replaceAll('_', ''));
+  if (!Number.isFinite(value)) throw new Error(`invalid ${field} ${s}`);
+  return value;
+}
+const num = (s: string) => decimalNumber(s.replaceAll(' ', '').replace(',', '.'));
 function search(pattern: RegExp, text: string): string[] {
   const flags = pattern.flags.includes('g') ? pattern.flags : pattern.flags + 'g';
   const found = [...text.matchAll(new RegExp(pattern.source, flags))];
@@ -42,9 +52,7 @@ export function parseDebtStructure(pages: CleanPage[]): Record<string, Json> {
       const vals = values(source).map((s) => {
         if (s === '-') return null;
         if (!s.endsWith('%')) throw new Error(`unexpected percent cell ${s}`);
-        const v = num(s.slice(0, -1));
-        if (!Number.isFinite(v)) throw new Error(`invalid percent cell ${s}`);
-        return v;
+        return decimalNumber(s.slice(0, -1).replace(',', '.'), 'percent cell');
       });
       vals.forEach((v, i) => {
         sums[i]! += v ?? 0;
