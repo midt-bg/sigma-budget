@@ -22,6 +22,28 @@ describe("freshness", () => {
   it("rejects missing and invalid dates", () => {
     for (const value of [undefined, "2026-02-30", "2026-09-29"]) expect(() => checkFreshness(value, "2026-11-08")).toThrow();
   });
+  it("takes today from the Sofia clock, in winter and summer time", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "freshness-"));
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.useFakeTimers();
+    const late = async (asOf: string, instant: string) => {
+      await writeFile(join(dir, "execution.json"), JSON.stringify({ latest: { asOf } }));
+      vi.setSystemTime(new Date(instant));
+      log.mockClear();
+      expect(await freshnessCli(["--release", dir])).toBe(0);
+      return String(log.mock.calls[0]?.[0]).includes("закъснява");
+    };
+    try {
+      // UTC+2: Sofia reaches 1 December at 22:00 UTC on 30 November
+      expect(await late("2026-09-30", "2026-11-30T21:59:59Z")).toBe(false);
+      expect(await late("2026-09-30", "2026-11-30T22:00:00Z")).toBe(true);
+      // UTC+3: Sofia reaches 1 July at 21:00 UTC on 30 June
+      expect(await late("2027-04-30", "2027-06-30T20:59:59Z")).toBe(false);
+      expect(await late("2027-04-30", "2027-06-30T21:00:00Z")).toBe(true);
+    } finally {
+      vi.useRealTimers(); log.mockRestore(); await rm(dir, { recursive: true, force: true });
+    }
+  });
   it("handles files and emits Actions warning and summary", async () => {
     const dir = await mkdtemp(join(tmpdir(), "freshness-"));
     const log = vi.spyOn(console, "log").mockImplementation(() => {});
