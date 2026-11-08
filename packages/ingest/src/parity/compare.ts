@@ -89,6 +89,11 @@ export function compare(
       return;
     }
     if (typeof a === "number" && typeof b === "number") {
+      // JSON.parse rounds integers beyond 2^53, so two different literals may parse equal.
+      if ([a, b].some((n) => Number.isInteger(n) && !Number.isSafeInteger(n))) {
+        add(p, a, b, "unsafe-integer");
+        return;
+      }
       const rule = precision(policy, context.dataset, p),
         tolerance = rule && rule.decimals > 0 ? 0.5 * 10 ** -rule.decimals : 0;
       // Integer monetary units are exact; fractional units use decimal half-units.

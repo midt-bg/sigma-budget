@@ -50,8 +50,6 @@ jobs:
         run: pnpm typecheck
       - name: TypeScript tests
         run: pnpm test
-      - name: Pinned release unchanged
-        run: git diff --exit-code -- data/release
       - name: Check the source and dataset registries
         run: python -m budget_pipeline.validate.registry check
       - name: Check the published release (data/release against its manifest)
@@ -68,6 +66,8 @@ jobs:
         env:
           ORIGIN: ${{ vars.STAGING_ORIGIN || 'https://sigma-budget.my-data.bg' }}
         run: python -m apps.web.scripts.build --env staging --origin "$ORIGIN" --noindex
+      - name: The checks and the build leave data/release unchanged
+        run: test -z "$(git status --porcelain -- data/release)" || { git status --short -- data/release; exit 1; }
       - uses: actions/upload-artifact@v4
         with:
           name: build

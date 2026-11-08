@@ -8,11 +8,15 @@
     "data/release/**",
     "data/inputs/**"
   ],
-  "globalPassThroughEnv": ["CLOUDFLARE_ENV"],
+  "globalEnv": ["CLOUDFLARE_ENV", "WRANGLER_CONFIG"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**", "build/**"]
+    },
+    "@sigma-budget/web#build": {
+      "dependsOn": ["^build"],
+      "cache": false
     },
     "typecheck": {
       "dependsOn": ["^build"]

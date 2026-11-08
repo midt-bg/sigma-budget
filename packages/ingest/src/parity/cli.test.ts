@@ -32,6 +32,10 @@ it("compares exact scoped file sets, pending and absent inputs, and CLI exit cod
     await writeFile(join(candidate, "stale.json"), "{}");
     expect((await compareScope(opts)).differences[0]?.kind).toBe("file-set");
     await rm(join(candidate, "stale.json"));
+    await writeFile(join(oracle, "a.json"), '{"id":9007199254740992}');
+    await writeFile(join(candidate, "a.json"), '{"id":9007199254740993}');
+    expect((await compareScope(opts)).outcome).toBe("fail");
+    await writeFile(join(oracle, "a.json"), "{}");
     await writeFile(join(candidate, "a.json"), '{"value":NaN}');
     expect((await compareScope(opts)).outcome).toBe("fail");
     expect(

@@ -24,6 +24,7 @@ describe("semantic comparator", () => {
     ["Infinity", Infinity, Infinity],
     ["overflow parsed JSON", JSON.parse("1e999"), 0],
     ["invalid nested number", { a: NaN }, { a: NaN }],
+    ["unsafe integer", { id: 2 ** 53 }, { id: 2 ** 53 }],
   ])("%s", (_name, a, b) => expect(diff(a, b).length).toBeGreaterThan(0));
   it("accepts the half-unit boundary", () =>
     expect(diff({ amount: 0 }, { amount: 0.05 }, policy)).toEqual([]));

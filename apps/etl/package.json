@@ -13,6 +13,6 @@
     "@sigma-budget/ingest": "workspace:*"
   },
   "bin": {
-    "budget-ts": "dist/cli.js"
+    "budget-ts": "bin/budget-ts.js"
   }
 }
