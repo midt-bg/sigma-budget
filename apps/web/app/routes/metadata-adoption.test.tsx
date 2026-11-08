@@ -52,7 +52,7 @@ for (const screen of ['S25', 'S35'] as const)
         select.value = 'execution';
         select.dispatchEvent(new Event('change', { bubbles: true }));
       });
-      expect(setQuery).toHaveBeenCalledWith({ set: 'execution' });
+      expect(setQuery).toHaveBeenCalledExactlyOnceWith({ set: 'execution' });
       expect(go).not.toHaveBeenCalled();
     } else {
       const button = container.querySelector('.png-btn')!;
