@@ -1,4 +1,5 @@
 """Acquisition coverage, immutable snapshots and offline enforcement."""
+import copy
 import hashlib
 import http.server
 import os
@@ -33,6 +34,44 @@ class ReproducibilityTests(unittest.TestCase):
         self.assertEqual(result["consumer"], ["source-exception:gva"])
         self.assertEqual(result["closed"], [])
         self.assertEqual(sum(not v for v in result.values()), 1)
+
+    def test_municipal_accounting_recomputes_rows_before_serialization(self):
+        from budget_pipeline.extract import legacy_inputs as producer
+        columns = ("total", "delegated", "equalizing", "winter_roads", "capital", "other_targeted")
+        municipalities = [dict(region="region", name=str(i), name_in_dv=str(i), total=1.0,
+                               delegated=1.0, equalizing=None, winter_roads=None,
+                               capital=None, other_targeted=None) for i in range(265)]
+        sums = dict.fromkeys(columns, 0.0)
+        sums.update(total=265.0, delegated=265.0)
+        original = {"count": 265, "columns": {}, "sums": sums,
+                    "total_rows_in_law": [sums.copy()], "municipalities": municipalities}
+        tables = {"annex9": {"rows": [{"label": "Основни бюджетни взаимоотношения - всичко", "values": [265.0]}]}}
+        def execute(data):
+            dv = {"zdb": {"art51": data, "dv": "law", "url": "https://example.org/law"}}
+            with patch.object(producer, "DV", dv), patch.object(producer, "T", tables), patch.object(producer, "save") as save:
+                producer.municipal()
+                return save
+        self.assertEqual(execute(original).call_count, 1)
+        for mutation in ("row total", "balanced row", "other targeted", "row count", "stored count", "stored sums"):
+            with self.subTest(mutation=mutation):
+                data = copy.deepcopy(original)
+                if mutation in ("row total", "balanced row"):
+                    data["municipalities"][0]["total"] += 100
+                if mutation == "balanced row":
+                    data["municipalities"][0]["delegated"] += 100
+                if mutation == "other targeted":
+                    data["municipalities"][0]["other_targeted"] = 100
+                if mutation == "row count":
+                    data["municipalities"].pop()
+                if mutation == "stored count":
+                    data["count"] = 264
+                if mutation == "stored sums":
+                    data["sums"]["total"] += 100
+                dv = {"zdb": {"art51": data}}
+                with patch.object(producer, "DV", dv), patch.object(producer, "T", tables), patch.object(producer, "save") as save:
+                    with self.assertRaises(SystemExit):
+                        producer.municipal()
+                    save.assert_not_called()
 
     def test_offline_rejects_socket(self):
         from budget_pipeline.offline import deny_network

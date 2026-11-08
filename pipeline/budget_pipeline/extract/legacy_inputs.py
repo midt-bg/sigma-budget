@@ -179,15 +179,35 @@ def components():
 # ---------------- 6. Общините ----------------
 def municipal():
     a = DV["zdb"]["art51"]
-    need(a["count"] == 265, f"очаквах 265 общини, има {a['count']}")
+    from decimal import Decimal
+    municipalities = a["municipalities"]
+    count = len(municipalities)
+    need(count == 265 and count == a["count"], f"очаквах 265 общини, редове {count}, записани {a['count']}")
+    need(len({(m["region"], m["name"]) for m in municipalities}) == count, "повторена община")
+    columns = ("total", "delegated", "equalizing", "winter_roads", "capital", "other_targeted")
+    sums = {key: Decimal(0) for key in columns}
+    tolerance = Decimal("0.15")
+    for municipality in municipalities:
+        values = {key: Decimal(str(municipality[key])) if municipality[key] is not None else Decimal(0)
+                  for key in columns}
+        need(all(value.is_finite() for value in values.values()), "нечислова стойност в община")
+        # Column 7 (other_targeted) is separate from the main transfers (columns 3–6).
+        parts = sum(values[key] for key in ("delegated", "equalizing", "winter_roads", "capital"))
+        need(abs(values["total"] - parts) < tolerance, "редът на община не се равнява: " + municipality["name"])
+        for key in columns:
+            sums[key] += values[key]
+    need(len(a["total_rows_in_law"]) == 1, "очаквах един общ ред в закона")
     law = a["total_rows_in_law"][0]
-    for k in ("total", "delegated", "equalizing", "winter_roads", "capital", "other_targeted"):
-        need(abs(a["sums"][k] - law[k]) < 0.15, f"сборът по {k} ≠ реда „ВСИЧКО“ в закона")
-    need(abs(a["sums"]["total"] - row(T["annex9"], "Основни бюджетни взаимоотношения - всичко")[0]) < 0.15, "сборът ≠ АСБП, Прил. 9")
+    for key in columns:
+        need(abs(sums[key] - Decimal(str(law[key]))) < tolerance, f"пресметнатият сбор по {key} ≠ реда „ВСИЧКО“ в закона")
+        need(abs(sums[key] - Decimal(str(a["sums"][key]))) < tolerance, f"пресметнатият сбор по {key} ≠ записания сбор")
+    need(abs(sums["total"] - Decimal(str(row(T["annex9"], "Основни бюджетни взаимоотношения - всичко")[0]))) < tolerance,
+         "пресметнатият сбор ≠ АСБП, Прил. 9")
+    calculated_sums = {key: float(value.quantize(Decimal("0.1"))) for key, value in sums.items()}
     save("municipal_transfers_2026.json", {
         "title": "Трансфери от централния бюджет за общините, 2026 г.",
         "source": f"ЗДБ 2026, чл. 51, т. 1 и 2 ({DV['zdb']['dv']})", "url": DV["zdb"]["url"], "retrieved": TODAY, "unit": "хил. €",
-        "columns": a["columns"], "sums": a["sums"],
+        "columns": a["columns"], "sums": calculated_sums,
         "checks": "Сборовете по колони съвпадат с реда „ВСИЧКО:“ в закона и с АСБП, Прил. 9; във всеки ред к.3+к.4+к.5+к.6 = к.2.",
         "names_note": "В текста на ДВ 140 имена на общини съдържат латински букви, които изглеждат като кирилски (напр. „Kресна“); тук са превърнати в кирилица, оригиналът е в name_in_dv.",
         "municipalities": a["municipalities"]})
