@@ -203,14 +203,14 @@ def check_datasets(reg, source_ids, inter, r):
 
 
 def gaps(ds, inter):
-    """dataset -> the inputs on its way to the originals that no working producer makes (spec, section 4)"""
+    """dataset -> unresolved intermediate and source/reproduction exceptions, including dependencies."""
     by_id = {d["id"]: d for d in ds}
     by_path = {i["path"]: i for i in inter}
     out = {}
     for d in ds:
         if d["status"] == "pending":
             continue
-        seen, todo, found = set(), list(d.get("inputs", [])), []
+        seen, todo, found = set(), [d["id"]] + list(d.get("inputs", [])), []
         while todo:
             x = todo.pop()
             if x in seen:
@@ -221,8 +221,11 @@ def gaps(ds, inter):
                 if not i.get("reproducible") and i.get("category") != "described-input":
                     found.append(x)
                 todo.extend(i.get("inputs", []))
-            elif x in by_id and x != d["id"]:
-                todo.extend(by_id[x].get("inputs", []))
+            elif x in by_id:
+                dependency = by_id[x]
+                if dependency.get("notRebuilt") and not dependency.get("rebuild"):
+                    found.append("source-exception:" + x)
+                todo.extend(dependency.get("inputs", []))
         out[d["id"]] = sorted(set(found))
     return out
 
@@ -259,7 +262,9 @@ def main(argv):
     g = gaps(ds, inter)
     described = [i["path"] for i in inter if i.get("category") == "described-input"]
     if a.json:
-        print(json.dumps({"errors": r.errors, "gaps": g, "describedInputs": described}, ensure_ascii=False, indent=1))
+        print(json.dumps({"errors": r.errors, "gaps": g, "describedInputs": described,
+                          "sourceExceptions": {d["id"]: d["notRebuilt"] for d in ds
+                                               if d["status"] != "pending" and d.get("notRebuilt") and not d.get("rebuild")}}, ensure_ascii=False, indent=1))
     else:
         real = [d for d in ds if d["status"] != "pending"]
         print("registry: %d sources, %d intermediates, %d datasets (%d pending), %d files in data/release"
@@ -268,7 +273,7 @@ def main(argv):
         for d in real:
             if not d.get("rebuild"):
                 print("  %-22s %s" % (d["id"], d.get("notRebuilt")))
-        print("\nchain to the originals has a gap (an intermediate without a working producer): %d of %d"
+        print("\nchain to the originals has a gap (intermediate or source-level exception): %d of %d"
               % (sum(1 for v in g.values() if v), len(g)))
         for k, v in g.items():
             if v:

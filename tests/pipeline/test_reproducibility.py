@@ -23,6 +23,17 @@ class ReproducibilityTests(unittest.TestCase):
                  {"path": "number", "reproducible": False}]
         self.assertEqual(gaps(ds, inter), {"test": ["number"]})
 
+    def test_missing_source_snapshot_is_not_a_closed_chain(self):
+        ds = [{"id": "gva", "status": "real", "inputs": ["eurostat"],
+               "rebuild": None, "notRebuilt": "historical snapshot missing"},
+              {"id": "consumer", "status": "real", "inputs": ["gva"], "rebuild": "builder"},
+              {"id": "closed", "status": "real", "inputs": ["eurostat"], "rebuild": "builder"}]
+        result = gaps(ds, [])
+        self.assertEqual(result["gva"], ["source-exception:gva"])
+        self.assertEqual(result["consumer"], ["source-exception:gva"])
+        self.assertEqual(result["closed"], [])
+        self.assertEqual(sum(not v for v in result.values()), 1)
+
     def test_offline_rejects_socket(self):
         from budget_pipeline.offline import deny_network
         for event in ("socket.connect", "socket.getaddrinfo", "socket.bind"):
