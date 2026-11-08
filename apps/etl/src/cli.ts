@@ -15,16 +15,19 @@ const USAGE = [
 
 try {
   const [command, ...args] = process.argv.slice(2);
+  const scopeIndex = args.findIndex((value, index) => index % 2 === 0 && value === '--scope');
+  const scope = scopeIndex < 0 ? undefined : args[scopeIndex + 1];
   if (command === 'build')
-    process.exitCode = args.includes('outlook,revenue,expenditure,measures')
-      ? await fiscalBuildCli(args)
-      : args.includes('glossary,guide')
-      ? await editorialBuildCli(args)
-      : args.includes('components,rates')
-        ? await componentsRatesBuildCli(args)
-        : args.includes('ministries,ministries-programs,programs')
-          ? await programmesBuildCli(args)
-          : await lawBuildCli(args);
+    process.exitCode =
+      scope === 'outlook,revenue,expenditure,measures'
+        ? await fiscalBuildCli(args)
+        : scope === 'glossary,guide'
+          ? await editorialBuildCli(args)
+          : scope === 'components,rates'
+            ? await componentsRatesBuildCli(args)
+            : scope === 'ministries,ministries-programs,programs'
+              ? await programmesBuildCli(args)
+              : await lawBuildCli(args);
   else if (command === 'parity') process.exitCode = await parityCli(args);
   else if (command === 'freshness') process.exitCode = await freshnessCli(args);
   else throw new Error(USAGE);

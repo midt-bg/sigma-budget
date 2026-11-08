@@ -23,3 +23,10 @@ it('rejects a modified social budget total', () => {
   row[row.length - 1] = '1';
   expect(() => transformDoo(e.doo)).toThrow();
 });
+it('rejects an additional numeric table in ДОО article 1', () => {
+  const { doo } = inputs();
+  const nextArticle = doo.findIndex((b) => b[0] === 'p' && /^Чл\.\s*2\./u.test(b[1]));
+  expect(nextArticle).toBeGreaterThan(0);
+  doo.splice(nextArticle, 0, ['t', [['Допълнителен разход', '1,0']]]);
+  expect(() => transformDoo(doo)).toThrow(/exactly three ДОО tables/u);
+});

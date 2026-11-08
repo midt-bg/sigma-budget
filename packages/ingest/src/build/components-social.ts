@@ -118,7 +118,10 @@ function same(label: string, a: number, b: number) {
 const sum = (r: SocialRow[]) => r.reduce((a, b) => a + b.khil, 0);
 const rnd = (v: number) => roundForPython(v, 1);
 export function transformDoo(blocks: LawBlock[]): DooBudget {
-  const [rev, exp, bal] = article(blocks, 1),
+  const tables = article(blocks, 1);
+  if (tables.length !== 3)
+    throw new Error('components: expected exactly three ДОО tables in article 1');
+  const [rev, exp, bal] = tables,
     [pr, pe, pb] = article(blocks, 2);
   if (!rev || !exp || !bal || !pr || !pe || !pb) throw new Error('components: missing ДОО tables');
   const r = rows(rev, socialSpecs.doo_r),
