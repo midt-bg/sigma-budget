@@ -1,5 +1,8 @@
 """Acquisition coverage, immutable snapshots and offline enforcement."""
 import hashlib
+import http.server
+import os
+import threading
 import json
 import subprocess
 import sys
@@ -25,6 +28,52 @@ class ReproducibilityTests(unittest.TestCase):
         for event in ("socket.connect", "socket.getaddrinfo", "socket.bind"):
             with self.assertRaises(RuntimeError):
                 deny_network(event, ())
+
+    def test_guard_blocks_shell_network_and_unguarded_python(self):
+        from budget_pipeline.offline import deny_network
+        requests = []
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                requests.append(self.path)
+                self.send_response(200)
+                self.end_headers()
+            def log_message(self, *args):
+                pass
+        with http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler) as server:
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                with tempfile.TemporaryDirectory() as td:
+                    url = "http://127.0.0.1:%d/" % server.server_port
+                    Path(td, "network_probe.py").write_text(
+                        "import subprocess\nsubprocess.run(['/bin/sh', '-c', "
+                        + repr("curl --max-time 2 " + url) + "], check=True)\n")
+                    env = dict(os.environ, PYTHONPATH=td + os.pathsep + str(cli.ROOT / "pipeline"))
+                    result = subprocess.run([sys.executable, "-m", "budget_pipeline.offline", "network_probe"],
+                                            env=env, capture_output=True, text=True, timeout=10)
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn("build subprocess must use guarded Python", result.stderr)
+                    self.assertEqual(requests, [])
+            finally:
+                server.shutdown()
+                thread.join()
+        for executable, argv in ((sys.executable, [sys.executable, "-c", "pass"]),
+                                 ("/bin/sh", ["/bin/sh", "-c", "true"])):
+            with self.assertRaises(RuntimeError):
+                deny_network("subprocess.Popen", (executable, argv, None, None))
+        deny_network("subprocess.Popen", (sys.executable,
+                     [sys.executable, "-m", "budget_pipeline.offline", "module"], None, None))
+
+    def test_docker_build_run_has_no_network(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            lock = root / "pipeline/requirements.lock"
+            lock.parent.mkdir()
+            lock.write_text("locked")
+            with patch.object(cli.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, b"", b"")) as run:
+                cli.run_in_env("docker", root, root, ["-m", "budget_pipeline.offline", "module"])
+            args = run.call_args_list[-1].args[0]
+            self.assertEqual(args[args.index("--network") + 1], "none")
 
     def test_collect_includes_fetch_and_reducers_and_preserves_pins(self):
         with tempfile.TemporaryDirectory() as td:

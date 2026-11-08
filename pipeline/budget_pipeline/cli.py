@@ -220,7 +220,7 @@ def run_in_env(env, src, inputs_dir, cmd, extra_env=None):
         b = subprocess.run(["docker", "build", "-q", "-t", image, str(src / "pipeline")], capture_output=True)
         if b.returncode:
             raise Fail(EXIT_INVALID, "docker build: " + b.stderr.decode("utf-8", "replace")[-400:])
-        args = ["docker", "run", "--rm", "--network=none", "-v", "%s:/repo" % src]
+        args = ["docker", "run", "--rm", "--network", "none", "-v", "%s:/repo" % src]
         for d in INPUT_DIRS:
             if (inputs_dir / d).is_dir():
                 args += ["-v", "%s:/repo/%s:ro" % ((inputs_dir / d).resolve(), d)]
