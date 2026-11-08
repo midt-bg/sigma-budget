@@ -199,7 +199,7 @@ def stage_inputs(found, inputs_dir, view):
     """only the inputs the registries declare, linked (or copied) into a view the build sees: an input that the registry forgets makes the
     build fail at once, so the inputs of the manifest are all the build read"""
     for path in found:
-        src, dst = inputs_dir / path, view / path
+        src, dst = inputs_dir / found[path].get("file", path), view / path
         dst.parent.mkdir(parents=True, exist_ok=True)
         try:
             os.link(src, dst)
@@ -268,11 +268,18 @@ def build_release(commit, inputs_dir, out, build_date, env, log=print):
         log("build: commit %s, inputs %s, env %s" % (commit[:12], inputs_dir, env))
         export_commit(commit, src)
         found, missing, sources = registry_inputs(src, inputs_dir)
+        snapshot = inputs_dir / "snapshot.json"
+        if snapshot.is_file():
+            for row in json.loads(snapshot.read_text(encoding="utf-8"))["collected"]:
+                if row["status"] != "ok":
+                    raise Fail(EXIT_MISSING, "snapshot acquisition failed: " + row["path"])
+                if row["path"] in found:
+                    found[row["path"]]["file"] = row.get("file", row["path"])
         pinned = pins(src)
         acq = acquisition_records(inputs_dir)
         inputs, bad = [], []
         for path, rec in sorted(found.items()):
-            p = inputs_dir / path
+            p = inputs_dir / rec.get("file", path)
             h = sha256_file(p)
             pin = pinned.get(path) or rec["entry"].get("sha256")
             if pin and pin != h:
@@ -566,15 +573,15 @@ def cmd_refetch(a):
 
 def cmd_collect(a):
     from budget_pipeline.sources.collect import collect
-    rows = collect(ROOT, Path(a.out), Path(a.seed), fetch, kind_ok, sha256_file, sha256_bytes, yaml_load)
+    rows = collect(ROOT, Path(a.out), Path(getattr(a, "seed", ROOT)), fetch, kind_ok, sha256_file, sha256_bytes, yaml_load)
     bad = [r for r in rows if r["status"] != "ok"]
     changed = [r for r in rows if r.get("drift") != "same" and r["status"] == "ok"]
-    if a.summary:
+    if getattr(a, "summary", None):
         lines = ["| Source | File | Result | SHA-256 | Expected | Detail |", "|---|---|---|---|---|---|"]
         for r in rows:
             lines.append("| %s | %s | %s | %s | %s | %s |" % (r["source"], r["path"], r.get("drift", r["status"]), r.get("sha256", "—"), r.get("expected", "—"), r.get("error", "").replace("|", "/").replace("\n", " ")))
         Path(a.summary).write_text("\n".join(lines) + "\n", encoding="utf-8")
-    code = EXIT_MISSING if bad else EXIT_DIFF if a.check_drift and changed else EXIT_OK
+    code = EXIT_MISSING if bad else EXIT_DIFF if getattr(a, "check_drift", False) and changed else EXIT_OK
     return code, {"out": str(a.out), "ok": len(rows)-len(bad), "changed": len(changed), "notOk": bad}
 
 

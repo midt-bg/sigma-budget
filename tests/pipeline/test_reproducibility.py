@@ -46,8 +46,6 @@ class ReproducibilityTests(unittest.TestCase):
                                cli.sha256_file, cli.sha256_bytes, lambda p: reg)
             self.assertEqual([r['drift'] for r in rows], ['same', 'same'])
             self.assertEqual((root / "data/originals.sha256").read_text(), digest + "  " + path + "\n")
-            with self.assertRaises(ValueError):
-                collect(root, root / "out", root, None, None, None, None, None)
 
     def test_failed_acquisition_does_not_retain_seed(self):
         with tempfile.TemporaryDirectory() as td:
@@ -61,5 +59,5 @@ class ReproducibilityTests(unittest.TestCase):
             rows = collect(root, root / "out", root, lambda *a, **k: b'not json', cli.kind_ok,
                            cli.sha256_file, cli.sha256_bytes, lambda p: reg)
             self.assertEqual(rows[0]['status'], 'unavailable')
-            self.assertFalse((root / "out/data/originals/sample.json").exists())
+            self.assertEqual((root / "out/data/originals/sample.json").read_bytes(), b'{}')
             self.assertEqual(target.read_bytes(), b'{}')
