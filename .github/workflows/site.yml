@@ -208,9 +208,6 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -222,13 +219,11 @@ jobs:
         env:
           COMMON_PARITY_REPORT: ${{ github.workspace }}/tmp/ts-migration/candidates/02/diff.json
         run: pnpm --filter @sigma-budget/ingest exec vitest run src/common/common.test.ts
-      - name: Law builder and scoped parity
+      - name: Law builder and frozen Python parity
+        env:
+          LAW_PARITY_REPORT: ${{ github.workspace }}/tmp/ts-migration/candidates/04/diff.json
         run: |
-          PYTHONPATH=pipeline python packages/ingest/test/fixtures/law/generate_oracle.py --check
           pnpm --filter @sigma-budget/ingest exec vitest run src/build/law-evidence.test.ts src/build/law-articles.test.ts src/build/law-changes.test.ts src/build/law.test.ts
-          pnpm --filter @sigma-budget/etl... build
-          pnpm exec budget-ts build --inputs packages/ingest/test/fixtures/law --out tmp/ts-migration/candidates/04 --scope law --build-date 2026-11-08
-          pnpm exec budget-ts parity --oracle data/release --candidate tmp/ts-migration/candidates/04/data --scope law --policy packages/ingest/test/fixtures/law/policy.json --report tmp/ts-migration/candidates/04/diff.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:

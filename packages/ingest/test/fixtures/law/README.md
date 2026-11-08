@@ -19,7 +19,9 @@ data and does not evaluate Python literals. The optional Parliament ZIP was
 absent from the input archive, so its real size is not verified. The 2027
 wording has its own fixture. The raw legal parsers remain in Python.
 
-Build and compare the TypeScript candidate with the current release:
+The mandatory CI check compares against the frozen Python oracle and writes a
+`law-parity` report. To compare the TypeScript candidate with the current
+release manually, run:
 
 ```sh
 pnpm --filter @sigma-budget/etl... build

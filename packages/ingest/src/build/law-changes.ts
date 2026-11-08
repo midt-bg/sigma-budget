@@ -140,8 +140,13 @@ function notes(changes: Data[], rec: Data, art1: Data) {
   const r2: any = rd.get(2),
     r3: any = rd.get(3),
     r17: any = rd.get(17);
-  const kids = ['1.1', '1.2', '1.3', '1.4'].reduce((s, n) => s + a(n).diff, 0),
-    rest = roundNumber(a('1').diff - kids, 1)!;
+  const numericDiff = (no: string): number => {
+    const value: unknown = a(no).diff;
+    if (!isNumber(value)) throw new Error(`Article 1 II ${no} difference is not numeric`);
+    return value;
+  };
+  const kids = ['1.1', '1.2', '1.3', '1.4'].reduce((s, n) => s + numericDiff(n), 0),
+    rest = roundNumber(numericDiff('1') - kids, 1)!;
   const inst = line(by.get(16)!, 'II', '1.2.2.4');
   if (
     r3.exp !== -r17.exp ||

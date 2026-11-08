@@ -1,4 +1,6 @@
 import { roundNumber } from '../io/data.js';
+import type { LawDataset, LawEvidence, LawKey } from './law-types.js';
+export type * from './law-types.js';
 import { metadata } from '../common/metadata.js';
 import { sources } from '../common/sources.js';
 import { articleOne, budgetRows, budgetTotals } from './law-articles.js';
@@ -7,13 +9,6 @@ import { gazetteFacts, next2027, parliamentFacts } from './law-evidence.js';
 import { kinds } from './law-kinds.js';
 
 type Data = Record<string, any>;
-export interface LawEvidence {
-  law: Data;
-  ministries: Data | null;
-  parliament: Data;
-  dvBlocks: Data;
-  archiveBytes?: number | null;
-}
 const laws: Data = { zdb: [167157, 'ЗДБ'], zbdoo: [167156, 'ЗБДОО'], zbnzok: [167155, 'ЗБНЗОК'] };
 const page = (id: number) => `https://www.parliament.bg/bg/bills/ID/${id}`;
 const files = 'https://www.parliament.bg/bills/52/';
@@ -58,11 +53,11 @@ function event(kind: string, title: string, date?: string, options: Data = {}): 
     source: source || ['parliament'],
   };
 }
-export function buildLaw(evidence: LawEvidence, buildDate: string): Data {
+export function buildLaw(evidence: LawEvidence, buildDate: string): LawDataset {
   const L = evidence.law,
     P: Data = {},
     DV: Data = {};
-  for (const [key, [id]] of Object.entries(laws) as [string, [number, string]][]) {
+  for (const [key, [id]] of Object.entries(laws) as [LawKey, [number, string]][]) {
     P[key] = parliamentFacts(id, evidence.parliament[key]);
     DV[key] = gazetteFacts(evidence.dvBlocks[key]);
   }
@@ -411,7 +406,7 @@ export function buildLaw(evidence: LawEvidence, buildDate: string): Data {
     proposals,
     next: next2027(),
     pending: ['P07'],
-  };
+  } as unknown as LawDataset;
 }
 function andList(items: string[]) {
   if (!items.length) throw new Error('Empty list');
