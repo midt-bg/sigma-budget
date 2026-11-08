@@ -7,6 +7,7 @@ export * from './io/registry.js';
 export * from './common/metadata.js';
 export * from './build/context.js';
 export * from './build/annex.js';
+export * from './build/fiscal.js';
 export * from './common/format.js';
 export * from './common/sources.js';
 export * from './build/law.js';
