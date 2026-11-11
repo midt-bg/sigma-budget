@@ -19,7 +19,7 @@ describe('complete aggregation fixture', () => {
         ['search-index', outputs.search],
       ] as const)
         expect(value).toEqual(json(`${stage}/${name}.json`));
-      expect(outputs.rss).toBe(text(`${stage}/feed.xml`).replace('<title>Бюджет на светло:', '<title>СИГМА Бюджет:'));
+      expect(outputs.rss).toBe(text(`${stage}/feed.xml`));
     }
   });
 });

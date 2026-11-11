@@ -95,8 +95,8 @@ export interface FeedInput {
   populationAsOf: string;
   pending: Record<string, { reason: string | null; expected: string }>;
   baseUrl?: string;
-  /** Historical fixture replays supply their original product identity explicitly. */
-  siteName?: string;
+  /** Site identity from the editorial input metadata, including historical replays. */
+  siteName: string;
 }
 const KINDS = [
   { id: 'report', label: 'Месечен отчет' },
