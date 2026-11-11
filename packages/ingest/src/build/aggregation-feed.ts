@@ -95,6 +95,8 @@ export interface FeedInput {
   populationAsOf: string;
   pending: Record<string, { reason: string | null; expected: string }>;
   baseUrl?: string;
+  /** Historical fixture replays supply their original product identity explicitly. */
+  siteName?: string;
 }
 const KINDS = [
   { id: 'report', label: 'Месечен отчет' },
@@ -394,5 +396,5 @@ export function buildFeed(input: FeedInput) {
     highlights: h,
     sentences,
   };
-  return { feed, rss: buildRss(feed, input.baseUrl ?? DEFAULT_RSS_ORIGIN, input.buildDate) };
+  return { feed, rss: buildRss(feed, input.baseUrl ?? DEFAULT_RSS_ORIGIN, input.buildDate, input.siteName) };
 }

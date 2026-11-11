@@ -42,14 +42,14 @@ export function rssDate(iso: string): string {
   return `${dow}, ${String(day).padStart(2, '0')} ${mon} ${String(year).padStart(4, '0')} 12:00:00 +0000`;
 }
 
-export function buildRss(feed: RssFeed, base: string, buildDate: string): string {
+export function buildRss(feed: RssFeed, base: string, buildDate: string, siteName = 'СИГМА Бюджет'): string {
   base = base.endsWith('/') ? base : base + '/';
   const labels = new Map(feed.kinds.map((kind) => [kind.id, kind.label]));
   const lines = [
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">',
     '<channel>',
-    '<title>СИГМА Бюджет: какво е ново</title>',
+    `<title>${escapeXml(siteName)}: какво е ново</title>`,
     `<link>${escapeXml(base)}</link>`,
     '<description>Събития по данните за държавния бюджет: месечни отчети, законодателен път, ставки и нови набори. Прототип с примерни данни, където е отбелязано.</description>',
     '<language>bg</language>',

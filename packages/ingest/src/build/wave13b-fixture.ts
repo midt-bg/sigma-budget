@@ -250,6 +250,8 @@ export async function loadWave13bFixture(path: string): Promise<Wave13bInput> {
       glossaryInput: json('aggregation/inputs/glossary.json'),
     },
     feed: {
+      // Replay the authenticated historical oracle without changing its frozen identity.
+      siteName: 'Бюджет на светло',
       annualUpdated: annual.updated,
       quarterUpdated: quarter.updated,
       cofogUpdated: json('fiscal/inputs/data/inputs/cofog_bg.json').updated,
