@@ -2,7 +2,7 @@
 import { html } from '../html.js';
 import { num, money } from '../format.js';
 import { block } from '../ui/block.js';
-import { dataTable, updateRows } from '../ui/table.js';
+import { dataTable, updateRows, tableData } from '../ui/table.js';
 import { chart } from '../ui/chart.js';
 import { kpi, kpiGrid } from '../ui/kpi.js';
 import { pendingState, errorState } from '../ui/states.js';
@@ -815,7 +815,6 @@ function projectsBlocks(ctx, doc) {
           caption: `Приложение 2, ${num(projects.length)} проекта, в хил. евро`,
           columns: projectColumns('хил. €', 1),
           rows: projectRows(ctx, projects),
-          sortable: true,
           empty: 'Няма проекти за това търсене. Провери думите или изчисти търсенето.',
           note: '— сумата за годината не е посочена в законопроекта.',
         })}`,
@@ -823,6 +822,16 @@ function projectsBlocks(ctx, doc) {
     {
       sub: 'Сбор на годишните суми на проектите от Приложение 2 на законопроекта. Законопроектът не дава общ ред, а празните клетки не означават нулев разход.',
       ...status,
+      // The block's CSV is the full project list (not the chart above it).
+      share: {
+        ...status.share,
+        unit: 'хил. €',
+        table: () =>
+          tableData({
+            columns: projectColumns('хил. €', 1),
+            rows: projects.map((r) => projectRow(r, (v) => v)),
+          }),
+      },
     },
   );
 }

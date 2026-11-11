@@ -272,6 +272,10 @@ it('summarizes the investment programme without provenance noise', async () => {
   expect(top.rows).toHaveLength(10);
   const all = tableData(scope.maps.table.get('s34-project-details'));
   expect(all.rows).toHaveLength(doc.projects.length);
+  // The block's CSV is the project list, not the institution chart.
+  const csv = csvFor(scope.maps.share.get('s34-projects'));
+  expect(csv).toContain('Номер в приложението');
+  expect(csv.trim().split('\r\n')).toHaveLength(doc.projects.length + 1);
   // Name, institution and appendix number are kept for the CSV; empty years stay empty, never zero.
   expect(all.columns.slice(0, 3)).toEqual(['Проект', 'Ведомство', 'Номер в приложението']);
   const gap = doc.projects.find((r: any) => Object.keys(r.gaps || {}).length);
