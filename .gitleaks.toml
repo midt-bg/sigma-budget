@@ -1,0 +1,24 @@
+title = "СИГМА Бюджет secret scan"
+[extend]
+useDefault = true
+
+[[rules]]
+id = "generic-api-key"
+[[rules.allowlists]]
+description = "Reviewed 2026-11-11: public fiscal period identifiers, not credentials; exact secret values only."
+regexTarget = "secret"
+regexes = ['''^202[89]\.forecast$''']
+
+[[rules.allowlists]]
+description = "Reviewed 2026-11-11: SHA-256 donor/source checksums in frozen provenance/capture evidence only."
+condition = "AND"
+paths = ['''packages/ingest/test/fixtures/(validate14/code-path-capture|validate15/compound/provenance|validate17a/provenance|validate15/oracle|wave13b/proof)\.json$''']
+regexTarget = "secret"
+regexes = ['''^[a-f0-9]{64}$''']
+
+[[rules.allowlists]]
+description = "Reviewed 2026-11-11: exact remaining KeyError field names in the frozen oracle."
+condition = "AND"
+paths = ['''packages/ingest/test/fixtures/validate15/oracle\.json$''']
+regexTarget = "secret"
+regexes = ['''^(annex3ExpenditureMln|discretionary2026)$''']
