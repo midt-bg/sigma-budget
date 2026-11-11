@@ -12,7 +12,9 @@
 
 Включени са всички производствени TS/JS файлове в `src` и CLI launcher-ите в `bin`, както и изрично `apps/etl/publication-documents/prepare.mjs`, а за web - `app`, `client`, `workers`, service worker и candidate-data adapter, дори когато никой тест не ги импортира. Изключени са само тестове, декларации и fixture директории. CLI subprocess изпълненията проверяват реалната компилирана граница, но V8 отчетът на родителския Vitest процес не приписва тяхното покритие на изходния TypeScript.
 
-Локално: `pnpm test -- --coverage`, после `pnpm check:coverage`. Липсващ workspace/отчет или невалидни метрики провалят gate. Допустимият шум е 0.5 процентни пункта за lines/branches по workspace, както в СИГМА. Базата се обновява само след преглед с `node scripts/check-coverage.mjs --update`; не се обновява автоматично в CI.
+Локално: `pnpm test -- --coverage`, после `pnpm check:coverage`. Липсващ workspace/отчет или невалидни метрики провалят gate. Допустимият шум е 0.5 процентни пункта за lines/branches по workspace, както в СИГМА. `node scripts/check-coverage.mjs --update` първо проверява всички отчети и четирите метрики и може само да повишава lines/branches базата. Намаление се отхвърля с non-zero status и без запис, включително в рамките на толеранса или при изключение. Базата не се обновява автоматично в CI.
+
+CI изпълнява `node scripts/check-coverage.mjs --check-base` преди тестовете. Checkout включва историята; PR се сравнява с `origin/<base_ref>`, push - с merge-base на HEAD и предходния push SHA, ръчно стартиране - с предишната ревизия. Ref/SHA идват през env и се подават като отделни git argv стойности, без shell интерполация. Само липсващ `coverage-baseline.json` в съществуващата base ревизия пропуска сравнението с изрично SKIP съобщение, както при първоначалното въвеждане на базата. Липсващ ref или повреден JSON е отказ. Нов workspace без base стойност е допустим; премахване на съществуваща база е отказ. Всяко намаление на съществуваща метрика изисква валидно изключение за същия workspace/metric, чийто `minimum` покрива новата стойност. Толерансът от 0.5 пункта не допуска намаляване на самата база.
 
 Умишлена временна регресия се описва в `coverage-exceptions.json`: `workspace`, `metric` (`lines`/`branches`), `minimum`, конкретно `reason`, `review` (URL към PR в това хранилище) и `expires` (UTC YYYY-MM-DD). Записът подлежи на преглед като код; празни причини, дублирани/неизвестни обхвати и изтекли изключения провалят проверката. Първоначално няма изключения. Не се добавят изключения за неуспешни тестове.
 
@@ -20,7 +22,7 @@
 
 `pnpm format:check` проверява целия поддържан от Prettier набор с `--ignore-unknown`; `pnpm format` го форматира. Това е format gate, не semantic lint. Python, shell и другите неподдържани езици се проверяват чрез съответните тестове, а не се представят като форматирани от Prettier.
 
-Прегледаните изключения в `.prettierignore` пазят `data/`, `reference/`, историческия `pipeline/`, frozen fixtures/oracles, vendored и генерирани файлове. Масовото форматиране е отделен последен commit върху main след сливането на PR #57 (тема), #58 (име), #59 (формулировки и източници) и #64 (boot/release build). При следващи паралелни client JS промени format pass се изпълнява отново. Замразените bytes не се форматират.
+Прегледаните изключения в `.prettierignore` пазят `data/`, `reference/`, историческия `pipeline/`, frozen fixtures/oracles, vendored и генерирани файлове. Масовото форматиране е отделен commit върху main след сливането на PR #57 (тема), #58 (име), #59 (формулировки и източници) и #64 (boot/release build). При следващи паралелни client JS промени format pass се изпълнява отново. Замразените bytes не се форматират.
 
 ## Изходно CI време
 
@@ -36,6 +38,6 @@ Browser bootstrap не променя apt sources. След потвърдени
 
 ## Обхват след #64
 
-`client/chrome-boot.js` се включва чрез `client/**/*.js`, а новите screen модули и `migration/screens.ts` - чрез `app/**/*.{ts,tsx}`. Всички те участват и във format gate. Manifest файловете с `build:release` също се форматират. `tests/e2e/boot.py`, `tests/release/test_build_artifact.py` и `apps/web/scripts/build.py` са Python: извън Prettier/V8 обхвата, с отделни Python unit/e2e проверки в site workflow. След rebase форматът се регенерира чрез Prettier като отделен последен commit; format конфликти не се разрешават на ръка.
+`client/chrome-boot.js` се включва чрез `client/**/*.js`, а новите screen модули и `migration/screens.ts` - чрез `app/**/*.{ts,tsx}`. Всички те участват и във format gate. Manifest файловете с `build:release` също се форматират. `tests/e2e/boot.py`, `tests/release/test_build_artifact.py` и `apps/web/scripts/build.py` са Python: извън Prettier/V8 обхвата, с отделни Python unit/e2e проверки в site workflow. След rebase форматът се регенерира чрез Prettier в отделен format-only commit; последващите CI поправки са самостоятелни commits. Format конфликти не се разрешават на ръка.
 
 Parity report пътищата се дефинират само в `coverage.env` на site workflow. Turbo strict mode ги пропуска изрично през `globalPassThroughEnv`, а upload стъпките ползват `${{ env.<REPORT> }}`. Всички 12 отчета се генерират и при успешни тестове: преди run се изчистват стари файлове, след run се проверява всеки JSON поотделно, включително четирите Wave15 отчета. Задължителните uploads остават с `if-no-files-found: error`; липсващ отчет не се игнорира.

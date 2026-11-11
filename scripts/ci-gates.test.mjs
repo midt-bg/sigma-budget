@@ -123,3 +123,21 @@ test('every report reaches strict Turbo tasks and its upload uses the same env p
   assert.ok(job.steps.some((step) => step.run === 'node scripts/check-parity-reports.mjs --clean'));
   assert.ok(job.steps.some((step) => step.run === 'node scripts/check-parity-reports.mjs'));
 });
+
+test('coverage CI checks the target baseline with history and env refs before running suites', () => {
+  const { parse } = createRequire(new URL('../packages/ingest/package.json', import.meta.url))(
+    'yaml',
+  );
+  const job = parse(workflow).jobs.coverage;
+  const checkout = job.steps.find((step) => step.uses?.startsWith('actions/checkout@'));
+  assert.equal(checkout.with['fetch-depth'], 0);
+  const gate = job.steps.findIndex(
+    (step) => step.run === 'node scripts/check-coverage.mjs --check-base',
+  );
+  assert.ok(gate >= 0);
+  assert.deepEqual(job.steps[gate].env, {
+    COVERAGE_BASE_REF: '${{ github.base_ref }}',
+    COVERAGE_BASE_SHA: '${{ github.event.before }}',
+  });
+  assert.ok(gate < job.steps.findIndex((step) => step.run === 'pnpm test -- --coverage'));
+});
