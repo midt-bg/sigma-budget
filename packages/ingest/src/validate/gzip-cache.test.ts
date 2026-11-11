@@ -94,7 +94,9 @@ describe('preserves sizes after many distinct inputs and cache-sized replacement
 describe('preserves the size of inputs larger than the cache budget', () => {
   const test = item('over-limit');
   let raw: Buffer;
-  beforeAll(() => { raw = data(test); });
+  beforeAll(() => {
+    raw = data(test);
+  });
   it('compresses the over-limit buffer', () => {
     expect(gzipSize(raw)).toBe(test.gzip);
   });
