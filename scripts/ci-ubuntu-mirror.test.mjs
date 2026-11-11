@@ -16,6 +16,8 @@ test('canonical mirror preserves repositories, security sources and signing keys
     const thirdParty =
       'deb https://example.invalid/ubuntu noble main\ndeb https://security.ubuntu.com/ubuntu noble-security main\n';
     writeFileSync(join(apt, 'sources.list'), legacy);
+    const mirrors = 'http://azure.archive.ubuntu.com/ubuntu/\nhttps://archive.ubuntu.com/ubuntu/\n';
+    writeFileSync(join(apt, 'apt-mirrors.txt'), mirrors);
     writeFileSync(join(apt, 'sources.list.d/ubuntu.sources'), deb822);
     writeFileSync(join(apt, 'sources.list.d/vendor.list'), thirdParty);
     const external = join(root, 'external');
@@ -24,7 +26,7 @@ test('canonical mirror preserves repositories, security sources and signing keys
     execFileSync('bash', [resolve('scripts/ci-ubuntu-mirror.sh'), apt]);
     assert.equal(
       readFileSync(join(apt, 'sources.list'), 'utf8'),
-      legacy.replace('azure.archive', 'archive'),
+      legacy.replace('http://azure.archive', 'https://archive'),
     );
     assert.equal(
       readFileSync(join(apt, 'sources.list.d/ubuntu.sources'), 'utf8'),
@@ -32,6 +34,10 @@ test('canonical mirror preserves repositories, security sources and signing keys
     );
     assert.equal(readFileSync(join(apt, 'sources.list.d/vendor.list'), 'utf8'), thirdParty);
     assert.equal(readFileSync(external, 'utf8'), legacy);
+    assert.equal(
+      readFileSync(join(apt, 'apt-mirrors.txt'), 'utf8'),
+      mirrors.replace('http://azure.archive', 'https://archive'),
+    );
     execFileSync('bash', [resolve('scripts/ci-ubuntu-mirror.sh'), apt]);
     assert.equal(
       readFileSync(join(apt, 'sources.list.d/ubuntu.sources'), 'utf8'),
