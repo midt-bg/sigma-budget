@@ -77,6 +77,10 @@ def main():
             assert projects.locator('th[scope="col"]').count() == 3
             assert projects.get_by_text('budget2027-provenance.json').count() == 0
             checks += 1
+            go('/prognoza?per=2027.draft')
+            assert page.locator('.fig-table table').count() > 0
+            assert page.locator('.fig-table thead th', has_text='произход').count() == 0
+            checks += 1
             go('/merki/kr1?per=2026.law')
             expect(page.locator('h1')).not_to_be_empty()
             assert page.locator('.measure-cards').count() == 0
