@@ -1,3 +1,4 @@
+import { scopeAnnualCatalogTraps } from './catalog-editorial.js';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { beforeAll, expect, it } from 'vitest';
@@ -185,4 +186,19 @@ it('uses owner and text precedence, inherits RSS metadata, and notes missing dis
   expect(entry.source).toEqual(state.buildInput.out.get('feed.json')!.object.meta.source);
   expect(result.notes.join('\n')).toContain('glossary.json');
   expect(result.catalog.datasets.some((d) => d.slug === 'glossary')).toBe(false);
+});
+
+it('scopes the next annual catalogue to legacy arrays and the November byPeriod series', () => {
+  const input = fixtureBase.buildInput;
+  const catalog = buildCatalog({
+    ...input,
+    editorial: { ...input.editorial, traps: scopeAnnualCatalogTraps(input.editorial.traps) },
+  }).catalog;
+  const note = (catalog.traps as { id: string; text: string }[]).find(
+    (t) => t.id === 'two-versions',
+  )!;
+  expect(note.text).toContain('само за старите масиви към проекта за 2026');
+  expect(note.text).toContain('2026.expected е очаквано изпълнение');
+  expect(note.text).toContain('2027.draft е проект');
+  expect(note.text).toContain('2028.forecast и 2029.forecast са прогнози');
 });

@@ -244,3 +244,56 @@ it('unavailable annual blocks carry reasons without invented pending IDs or stat
     }
   }
 });
+
+for (const [per, attribution] of [
+  ['2026.law', 'Приет закон за 2026 г., Приложение 1.'],
+  ['2026.expected', 'Очаквано изпълнение за 2026 г., Приложение 3'],
+  ['2027.draft', 'Проект за 2027 г., Приложение 3'],
+  ['2028.forecast', 'Прогноза за 2028 г., Приложение 3'],
+  ['2029.forecast', 'Прогноза за 2029 г., Приложение 3'],
+  ['2024.report', 'Отчетни данни за 2024 г.'],
+  ['2025.report', 'Отчетни данни за 2025 г.'],
+]) {
+  for (const [path, selector] of [
+    ['/prognoza', '#s13-sum'],
+    ['/prihodi', '#s06-notes'],
+    ['/razhodi', '#s07-notes'],
+  ]) {
+    it(`attributes ${path} to the selected ${per} record`, async () => {
+      const document = await annualDocument(`${path}?per=${per}`);
+      const text = document.querySelector(
+        per === '2026.law' && path !== '/prognoza'
+          ? `${path === '/prihodi' ? '#s06' : '#s07'}-annual-coverage`
+          : selector,
+      )?.textContent;
+      expect(text).toContain(attribution);
+      expect(text).not.toContain('Приетият закон може да се различава от проекта');
+      if (!per.endsWith('report')) expect(text).toContain('06.11.2026');
+    });
+  }
+  it(`discloses the frozen sector snapshot beside figures for ${per}`, async () => {
+    const document = await annualDocument(`/bvp?per=${per}`);
+    const sector = document.querySelector('#s31-b-sectors');
+    expect(sector?.textContent).toContain('замразена снимка');
+    expect(sector?.textContent).toContain('Има по-късни ревизии');
+    expect(sector?.textContent).toContain('част от историческите оригинали липсват');
+    expect(sector?.textContent).toContain('Версия на източника: 07.10.2026');
+    expect(sector?.textContent).toContain('Придобиване: 09.10.2026');
+    expect(sector?.querySelector('a[href*="proverka"]')?.getAttribute('href')).toContain(
+      's35-coverage',
+    );
+  });
+}
+it('scopes the displayed catalogue note without mutating its release', async () => {
+  const document = await annualDocument('/danni');
+  expect(document.querySelector('article')?.textContent).toContain(
+    'само за старите масиви към проекта за 2026',
+  );
+  expect(document.querySelector('article')?.textContent).toContain(
+    '2026.expected е очаквано изпълнение',
+  );
+  expect(document.querySelector('article')?.textContent).toContain('2027.draft е проект');
+  expect(
+    (await load('catalog')).traps.find((t: any) => t.id === 'two-versions').text,
+  ).not.toContain('byPeriod');
+});
