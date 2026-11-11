@@ -236,10 +236,10 @@ async function render(kind) {
       const model = seed?.screen === route.id ? seed : await reactBridge.loadModel(route.id,params,query,signal);
       if (!model.view || model.view === 'ready') await loadStyle(route.file);
       if (seq !== navSeq) return;
-      await reactBridge.mount(model,{go,announce,retry:rerender,setQuery},!!seed);
+      await reactBridge.mount(model,{go,announce,retry:rerender,setQuery},!!seed,signal);
       seedNode?.remove();
       reactOwned = true;
-      vm = reactBridge.metadata(model);
+      vm = await reactBridge.metadata(model);
       document.title = docTitle(vm);
       if (!seed) seo.apply(vm,docTitle(vm));
     } else vm = await build(route, params, query, { signal, kind, path: segs.join('/'), stale: () => seq !== navSeq, loadStyle, actions: { setQuery, rerender, announce, go } });
@@ -254,7 +254,7 @@ async function render(kind) {
     reactBridge = await import(/* @vite-ignore */ bridgeModule);
     const model = await reactBridge.loadModel('S30',vm.params,query,signal);
     if (seq !== navSeq) return;
-    await reactBridge.mount(model,{go,announce,retry:rerender,setQuery});
+    await reactBridge.mount(model,{go,announce,retry:rerender,setQuery},false,signal);
     document.title=docTitle(vm);seo.apply(vm,docTitle(vm));
     reactOwned=true;
   }

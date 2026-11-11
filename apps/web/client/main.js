@@ -19,18 +19,22 @@ async function boot() {
     const seed = document.getElementById('react-screen-seed');
     if (seed) data.adoptTextSeed(JSON.parse(seed.textContent));
   }
+  let bridge;
+  const refreshChrome = () => {
+    const r = router.current?.route || router.routes.find(r=>r.id === document.querySelector('article.page')?.dataset.route);
+    bridge?.refreshChrome({route:r,periods:r?.periods,wide:window.matchMedia('(min-width: 961px)').matches,cur:r?.id,from:location.pathname.replace(/^\//,'')});
+  };
+  shell.init(refreshChrome);
+  initActions();
+  window.__chromeReady = true;
+  const pending = window.__chromeTap;
+  if (pending) { delete window.__chromeTap; document.querySelector(pending)?.click(); }
+  import('./react-bridge.js').then(m => { bridge = m; refreshChrome(); }).catch(console.error);
   // core.json carries the source cards and the „Предстои“ texts; do not hold the first paint for more than ~1.5 s
   const coreP = data.load('core').catch(() => null);
   await Promise.race([coreP, wait(1500)]);
   motion.init();
   watchLinks();                                                   // path mode: old #/x links in pages and data become /x (js/loc.js)
-  const bridge = await import('./react-bridge.js');
-  const refreshChrome = () => {
-    const r = router.current?.route || router.routes.find(r=>r.id === document.querySelector('article.page')?.dataset.route);
-    bridge.refreshChrome({route:r,periods:r?.periods,wide:window.matchMedia('(min-width: 961px)').matches,cur:r?.id,from:location.pathname.replace(/^\//,'')});
-  };
-  shell.init(refreshChrome);
-  initActions();
   coreP.then(() => { shell.refreshFooter(); });
   data.prefetch('releases/current');                            // the release ID that every CSV names (js/share.js csvMeta)
   await router.start();
