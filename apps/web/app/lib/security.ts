@@ -31,13 +31,11 @@ export function responseHeaders(path: string, env: PolicyEnv): Headers {
 export function finalizeResponse(request: Request, response: Response, env: PolicyEnv): Response {
   const h = new Headers(response.headers);
   for (const [key, value] of responseHeaders(new URL(request.url).pathname, env)) {
-    // Downloaded active originals must retain their sandbox as well as the base policy.
-    h.set(
-      key,
-      key === 'content-security-policy' && h.get(key)?.includes('sandbox')
-        ? value + '; sandbox'
-        : value,
-    );
+    // Route policies (sandbox, stricter framing/referrer policies, etc.) take precedence.
+    // Cache-Control and Content-Disposition are outside the defaults and stay untouched.
+    if (!h.has(key)) h.set(key, value);
+    // Environment noindex must also apply when a route already carries another robots directive.
+    else if (key === 'x-robots-tag' && !/\bnoindex\b/i.test(h.get(key) || '')) h.append(key, value);
   }
   h.delete('Access-Control-Allow-Credentials');
   if (new URL(request.url).pathname.startsWith('/embed/')) h.delete('X-Frame-Options');

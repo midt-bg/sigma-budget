@@ -193,7 +193,11 @@ preflight за удостоверени или нестандартни заяв
 Публичните release API/object заявки и четенето на текущи registry файлове се
 ограничават чрез Workers binding `RELEASE_RATE_LIMITER`: 120 заявки за 60 секунди
 на CF-Connecting-IP, общ брояч за маршрутите, с `unknown-client` при липса на IP.
-Статичните bundled файлове не четат R2 и не изразходват този лимит.
+Ключът е префиксиран с `WORKER_VERSION.id` от платформения version metadata
+binding, така че dev и production не споделят брояч дори при namespace `2001`.
+При локална липса на metadata префиксът е hostname-ът на заявката.
+Статичните bundled файлове, включително `/data/releases/<id>/*`, се разпознават
+преди limiter-а и не четат R2. Candidate builds също не използват registry лимита.
 429 връща `Retry-After: 60` и `Cache-Control: no-store`. В production липсващ или
 повреден binding връща 503; локално и в staging заявката продължава с предупреждение.
 Ограничението е приблизително и се прилага отделно във всяка Cloudflare локация:
@@ -202,7 +206,11 @@ https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/
 При следващо разрешено публикуване операторът трябва да провери, че namespace
 `2001` (production) и `2002` (staging) са свободни в акаунта, или да ги замени с
 отделни свободни положителни числови идентификатори. Binding-ът е конфигуриран
-изрично и в двете среди. Не са необходими remote команди за тази промяна.
+изрично в default/dev конфигурацията и staging. Операторът трябва да пренесе
+и `version_metadata: { "binding": "WORKER_VERSION" }`, и `RELEASE_RATE_LIMITER`
+в custom/local deploy конфигурациите преди следващия разрешен dev/production
+deploy. Metadata ID се задава от платформата и не се въвежда ръчно.
+Не са необходими remote команди за тази промяна.
 
 CI блокира при всички advisory нива (`pnpm audit --audit-level=low`), при gitleaks
 находки и при Semgrep находки. Няма advisory изключения. Евентуално изключение
@@ -216,8 +224,14 @@ Semgrep използва digest-pinned образ като СИГМА и пре�
 локални XML файлове и константни SVG икони; те не са потвърдени уязвимости в одита.
 Този фокусиран gate не заменя прегледа на тези контексти. Gitleaks запазва всички
 стандартни правила; точните публични стойности `2028.forecast` и `2029.forecast`
-са документирани false positives в `.gitleaks.toml`, без изключване на файлове. Допълнителните изключения обхващат само SHA-256
+са документирани false positives в `.gitleaks.toml`, без изключване на файлове. Допълнителните изключения обхващат само 11 точни, прегледани SHA-256
 стойности в пет конкретни frozen provenance/capture файла и точните имена на две
 липсващи полета от KeyError в един validation oracle. Dependabot предлага обновявания на SHA pins
 за GitHub Actions за преглед. За merge protection трябва да са required двата
 security job-а; staging deploy зависи от security workflow-а.
+
+
+Release acceptance helper-ът пази HTTP headers с case-insensitive lookup.
+Sandbox проверката изисква самостоятелна `sandbox` директива без `allow-*`
+изключения; допълнителните CSP директиви не я обезсилват. Проверяват се и
+attachment, no-transform и пълната CSP на SSR документа.

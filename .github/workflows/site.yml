@@ -156,6 +156,7 @@ jobs:
       - run: |
           python -m pip install --require-hashes -r tests/requirements-dev.lock -r pipeline/requirements.lock
           python -m pip install --no-deps -e pipeline
+      - run: python -m unittest tests.release.test_response_headers
       - run: python -m tests.release.release_check
       - run: python -m tests.release.restore_drill
 

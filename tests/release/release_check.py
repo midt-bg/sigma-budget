@@ -91,9 +91,14 @@ def req(method, url, body=None, headers=None):
     r = urllib.request.Request(url, data=body, method=method, headers=headers or {})
     try:
         with urllib.request.urlopen(r, timeout=60) as res:
-            return res.status, dict(res.headers), res.read()
+            return res.status, res.headers, res.read()
     except urllib.error.HTTPError as e:
-        return e.code, dict(e.headers), e.read()
+        return e.code, e.headers, e.read()
+
+
+def has_sandbox(csp):
+    # A bare sandbox directive grants no exceptions; extra CSP directives remain restrictive.
+    return any(part.strip().lower().split() == ['sandbox'] for part in csp.split(';'))
 
 
 def jbody(b):
@@ -301,7 +306,7 @@ def main(argv):
         s, h, b = req("GET", base + "/data/releases/%s/%s" % (A[2], out0["path"]), headers={"Range": "bytes=0-9"})
         ok(s == 206 and len(b) == 10 and h.get("Content-Range", "").startswith("bytes 0-9/"), "Range: 206 with ten bytes")
         s, h, _b = req("GET", base + "/data/releases/%s/data/originals/dv/law.html" % A[2])
-        ok(s == 200 and "attachment" in h.get("Content-Disposition", "") and h.get("Content-Security-Policy") == "sandbox",
+        ok(s == 200 and "attachment" in h.get("Content-Disposition", "") and has_sandbox(h.get("Content-Security-Policy", "")),
            "an HTML original is a download in a sandbox, not a page of this origin")
         ok("no-transform" in h.get("Cache-Control", ""), "release files are no-transform: the edge may not edit their bytes (a Web Analytics beacon)")
         s, _h, _b = req("GET", base + "/data/releases/%s/data/not-listed.json" % A[2])

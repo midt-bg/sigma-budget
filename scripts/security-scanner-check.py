@@ -19,8 +19,11 @@ with tempfile.TemporaryDirectory(prefix='security-control-') as directory:
     else:
         command = [binary, 'dir', str(target), '--config', str(ROOT / '.gitleaks.toml'), '--redact', '--no-banner']
         samples = [('bad.txt', 'api_key = "' + secrets.token_hex(20) + '"')]
+        for name in ['validate14/code-path-capture', 'validate15/compound/provenance', 'validate17a/provenance', 'validate15/oracle', 'wave13b/proof']:
+            samples.append(('packages/ingest/test/fixtures/' + name + '.json', '{"api_key":"' + secrets.token_hex(32) + '"}'))
     for name, content in samples:
         file = target / name
+        file.parent.mkdir(parents=True, exist_ok=True)
         file.write_text(content)
         result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env={**os.environ, 'SEMGREP_ENABLE_VERSION_CHECK': '0'})
         if result.returncode != 1:

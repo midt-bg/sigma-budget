@@ -196,8 +196,6 @@ async function dispatch(request: Request, env: Env, ctx: ExecutionContext): Prom
     return new Response('Method not allowed', { status: 405, headers: { Allow: 'GET, HEAD' } });
   }
   if (RELEASES.test(url.pathname)) {
-    const limited = await rateLimitReleaseRead(request, env);
-    if (limited) return limited;
     // A local candidate build uses only its packaged release metadata, even
     // when local registry bindings contain another release.
     if (candidateReleaseId()) {
@@ -205,6 +203,14 @@ async function dispatch(request: Request, env: Env, ctx: ExecutionContext): Prom
         ? env.ASSETS.fetch(request)
         : Response.json({ error: 'local candidate has no release registry' }, { status: 404 });
     }
+    // Packaged release resources are immutable build assets, not registry reads.
+    // Check the asset before charging the registry limiter (including 304/HEAD).
+    if (/^\/data\/releases\/[a-f0-9]{64}\/.+/.test(url.pathname)) {
+      const asset = await env.ASSETS.fetch(request);
+      if (asset.status === 200 || asset.status === 206 || asset.status === 304) return asset;
+    }
+    const limited = await rateLimitReleaseRead(request, env);
+    if (limited) return limited;
     // the registry's releases; a release that was published with the site (data/release/releases/) is one of the static files. An
     // environment without a registry (no D1 tables: a local check, a new environment) answers as one where the release is unknown
     let res: Response;

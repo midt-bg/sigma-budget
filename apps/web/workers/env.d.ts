@@ -2,6 +2,7 @@
 interface Env {
   ASSETS: Fetcher;
   RELEASE_RATE_LIMITER?: RateLimit;
+  WORKER_VERSION?: { id: string };
   DB: D1Database;
   OBJECTS: R2Bucket;
   ENVIRONMENT: string;

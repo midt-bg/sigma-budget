@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
-import { finalizeResponse, staticResponseHeaders } from '../app/lib/security';
+import { CSP, finalizeResponse, staticResponseHeaders } from '../app/lib/security';
 import { rateLimitReleaseRead } from './release-rate-limit';
 import { publicApi } from './api/api.js';
 import { operator } from './api/access.js';
@@ -69,6 +69,49 @@ describe('SECURITY-05–06 response policy', () => {
       expect(await res.text()).toBe('');
     },
   );
+  it('keeps downloaded originals attached, sandboxed and immutable without transforming bytes', () => {
+    const res = finalizeResponse(
+      request('/data/releases/id/original.html'),
+      new Response('original', {
+        headers: {
+          'Content-Disposition': 'attachment; filename="original.html"',
+          'Content-Security-Policy': 'sandbox',
+          'X-Frame-Options': 'DENY',
+          'Referrer-Policy': 'no-referrer',
+          'Cache-Control': 'public, max-age=31536000, immutable, no-transform',
+        },
+      }),
+      local,
+    );
+    expect(res.headers.get('Content-Disposition')).toBe('attachment; filename="original.html"');
+    expect(res.headers.get('X-Frame-Options')).toBe('DENY');
+    expect(res.headers.get('Referrer-Policy')).toBe('no-referrer');
+    expect(res.headers.get('Cache-Control')).toBe(
+      'public, max-age=31536000, immutable, no-transform',
+    );
+    expect(
+      res.headers
+        .get('Content-Security-Policy')
+        ?.split(';')
+        .map((s) => s.trim()),
+    ).toContain('sandbox');
+    expect(res.headers.get('X-Content-Type-Options')).toBe('nosniff');
+  });
+  it('preserves document no-transform and adds the complete shared CSP', () => {
+    const res = finalizeResponse(
+      request('/izpalnenie'),
+      new Response('document', {
+        headers: {
+          'Cache-Control': 'private, no-store, no-transform',
+        },
+      }),
+      local,
+    );
+    expect(res.headers.get('Cache-Control')).toBe('private, no-store, no-transform');
+    expect(res.headers.get('Content-Security-Policy')).toBe(CSP + "; frame-ancestors 'self'");
+    expect(res.headers.get('Cross-Origin-Resource-Policy')).toBe('same-origin');
+    expect(res.headers.get('X-Robots-Tag')).toBe('noindex');
+  });
   it('scopes public CORS and embedding without weakening downloaded originals', () => {
     for (const path of ['/api/releases', '/data/core.json', '/data/releases/x/manifest.json']) {
       const h = finalizeResponse(request(path), new Response(null), local).headers;
@@ -95,7 +138,7 @@ describe('SECURITY-05–06 response policy', () => {
       new Response(null, { headers: { 'Content-Security-Policy': 'sandbox' } }),
       local,
     );
-    expect(sandbox.headers.get('Content-Security-Policy')).toContain('; sandbox');
+    expect(sandbox.headers.get('Content-Security-Policy')).toBe('sandbox');
     expect(staticResponseHeaders(local)).toContain('x-robots-tag: noindex');
   });
 });
@@ -181,6 +224,18 @@ describe('SECURITY-09 release rate limit', () => {
     expect(res?.status).toBe(429);
     expect(res?.headers.get('Retry-After')).toBe('60');
     expect(limit.mock.calls[0]).toEqual(limit.mock.calls[1]);
+  });
+  it('separates dev and production deployments sharing a namespace', async () => {
+    const limit = vi.fn(async (_input: { key: string }) => ({ success: true }));
+    for (const id of ['dev-version', 'production-version']) {
+      await rateLimitReleaseRead(request('/api/releases'), {
+        ENVIRONMENT: 'production',
+        WORKER_VERSION: { id },
+        RELEASE_RATE_LIMITER: { limit },
+      });
+    }
+    expect(limit.mock.calls[0][0].key).toBe('dev-version:unknown-client');
+    expect(limit.mock.calls[1][0].key).toBe('production-version:unknown-client');
   });
   it('degrades locally, fails closed in production, and handles binding failures', async () => {
     expect(await rateLimitReleaseRead(request('/api/releases'), local)).toBeNull();
