@@ -247,7 +247,7 @@ describe('SECURITY-09 release rate limit', () => {
     expect(counts.size).toBe(1);
     expect(limit).toHaveBeenCalledWith({ key: '192.0.2.1' });
   });
-  it('configures distinct stable namespaces for dev, staging and production', () => {
+  it('keeps production at top level and staging isolated without a production env block', () => {
     const text = readFileSync(resolve(root, 'apps/web/wrangler.jsonc'), 'utf8');
     const config = JSON.parse(
       text
@@ -255,15 +255,49 @@ describe('SECURITY-09 release rate limit', () => {
         .filter((line) => !line.trim().startsWith('//'))
         .join('\n'),
     );
-    const namespaces = [config, config.env.staging, config.env.production].map((c) => {
+    const namespaces = [config, config.env.staging].map((c) => {
       const binding = c.ratelimits.find((b: { name: string }) => b.name === 'RELEASE_RATE_LIMITER');
       expect(binding.simple).toEqual({ limit: 120, period: 60 });
       return binding.namespace_id;
     });
-    expect(namespaces).toEqual(['2003', '2002', '2001']);
-    expect(new Set(namespaces).size).toBe(3);
+    expect(namespaces).toEqual(['2001', '2002']);
+    expect(new Set(namespaces).size).toBe(2);
+    expect(config.name).toBe('sigma-budget');
+    expect(config.vars.ENVIRONMENT).toBe('production');
+    expect(config.vars.SITE_ORIGIN).toBe('https://sigma-budget.my-data.bg');
+    expect(config.vars.NOINDEX).toBe('');
+    expect(config.d1_databases[0].database_name).toBe('sigma-budget-registry');
+    expect(config.r2_buckets[0].bucket_name).toBe('sigma-budget-objects');
+    expect(config.env).not.toHaveProperty('production');
     expect(text).not.toContain('WORKER_VERSION');
   });
+  it.each(['dev', 'staging', 'development', 'test', 'PRODUCTION', ''])(
+    'fails open only on missing/error binding but enforces a working limiter for ENVIRONMENT=%j',
+    async (ENVIRONMENT) => {
+      const req = request('/api/releases');
+      expect(await rateLimitReleaseRead(req, { ENVIRONMENT })).toBeNull();
+      expect(
+        await rateLimitReleaseRead(req, {
+          ENVIRONMENT,
+          RELEASE_RATE_LIMITER: {
+            limit: async () => {
+              throw new Error('unavailable');
+            },
+          },
+        }),
+      ).toBeNull();
+      expect(
+        (
+          await rateLimitReleaseRead(req, {
+            ENVIRONMENT,
+            RELEASE_RATE_LIMITER: {
+              limit: async () => ({ success: false }),
+            },
+          })
+        )?.status,
+      ).toBe(429);
+    },
+  );
   it('degrades locally, fails closed in production, and handles binding failures', async () => {
     expect(await rateLimitReleaseRead(request('/api/releases'), local)).toBeNull();
     expect(

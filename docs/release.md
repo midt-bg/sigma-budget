@@ -196,22 +196,32 @@ preflight за удостоверени или нестандартни заяв
 Ключът е само IP адресът, без version/hostname префикс. Една среда запазва
 общия бюджет през rolling/gradual deployments и през hostname aliases.
 Средите са изолирани чрез три стабилни namespaces: `2001` за production,
-`2002` за staging и `2003` за default/dev (`sigma-budget-dev`).
+`2002` за staging и `2003` за операторския dev deployment config (`sigma-budget-dev`).
+Top-level конфигурацията остава production; dev се публикува със собствен
+операторски config с `ENVIRONMENT: "dev"`, собствен `SITE_ORIGIN` и `NOINDEX: "1"`.
 Статичните bundled файлове, включително `/data/releases/<id>/*`, се разпознават
 преди limiter-а и не четат R2. Candidate builds също не използват registry лимита.
-429 връща `Retry-After: 60` и `Cache-Control: no-store`. В production липсващ или
-повреден binding връща 503; локално и в staging заявката продължава с предупреждение.
+429 връща `Retry-After: 60` и `Cache-Control: no-store`. При липсващ binding или
+грешка от него registry четенето получава 503 само ако `ENVIRONMENT` е точно
+`"production"`. При всяка друга стойност, включително `"dev"` и `"staging"`,
+limiter-ът предупреждава и допуска заявката (fail open). Работещ binding се
+прилага във всички среди и връща 429 при изчерпана квота.
 Ограничението е приблизително и се прилага отделно във всяка Cloudflare локация:
 https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/
 
 При следващо разрешено публикуване операторът трябва да провери, че и трите
 namespace IDs (`2001`, `2002`, `2003`) са неизползвани в акаунта. При конфликт
 трябва да се изберат три други отделни свободни положителни числови IDs и да се
-пренесат в custom/local конфигурациите. Всяка среда включва собствен
-`RELEASE_RATE_LIMITER` binding. Не се използва version metadata binding.
-Default конфигурацията е dev; production се избира изрично чрез
-`CLOUDFLARE_ENV=production` при build (или `--env production` за команди по
-изходната конфигурация). При deploy се използва съответният generated build config.
+пренесат в custom/local конфигурациите. Top-level production носи binding с
+`2001`, а staging носи binding с `2002`. Отделният операторски dev config трябва
+да включва собствен binding:
+
+```jsonc
+"ratelimits": [{ "name": "RELEASE_RATE_LIMITER", "namespace_id": "2003", "simple": { "limit": 120, "period": 60 } }]
+```
+
+Не се използва version metadata binding. Production deploy процедурата и
+нейният избор на top-level конфигурацията са запазени.
 Не са необходими remote команди за тази промяна.
 
 CI блокира при всички advisory нива (`pnpm audit --audit-level=low`), при gitleaks
