@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 const workflow = readFileSync('.github/workflows/site.yml', 'utf8');
 test('one Node suite command and explicit deploy barrier', () => {
   assert.equal((workflow.match(/run: pnpm test -- --coverage/g) || []).length, 1);
@@ -30,4 +31,25 @@ test('all independent Python and provenance commands survive the consolidation',
   const wave = readFileSync('.github/workflows/wave15b-validation.yml', 'utf8');
   assert.match(wave, /workflow_call:/);
   assert.doesNotMatch(wave, /vitest run/);
+});
+
+test('security covers other PR targets without duplicating main PR checks', () => {
+  const { parse } = createRequire(new URL('../packages/ingest/package.json', import.meta.url))(
+    'yaml',
+  );
+  const site = parse(workflow);
+  const security = parse(readFileSync('.github/workflows/security.yml', 'utf8'));
+  assert.deepEqual(site.on.pull_request.branches, ['main']);
+  assert.deepEqual(security.on.pull_request, { 'branches-ignore': ['main'] });
+  assert.ok(Object.hasOwn(security.on, 'workflow_call'));
+  assert.deepEqual(Object.keys(security.jobs).sort(), ['dependencies-and-secrets', 'semgrep']);
+});
+
+test('ETL coverage includes the standalone entry point and retains shared production globs', async () => {
+  const { default: config } = await import('../apps/etl/vitest.config.ts');
+  assert.deepEqual(config.test.coverage.include, [
+    'src/**/*.{ts,js}',
+    'bin/**/*.js',
+    'publication-documents/prepare.mjs',
+  ]);
 });

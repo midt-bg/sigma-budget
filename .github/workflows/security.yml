@@ -1,5 +1,8 @@
 name: security
 on:
+  # main PRs use the site caller; other targets still receive the full security suite.
+  pull_request:
+    branches-ignore: [main]
   workflow_call:
   workflow_dispatch:
 permissions:

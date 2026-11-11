@@ -2,7 +2,7 @@
 
 `site.yml` изпълнява всички Node suites веднъж в job `coverage`, с V8 coverage от Vitest 4.1.12. Самостоятелните wave jobs запазват независимите Python, frozen-donor, provenance и CLI candidate проверки. Тестовите parity отчети се качват от `coverage`. Сглобеният web артефакт се използва повторно от browser проверките и staging deploy.
 
-`required-validation` зависи от всички останали проверки, включително wave14, wave15, wave15b, wave17a/b/c, wave18, aggregation/catalog parity, data-image, node-import и reusable security workflow (semgrep и dependencies-and-secrets). Изпълнява се с `always()` и приема само `success` за всяка зависимост; failure, cancellation и skipped блокират deploy. Staging deploy зависи само от тази бариера. Security и wave15b се извикват от site workflow; имат и ръчно стартиране, без дублиращи PR/push изпълнения.
+`required-validation` зависи от всички останали проверки, включително wave14, wave15, wave15b, wave17a/b/c, wave18, aggregation/catalog parity, data-image, node-import и reusable security workflow (semgrep и dependencies-and-secrets). Изпълнява се с `always()` и приема само `success` за всяка зависимост; failure, cancellation и skipped блокират deploy. Staging deploy зависи само от тази бариера. Security и wave15b се извикват от site workflow за PR към main; имат и ръчно стартиране. Security има отделен `pull_request` trigger с `branches-ignore: [main]` за PR към release/integration и други клони. Така всички PR targets получават Semgrep, gitleaks и dependency audit, без дублиране за main.
 
 Операторска стъпка: branch protection трябва да изисква `required-validation` и `coverage`. Тази промяна не настройва GitHub branch protection и не разрешава production deploy.
 
@@ -10,7 +10,7 @@
 
 `coverage-baseline.json` съдържа измерените начални lines/branches проценти за всеки workspace с тестова команда. `coverage-summary.md` показва също functions/statements. Ниското покритие се отчита честно; базата не е твърдение за достатъчност на тестовете.
 
-Включени са всички производствени TS/JS файлове в `src` и CLI launcher-ите в `bin`, а за web - `app`, `client`, `workers`, service worker и candidate-data adapter, дори когато никой тест не ги импортира. Изключени са само тестове, декларации и fixture директории. CLI subprocess изпълненията проверяват реалната компилирана граница, но V8 отчетът на родителския Vitest процес не приписва тяхното покритие на изходния TypeScript.
+Включени са всички производствени TS/JS файлове в `src` и CLI launcher-ите в `bin`, както и изрично `apps/etl/publication-documents/prepare.mjs`, а за web - `app`, `client`, `workers`, service worker и candidate-data adapter, дори когато никой тест не ги импортира. Изключени са само тестове, декларации и fixture директории. CLI subprocess изпълненията проверяват реалната компилирана граница, но V8 отчетът на родителския Vitest процес не приписва тяхното покритие на изходния TypeScript.
 
 Локално: `pnpm test -- --coverage`, после `pnpm check:coverage`. Липсващ workspace/отчет или невалидни метрики провалят gate. Допустимият шум е 0.5 процентни пункта за lines/branches по workspace, както в СИГМА. Базата се обновява само след преглед с `node scripts/check-coverage.mjs --update`; не се обновява автоматично в CI.
 
@@ -31,3 +31,5 @@
 Literal HTML/CSS и кодовите примери в низове не се преформатират (`embeddedLanguageFormatting: off`): те участват в byte-level oracle договори. JSONC се форматира без trailing commas за съвместимост с текущите проверяващи parsers. Това запазва съдържанието на договорите, без да изключва поддържаните JS/TS/JSONC файлове от format gate.
 
 Browser bootstrap използва официалния Ubuntu archive mirror вместо Azure mirror след повторени DNS откази в main и PR CI. Запазени са security/third-party repositories, apt signing keys и всички Playwright зависимости и проверки. Тази CI-only поправка следва вече публикувания отделен format commit; публикуваната история не се пренаписва.
+
+Провереният Node inventory извън `src`/`bin` включва standalone publication-documents entry point, web service worker и candidate-data adapter. Последните два вече са в web coverage. Останалите Node файлове извън тези source директории са Vitest/Vite/React Router конфигурации и vendored код; не са production runtime entry points.

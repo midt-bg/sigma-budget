@@ -2,7 +2,7 @@
 
 | Workspace | Lines | Branches | Functions | Statements |
 | --- | ---: | ---: | ---: | ---: |
-| apps/etl | 65.56% | 61.95% | 67.85% | 64.15% |
+| apps/etl | 65.19% | 61.57% | 67.85% | 63.78% |
 | apps/web | 48.29% | 41.49% | 54.62% | 46.76% |
 | packages/dataset-schema | 98.55% | 92.77% | 100% | 97.56% |
 | packages/ingest | 84.34% | 78.25% | 85.83% | 82.08% |

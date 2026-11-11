@@ -2,8 +2,8 @@
   "tolerance": 0.5,
   "workspaces": {
     "apps/etl": {
-      "lines": 65.56,
-      "branches": 61.95
+      "lines": 65.19,
+      "branches": 61.57
     },
     "apps/web": {
       "lines": 48.29,
