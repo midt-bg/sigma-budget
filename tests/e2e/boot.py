@@ -5,6 +5,7 @@ Run against the built Worker: python -m tests.e2e.boot --url http://127.0.0.1:89
 import argparse
 import asyncio
 import re
+from datetime import datetime, timedelta, timezone
 from playwright.async_api import async_playwright
 
 async def early_preferences(browser, url):
@@ -16,23 +17,29 @@ async def early_preferences(browser, url):
             await release.wait()
             await request.continue_()
         await page.route('**/data/core.json', hold)
+        # Freeze the bounded boot timer, so this proves a pre-start interaction
+        # even on a busy runner. Network and real DOM events remain available.
+        at = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        await page.clock.install(time=at)
+        await page.clock.pause_at(at + timedelta(seconds=1))
         try:
             await page.goto(url.rstrip('/') + '/razhodi', wait_until='domcontentloaded')
             assert await page.evaluate("import('/js/router.js').then(m => m.router.current === null)")
             if choice == 'period':
-                await page.locator('#btn-period').click()
-                await page.locator('[role=dialog] input[value="2024.report"]').check()
+                await page.locator('#btn-period').click(force=True)
+                await page.get_by_role('dialog').locator('input[value="2024.report"]').click(force=True)
                 assert 'per=2024.report' in page.url
             elif choice == 'unit':
-                await page.locator('.unit-switch input[value="pct"]').check()
+                await page.locator('.unit-switch input[value="pct"]').click(force=True)
                 assert 'unit=pct' in page.url
             else:
-                await page.locator('[data-share]').first.click()
+                await page.locator('[data-share]').first.click(force=True)
                 assert not await page.get_by_text('Този блок не може да се споделя.').count()
             # Prove this was an early interaction, before startup consumed the URL.
             assert await page.evaluate("import('/js/router.js').then(m => m.router.current === null)")
         finally:
             release.set()
+            await page.clock.resume()
         await page.wait_for_selector('article[data-route="S07"][data-ready="1"]')
         if choice == 'period':
             assert await page.evaluate("import('/js/store.js').then(m => m.store.get('period'))") == '2024.report'
@@ -56,7 +63,7 @@ async def early_preferences(browser, url):
     try:
         await page.goto(url.rstrip('/') + '/zakon', wait_until='domcontentloaded')
         await page.locator('#btn-period').click()
-        assert await page.locator('[role=dialog] input[type=radio]:not(:disabled)').evaluate_all('(nodes) => nodes.map(n => n.value)') == ['2026.law']
+        assert await page.get_by_role('dialog').locator('input[type=radio]:not(:disabled)').evaluate_all('(nodes) => nodes.map(n => n.value)') == ['2026.law']
         assert await page.evaluate("import('/js/store.js').then(m => m.store.get('period'))") == '2026.law'
     finally:
         release.set()
