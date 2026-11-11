@@ -1,16 +1,18 @@
 import { expect, it, vi } from 'vitest';
 vi.mock('react-router', () => ({ createRequestHandler: () => async () => new Response('page') }));
 vi.mock('./release-data', () => ({
-  releaseData: async () => ({
+  usesRegistry: vi.fn(async () => false),
+  releaseData: vi.fn(async () => ({
     releaseId: 'test',
     dataBase: '/data/',
     load: async () => null,
     file: async () => null,
-  }),
+  })),
   candidateReleaseId: () => null,
   noRegistry: () => false,
 }));
 import app from './app';
+import { usesRegistry, releaseData } from './release-data';
 
 it('finalizes actual dispatch early returns, resource fallbacks, admin auth and exceptions', async () => {
   const ctx = { waitUntil: vi.fn() } as unknown as ExecutionContext;
@@ -82,4 +84,20 @@ it('does not charge bundled static files to the registry read limiter', async ()
   expect(res.status).toBe(200);
   expect(await res.text()).toBe('bundled');
   expect(limit).not.toHaveBeenCalled();
+});
+
+it('limits stable registry data before loading the manifest or file', async () => {
+  vi.mocked(usesRegistry).mockResolvedValueOnce(true);
+  vi.mocked(releaseData).mockClear();
+  const env = {
+    ENVIRONMENT: 'production',
+    RELEASE_RATE_LIMITER: { limit: async () => ({ success: false }) },
+  } as unknown as Env;
+  const res = await app.fetch(
+    new Request('https://budget.example/data/core.json'),
+    env,
+    {} as ExecutionContext,
+  );
+  expect(res.status).toBe(429);
+  expect(releaseData).not.toHaveBeenCalled();
 });

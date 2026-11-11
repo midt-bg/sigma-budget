@@ -15,7 +15,13 @@ import { publicApi } from './api/api.js';
 import { provideScope } from '../client/env.js';
 import { requestState } from '../client/store.js';
 import { screenSearch } from '../app/lib/query-params';
-import { releaseData, noRegistry, candidateReleaseId, type ReleaseData } from './release-data';
+import {
+  releaseData,
+  noRegistry,
+  candidateReleaseId,
+  usesRegistry,
+  type ReleaseData,
+} from './release-data';
 import { inFlight, claim, withinCap } from './render-gate';
 import { finalizeResponse } from '../app/lib/security';
 import { rateLimitReleaseRead } from './release-rate-limit';
@@ -229,18 +235,16 @@ async function dispatch(request: Request, env: Env, ctx: ExecutionContext): Prom
   const sigmaUrl = env.SIGMA_URL || '';
   let data: ReleaseData;
   try {
+    if (DATA_FILE.test(url.pathname) && (await usesRegistry(env))) {
+      const limited = await rateLimitReleaseRead(request, env);
+      if (limited) return limited;
+    }
     data = await releaseData(env, url.origin);
   } catch (e) {
     console.error(e);
     return unavailable();
   } // RegistryError: D1 or R2 cannot be read right now
-  if (DATA_FILE.test(url.pathname)) {
-    if (data.dataBase.startsWith('/data/releases/')) {
-      const limited = await rateLimitReleaseRead(request, env);
-      if (limited) return limited;
-    }
-    return dataFile(request, env, url, data, origin);
-  }
+  if (DATA_FILE.test(url.pathname)) return dataFile(request, env, url, data, origin);
   const release = {
     id: data.releaseId,
     dataBase: data.dataBase,
