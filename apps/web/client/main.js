@@ -1,6 +1,6 @@
 // Boot: essential chrome -> core data -> router.  Everything else loads lazily.
 import { store } from './store.js';
-import { migratePeriod, resolvePeriod } from './periods.js';
+import { migratePeriod } from './periods.js';
 import { data } from './data.js';
 import { router, dropStalePrerender } from './router.js';
 import { shell } from './shell.js';
@@ -11,9 +11,7 @@ import { watchLinks, ROOT } from './loc.js';
 const wait = ms => new Promise(r => setTimeout(r, ms));
 
 async function boot() {
-  const initial = router.parseHash(location.hash.startsWith('#/') ? location.hash : location.pathname + location.search).query;
-  store.set('period', resolvePeriod(initial.per).resolved);
-  store.set('periodRequested', initial.per ?? null);
+  router.init();
   dropStalePrerender();                                           // the HTML of another address is not shown while the data loads
   if (document.documentElement.hasAttribute('data-prerendered')) {
     const seed = document.getElementById('react-screen-seed');
