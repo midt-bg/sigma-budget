@@ -29,3 +29,5 @@
 При същите останали времена изваждането на Node tests от build дава приблизително 1435 s (23 min 55 s) за build + browser check, около 33% по-кратък път. Отделният coverage job също трябва да завърши преди общата бариера. Това е оценка от исторически стъпки, не обещание за runner време; опашката, натоварването и V8 overhead се отчитат отделно при сравнение с PR run.
 
 Literal HTML/CSS и кодовите примери в низове не се преформатират (`embeddedLanguageFormatting: off`): те участват в byte-level oracle договори. JSONC се форматира без trailing commas за съвместимост с текущите проверяващи parsers. Това запазва съдържанието на договорите, без да изключва поддържаните JS/TS/JSONC файлове от format gate.
+
+Browser bootstrap използва официалния Ubuntu archive mirror вместо Azure mirror след повторени DNS откази в main и PR CI. Запазени са security/third-party repositories, apt signing keys и всички Playwright зависимости и проверки. Тази CI-only поправка следва вече публикувания отделен format commit; публикуваната история не се пренаписва.

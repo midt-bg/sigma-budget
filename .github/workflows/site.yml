@@ -67,7 +67,7 @@ jobs:
           python -m pip install --no-deps -e pipeline
           pnpm install --frozen-lockfile
       - name: Coverage gate self-tests
-        run: node --test scripts/check-coverage.test.mjs scripts/ci-gates.test.mjs
+        run: node --test scripts/check-coverage.test.mjs scripts/ci-gates.test.mjs scripts/ci-ubuntu-mirror.test.mjs
       - name: All Node suites, once, with coverage
         run: pnpm test -- --coverage
       - name: Node tests leave protected inputs unchanged
@@ -157,6 +157,7 @@ jobs:
         run: |
           python -m pip install --require-hashes -r tests/requirements-dev.lock -r pipeline/requirements.lock
           python -m pip install --no-deps -e pipeline
+          sudo bash scripts/ci-ubuntu-mirror.sh
           python -m playwright install --with-deps chromium
           pnpm install --frozen-lockfile
       - name: Check repository formatting
@@ -220,6 +221,7 @@ jobs:
       - run: |
           python -m pip install --require-hashes -r tests/requirements-dev.lock -r pipeline/requirements.lock
           python -m pip install --no-deps -e pipeline
+          sudo bash scripts/ci-ubuntu-mirror.sh
           python -m playwright install --with-deps chromium
           pnpm install --frozen-lockfile
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
@@ -894,6 +896,7 @@ jobs:
       - name: Provision the existing locked browser test tool (outside import runtime)
         run: |
           python -m pip install --require-hashes -r tests/requirements-dev.lock
+          sudo bash scripts/ci-ubuntu-mirror.sh
           python -m playwright install --with-deps chromium
       - name: Package the fresh Node candidate and exercise its Worker and browser identity
         run: node scripts/node-candidate-site-acceptance.mjs "$RUNNER_TEMP/node-acceptance/candidate" "$RUNNER_TEMP/node-site"
