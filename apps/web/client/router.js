@@ -26,6 +26,7 @@ const RERENDER_KEYS = [...(ROLE_SELECTOR ? ['userType'] : []), 'period', 'unit',
 const $view = () => document.getElementById('view');
 
 let initialized = false, started = false, applying = false;
+let explicitPeriodSelection = false;
 let finishInitial;
 const initialReady = new Promise(resolve => { finishInitial = resolve; });
 let navSeq = 0, abort = null, cur = null, lastHref = '', histK = Date.now(), curK = 0, cleanups = [], readyP = Promise.resolve();
@@ -335,6 +336,7 @@ function onClick(e) {
 function onStore(key) {
   if (applying || !RERENDER_KEYS.includes(key)) return;
   if (key === 'period') {
+    explicitPeriodSelection = true;
     const per = store.get('period');
     setQuery({ per: per === DEFAULT_PERIOD ? null : per }, { rerender: false });
   }
@@ -401,5 +403,7 @@ export const router = {
   get periods() { return cur ? periodsFor(cur.route, cur.vm && cur.vm.mod) : periodsFor(resolve(here()).route); },
   get ready() { return readyP; },
   get initialReady() { return initialReady; },
+  markPeriodSelection() { explicitPeriodSelection = true; },
+  get periodSelected() { return explicitPeriodSelection; },
   routes: ROUTES
 };

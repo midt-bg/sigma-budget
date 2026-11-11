@@ -9,9 +9,11 @@ from datetime import datetime, timedelta, timezone
 from playwright.async_api import async_playwright
 
 async def early_preferences(browser, url):
-    for choice in ['period', 'unit', 'share']:
+    for choice in ['period', 'default-period', 'same-default-period', 'unit', 'share']:
         context = await browser.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, service_workers='block')
         page = await context.new_page()
+        if choice in ['default-period', 'same-default-period']:
+            await page.add_init_script("localStorage.setItem('bns.prefs.v1', JSON.stringify({period:'2026.draft', unit:'eur'}))")
         release = asyncio.Event()
         async def hold(request):
             await release.wait()
@@ -29,6 +31,16 @@ async def early_preferences(browser, url):
                 await page.locator('#btn-period').click(force=True)
                 await page.get_by_role('dialog').locator('input[value="2024.report"]').click(force=True)
                 assert 'per=2024.report' in page.url
+            elif choice in ['default-period', 'same-default-period']:
+                values = ['2024.report', '2027.draft'] if choice == 'default-period' else ['2027.draft']
+                for value in values:
+                    await page.locator('#btn-period').click(force=True)
+                    await page.get_by_role('dialog').locator(f'input[value="{value}"]').click(force=True)
+                    # An unchanged radio has no change event, so its sheet stays open.
+                    if value == '2027.draft' and choice == 'same-default-period':
+                        await page.keyboard.press('Escape')
+                assert await page.evaluate("import('/js/store.js').then(m => m.store.get('period'))") == '2027.draft'
+                assert 'per=' not in page.url
             elif choice == 'unit':
                 await page.locator('.unit-switch input[value="pct"]').click(force=True)
                 assert 'unit=pct' in page.url
@@ -44,6 +56,13 @@ async def early_preferences(browser, url):
         if choice == 'period':
             assert await page.evaluate("import('/js/store.js').then(m => m.store.get('period'))") == '2024.report'
             assert 'per=2024.report' in page.url
+        elif choice in ['default-period', 'same-default-period']:
+            # Wait for the actual migration (including storage cleanup), rather
+            # than asserting during the gap between initial render and migration.
+            await page.wait_for_function("() => !Object.hasOwn(JSON.parse(localStorage.getItem('bns.prefs.v1')), 'period')")
+            await page.wait_for_selector('article[data-route="S07"][data-ready="1"]')
+            assert await page.evaluate("import('/js/store.js').then(m => m.store.get('period'))") == '2027.draft'
+            assert 'per=' not in page.url
         elif choice == 'unit':
             assert await page.evaluate("import('/js/store.js').then(m => m.store.get('unit'))") == 'pct'
             assert await page.locator('.unit-switch input[value="pct"]').is_checked()

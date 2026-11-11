@@ -37,7 +37,7 @@ async function boot() {
   data.prefetch('releases/current');                            // the release ID that every CSV names (js/share.js csvMeta)
   await router.start();
   const beforeMigration = location.href;
-  const migration = migratePeriod({ address: location.href,
+  const migration = migratePeriod({ address: location.href, explicitSelection: router.periodSelected,
     get: key => localStorage.getItem(key), set: (key, value) => localStorage.setItem(key, value),
     replace: url => history.replaceState(history.state, '', url) });
   if (location.href !== beforeMigration) { await router.rerender(); store.set('periodNotice', migration?.resolved === store.get('period') ? migration.notice || '' : ''); refreshChrome(); }
