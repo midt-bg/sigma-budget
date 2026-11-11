@@ -6,9 +6,11 @@
     "vitest.shared.ts",
     "data/datasets.yaml",
     "data/release/**",
-    "data/inputs/**"
+    "data/inputs/**",
+    "coverage-baseline.json",
+    "coverage-exceptions.json"
   ],
-  "globalEnv": ["CLOUDFLARE_ENV", "WRANGLER_CONFIG"],
+  "globalEnv": ["CLOUDFLARE_ENV", "WRANGLER_CONFIG", "PYTHON312"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
@@ -22,13 +24,19 @@
       "dependsOn": ["^build"]
     },
     "test": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"],
+      "cache": false
     },
     "@sigma-budget/ingest#test": {
-      "dependsOn": ["build"]
+      "dependsOn": ["build"],
+      "outputs": ["coverage/**"],
+      "cache": false
     },
     "@sigma-budget/etl#test": {
-      "dependsOn": ["build"]
+      "dependsOn": ["build"],
+      "outputs": ["coverage/**"],
+      "cache": false
     },
     "dev": {
       "cache": false,

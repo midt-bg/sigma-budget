@@ -104,6 +104,8 @@ function capture(fn: (c: Context) => any, ctx: Context): any {
   }
 }
 describe('CORE and CATALOG frozen Python differential', () => {
+  // Cold full-corpus CORE + CATALOG baseline measured 5.43s with V8 coverage.
+  // Keep the default limit for the remaining differential scenarios.
   for (const test of cases)
     it(test.name, () => {
       const root = mkdtempSync(join(tmpdir(), 'sigma-17a-'));
@@ -151,7 +153,7 @@ describe('CORE and CATALOG frozen Python differential', () => {
         evidence.push(item);
         rmSync(root, { recursive: true, force: true });
       }
-    });
+    }, test.name === 'baseline' ? 15_000 : undefined);
 });
 
 describe('complete vintage-key CLI outcomes from the Python wrapper', () => {
