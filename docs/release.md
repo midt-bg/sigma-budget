@@ -177,3 +177,47 @@ Access приложението покрива само `/admin/*`: сайтът
   токен при всяко сваляне. Текстът на законите е същият. Разликата се отчита, не се крие.
 
 Всички команди тук се изпълняват от корена на хранилището. Конфигурацията за собствен акаунт е `apps/web/wrangler.local.jsonc`, до `apps/web/wrangler.jsonc`, така че относителните `main` и `migrations_dir` запазват значението си. За нея се използва `-c apps/web/wrangler.local.jsonc`, а при сглобяване - `WRANGLER_CONFIG=apps/web/wrangler.local.jsonc`. Vite разрешава тази променлива спрямо корена на хранилището. Deploy на сглобен сайт използва `-c apps/web/build/server/wrangler.json`.
+
+## Политика за публичното четене
+
+`/api/releases`, неговите подмаршрути и `/data/*` са публични за GET и HEAD.
+Всички отговори, включително грешките и статичните резервни файлове, изпращат
+`Access-Control-Allow-Origin: *`, `Access-Control-Allow-Methods: GET, HEAD` и
+`Cross-Origin-Resource-Policy: cross-origin`, без разрешение за credentials.
+Браузърните клиенти използват `credentials: 'omit'`. ETag, X-Release-Id и
+Retry-After са достъпни за JavaScript. Други методи получават 405; не се поддържа
+preflight за удостоверени или нестандартни заявки. `/admin/*` остава same-origin.
+Общият слой добавя security headers и noindex извън production; само `/embed/*`
+разрешава `frame-ancestors *`. Sandbox политиката на активните оригинали се запазва.
+
+Публичните release API/object заявки и четенето на текущи registry файлове се
+ограничават чрез Workers binding `RELEASE_RATE_LIMITER`: 120 заявки за 60 секунди
+на CF-Connecting-IP, общ брояч за маршрутите, с `unknown-client` при липса на IP.
+Статичните bundled файлове не четат R2 и не изразходват този лимит.
+429 връща `Retry-After: 60` и `Cache-Control: no-store`. В production липсващ или
+повреден binding връща 503; локално и в staging заявката продължава с предупреждение.
+Ограничението е приблизително и се прилага отделно във всяка Cloudflare локация:
+https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/
+
+При следващо разрешено публикуване операторът трябва да провери, че namespace
+`2001` (production) и `2002` (staging) са свободни в акаунта, или да ги замени с
+отделни свободни положителни числови идентификатори. Binding-ът е конфигуриран
+изрично и в двете среди. Не са необходими remote команди за тази промяна.
+
+CI блокира при всички advisory нива (`pnpm audit --audit-level=low`), при gitleaks
+находки и при Semgrep находки. Няма advisory изключения. Евентуално изключение
+изисква отделен преглед с advisory ID, основание, собственик, дата на преглед и
+срок; грешка на скенера също блокира проверката. Gitleaks проверява checkout-а
+преди инсталирането на зависимости и редактира намерените стойности в лога.
+Semgrep използва digest-pinned образ като СИГМА и преглеждани локални правила
+в `.semgrep/security.yml` за динамично изпълнение, shell команди, SQL интерполация,
+изключена JWT проверка и опасна десериализация в JavaScript/TypeScript/Python.
+Пробното изпълнение на широките audit packs даде 20 сигнала за доверени CLI URL-и,
+локални XML файлове и константни SVG икони; те не са потвърдени уязвимости в одита.
+Този фокусиран gate не заменя прегледа на тези контексти. Gitleaks запазва всички
+стандартни правила; точните публични стойности `2028.forecast` и `2029.forecast`
+са документирани false positives в `.gitleaks.toml`, без изключване на файлове. Допълнителните изключения обхващат само SHA-256
+стойности в пет конкретни frozen provenance/capture файла и точните имена на две
+липсващи полета от KeyError в един validation oracle. Dependabot предлага обновявания на SHA pins
+за GitHub Actions за преглед. За merge protection трябва да са required двата
+security job-а; staging deploy зависи от security workflow-а.
