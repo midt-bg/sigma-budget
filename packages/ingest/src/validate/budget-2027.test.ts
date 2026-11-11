@@ -43,6 +43,8 @@ const cases = JSON.parse(readFileSync(join(fixtures, 'validate15b/oracle.json'),
   };
   result: unknown;
 }[];
+// Source mutations rebuild annual lineage before validation: measured 5.24–5.33s
+// with V8 coverage on the shared audit host; scoped 15s integration budget.
 it.each(cases)('matches the unchanged donor: $mutation.name', ({ mutation, result }) => {
   if (mutation.file) {
     const path = join(root, 'data/release', mutation.file);
@@ -120,8 +122,9 @@ it.each(cases)('matches the unchanged donor: $mutation.name', ({ mutation, resul
         copy(`wave13a/published/${name}.json`, `data/release/${name}.json`);
     }
   }
-});
+}, 15_000);
 
+// Multiple real CLI validations and crash recovery measured 5.94s with coverage.
 it('confines candidate reports and protects inputs even after a crashed validation', async () => {
   const { main } = await import('./budget-2027-cli.js');
   const { linkSync, symlinkSync, existsSync } = await import('node:fs');
@@ -181,7 +184,7 @@ it('confines candidate reports and protects inputs even after a crashed validati
     stdout.mockRestore();
     stderr.mockRestore();
   }
-});
+}, 15_000);
 
 it.each([
   ['float-encoded year', 'outlook.json', '"year":2026', '"year":2026.0'],
