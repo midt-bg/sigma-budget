@@ -7,6 +7,10 @@ import { data } from '../lib/legacy';
 import { chromeTree, chromeDOM } from './chrome-tree';
 import { loadScreen } from './screens';
 import type { Navigation, TextScreenModel } from '../lib/screen-state';
+export function preload(screen?: string) {
+  if (screen && ['S26', 'S30', 'S25', 'S35', 'S14', 'S16'].includes(screen))
+    return loadScreen(screen as TextScreenModel['screen']);
+}
 let root: Root | undefined;
 export function dispose() {
   if (root) {
@@ -94,7 +98,7 @@ export function refreshChrome(
     tabbar: tabbarHtml(options.route),
   };
   for (const [id, piece] of Object.entries(pieces)) {
-    const element = chromeTree(piece);
+    const element = chromeTree(piece, true);
     const node = document.getElementById(id);
     if (!node) continue;
     let owner = chromeRoots.get(id);

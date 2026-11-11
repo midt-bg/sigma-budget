@@ -1,4 +1,4 @@
-// Boot: core data (small, eager) -> shell -> router.  Everything else loads lazily.
+// Boot: essential chrome -> core data -> router.  Everything else loads lazily.
 import { store } from './store.js';
 import { migratePeriod, resolvePeriod } from './periods.js';
 import { data } from './data.js';
@@ -29,7 +29,7 @@ async function boot() {
   window.__chromeReady = true;
   const pending = window.__chromeTap;
   if (pending) { delete window.__chromeTap; document.querySelector(pending)?.click(); }
-  import('./react-bridge.js').then(m => { bridge = m; refreshChrome(); }).catch(console.error);
+  import('./react-bridge.js').then(m => { bridge = m; refreshChrome(); return bridge.preload(document.querySelector('article.page')?.dataset.route); }).catch(console.error);
   // core.json carries the source cards and the „Предстои“ texts; do not hold the first paint for more than ~1.5 s
   const coreP = data.load('core').catch(() => null);
   await Promise.race([coreP, wait(1500)]);
