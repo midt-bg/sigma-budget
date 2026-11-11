@@ -9,6 +9,8 @@ from pathlib import Path
 
 from playwright.sync_api import expect, sync_playwright
 
+from tests.e2e.light_contrast import check_light_contrast
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -128,6 +130,7 @@ def main():
         assert page.locator('[data-theme-pick], .theme-pick').count() == 0
         checks += 1
         context.close()
+        checks += check_light_contrast(browser, args.url)
         browser.close()
     print(f'visual-audit: {checks} checks passed (Chromium, light palette and dark OS with legacy storage)')
 
