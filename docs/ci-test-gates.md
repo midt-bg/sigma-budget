@@ -20,7 +20,7 @@
 
 `pnpm format:check` проверява целия поддържан от Prettier набор с `--ignore-unknown`; `pnpm format` го форматира. Това е format gate, не semantic lint. Python, shell и другите неподдържани езици се проверяват чрез съответните тестове, а не се представят като форматирани от Prettier.
 
-Прегледаните изключения в `.prettierignore` пазят `data/`, `reference/`, историческия `pipeline/`, frozen fixtures/oracles, vendored и генерирани файлове. Масовото форматиране е отделен последен commit върху main след сливането на PR #57 (тема), #58 (име) и #59 (формулировки и източници). При следващи паралелни client JS промени format pass се изпълнява отново. Замразените bytes не се форматират.
+Прегледаните изключения в `.prettierignore` пазят `data/`, `reference/`, историческия `pipeline/`, frozen fixtures/oracles, vendored и генерирани файлове. Масовото форматиране е отделен последен commit върху main след сливането на PR #57 (тема), #58 (име), #59 (формулировки и източници) и #64 (boot/release build). При следващи паралелни client JS промени format pass се изпълнява отново. Замразените bytes не се форматират.
 
 ## Изходно CI време
 
@@ -30,6 +30,12 @@
 
 Literal HTML/CSS и кодовите примери в низове не се преформатират (`embeddedLanguageFormatting: off`): те участват в byte-level oracle договори. JSONC се форматира без trailing commas за съвместимост с текущите проверяващи parsers. Това запазва съдържанието на договорите, без да изключва поддържаните JS/TS/JSONC файлове от format gate.
 
-Browser bootstrap използва официалния Ubuntu archive mirror вместо Azure mirror след повторени DNS откази в main и PR CI. Запазени са security/third-party repositories, apt signing keys и всички Playwright зависимости и проверки. Тази CI-only поправка следва вече публикувания отделен format commit; публикуваната история не се пренаписва.
+Browser bootstrap не променя apt sources. След потвърдени DNS откази към Azure и official archive се повтаря само `playwright install --with-deps chromium`: до 3 опита, по максимум 300 s, с паузи 15/30 s. След последния опит non-zero status се връща като отказ. Запазени са apt signature verification и всички Playwright зависимости и проверки; няма `continue-on-error` или `--allow-unauthenticated`. DNS-only отказите са инфраструктурни, а не основание за допълнителни mirror/workaround промени.
 
 Провереният Node inventory извън `src`/`bin` включва standalone publication-documents entry point, web service worker и candidate-data adapter. Последните два вече са в web coverage. Останалите Node файлове извън тези source директории са Vitest/Vite/React Router конфигурации и vendored код; не са production runtime entry points.
+
+## Обхват след #64
+
+`client/chrome-boot.js` се включва чрез `client/**/*.js`, а новите screen модули и `migration/screens.ts` - чрез `app/**/*.{ts,tsx}`. Всички те участват и във format gate. Manifest файловете с `build:release` също се форматират. `tests/e2e/boot.py`, `tests/release/test_build_artifact.py` и `apps/web/scripts/build.py` са Python: извън Prettier/V8 обхвата, с отделни Python unit/e2e проверки в site workflow. След rebase форматът се регенерира чрез Prettier като отделен последен commit; format конфликти не се разрешават на ръка.
+
+Parity report пътищата се дефинират само в `coverage.env` на site workflow. Turbo strict mode ги пропуска изрично през `globalPassThroughEnv`, а upload стъпките ползват `${{ env.<REPORT> }}`. Всички 12 отчета се генерират и при успешни тестове: преди run се изчистват стари файлове, след run се проверява всеки JSON поотделно, включително четирите Wave15 отчета. Задължителните uploads остават с `if-no-files-found: error`; липсващ отчет не се игнорира.

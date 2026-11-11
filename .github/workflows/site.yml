@@ -67,12 +67,17 @@ jobs:
           python -m pip install --no-deps -e pipeline
           pnpm install --frozen-lockfile
       - name: Coverage gate self-tests
-        run: node --test scripts/check-coverage.test.mjs scripts/ci-gates.test.mjs scripts/ci-ubuntu-mirror.test.mjs
+        run: node --test scripts/check-coverage.test.mjs scripts/ci-gates.test.mjs scripts/ci-install-browser.test.mjs scripts/check-parity-reports.test.mjs
+      - name: Clear stale mandatory parity reports
+        run: node scripts/check-parity-reports.mjs --clean
       - name: All Node suites, once, with coverage
         run: pnpm test -- --coverage
       - name: Node tests leave protected inputs unchanged
         if: always()
         run: test -z "$(git status --porcelain -- data packages/ingest/test/fixtures tests/pipeline/fixtures apps/web/app/routes/__fixtures__)"
+      - name: Check every mandatory parity report
+        if: always()
+        run: node scripts/check-parity-reports.mjs
       - name: Per-workspace regression gate
         run: pnpm check:coverage
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -83,59 +88,65 @@ jobs:
             coverage-summary.md
             apps/*/coverage/coverage-summary.json
             packages/*/coverage/coverage-summary.json
-            tmp/ts-migration/candidates/**/*.json
           if-no-files-found: error
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: validation-wave14-parity
-          path: tmp/ts-migration/candidates/14/report.json
+          path: ${{ env.WAVE14_PARITY_REPORT }}
           if-no-files-found: error
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: validation-wave15-parity
           path: |
-            tmp/ts-migration/candidates/15/report.json
-            tmp/ts-migration/candidates/15/compound-report.json
-            tmp/ts-migration/candidates/15/native-report.json
-            tmp/ts-migration/candidates/15/iterable-report.json
+            ${{ env.WAVE15_PARITY_REPORT }}
+            ${{ env.WAVE15_COMPOUND_REPORT }}
+            ${{ env.WAVE15_NATIVE_REPORT }}
+            ${{ env.WAVE15_ITERABLE_REPORT }}
           if-no-files-found: error
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: validation-wave17a-parity
-          path: tmp/ts-migration/candidates/17a/report.json
+          path: ${{ env.WAVE17A_PARITY_REPORT }}
           if-no-files-found: error
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: editorial-parity
-          path: tmp/ts-migration/candidates/08/diff.json
+          path: ${{ env.EDITORIAL_PARITY_REPORT }}
           if-no-files-found: error
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: components-rates-parity
-          path: tmp/ts-migration/candidates/06/diff.json
+          path: ${{ env.COMPONENTS_RATES_PARITY_REPORT }}
           if-no-files-found: error
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: programmes-parity
-          path: tmp/ts-migration/candidates/05/diff.json
+          path: ${{ env.PROGRAMMES_PARITY_REPORT }}
           if-no-files-found: error
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: law-parity
-          path: tmp/ts-migration/candidates/04/diff.json
+          path: ${{ env.LAW_PARITY_REPORT }}
           if-no-files-found: error
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: common-parity
-          path: tmp/ts-migration/candidates/02/diff.json
+          path: ${{ env.COMMON_PARITY_REPORT }}
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: fiscal-node-parity
+          path: ${{ env.FISCAL_PARITY_REPORT }}
           if-no-files-found: error
 
   build:
@@ -157,8 +168,7 @@ jobs:
         run: |
           python -m pip install --require-hashes -r tests/requirements-dev.lock -r pipeline/requirements.lock
           python -m pip install --no-deps -e pipeline
-          sudo bash scripts/ci-ubuntu-mirror.sh
-          python -m playwright install --with-deps chromium
+          bash scripts/ci-install-browser.sh
           pnpm install --frozen-lockfile
       - name: Check repository formatting
         run: pnpm format:check
@@ -221,8 +231,7 @@ jobs:
       - run: |
           python -m pip install --require-hashes -r tests/requirements-dev.lock -r pipeline/requirements.lock
           python -m pip install --no-deps -e pipeline
-          sudo bash scripts/ci-ubuntu-mirror.sh
-          python -m playwright install --with-deps chromium
+          bash scripts/ci-install-browser.sh
           pnpm install --frozen-lockfile
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
@@ -496,13 +505,11 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Law builder and frozen Python parity
         env:
-          LAW_PARITY_REPORT: ${{ github.workspace }}/tmp/ts-migration/candidates/04/diff.json
           PYTHONPATH: pipeline
         run: |
           python packages/ingest/test/fixtures/law/generate_oracle.py --check
       - name: Editorial builder and frozen Python parity
         env:
-          EDITORIAL_PARITY_REPORT: ${{ github.workspace }}/tmp/ts-migration/candidates/08/diff.json
           PYTHONPATH: pipeline
         run: |
           python3 packages/ingest/test/fixtures/editorial/generate_oracle.py --check
@@ -547,7 +554,6 @@ jobs:
       - name: Fiscal frozen Python oracle and parity
         env:
           PYTHONPATH: pipeline
-          FISCAL_PARITY_REPORT: ${{ github.workspace }}/tmp/ts-migration/candidates/candidate03/diff.json
         run: |
           python packages/ingest/test/fixtures/fiscal/generate_oracle.py --check
           python packages/ingest/test/fixtures/fiscal/generate_datasets.py --check
@@ -896,8 +902,7 @@ jobs:
       - name: Provision the existing locked browser test tool (outside import runtime)
         run: |
           python -m pip install --require-hashes -r tests/requirements-dev.lock
-          sudo bash scripts/ci-ubuntu-mirror.sh
-          python -m playwright install --with-deps chromium
+          bash scripts/ci-install-browser.sh
       - name: Package the fresh Node candidate and exercise its Worker and browser identity
         run: node scripts/node-candidate-site-acceptance.mjs "$RUNNER_TEMP/node-acceptance/candidate" "$RUNNER_TEMP/node-site"
       - name: Protected checkout state

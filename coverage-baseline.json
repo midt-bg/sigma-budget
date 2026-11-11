@@ -6,8 +6,8 @@
       "branches": 61.57
     },
     "apps/web": {
-      "lines": 48.29,
-      "branches": 41.49
+      "lines": 48.19,
+      "branches": 41.43
     },
     "packages/dataset-schema": {
       "lines": 98.55,

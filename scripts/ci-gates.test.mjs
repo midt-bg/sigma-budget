@@ -25,8 +25,19 @@ test('all independent Python and provenance commands survive the consolidation',
   for (const [path, commands] of Object.entries(evidence)) {
     const current = readFileSync(path, 'utf8')
       .split('\n')
-      .map((x) => x.trim().replace(/^- run: /, ''));
+      .map((x) => x.trim().replace(/^- run: /, ''))
+      .map((x) =>
+        x === 'bash scripts/ci-install-browser.sh'
+          ? 'python -m playwright install --with-deps chromium'
+          : x,
+      );
     for (const command of commands) assert.ok(current.includes(command), command);
+    const browserInstall = 'python -m playwright install --with-deps chromium';
+    assert.equal(
+      current.filter((command) => command === browserInstall).length,
+      commands.filter((command) => command === browserInstall).length,
+      `${path}: every browser setup must retain the checked retry wrapper`,
+    );
   }
   const wave = readFileSync('.github/workflows/wave15b-validation.yml', 'utf8');
   assert.match(wave, /workflow_call:/);
@@ -52,4 +63,63 @@ test('ETL coverage includes the standalone entry point and retains shared produc
     'bin/**/*.js',
     'publication-documents/prepare.mjs',
   ]);
+});
+
+test('merged boot and route modules remain inside formatting and production coverage', async () => {
+  const { getFileInfo } = await import('prettier');
+  const { matchesGlob } = await import('node:path');
+  const { default: config } = await import('../apps/web/vitest.config.ts');
+  const modules = [
+    'client/chrome-boot.js',
+    'app/migration/screens.ts',
+    ...['S14', 'S16', 'S25', 'S26', 'S30', 'S35'].map((id) => `app/migration/screen-${id}.tsx`),
+  ];
+  for (const file of modules) {
+    assert.ok(
+      config.test.coverage.include.some((glob) => matchesGlob(file, glob)),
+      file,
+    );
+    const info = await getFileInfo(`apps/web/${file}`, { ignorePath: '.prettierignore' });
+    assert.equal(info.ignored, false, file);
+    assert.ok(info.inferredParser, file);
+  }
+  for (const file of ['package.json', 'apps/web/package.json']) {
+    const info = await getFileInfo(file, { ignorePath: '.prettierignore' });
+    assert.equal(info.inferredParser, 'json-stringify', file);
+    assert.equal(info.ignored, false, file);
+  }
+  // Python stays in its own unit/e2e gates; it is never presented as V8/Prettier coverage.
+  const python = await getFileInfo('tests/e2e/boot.py', { ignorePath: '.prettierignore' });
+  assert.equal(python.inferredParser, null);
+});
+
+test('every report reaches strict Turbo tasks and its upload uses the same env path', () => {
+  const { parse } = createRequire(new URL('../packages/ingest/package.json', import.meta.url))(
+    'yaml',
+  );
+  const job = parse(workflow).jobs.coverage;
+  const turbo = JSON.parse(readFileSync('turbo.json', 'utf8'));
+  const allowed = [...turbo.globalEnv, ...turbo.globalPassThroughEnv];
+  const names = Object.keys(job.env).filter((name) => name.endsWith('_REPORT'));
+  const uploaded = [];
+  for (const step of job.steps.filter((step) =>
+    step.uses?.startsWith('actions/upload-artifact@'),
+  )) {
+    for (const match of step.with.path.matchAll(/\$\{\{ env\.([A-Z0-9_]+_REPORT) \}\}/g)) {
+      uploaded.push(match[1]);
+      assert.equal(step.with['if-no-files-found'], 'error');
+      assert.equal(step.if, 'always()');
+    }
+  }
+  assert.deepEqual(uploaded.sort(), [...names].sort());
+  for (const name of names) assert.ok(allowed.includes(name), `Turbo drops ${name}`);
+  for (const name of names) {
+    assert.equal(
+      [...workflow.matchAll(new RegExp(`^ +${name}:`, 'gm'))].length,
+      1,
+      `${name}: exactly one report path definition`,
+    );
+  }
+  assert.ok(job.steps.some((step) => step.run === 'node scripts/check-parity-reports.mjs --clean'));
+  assert.ok(job.steps.some((step) => step.run === 'node scripts/check-parity-reports.mjs'));
 });
