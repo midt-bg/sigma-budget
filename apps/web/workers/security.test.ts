@@ -151,6 +151,14 @@ describe('SECURITY-08 malformed Access JWTs', () => {
       expect((await operator(req, env)).status).toBe(401);
     },
   );
+  it('rejects malformed signature encoding before certificate lookup', async () => {
+    const req = new Request('https://budget.example/admin/operations', {
+      headers: {
+        'Cf-Access-Jwt-Assertion': `${encode({ alg: 'RS256', kid: 'x' })}.${encode({ iss: env.ACCESS_ISSUER, aud: 'test', exp: 9999999999 })}.Z`,
+      },
+    });
+    expect((await operator(req, { ...env, ACCESS_JWKS: 'invalid' })).status).toBe(401);
+  });
   it('sanitizes unavailable certificate verification', async () => {
     const req = new Request('https://budget.example/admin/operations', {
       headers: {
