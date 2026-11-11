@@ -17,7 +17,7 @@ reference/              исторически прототип и провер�
 docs/                   спецификации и архитектурни решения
 ```
 
-Workspace-ът обхваща `apps/*` и `packages/*` и използва единствено `pnpm-lock.yaml`. `./budget` стартира Node CLI от `@sigma-budget/etl`, който използва `@sigma-budget/ingest`; `./budget-python` и `pipeline/` са за историческо възпроизвеждане и справки. Новият код е TypeScript. Насоките за маршрути и поддръжка на старите екрани са в [ръководството](docs/dev-guide.md), а общите правила за принос - в [AGENTS.md](AGENTS.md). [ADR 0003](docs/adr/0003-repository-layout.md) е историческо решение с отменени части.
+Workspace-ът обхваща `apps/*` и `packages/*` и използва общия коренов `pnpm-lock.yaml`. `./budget` стартира Node CLI от `@sigma-budget/etl`, който използва `@sigma-budget/ingest`; `./budget-python` и `pipeline/` са за историческо възпроизвеждане и справки. Новият код е TypeScript. Насоките за маршрути и поддръжка на старите екрани са в [ръководството](docs/dev-guide.md), а общите правила за принос - в [AGENTS.md](AGENTS.md). [ADR 0003](docs/adr/0003-repository-layout.md) е историческо решение с отменени части.
 
 ## Локално стартиране
 
