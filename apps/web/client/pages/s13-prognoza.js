@@ -21,7 +21,7 @@ import { pendingState } from '../ui/states.js';
 import { yIndex, change, chartUnit } from '../view.js';
 import { num, pct, money, date, DASH, NBSP } from '../format.js';
 
-export const needs = ['core', 'outlook', 'budget2027?'];
+export const needs = ['budget2027-provenance?', 'core', 'outlook', 'budget2027?'];
 export const styles = ['s13-prognoza'];
 
 /* ---------------------------------------------------------------- words and small helpers */

@@ -24,7 +24,7 @@ import { apportion } from '../calc.js';
 import { yIndex, change, chartUnit, moneyCol, amount, periodStatus } from '../view.js';
 import { num, pct, money, delta, date, DASH, NBSP } from '../format.js';
 
-export const needs = ['core', 'outlook', 'revenue', 'glossary?'];
+export const needs = ['budget2027-provenance?', 'core', 'outlook', 'revenue', 'glossary?'];
 export const styles = ['s06-prihodi'];
 
 const yr = y => `${y}${NBSP}г.`;
