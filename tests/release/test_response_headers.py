@@ -27,5 +27,11 @@ class ResponseHeadersTest(unittest.TestCase):
     def test_sandbox_requires_a_bare_directive_not_a_substring_or_permissions(self):
         self.assertTrue(has_sandbox('sandbox'))
         self.assertTrue(has_sandbox("default-src 'self'; sandbox; object-src 'none'"))
-        for policy in ["default-src 'self'", "report-uri /sandbox", 'sandbox allow-scripts', 'sandbox allow-same-origin']:
+        self.assertTrue(has_sandbox("sandbox, default-src 'self'; sandbox"))
+        for policy in [
+            'sandbox allow-scripts; sandbox',
+            'sandbox allow-scripts allow-same-origin; sandbox',
+            'sandbox; sandbox',
+            'sandbox, sandbox allow-scripts',
+            "sandbox, default-src 'self'", "default-src 'self'", "report-uri /sandbox", 'sandbox allow-scripts', 'sandbox allow-same-origin']:
             self.assertFalse(has_sandbox(policy), policy)

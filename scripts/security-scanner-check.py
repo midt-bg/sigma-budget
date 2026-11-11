@@ -1,7 +1,6 @@
 """Negative controls: scanners must block an introduced issue and accept safe input."""
 import pathlib
 import os
-import secrets
 import subprocess
 import sys
 import tempfile
@@ -18,9 +17,11 @@ with tempfile.TemporaryDirectory(prefix='security-control-') as directory:
                    ('bad.py', 'import subprocess\nsubprocess.run(command, shell=True)')]
     else:
         command = [binary, 'dir', str(target), '--config', str(ROOT / '.gitleaks.toml'), '--redact', '--no-banner']
-        samples = [('bad.txt', 'api_key = "' + secrets.token_hex(20) + '"')]
+        # Public, fixed test data; chosen to exercise the detector, outside reviewed checksums.
+        control_value = 'b1fe548869255ebb76ff76b0f5042749a8afaa501f44e7a64f306aa4b256d8c7'
+        samples = [('bad.txt', 'api_key = "' + control_value + '"')]
         for name in ['validate14/code-path-capture', 'validate15/compound/provenance', 'validate17a/provenance', 'validate15/oracle', 'wave13b/proof']:
-            samples.append(('packages/ingest/test/fixtures/' + name + '.json', '{"api_key":"' + secrets.token_hex(32) + '"}'))
+            samples.append(('packages/ingest/test/fixtures/' + name + '.json', '{"api_key":"' + control_value + '"}'))
     for name, content in samples:
         file = target / name
         file.parent.mkdir(parents=True, exist_ok=True)

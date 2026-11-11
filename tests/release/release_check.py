@@ -97,8 +97,15 @@ def req(method, url, body=None, headers=None):
 
 
 def has_sandbox(csp):
-    # A bare sandbox directive grants no exceptions; extra CSP directives remain restrictive.
-    return any(part.strip().lower().split() == ['sandbox'] for part in csp.split(';'))
+    # Multiple serialized CSP policies are enforced together. Reject duplicate sandbox
+    # directives outright: later duplicates cannot repair a permissive first directive.
+    policies = [policy.strip() for policy in csp.split(',')]
+    for policy in policies:
+        directives = [part.strip().lower().split() for part in policy.split(';')]
+        sandbox = [parts for parts in directives if parts and parts[0] == 'sandbox']
+        if sandbox != [['sandbox']]:
+            return False
+    return bool(policies)
 
 
 def jbody(b):

@@ -3,7 +3,7 @@
 let warnedMissing = false;
 export async function rateLimitReleaseRead(
   request: Request,
-  env: Pick<Env, 'RELEASE_RATE_LIMITER' | 'ENVIRONMENT' | 'WORKER_VERSION'>,
+  env: Pick<Env, 'RELEASE_RATE_LIMITER' | 'ENVIRONMENT'>,
 ): Promise<Response | null> {
   let status = 503;
   if (!env.RELEASE_RATE_LIMITER) {
@@ -17,8 +17,8 @@ export async function rateLimitReleaseRead(
       if (
         (
           await env.RELEASE_RATE_LIMITER.limit({
-            // Version metadata separates independently deployed Workers even on a shared namespace.
-            key: `${env.WORKER_VERSION?.id || new URL(request.url).hostname}:${request.headers.get('CF-Connecting-IP')?.trim() || 'unknown-client'}`,
+            // Stable across versions and host aliases; environments use separate namespaces.
+            key: request.headers.get('CF-Connecting-IP')?.trim() || 'unknown-client',
           })
         ).success
       )

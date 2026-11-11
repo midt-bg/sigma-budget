@@ -225,17 +225,44 @@ describe('SECURITY-09 release rate limit', () => {
     expect(res?.headers.get('Retry-After')).toBe('60');
     expect(limit.mock.calls[0]).toEqual(limit.mock.calls[1]);
   });
-  it('separates dev and production deployments sharing a namespace', async () => {
-    const limit = vi.fn(async (_input: { key: string }) => ({ success: true }));
-    for (const id of ['dev-version', 'production-version']) {
-      await rateLimitReleaseRead(request('/api/releases'), {
-        ENVIRONMENT: 'production',
-        WORKER_VERSION: { id },
-        RELEASE_RATE_LIMITER: { limit },
+  it('shares the same client budget across rolling versions, host aliases and paths', async () => {
+    const counts = new Map<string, number>();
+    const limit = vi.fn(async ({ key }: { key: string }) => {
+      const count = (counts.get(key) || 0) + 1;
+      counts.set(key, count);
+      return { success: count <= 120 };
+    });
+    const env = { ENVIRONMENT: 'production', RELEASE_RATE_LIMITER: { limit } };
+    let allowed = 0;
+    for (let i = 0; i < 240; i++) {
+      const host = i % 2 ? 'old-version.example' : 'new-version.example';
+      const req = new Request(`https://${host}/api/releases`, {
+        headers: { 'CF-Connecting-IP': '192.0.2.1' },
       });
+      const res = await rateLimitReleaseRead(req, env);
+      if (!res) allowed++;
+      else expect(res.status).toBe(429);
     }
-    expect(limit.mock.calls[0][0].key).toBe('dev-version:unknown-client');
-    expect(limit.mock.calls[1][0].key).toBe('production-version:unknown-client');
+    expect(allowed).toBe(120);
+    expect(counts.size).toBe(1);
+    expect(limit).toHaveBeenCalledWith({ key: '192.0.2.1' });
+  });
+  it('configures distinct stable namespaces for dev, staging and production', () => {
+    const text = readFileSync(resolve(root, 'apps/web/wrangler.jsonc'), 'utf8');
+    const config = JSON.parse(
+      text
+        .split('\n')
+        .filter((line) => !line.trim().startsWith('//'))
+        .join('\n'),
+    );
+    const namespaces = [config, config.env.staging, config.env.production].map((c) => {
+      const binding = c.ratelimits.find((b: { name: string }) => b.name === 'RELEASE_RATE_LIMITER');
+      expect(binding.simple).toEqual({ limit: 120, period: 60 });
+      return binding.namespace_id;
+    });
+    expect(namespaces).toEqual(['2003', '2002', '2001']);
+    expect(new Set(namespaces).size).toBe(3);
+    expect(text).not.toContain('WORKER_VERSION');
   });
   it('degrades locally, fails closed in production, and handles binding failures', async () => {
     expect(await rateLimitReleaseRead(request('/api/releases'), local)).toBeNull();
