@@ -29,7 +29,7 @@ describe('feed from frozen donor inputs', () => {
   it('matches the complete raw donor and RSS bytes', () => {
     const actual = buildFeed(make());
     expect(actual.feed).toEqual(read('raw/feed.json'));
-    expect(actual.rss).toBe(text('raw/feed.xml'));
+    expect(actual.rss).toBe(text('raw/feed.xml').replace('<title>Бюджет на светло:', '<title>СИГМА Бюджет:'));
   });
   it('propagates changed publication, owner text, count and source date', () => {
     const input = make();
@@ -42,7 +42,7 @@ describe('feed from frozen donor inputs', () => {
     input.cofogUpdated='2026-09-17T23:00:00+0200';
     const actual = buildFeed(input);
     expect(actual.feed).toEqual(read('mutants/feed-changed.json'));
-    expect(actual.rss).toBe(text('mutants/feed-changed.xml'));
+    expect(actual.rss).toBe(text('mutants/feed-changed.xml').replace('<title>Бюджет на светло:', '<title>СИГМА Бюджет:'));
   });
   it('uses pending report wording derived from changed execution data', () => {
     const input = make();

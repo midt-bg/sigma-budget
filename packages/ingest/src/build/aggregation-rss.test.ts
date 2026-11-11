@@ -19,11 +19,14 @@ describe('RSS donor serializer', () => {
       const oracle = JSON.parse(readFileSync(join(fixture, 'oracle', `${name}.json`), 'utf8')) as {
         xml: string;
       };
-      expect(Buffer.from(xml)).toEqual(Buffer.from(oracle.xml));
+      expect(Buffer.from(xml)).toEqual(Buffer.from(oracle.xml.replace('<title>Бюджет на светло:', '<title>СИГМА Бюджет:')));
       const dir = mkdtempSync(join(tmpdir(), 'rss-parity-'));
       try {
         const file = join(dir, 'candidate.xml');
-        writeFileSync(file, xml);
+        // The historical Python oracle retains its original product title.
+        // Compare every byte after reversing only the explicitly asserted rename.
+        expect(xml).toContain('<title>СИГМА Бюджет: какво е ново</title>');
+        writeFileSync(file, xml.replace('<title>СИГМА Бюджет:', '<title>Бюджет на светло:'));
         const python = process.env.PYTHON312 || 'python3.12';
         const result = spawnSync(
           python,
