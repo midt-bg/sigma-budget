@@ -449,9 +449,9 @@ def main():
         sys.exit('--sigma-url must be an https address')
     if not a.no_build:
         env = dict(os.environ, **({'CLOUDFLARE_ENV': a.env} if a.env else {}))
-        r = subprocess.run([str(ROOT / 'node_modules' / '.bin' / 'react-router'), 'build'], cwd=ROOT / 'apps/web', env=env, capture_output=True, text=True)
+        r = subprocess.run(['pnpm', '--filter', '@sigma-budget/web...', 'build'], cwd=ROOT, env=env, capture_output=True, text=True)
         if r.returncode != 0:
-            sys.exit('build: react-router build failed:\n' + (r.stdout + r.stderr)[-3000:])
+            sys.exit('build: workspace build failed:\n' + (r.stdout + r.stderr)[-3000:])
     out, built = ROOT / 'apps' / 'web' / 'build' / 'client', ROOT / 'apps' / 'web' / 'build' / 'server' / 'wrangler.json'
     if not out.is_dir() or not built.is_file():
         sys.exit('build: no build/ (run without --no-build)')
