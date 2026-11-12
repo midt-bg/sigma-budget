@@ -332,13 +332,11 @@ export function footerHtml(o: { wide?: boolean; cur?: string; from?: string } = 
           <span>
             Данни от официални източници. Законопроектите, прогнозите и отчетите са обозначени.
           </span>
-          <span>Лиценз на данните: предстои решение.</span>
           <span>{sigmaLink('sister-link')}</span>
           <button type="button" className="link-btn" data-action="legend">
             Легенда: какво означават белезите
           </button>
         </div>
-        <p className="small muted">Работна група „Бюджет на светло“</p>
       </div>
     </>
   );

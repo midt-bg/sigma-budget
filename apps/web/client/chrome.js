@@ -156,10 +156,8 @@ export function footerHtml(o = {}) {
       ${kfp ? html`<span>Данните: КФП към ${kfp}${b.kfpPublished ? html` (обн. ${date(b.kfpPublished)})` : ''}</span>` : ''}
       ${b && b.dataVersion ? html`<span>Версия на данните: ${b.dataVersion}</span>` : ''}
       <span>Данни от официални източници. Законопроектите, прогнозите и отчетите са обозначени.</span>
-      <span>Лиценз на данните: предстои решение.</span>
       <span>${sigmaLink('sister-link')}</span>
       <button type="button" class="link-btn" data-action="legend">Легенда: какво означават белезите</button>
     </div>
-    <p class="small muted">Работна група „Бюджет на светло“</p>
   </div>`;
 }

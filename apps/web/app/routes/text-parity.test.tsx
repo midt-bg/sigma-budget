@@ -97,7 +97,13 @@ describe('frozen main 26f82ea, same release', () => {
         expect(html).not.toContain('data-s26-demo');
         expect(html).toContain('Официални източници');
         const actualDoc = parseHTML(html).document,
-          oldDoc = parseHTML(fixture(screen)).document;
+          oldDoc = parseHTML(
+            // The data have no separate licence: they are public official documents.
+            fixture(screen).replace(
+              /<p>Лицензът на данните още не е избран\.[\s\S]*?<\/p>/,
+              '<p>Данните са публични: идват от официални документи и нямат отделен лиценз.</p>',
+            ),
+          ).document;
         for (const id of ['s26-open', 's26-roadmap', 's26-credits']) {
           const section = (d: Document) =>
             `<article>${d.getElementById(id)!.closest('section')!.outerHTML}</article>`;

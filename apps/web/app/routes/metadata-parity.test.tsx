@@ -88,6 +88,12 @@ for (const c of manifest.cases) {
         'Файловете са в UTF-8. Публичните /api/releases и /data адреси позволяват четене от други сайтове чрез GET и HEAD (CORS: *), без изпращане на cookies или други удостоверителни данни.',
       )
       .replaceAll('Няма жив API', 'Отворени файлове с данни')
+      // The data have no separate licence: they are public official documents.
+      .replace(
+        /(<h2 id="s25-licence"[^>]*>[^<]*<\/h2>)[\s\S]*?<p>Какво знаем днес:<\/p>/,
+        '$1<p>Данните са публични: идват от официални документи и нямат отделен лиценз.</p><p>При ползване:</p>',
+      )
+      .replace('<li>Лиценз и условия за ползване.</li>', '')
       .replaceAll(
         'Сайтът е статичен. Няма сървър, който да отговаря на заявки с параметри, няма ключове за достъп и няма регистрация. Всеки набор е един готов файл с постоянен адрес: сваляш го цял и го филтрираш при себе си.',
         'Всеки набор е готов файл с постоянен адрес: сваляш го цял и го филтрираш при себе си. Публичните файлове се четат без ключ за достъп и без регистрация.',
@@ -113,10 +119,15 @@ for (const c of manifest.cases) {
       );
       const currentDoc = parseHTML(actual).document;
       const oldDoc = parseHTML(frozen).document;
-      for (const id of ['s35-release', 's35-code', 's35-val', 's35-provenance', 's35-history'])
+      for (const id of ['s35-release', 's35-code', 's35-provenance', 's35-history'])
         expect(
           semantics(`<article>${currentDoc.getElementById(id)!.outerHTML}</article>`).text,
         ).toBe(semantics(`<article>${oldDoc.getElementById(id)!.outerHTML}</article>`).text);
+      // The check groups are named in Bulgarian; the English summaries stay in validation.json.
+      const checks = currentDoc.getElementById('s35-val')!.textContent!;
+      expect(checks).toContain('Месечните отчети по КФП');
+      expect(checks).toContain('наред');
+      expect(checks).not.toMatch(/\bchecks\b|\bKFP\b/);
     }
     const { document } = parseHTML(
       clarified

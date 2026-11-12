@@ -25,7 +25,9 @@ import core from '../routes/__fixtures__/core.json';
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 const frozen = readFileSync(new NodeURL('../routes/__fixtures__/S26.html', import.meta.url), 'utf8')
   .replace(/<span class="theme-pick"[\s\S]*?<\/span>/, '')
-  .replace(/(<div[^>]*id="mockbar"[^>]*>)[\s\S]*?<\/div>/, '$1</div>'); // Historical fixture is unchanged; the retired banner now has no children.
+  .replace(/(<div[^>]*id="mockbar"[^>]*>)[\s\S]*?<\/div>/, '$1</div>') // Historical fixture is unchanged; the retired banner now has no children.
+  .replace(/<span>Лиценз на данните: предстои решение\.<\/span>/, '') // the data have no separate licence
+  .replace(/<p class="small muted">Работна група „Бюджет на светло“<\/p>/, ''); // the footer no longer names the group
 const hydrate = vi.mocked(client.hydrateRoot);
 beforeEach(() => {
   vi.resetModules();
