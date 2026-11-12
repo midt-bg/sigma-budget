@@ -16,6 +16,7 @@ import { parse } from '../../client/data.js';
 import { requestState } from '../../client/store.js';
 import { build, frameHtml, resolve } from '../../client/render.js';
 import { tableData } from '../../client/ui/table.js';
+import { periodByKey } from '../../client/periods.js';
 import { csvFor, linkFor, shortLink, reset as resetShare } from '../../client/share.js';
 import { head } from '../../client/seo.js';
 import { getIndex, stageOf, metaOf } from '../../client/searchlib.js';
@@ -260,10 +261,40 @@ it.each([
     expect(exports[2]).toBe(exports[0]);
   },
 );
-it('exports investment years with their own statuses', async () => {
-  const { scope } = await page('/byudzhet-2027');
-  const table = tableData(scope.maps.table.get('s34-projects-table'));
-  expect(table.statuses).toEqual(['real', 'forecast', 'forecast']);
+it('summarizes the investment programme without provenance noise', async () => {
+  const { scope, html, document } = await page('/byudzhet-2027');
+  for (const key of FRAMEWORK) expect(html).toContain(String(periodByKey(key)?.label));
+  // Cell provenance stays in the CSV and the sources note, not in the project tables.
+  for (const id of ['s34-projects-table', 's34-project-details'])
+    expect(document.querySelector(`#${id}`)?.textContent).not.toMatch(/provenance|Произход/);
+  expect(document.querySelector('#s34-projects #s34-projects-by-institution-fig')).not.toBeNull();
+  const top = tableData(scope.maps.table.get('s34-projects-table'));
+  expect(top.rows).toHaveLength(10);
+  const all = tableData(scope.maps.table.get('s34-project-details'));
+  expect(all.rows).toHaveLength(doc.projects.length);
+  // The block's CSV is the project list, not the institution chart.
+  const csv = csvFor(scope.maps.share.get('s34-projects'));
+  expect(csv).toContain('Номер в приложението');
+  expect(csv.trim().split('\r\n')).toHaveLength(doc.projects.length + 1);
+  // Name, institution and appendix number are kept for the CSV; empty years stay empty, never zero.
+  expect(all.columns.slice(0, 3)).toEqual(['Проект', 'Ведомство', 'Номер в приложението']);
+  const gap = doc.projects.find((r: any) => Object.keys(r.gaps || {}).length);
+  const row = all.rows.find((r: any) => r[2] === gap.id);
+  const idx = Number(Object.keys(gap.gaps)[0]);
+  expect(row?.[3 + idx]).toBe('');
+  // The top ten are ordered by the printed sum of their three years.
+  const totals = top.rows.map((r: any) =>
+    r.slice(3, 6).reduce((a: number, v: any) => a + (v === '' ? 0 : v), 0),
+  );
+  expect(totals).toEqual([...totals].sort((a: number, b: number) => b - a));
+});
+it('filters the investment projects by the search query', async () => {
+  const { scope, html } = await page('/byudzhet-2027?q=самолет');
+  const all = tableData(scope.maps.table.get('s34-project-details'));
+  expect(all.rows.length).toBeGreaterThan(0);
+  expect(all.rows.length).toBeLessThan(doc.projects.length);
+  expect(all.rows.every((r: any) => /самолет/i.test(r[0]))).toBe(true);
+  expect(html).toMatch(/<details[^>]*id="s34-all-projects"[^>]*open/);
 });
 it('keeps glossary references and the overview scope meaningful', async () => {
   const { document } = await page('/rechnik/proekt-na-byudzheten-plan');
@@ -295,6 +326,15 @@ it('preserves the Council-of-Ministers variant in institution return links', asy
   if (!vm.ctx) throw new Error('Institution context missing');
   expect(vm.ctx.href('S10')).toBe('/vedomstva?variant=billMc');
   expect(vm.ctx.href('S10', {}, { variant: 'bill' })).toBe('/vedomstva?variant=bill');
+});
+it('shows bill rows by their printed labels, without the unprinted marker or a repeated variant', async () => {
+  const { document, html } = await page('/vedomstvo/1200');
+  const policies = document.querySelector('#s11-bill-policies');
+  expect(policies?.textContent).toContain('Всичко:');
+  expect(html).not.toContain('unprinted');
+  expect(
+    [...(policies?.querySelectorAll('thead th') || [])].map((th) => th.textContent),
+  ).not.toContain('Вариант');
 });
 it.each(['blg03', 'bLg03'])(
   'accepts municipality codes with existing case-insensitive semantics: %s',
@@ -334,9 +374,14 @@ it.each(['2028.forecast', '2029.forecast'])(
   async (period) => {
     const { html } = await page('/pari?per=' + period);
     expect(html).toContain('/merki?per=' + period);
-    expect(html).not.toContain('Мерки в бюджета за 2026');
+    expect(html).not.toContain('Мерки по законопроекта за 2026');
   },
 );
+it('labels the 2026 measures in the overview as the bill’s, not the adopted law’s', async () => {
+  const { html } = await page('/pari?per=2026.law');
+  expect(html).toContain('Мерки по законопроекта за 2026');
+  expect(html).not.toContain('Мерки в бюджета за 2026');
+});
 it('uses the 2027 draft by default and preserves explicit reports, law, expected and aliases', async () => {
   expect(requestState().period).toBe('2027.draft');
   for (const key of ['2024.report', '2025.report', '2026.law', '2026.expected', ...FRAMEWORK])
@@ -536,5 +581,6 @@ it('preserves municipal region-code URLs while reading only the 2027 allocations
   const rows = scope.maps.table.get('s20-bill-table').rows;
   const original = bill.municipal.art52.rows.filter((r: any) => r.region === 'ОБЛАСТ БЛАГОЕВГРАД');
   expect(rows).toHaveLength(original.length);
-  expect(rows.every((r: any) => r.region === 'ОБЛАСТ БЛАГОЕВГРАД')).toBe(true);
+  // the bill's „ОБЛАСТ БЛАГОЕВГРАД“ is shown by the region name of the municipality identity
+  expect(rows.every((r: any) => r.region === 'Благоевград')).toBe(true);
 });
