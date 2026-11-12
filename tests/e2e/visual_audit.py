@@ -50,9 +50,8 @@ def main():
                     assert row.locator('dd').inner_text().strip()
                     box = row.bounding_box()
                     assert box['x'] >= 0 and box['x'] + box['width'] <= 390
-                expect(card.locator('.measure-origin dl')).to_be_hidden()
-            cards.first.locator('summary').click()
-            expect(cards.first.locator('.measure-origin dl')).to_be_visible()
+                # Provenance hashes stay in the CSV, not on the phone cards.
+                assert card.locator('.measure-origin').count() == 0
             checks += 1
 
             # Export still has all three original rows and all provenance columns.
