@@ -476,7 +476,10 @@ it('uses VI-1 forecast amounts and printed GDP ratios, with distinct bill articl
   const m = await page('/dalg?obhvat=maastricht');
   expect(m.html).toContain('Няма съпоставим периоден ред по Маастрихт');
   expect(m.html).not.toContain('44 343');
-  expect((await page('/dalg?per=2028.forecast')).html).toContain('граници само за 2027');
+  // Shared missing-data blocks use the final neutral copy rather than acquisition notes.
+  expect((await page('/dalg?per=2028.forecast')).html).toContain(
+    'Не показваме число без налични официални данни за този показател.',
+  );
 });
 it('charts the primary 2027–2029 publication with independently extracted amounts and legal labels', async () => {
   const { vm } = await page('/prognoza');

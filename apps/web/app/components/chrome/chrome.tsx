@@ -141,9 +141,6 @@ export function topbarHtml(
           {MARK}
           <span className="brand-name">СИГМА Бюджет</span>
         </a>
-        <span className="badge-mock" title="Бета версия с данни от официални източници">
-          Бета
-        </span>
         <div className="topbar-tools">
           <button
             type="button"

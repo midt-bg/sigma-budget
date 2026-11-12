@@ -102,7 +102,6 @@ export const CTA = 'Бюджет 2027';
 export function topbarHtml(o = {}) {
   const p = store.period;
   return html`<div class="mast-in"><a class="brand" href="${routeHref('S01')}" aria-label="СИГМА Бюджет, към началото">${MARK}<span class="brand-name">СИГМА Бюджет</span></a>
-    <span class="badge-mock" title="Бета версия с данни от официални източници">Бета</span>
     <div class="topbar-tools">
       <button type="button" class="tool-btn period-btn" id="btn-period" aria-haspopup="dialog" aria-expanded="false" aria-label="Година и статус на данните: ${p.label}"${o.periods === 'none' ? html` hidden` : ''}><span class="p-year">${yearOf(p)}</span><span class="p-status"> · ${statusOf(p)}</span>${icon('chevronDown', { size: 14 })}</button>
       <nav class="sidenav" id="sidenav" aria-label="Основна навигация">${navHtml(o.route)}</nav>

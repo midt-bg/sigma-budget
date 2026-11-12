@@ -1,3 +1,4 @@
+import { publicOrganization, finalPendingCopy, finalApiCopy } from './launch-copy-test-helper';
 import { rejectReactKeyWarnings } from './metadata-test-warnings';
 import { createHash } from 'node:crypto';
 import { expect, it, afterEach } from 'vitest';
@@ -101,7 +102,11 @@ for (const c of manifest.cases) {
     // Keep the historical capture intact. S35's intentional copy and input-kind column
     // now follow the current legacy renderer; its links and controls still match the capture.
     const clarified = c.screen === 'S35' && !c.query.demo;
-    const expected = clarified ? String(frameHtml(await build(byId.S35, {}, c.query))) : frozen;
+    const expected = clarified
+      ? String(frameHtml(await build(byId.S35, {}, c.query)))
+      : c.screen === 'S25'
+        ? finalApiCopy(frozen)
+        : finalPendingCopy(frozen);
     const a = semantics(actual),
       b = semantics(expected);
     expect({ ...a, text: undefined }).toEqual({ ...b, text: undefined });
@@ -146,7 +151,7 @@ for (const c of manifest.cases) {
         ),
       ).toBe(true);
     expect(JSON.parse(result.doc.ld)).toEqual(
-      JSON.parse(document.querySelector('#ld-page')!.textContent!),
+      JSON.parse(publicOrganization(document.querySelector('#ld-page')!.textContent!)),
     );
   });
 }
