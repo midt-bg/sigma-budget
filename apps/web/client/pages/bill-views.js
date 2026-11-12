@@ -381,7 +381,10 @@ export function institutionView(ctx) {
       kpiGrid([
         kpi({ label: 'Публикувани бюджети', value: items.length }),
         kpi({ label: 'Разходи общо', mln: total == null ? null : total / 1000 }),
-        kpi({ label: 'Собствени приходи', mln: rev == null ? null : rev / 1000 }),
+        // without a printed revenue line for every article there is no total; „Предстои“ would promise one
+        rev == null
+          ? kpi({ label: 'Собствени приходи', value: 'Няма сбор', sub: 'липсва отпечатан ред' })
+          : kpi({ label: 'Собствени приходи', mln: rev / 1000 }),
       ]),
       {
         sub: `${labels[variant]}. Сборът е изчислен от отпечатаните заглавни редове по членове 2–48; не е целият държавен бюджет. ${variant === 'billMc' ? 'Показан е само публикуваният чл. 2 от варианта на МС.' : 'За чл. 5 липсва отпечатан приходен ред, затова общият сбор на собствените приходи не е наличен.'}`,
