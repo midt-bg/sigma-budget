@@ -54,6 +54,13 @@ def main():
                 assert card.locator('.measure-origin').count() == 0
             checks += 1
 
+            # A search link to one measure value lands on its phone card (the desktop row is hidden).
+            go('/merki?per=2028.forecast&to=s12-II_7-1-1')
+            target = page.locator('[data-anchor-for="s12-II_7-1-1"]')
+            expect(target).to_be_focused()
+            expect(target).to_be_in_viewport()
+            checks += 1
+
             # Export still has all three original rows and all provenance columns.
             page.locator('[data-share="s12-II_7"]').click()
             with page.expect_download() as download:

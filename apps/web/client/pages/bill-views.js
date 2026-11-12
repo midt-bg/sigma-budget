@@ -980,11 +980,12 @@ export const mountBillSearch = (root, ctx) =>
 
 // Separate phone presentation: the hidden desktop table still owns the unchanged CSV.
 // Phone cards show the values only; cell provenance stays in the CSV, as in the desktop table.
-function measureCards(measures) {
+// Each value names its desktop row (data-anchor-for), so a search link (?to=s12-II_7-1-1) also lands on the phone card.
+function measureCards(measures, table) {
   return html`<div class="measure-cards">${measures.map(
-    (r) => html`<div class="measure-card">
+    (r, rowIndex) => html`<div class="measure-card">
     <h3>${r.label}</h3>
-    <dl>${FRAMEWORK.map((key, k) => html`<div class="measure-value"><dt>${periodByKey(key).label}, млн. €</dt><dd>${cellValue(r.cells[k]) == null ? '—' : num(cellValue(r.cells[k]), 1)}${r.gaps[k] ? html`<small class="muted">${r.gaps[k]}</small>` : ''}</dd></div>`)}</dl>
+    <dl>${FRAMEWORK.map((key, k) => html`<div class="measure-value" data-anchor-for="s12-${table}-${rowIndex}-${k}"><dt>${periodByKey(key).label}, млн. €</dt><dd>${cellValue(r.cells[k]) == null ? '—' : num(cellValue(r.cells[k]), 1)}${r.gaps[k] ? html`<small class="muted">${r.gaps[k]}</small>` : ''}</dd></div>`)}</dl>
   </div>`,
   )}</div>`;
 }
@@ -1025,7 +1026,7 @@ export function measuresView(ctx) {
           { key: 'gap', label: 'Липсваща стойност' },
         ],
         rows,
-      })}</div>${measureCards(doc.forecast[table])}`,
+      })}</div>${measureCards(doc.forecast[table], table)}`,
       {
         sub: 'Показани са отпечатаните ефекти и общият ред. Празните клетки не са нула. Знаците и разликите между годините са запазени.',
         ...frameworkStatus,

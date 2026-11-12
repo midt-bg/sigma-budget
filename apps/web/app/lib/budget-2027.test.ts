@@ -374,9 +374,14 @@ it.each(['2028.forecast', '2029.forecast'])(
   async (period) => {
     const { html } = await page('/pari?per=' + period);
     expect(html).toContain('/merki?per=' + period);
-    expect(html).not.toContain('Мерки в бюджета за 2026');
+    expect(html).not.toContain('Мерки по законопроекта за 2026');
   },
 );
+it('labels the 2026 measures in the overview as the bill’s, not the adopted law’s', async () => {
+  const { html } = await page('/pari?per=2026.law');
+  expect(html).toContain('Мерки по законопроекта за 2026');
+  expect(html).not.toContain('Мерки в бюджета за 2026');
+});
 it('uses the 2027 draft by default and preserves explicit reports, law, expected and aliases', async () => {
   expect(requestState().period).toBe('2027.draft');
   for (const key of ['2024.report', '2025.report', '2026.law', '2026.expected', ...FRAMEWORK])
