@@ -1,6 +1,6 @@
 // S15 Изпълнение (V5). The monthly reports of the КФП, comparison first: two permanent year columns («2025» and «2026»), the same period,
 // the same scope, the same mode («Натрупано» or «За месеца»). Every number comes from execution.json (D06/D16/D26) through js/exec.js.
-// Route: #/izpalnenie (the monthly comparison).
+// Routes: #/izpalnenie (the comparison), #/izpalnenie/byudzheti (the plan of every budget and the national budget against the EU funds).
 // Address: ?mesec= ?obhvat= ?rez=natrupano|mesec ?g1= (the earlier year) ?g2= ?pera=rev,exp (open groups) ?pokazatel=<row> (one item in full).
 // Arrival (working-group feedback, 2026-10-10): with no ?mesec the page opens on the LATEST reported month of the newest year (js/exec.js `defMonth`, read from execution.json: nothing here names a month),
 //   one line under the heading says which report it is (`reportLine`), and the four controls are folded into one closed disclosure «Избери месец и сравнение» whose summary says what is shown now.
@@ -24,7 +24,7 @@ import { siteUrl } from '../seo.js';
 import { dataHref } from '../data.js';
 import { store } from '../store.js';
 import * as share from '../share.js';
-import { moneyCol } from '../view.js';
+import { amount, moneyCol } from '../view.js';
 import {
   execModel,
   SCOPES,
@@ -79,13 +79,14 @@ export function keepQuery(ctx, over = {}) {
 
 export function model(ctx) {
   const E = execModel(ctx.data.execution, ctx.query || {});
+  const sub = ctx.params && ctx.params.sub;
   const open = new Set(
     String((ctx.query && ctx.query.pera) || '')
       .split(',')
       .filter(Boolean),
   );
   const item = ctx.query && ALL_ROWS.includes(ctx.query.pokazatel) ? ctx.query.pokazatel : null;
-  const page = item ? 'item' : 'main';
+  const page = sub === 'byudzheti' ? 'byudzheti' : item ? 'item' : 'main';
   return { ...E, ctx, page, item, open };
 }
 
@@ -396,6 +397,7 @@ export function compareBlock(C) {
   ]
     .filter(Boolean)
     .join(' ');
+  share.attach('s15-b-grid', { table: () => csvTable(C) });
   return block({
     id: 's15-b-grid',
     level: 2,
@@ -663,8 +665,308 @@ export function proofDisclosure(ctx, C) {
   });
 }
 
+/* ------------------------------------------------------------------ Бюджети: the plan of every budget (D07), the national budget and the EU funds */
+const khilToMln = (v) => (fin(v) ? v / 1000 : null);
+const moneyCell = (mc, mln) => {
+  const lev = mc.lev(mln);
+  return html`${mc.text(mln)}${lev ? html`<span class="s15-lev">${lev}</span>` : ''}`;
+};
+const componentsOf = (ctx) => {
+  const c = ctx.data.components;
+  return c && typeof c === 'object' && c.budgets && typeof c.budgets === 'object' ? c : null;
+};
+const srcOf = (c) =>
+  c && c.meta && Array.isArray(c.meta.source) && c.meta.source.length
+    ? c.meta.source
+    : ['zdb', 'asbp'];
+
+function budgetRows(ctx, c) {
+  const b = c.budgets,
+    k = khilToMln;
+  const a = (v) => amount(ctx, { mln: v });
+  const line = (list, id) =>
+    Array.isArray(list) ? (list.find((x) => x && x.id === id) || {}).khil : null;
+  const rows = [];
+  const s = b.state;
+  if (s && fin(s.revKhil)) {
+    const out =
+      fin(s.expKhil) && fin(s.transfersNetKhil) && fin(s.euContributionKhil)
+        ? s.expKhil + s.transfersNetKhil + s.euContributionKhil
+        : null;
+    const parts = fin(out)
+      ? `Разходите са сбор от ${a(k(s.expKhil))} собствени разходи, ${a(k(s.transfersNetKhil))} нетни трансфери към другите бюджети и ${a(k(s.euContributionKhil))} вноска в бюджета на ЕС.`
+      : '';
+    const fin2 = fin(s.financingKhil)
+      ? ` За покриване на дефицита е предвидено финансиране ${a(k(s.financingKhil))}.`
+      : '';
+    rows.push({
+      id: 'state',
+      name: s.name || 'Държавен бюджет',
+      what: `${parts}${fin2}`.trim(),
+      rev: k(s.revKhil),
+      exp: k(out),
+      bal: k(s.balanceKhil),
+    });
+  }
+  const d = b.doo;
+  if (d && fin(d.revAndTransfersKhil)) {
+    const pen = line(d.exp, 'pensions'),
+      gap = line(d.rev, 'transfersShortage');
+    const what = [
+      fin(d.ownRevKhil) && fin(d.transfersFromCentralKhil)
+        ? `Собствени приходи ${a(k(d.ownRevKhil))} и трансфери от държавния бюджет ${a(k(d.transfersFromCentralKhil))}.`
+        : '',
+      fin(pen) ? `Най-голям разход са пенсиите: ${a(k(pen))}.` : '',
+      fin(gap)
+        ? `Салдото е нула: недостигът се покрива с допълнителен трансфер от държавния бюджет (${a(k(gap))}).`
+        : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
+    rows.push({
+      id: 'doo',
+      name: d.name || 'ДОО',
+      what,
+      rev: k(d.revAndTransfersKhil),
+      exp: k(d.expAndTransfersKhil),
+      bal: k(d.balanceKhil),
+    });
+  }
+  const n = b.nzok;
+  if (n && fin(n.revAndTransfersKhil)) {
+    const pay = line(n.exp, 'payments');
+    const what = [
+      fin(n.ownRevKhil) && fin(n.transfersFromStateKhil)
+        ? `Собствени приходи ${a(k(n.ownRevKhil))} и трансфери от държавния бюджет ${a(k(n.transfersFromStateKhil))}.`
+        : '',
+      fin(pay) ? `Най-голям разход са здравноосигурителните плащания: ${a(k(pay))}.` : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
+    rows.push({
+      id: 'nzok',
+      name: n.name || 'НЗОК',
+      what,
+      rev: k(n.revAndTransfersKhil),
+      exp: k(n.expAndTransfersKhil),
+      bal: k(n.balanceKhil),
+    });
+  }
+  const m = b.municipalities;
+  if (m && fin(m.expMln)) {
+    const main =
+      m.transfers && Array.isArray(m.transfers.mainKhil) ? m.transfers.mainKhil[0] : null;
+    const what = [
+      fin(m.count) ? `Разходите на ${m.count} общини.` : '',
+      fin(main) ? `${a(k(main))} от тях идват като основни трансфери от държавния бюджет.` : '',
+      'Собствените приходи на общините (местни данъци и такси) не са показани тук.',
+    ]
+      .filter(Boolean)
+      .join(' ');
+    rows.push({
+      id: 'municipalities',
+      name: m.name || 'Общини',
+      what,
+      rev: null,
+      exp: m.expMln,
+      bal: null,
+    });
+  }
+  const e = b.euAccounts;
+  if (e && fin(e.revMln)) {
+    const what = fin(e.transferFromStateMln)
+      ? `Нетният трансфер от държавния бюджет е ${a(e.transferFromStateMln)}. Числата са по мотивите към законопроекта.`
+      : 'Числата са по мотивите към законопроекта.';
+    rows.push({
+      id: 'eu',
+      name: e.name || 'Сметки за средства от ЕС',
+      what,
+      rev: e.revMln,
+      exp: e.expMln,
+      bal: e.balanceMln,
+    });
+  }
+  return rows;
+}
+
+function budgetsBlock(ctx) {
+  const c = componentsOf(ctx);
+  if (!c) return '';
+  const rows0 = budgetRows(ctx, c);
+  if (!rows0.length) return '';
+  const mc = moneyCol(ctx, { d: 1 });
+  const rows = rows0.map((r) => ({
+    ...r,
+    mr: r.rev,
+    me: r.exp,
+    mb: r.bal,
+    rev: mc.raw(r.rev),
+    exp: mc.raw(r.exp),
+    bal: mc.raw(r.bal),
+  }));
+  const col = (key, label, f) => ({
+    key,
+    label,
+    num: true,
+    unit: mc.unit,
+    d: mc.d,
+    fmt: (_v, r) => moneyCell(mc, r[f]),
+  });
+  const withWhat = rows.filter((r) => r.what);
+  return block({
+    id: 's15-b-budgets',
+    level: 2,
+    title: 'Планът за всеки от бюджетите',
+    sub: 'Планът за 2026 г. (проект).',
+    scope: 'kfp',
+    source: srcOf(c),
+    asOf: c.meta && c.meta.asOf,
+    share: { text: 'Планът за 2026 г. по бюджети: приходи, разходи и салдо.' },
+    body: html`${dataTable({
+      id: 's15-t-budgets',
+      caption: 'План за 2026 г. по съставни бюджети: приходи, разходи и салдо',
+      columns: [
+        { key: 'name', label: 'Бюджет' },
+        col('rev', 'Приходи и получени трансфери', 'mr'),
+        col('exp', 'Разходи и дадени трансфери', 'me'),
+        col('bal', 'Салдо', 'mb'),
+      ],
+      rows,
+      dense: true,
+      note: 'Не събирайте числата по редовете: бюджетите си предават пари един на друг (трансфери). Консолидираната програма (КФП) изважда тези трансфери, за да не се броят два пъти.',
+    })}
+    ${withWhat.length ? html`<h3 class="s15-minor">Какво влиза в числата</h3><dl class="s15-defs">${withWhat.map((r) => html`<dt>${r.name}</dt><dd>${r.what}</dd>`)}</dl>` : ''}`,
+  });
+}
+
+function otherDisclosure(ctx, c) {
+  const o = c.budgets.other;
+  if (!o || !Array.isArray(o.items) || !o.items.length) return '';
+  const years = Array.isArray(o.years) ? o.years : [2026, 2027, 2028];
+  const mc = moneyCol(ctx, { d: 1 });
+  const yearLabel = (y, i) => `${y} г.${i === 0 ? ' (проект)' : ' (прогноза)'}`;
+  const at = (arr, i) => (Array.isArray(arr) ? khilToMln(arr[i]) : null);
+  const rows = o.items.map((it) => ({
+    name: it.label,
+    ...Object.fromEntries(years.map((_y, i) => [`y${i}`, mc.raw(at(it.khil, i))])),
+    ...Object.fromEntries(years.map((_y, i) => [`m${i}`, at(it.khil, i)])),
+  }));
+  const totals = Object.fromEntries(
+    years.flatMap((_y, i) => [
+      [`y${i}`, mc.raw(at(o.sumKhil, i))],
+      [`m${i}`, at(o.sumKhil, i)],
+    ]),
+  );
+  const cols = years.map((y, i) => ({
+    key: `y${i}`,
+    label: yearLabel(y, i),
+    num: true,
+    unit: mc.unit,
+    d: mc.d,
+    fmt: (_v, r) => mc.text(r[`m${i}`]),
+  }));
+  return disclosure({
+    id: 's15-other',
+    title: 'Бюджети на БНТ, БНР, БТА, БАН и държавните университети',
+    body: html`<p class="s15-lead">Приложение № 6 към мотивите към законопроекта изброява трансфери към тези бюджети. Член 1 от закона не ги назовава, затова не твърдим, че те са цялата сума в „Други получатели“.</p>
+      ${dataTable({ id: 's15-t-other', caption: 'Трансфери към други бюджети по приложение № 6 към мотивите', columns: [{ key: 'name', label: 'Бюджет' }, ...cols], rows, total: { label: 'Общо', values: totals }, dense: true, note: o.sourceNote ? `Източник на числата: ${o.sourceNote}.` : undefined })}`,
+  });
+}
+
+function notesDisclosure(c) {
+  const notes = Array.isArray(c.notes)
+    ? c.notes.filter((x) => typeof x === 'string' && x.trim())
+    : [];
+  const b = c.budgets;
+  const srcs = ['state', 'doo', 'nzok', 'municipalities', 'euAccounts', 'other']
+    .map((k) => b[k])
+    .filter((x) => x && x.sourceNote)
+    .map((x) => `${x.name}: ${x.sourceNote}`);
+  if (!notes.length && !srcs.length) return '';
+  return disclosure({
+    id: 's15-notes',
+    title: 'Бележки към числата и откъде са те',
+    body: html`${notes.length ? html`<ul class="s15-method">${notes.map((t) => html`<li>${t}</li>`)}</ul>` : ''}
+      ${srcs.length ? html`<h3 class="s15-minor">Откъде са числата за всеки бюджет</h3><ul class="s15-method">${srcs.map((t) => html`<li>${t}</li>`)}</ul>` : ''}`,
+  });
+}
+
+/** the national budget and the EU funds side by side with the КФП, at the chosen month: the three sources of the balance I − II + III − IV */
+function natEuBlock(C) {
+  const mc = moneyCol(C.ctx, { d: 1 });
+  const lines = [
+    ['rev', 'Приходи'],
+    ['exp.total', 'Разходи с вноската в ЕС'],
+    ['transfers', 'Трансфери между бюджетите, нето'],
+    ['balance', 'Бюджетно салдо'],
+  ];
+  const i = C.month - 1;
+  const rows = lines.map(([id, name]) => {
+    const r = { name };
+    for (const [sc] of SCOPES) {
+      const c = C.cum(C.g2, id, i, sc);
+      r[`m_${sc}`] = c;
+      r[sc] = mc.raw(c);
+    }
+    return r;
+  });
+  const col = (sc, label) => ({
+    key: sc,
+    label,
+    num: true,
+    unit: mc.unit,
+    d: mc.d,
+    fmt: (_v, r) => moneyCell(mc, r[`m_${sc}`]),
+  });
+  const has = rows.some((r) => fin(r.m_nat) || fin(r.m_eu));
+  const asOf = C.asOfOf(C.g2, i);
+  return block({
+    id: 's15-b-nateu',
+    level: 2,
+    title: 'Национален бюджет и средства от ЕС',
+    source: ['kfp'],
+    asOf,
+    sub: `Натрупано към ${date(asOf)} г. Салдото е приходи минус разходи плюс нетните трансфери.`,
+    share: has ? { text: `Национален бюджет и средства от ЕС към ${date(asOf)} г.` } : false,
+    body: has
+      ? dataTable({
+          id: 's15-t-nateu',
+          caption: `Национален бюджет, средства от ЕС и КФП към ${date(asOf)} г.`,
+          columns: [
+            { key: 'name', label: 'Показател' },
+            col('nat', 'Национален бюджет'),
+            col('eu', 'Средства от ЕС'),
+            col('kfp', 'КФП (общо)'),
+          ],
+          rows,
+          dense: true,
+          note: 'Трансферите между националния бюджет и средствата от ЕС са равни по размер и с противоположен знак, затова в КФП се нулират. Приходите, разходите и салдото на КФП са сборът от двата обхвата.',
+        })
+      : emptyState({ title: 'Няма данни', text: 'Отчетът няма стойности за избрания месец.' }),
+  });
+}
+
+export function byudzhetiView(C) {
+  const c = componentsOf(C.ctx);
+  const back = C.ctx.href('S15', {}, keepQuery(C.ctx));
+  const intro = html`<div class="s15-lead"><p>В ${gl('kfp', 'консолидираната фискална програма (КФП)')} се събират няколко отделни бюджета: държавният бюджет, държавното обществено осигуряване (ДОО), здравната каса (НЗОК), общините и средствата от ЕС. Тук е планът за 2026 г. (проект) и изпълнението по националния бюджет и средствата от ЕС.</p></div>`;
+  return html`<p class="s15-back"><a class="back-link" href="${back}">${icon('arrowLeft', { size: 16 })}<span>Към месечните отчети</span></a></p>${[
+    intro,
+    budgetsBlock(C.ctx),
+    c ? otherDisclosure(C.ctx, c) : '',
+    natEuBlock(C),
+    c ? notesDisclosure(c) : '',
+  ]}`;
+}
+
 /* ------------------------------------------------------------------ the page */
-export const needs = ['core', 'execution', 'execution-provenance?', 'releases/current?'];
+export const needs = [
+  'core',
+  'execution',
+  'components?',
+  'execution-provenance?',
+  'releases/current?',
+];
 export const styles = ['s15-izpalnenie'];
 
 /** for search and answer engines (js/seo.js): the plan question of the start page and the „Накратко“ sentence under the comparison */
@@ -678,10 +980,18 @@ export function answer(ctx) {
   const C = model(ctx);
   return C.page === 'main' ? summaryText(C) || '' : '';
 }
+export function docTitle(ctx) {
+  return ctx.data?.execution && model(ctx).page === 'byudzheti'
+    ? 'Месечни отчети по бюджети'
+    : null;
+}
+
 export function lede(ctx) {
   try {
     if (!ctx.data || !ctx.data.execution) return undefined;
     const C = model(ctx);
+    if (C.page === 'byudzheti')
+      return 'Планът за 2026 г. по бюджети и изпълнението на националния бюджет и средствата от ЕС.';
     if (C.page === 'item') return undefined;
     return reportLine(C); // the comparison follows at once; the sentence in words sits under the grid
   } catch (e) {
@@ -720,6 +1030,8 @@ export const embeds = {
 
 /** one line that says what the numbers are: a report, which years, which scope, which mode, in which unit */
 export function contextLine(C) {
+  if (C.page === 'byudzheti')
+    return html`<span class="ctx-period"><strong>План 2026 (проект)</strong> <span class="muted">· по бюджети · млн. €</span></span>`;
   const when = C.problem ? '' : C.mode === 'mesec' ? `${cap1(monthName(C.month))}` : monthsLabel(C);
   return html`<span class="ctx-period"><strong>Отчет ${when ? `· ${when}` : ''}</strong> <span class="muted">· ${C.g1} и ${C.g2} · ${C.scope === 'kfp' ? 'КФП' : SCOPE_NAME[C.scope]} · ${C.mode === 'mesec' ? 'за месеца' : 'натрупано'} · млрд. €</span></span>`;
 }
@@ -727,11 +1039,13 @@ export function contextLine(C) {
 export function render(ctx) {
   const C = model(ctx);
   let body;
-  if (C.problem) body = html`${controlsDisclosure(C)}${problemFrame(C)}`;
+  if (C.page === 'byudzheti') body = byudzhetiView(C);
+  else if (C.problem) body = html`${controlsDisclosure(C)}${problemFrame(C)}`;
   else if (C.page === 'item') body = html`${itemView(C)}${methodDisclosure(C)}`;
   else {
+    const links = html`<p class="s15-links small"><a href="${ctx.href('S15', { sub: 'byudzheti' }, keepQuery(ctx))}">Планът по бюджети и средствата от ЕС</a></p>`;
     const plan = planBlock(C, { link: linkOf(C) });
-    body = html`${controlsDisclosure(C)}${PLAN_FIRST ? plan : ''}${compareBlock(C)}${PLAN_FIRST ? '' : plan}${chartsView(C)}${expertBlock(C)}${methodDisclosure(C)}${proofDisclosure(ctx, C)}`;
+    body = html`${controlsDisclosure(C)}${PLAN_FIRST ? plan : ''}${compareBlock(C)}${PLAN_FIRST ? '' : plan}${chartsView(C)}${links}${expertBlock(C)}${methodDisclosure(C)}${proofDisclosure(ctx, C)}`;
   }
   return { body, context: C.page === 'main' && !C.problem ? '' : contextLine(C), ownContext: true }; // the main screen says it in the line under the heading and in the «Избери месец и сравнение» row
 }

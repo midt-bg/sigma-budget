@@ -40,7 +40,7 @@ it('excludes pending sets from lookup, counts, filters and related links without
     expect(item.related.every((s: any) => s.status !== 'pending')).toBe(true);
   expect(JSON.stringify(original)).toBe(before);
 });
-for (const path of ['/danni', '/izpalnenie', '/5-minuti', '/']) {
+for (const path of ['/danni', '/izpalnenie', '/izpalnenie/byudzheti', '/5-minuti', '/']) {
   it(`${path} has no future-data notices or pending catalogue links`, async () => {
     const doc = await documentAt(path);
     const article = doc.querySelector('article')!;
@@ -48,16 +48,11 @@ for (const path of ['/danni', '/izpalnenie', '/5-minuti', '/']) {
       /предстои|предстоят|още не|в тази версия|\b403\b|само през браузър|работна група/i,
     );
     expect(
-      article.querySelector(
-        'a[href*="/danni/p0"],a[href*="/izpalnenie/byudzheti"],.chip[data-query="status=pending"]',
-      ),
+      article.querySelector('a[href*="/danni/p0"],.chip[data-query="status=pending"]'),
     ).toBeNull();
   });
 }
-for (const path of [
-  '/izpalnenie/byudzheti',
-  ...Array.from({ length: 7 }, (_, i) => `/danni/p0${i + 1}`),
-]) {
+for (const path of Array.from({ length: 7 }, (_, i) => `/danni/p0${i + 1}`)) {
   it(`${path} resolves to the existing not-found screen`, async () => {
     expect((await documentAt(path)).querySelector('article')?.getAttribute('data-route')).toBe(
       'S30',
