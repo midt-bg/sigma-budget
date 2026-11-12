@@ -49,6 +49,50 @@ it('charges every uncached render to the client, under its own key, and answers 
   expect(render).toHaveBeenCalledTimes(1);
 });
 
+it('draws two simultaneous identical misses once and charges the limiter once', async () => {
+  const store = new Map<string, Response>();
+  vi.stubGlobal('caches', {
+    default: {
+      match: async (key: Request) => store.get(key.url)?.clone(),
+      put: async (key: Request, res: Response) => {
+        store.set(key.url, res);
+      },
+    },
+  });
+  let open!: () => void;
+  const gate = new Promise<void>((resolve) => (open = resolve));
+  render.mockImplementationOnce(async () => {
+    await gate;
+    return new Response('page');
+  });
+  const limit = vi.fn(async () => ({ success: true }));
+  const first = app.fetch(site('/razhodi'), envWith(limit), ctx);
+  const second = app.fetch(site('/razhodi'), envWith(limit), ctx);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  open();
+  const answers = await Promise.all([first, second]);
+  expect(answers.map((res) => res.status)).toEqual([200, 200]);
+  expect(answers.map((res) => res.headers.get('X-Screen-Cache')).sort()).toEqual(['HIT', 'MISS']);
+  expect(render).toHaveBeenCalledTimes(1);
+  expect(limit).toHaveBeenCalledTimes(1);
+});
+
+it('lets a waiting identical miss through when the first one was refused', async () => {
+  vi.stubGlobal('caches', { default: { match: async () => undefined, put: async () => {} } });
+  let calls = 0;
+  const limit = vi.fn(async () => {
+    calls += 1;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    return { success: calls > 1 };
+  });
+  const answers = await Promise.all([
+    app.fetch(site('/razhodi'), envWith(limit), ctx),
+    app.fetch(site('/razhodi'), envWith(limit), ctx),
+  ]);
+  expect(answers.map((res) => res.status)).toEqual([429, 200]);
+  expect(render).toHaveBeenCalledTimes(1);
+});
+
 it('keeps the pages up when the limiter binding is missing or fails', async () => {
   const failing = vi.fn(async () => {
     throw new Error('limiter down');

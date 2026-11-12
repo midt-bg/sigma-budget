@@ -23,7 +23,7 @@ import { dataTable, tableData } from './table.js';
 import { seg } from './seg.js';
 import * as share from '../share.js';
 import { loadECharts, buildOption, tailAt } from '../charts.js';
-import { apportion } from '../calc.js';
+import { apportion, foldShares } from '../calc.js';
 
 /** shares of a whole of non-negative parts, apportioned to 100,0 like the screens' own lists; a whole with a negative part keeps plain shares */
 function sharesOf(values) {
@@ -101,7 +101,9 @@ function donutLegend(spec) {
       mock: src.slice(cut).some((d) => d.mock),
     });
   if (spec.legendValues) {
-    const shares = sharesOf(parts.map((p) => p.value));
+    // apportioned over every part before the tail is folded, so each share matches the table twin; „Други“ is the sum of its parts
+    const all = sharesOf(src.map((d) => d.value ?? null));
+    const shares = foldShares(all, cut);
     const f = spec.fmt || ((v) => num(v, spec.d ?? (Math.abs(v) >= 100 ? 0 : 1)));
     parts.forEach((p, i) => {
       p.val = okn(p.value) ? f(p.value) : DASH;

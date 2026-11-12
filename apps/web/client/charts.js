@@ -6,7 +6,7 @@
 import { ROOT } from './loc.js';
 import { num } from './format.js';
 import { esc } from './html.js';
-import { apportion } from './calc.js';
+import { apportion, foldShares } from './calc.js';
 
 /* ---------------------------------------------------------------- loader */
 let loading = null;
@@ -427,14 +427,16 @@ function donut(spec, tk, env) {
       mock: rest.some((d) => d.mock),
     });
   const total = items.reduce((a, d) => a + (d.value || 0), 0);
-  // the tooltip share is apportioned to 100,0 like the table twin and the screens' lists (echarts' own percent rounds each slice alone)
-  const shares = items.some((d) => d.value < 0)
+  // the tooltip share is apportioned to 100,0 over every part before the tail is folded, like the table twin and the screens' lists
+  // (echarts' own percent rounds each slice alone); „Други“ is the sum of its parts' shares
+  const all = src.some((d) => d.value < 0)
     ? null
     : apportion(
-        items.map((d) => d.value),
+        src.map((d) => d.value),
         100,
         1,
       );
+  const shares = all ? foldShares(all, cut) : null;
   const data = items.map((d) => {
     const mock = !!(spec.mock || d.mock);
     return {

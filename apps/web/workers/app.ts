@@ -296,12 +296,13 @@ async function dispatch(request: Request, env: Env, ctx: ExecutionContext): Prom
     const stored = await fromCache();
     if (stored) return stored;
   }
-  // every request that reaches the renderer counts against the client's limit (cached screens do not)
-  const limited = await rateLimitRender(request, env);
-  if (limited) return limited;
+  // claim the miss before any await, so an identical miss arriving meanwhile waits for this one; the finally settles it on every exit
   const settle = cache && !head ? claim(key.url) : () => {};
   let stored: Promise<unknown> = Promise.resolve();
   try {
+    // every request that reaches the renderer counts against the client's limit (cached screens do not)
+    const limited = await rateLimitRender(request, env);
+    if (limited) return limited;
     const res = await withinCap(() =>
       scopes.run(scope, () => handler(screenRequest, { cloudflare: { env, ctx }, release })),
     );
