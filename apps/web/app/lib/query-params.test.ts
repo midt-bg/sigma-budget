@@ -61,5 +61,5 @@ it('all sample controls are declared; optional execution subpath remains validat
       for (const key of u.searchParams.keys()) expect(['per', 'demo', ...r.query]).toContain(key);
     }
   expect(match(['izpalnenie', 'wrong'])).toBeNull();
-  expect(match(['izpalnenie', 'byudzheti'])?.route.id).toBe('S15');
+  expect(match(['izpalnenie', 'byudzheti'])).toBeNull();
 });

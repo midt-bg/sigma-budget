@@ -3,14 +3,15 @@ import { rejectReactKeyWarnings } from './metadata-test-warnings';
 import { createHash } from 'node:crypto';
 import { expect, it, afterEach } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { execFileSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
 import { renderToString } from 'react-dom/server';
 import { parseHTML } from 'linkedom';
 import { MigratedScreen } from '../migration/registry';
 import { textModel } from '../lib/screens/text';
 import { renderScreen } from '../lib/screen.server';
+import { build, frameHtml, resolve } from '../../client/render.js';
 import { provideScope } from '../../client/env.js';
+import { data } from '../../client/data.js';
+import { csvFor, get as shareSpec, reset as resetShare } from '../../client/share.js';
 import { requestState } from '../../client/store.js';
 import manifest from './__fixtures__/narrative-manifest.json';
 import inputs from './__fixtures__/narrative-inputs.json';
@@ -23,11 +24,29 @@ const release = {
   feedbackEmail: '',
 };
 const load = async <T,>(name: string): Promise<T> => {
+  if (name === 'releases/current') return { release_id: manifest.releaseId } as T;
   if (!(name in docs)) throw new Error(name);
   return docs[name] as T;
 };
 const fixture = (file: string) =>
   readFileSync(new URL(`./__fixtures__/${file}`, import.meta.url), 'utf8');
+// Keep frozen captures unchanged; remove only the retired future-data blocks and copy.
+function launchCopy(html: string) {
+  const { document } = parseHTML(html);
+  document
+    .querySelectorAll('#s16-b-expected,#s14-2027,[data-pending-id="P07"]')
+    .forEach((n) => n.remove());
+  document.querySelectorAll('.s14-text').forEach((n) => {
+    if (n.textContent?.includes('програмите още не са добавени в тази версия')) n.remove();
+  });
+  return document
+    .toString()
+    .replaceAll('и какво предстои.', 'и хронологията на събитията.')
+    .replaceAll(
+      ' Адресите на събитията в него са примерни, докато порталът няма постоянен адрес.',
+      '',
+    );
+}
 export function semantics(html: string) {
   const { document } = parseHTML(html),
     article = document.querySelector('article')!;
@@ -74,10 +93,10 @@ for (const c of manifest.cases) {
       <MigratedScreen model={model} navigation={{ go() {}, announce() {} }} />,
     );
     const a = semantics(actual),
-      b = semantics(finalPendingCopy(fixture(c.file)));
+      b = semantics(finalPendingCopy(launchCopy(fixture(c.file))));
     expect({ ...a, text: undefined }).toEqual({ ...b, text: undefined });
     expect(a.text).toBe(b.text);
-    const { document } = parseHTML(fixture(c.file));
+    const { document } = parseHTML(launchCopy(fixture(c.file)));
     expect(result.doc.status).toBe(c.status);
     expect(result.doc.title).toBe(document.title);
     for (const tag of result.doc.tags)
@@ -113,36 +132,53 @@ it('frozen server documents and inputs match their recorded checksums', () => {
   ).toBe(manifest.inputsSha256);
 });
 
-it('period vocabulary fixtures regenerate from the independent legacy renderer', () => {
-  // Execute the historical generator with only the intentional launch-copy overrides.
-  const source = readFileSync(
-    new URL('./__fixtures__/refresh-period-fixtures.mjs', import.meta.url),
-    'utf8',
-  )
-    .replace("const check = process.argv.includes('--check');", 'const check = true;')
-    .replace('output !== read(c.file)', 'normalizeLaunch(output) !== normalizeLaunch(read(c.file))')
-    .replace('c.sha256 = hash(output);', 'c.sha256 = hash(read(c.file));');
-  const overrides = String.raw`
-    const normalizeLaunch = (html) => {
-      const { document } = parseHTML(html
-        .replaceAll('Работна група „Бюджет на светло“', 'СИГМА Бюджет')
-        .replaceAll(',"alternateName":"СИГМА Бюджет"', '')
-        .replaceAll('Предстои', 'Няма данни'));
-      document.querySelectorAll('.state-pending').forEach(state => {
-        state.querySelector('.state-text').textContent =
-          'Не показваме число без налични официални данни за този показател.';
-        state.querySelectorAll('.state-text.small').forEach(note => note.remove());
-        state.innerHTML = state.innerHTML.replace(/\s+</g, '<');
-      });
-      return document.toString();
-    };
-  `;
-  expect(() =>
-    execFileSync(process.execPath, ['--input-type=module', '--eval', overrides + source], {
-      cwd: fileURLToPath(new URL('./__fixtures__/', import.meta.url)),
-      stdio: 'pipe',
-    }),
-  ).not.toThrow();
-});
+// Preserve the CSV oracle check previously run by the fixture regeneration script.
+for (const c of manifest.exportCases) {
+  it(`${c.file} preserves the frozen legacy CSV`, async () => {
+    const url = new URL(c.address, manifest.origin);
+    const scope = { url, origin: url.origin, data: new Map(), state: requestState(null), load };
+    provideScope(() => scope);
+    await data.load('core');
+    const route = resolve(c.address);
+    resetShare(route.route);
+    await build(route.route, route.params, route.query);
+    await data.load('releases/current');
+    const table = (scope as any).maps.attached.get('s14-t-bjudzheti').table;
+    expect(csvFor({ ...shareSpec(c.block), table })).toBe(fixture(c.file));
+  });
+}
+
+// Live legacy parity remains independent of React after retiring the pending blocks.
+for (const c of manifest.cases.filter((c) => !c.query.demo)) {
+  it(`${c.file} matches the current independent legacy renderer`, async () => {
+    const url = new URL(c.address, manifest.origin);
+    provideScope(() => ({
+      url,
+      origin: url.origin,
+      data: new Map(),
+      state: requestState(c.query.per || null),
+      load,
+    }));
+    const route = resolve(c.address);
+    const legacy = String(frameHtml(await build(route.route, route.params, route.query)))
+      .replaceAll('href="#/', 'href="/')
+      .replaceAll('href="data/', 'href="/data/')
+      .replaceAll(
+        '/vrazka?type=error&amp;block=',
+        `/vrazka?type=error&amp;from=${url.pathname.slice(1)}&amp;block=`,
+      );
+    const model = await textModel(
+      c.screen as 'S14' | 'S16',
+      {},
+      c.query as Record<string, string>,
+      { release, load },
+    );
+    expect(
+      semantics(
+        renderToString(<MigratedScreen model={model} navigation={{ go() {}, announce() {} }} />),
+      ),
+    ).toEqual(semantics(legacy));
+  });
+}
 
 rejectReactKeyWarnings();

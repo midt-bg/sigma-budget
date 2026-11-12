@@ -79,6 +79,13 @@ for (const c of manifest.cases) {
     // original captured HTML and its checksums intact.
     // SECURITY-06 intentionally replaces the unresolved CORS statement; preserve the frozen capture.
     const frozen = fixture(c.file)
+      // Pending catalogue entries no longer have public pages or a missing-files notice.
+      .replace(/<p class="small muted">Още 7 набора нямат файл,[\s\S]*?<\/p>/, '')
+      .replace(/ За 4 от 46 бюджета програмите предстоят \([\s\S]*?P03<\/a>\)\./g, '')
+      .replace(
+        / файла, а още 7 набора предстоят\.(?: Истински API има само като предложение за втората фаза: виж по-долу\.)?/g,
+        ' файла.',
+      )
       .replaceAll('Бюджет 2026 и прогноза', 'Бюджет и прогноза')
       .replaceAll(
         'Тук няма жив API: всички данни на сайта са готови файлове, които можеш да свалиш и да прочетеш с код. Ето кои са, как изглеждат и как се ползват.',

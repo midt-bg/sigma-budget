@@ -312,7 +312,7 @@
     [
       "S15",
       "izpalnenie",
-      "/izpalnenie/:sub(byudzheti)?",
+      "/izpalnenie",
       "s15-izpalnenie",
       "Месечни отчети",
       "exec",
@@ -328,8 +328,7 @@
           "#/izpalnenie?mesec=1",
           "#/izpalnenie?rez=mesec",
           "#/izpalnenie?obhvat=nat",
-          "#/izpalnenie?g1=2024&g2=2025",
-          "#/izpalnenie/byudzheti"
+          "#/izpalnenie?g1=2024&g2=2025"
         ],
         "desc": "Две години един до друг: колко е събрано и изразходвано до избрания месец."
       }

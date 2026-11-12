@@ -163,7 +163,7 @@ def part_numbers(browser, port):
 
 
 ROUTES = [("home", "#/"), ("izpalnenie", "#/izpalnenie"), ("izp-2024", "#/izpalnenie?g1=2024&g2=2025&obhvat=eu&rez=mesec"), ("razhodi", "#/razhodi"),
-          ("prihodi", "#/prihodi"), ("danaci", "#/danaci"), ("tarsene", "#/tarsene?q=%D0%94%D0%94%D0%A1"), ("izp-budzheti", "#/izpalnenie/byudzheti"),
+          ("prihodi", "#/prihodi"), ("danaci", "#/danaci"), ("tarsene", "#/tarsene?q=%D0%94%D0%94%D0%A1"),
           ("vedomstva", "#/vedomstva")]
 
 TARGET_JS = """() => {
