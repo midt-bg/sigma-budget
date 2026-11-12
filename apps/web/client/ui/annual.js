@@ -31,8 +31,9 @@ export function annualGap(ctx, dataset, fields = []) {
             columns: [
               { key: 'label', label: 'Показател' },
               { key: 'amount', label: 'Сума', unit: 'млн. €', num: true, d: 1 },
-              { key: 'period', label: 'Период' },
-              { key: 'provenance', label: 'Произход' },
+              // The period is the block title; the raw key stays in the CSV only.
+              { key: 'period', label: 'Период', csvOnly: true },
+              { key: 'provenance', label: 'Произход', csvOnly: true },
             ],
             rows,
           })

@@ -2,7 +2,7 @@
 import { html } from '../html.js';
 import { num, money } from '../format.js';
 import { block } from '../ui/block.js';
-import { dataTable, updateRows } from '../ui/table.js';
+import { dataTable, updateRows, tableData } from '../ui/table.js';
 import { chart } from '../ui/chart.js';
 import { kpi, kpiGrid } from '../ui/kpi.js';
 import { pendingState, errorState } from '../ui/states.js';
@@ -93,9 +93,11 @@ const base = (ctx, id, title, body, extra = {}) =>
     share: { period: ctx.period.key, unit: 'хил. €' },
     ...extra,
   });
+// Cell provenance (hash and link) is for verification: it stays in the CSV export, not on screen.
 const originCol = {
   key: 'provenance',
   label: 'Произход',
+  csvOnly: true,
   fmt: (v, r) => (v ? html`<a href="${r.origin}">${v}</a>` : 'Няма публикувана клетка'),
 };
 const cellRow = (label, cell, extra = {}) => ({
@@ -114,21 +116,25 @@ export const cellColumns = (unit = 'хил. €') => [
   { key: 'label', label: 'Показател' },
   { key: 'value', label: 'Стойност', unit, num: true, d: 1 },
   originCol,
-  { key: 'origin', label: 'Връзка към произхода' },
+  { key: 'origin', label: 'Връзка към произхода', csvOnly: true },
 ];
 const rowsTable = (id, rows, unit) =>
   dataTable({
     id,
-    caption: 'Публикувани стойности и произход',
+    caption: 'Публикувани стойности',
     columns: [
       ...cellColumns(unit),
-      ...(rows.some((r) => r.variant) ? [{ key: 'variant', label: 'Вариант' }] : []),
+      // the variant is the same on every row (it is in the page control); it stays in the CSV
+      ...(rows.some((r) => r.variant) ? [{ key: 'variant', label: 'Вариант', csvOnly: true }] : []),
     ],
     rows,
   });
 const billRows = (rows, variant) =>
   (rows || []).map((r) =>
-    cellRow(`${r.no || ''} ${r.label}`, r.cell, { variant: labels[variant] }),
+    // „unprinted“ marks a row without a printed number (e.g. the „Всичко:“ total)
+    cellRow([r.no === 'unprinted' ? '' : r.no, r.label].filter(Boolean).join(' '), r.cell, {
+      variant: labels[variant],
+    }),
   );
 const unavailable = (ctx) =>
   ctx.failed?.includes('budget2027')
@@ -212,7 +218,7 @@ function municipalityRows(ctx, all = municipalRows(ctx.data.budget2027, ctx.data
     )
     .map((m) => ({
       name: m.displayName,
-      region: m.region,
+      region: m.regionName,
       ...Object.fromEntries(m.cells.map((c, i) => ['v' + i, cellValue(c)])),
       provenance: m.cells[0]?.provenance,
       origin: provenanceUrl(m.cells[0]),
@@ -233,20 +239,23 @@ function municipalityRows(ctx, all = municipalRows(ctx.data.budget2027, ctx.data
 const resultCount = (ctx, n) =>
   municipalScreen(ctx) ? `Намерени общини: ${num(n)}.` : `Намерени ведомства: ${num(n)}.`;
 const searchHint = 'Списъкът се филтрира, докато пишеш. Може и с латински букви.';
-const searchField = (ctx, rows, label) => html`${field({
-  id: 'bill-q',
+// One search box (ids `${prefix}-q` / `${prefix}-count`, button `data-${prefix}-clear`); wired by wireSearch.
+const searchBox = (ctx, prefix, label, count) => html`${field({
+  id: `${prefix}-q`,
   label,
   hint: searchHint,
   control: textInput({
-    id: 'bill-q',
+    id: `${prefix}-q`,
     name: 'q',
     type: 'search',
     value: ctx.query.q || '',
     hint: searchHint,
     autocomplete: 'off',
   }),
-})}<p class="small" id="bill-count" role="status">${resultCount(ctx, rows.length)}</p>
-<p><button type="button" class="btn btn-sm" data-bill-clear${cleanSearch(ctx.query.q) ? '' : html` disabled`}>Изчисти търсенето</button></p>`;
+})}<p class="small" id="${prefix}-count" role="status">${count}</p>
+<p><button type="button" class="btn btn-sm" data-${prefix}-clear${cleanSearch(ctx.query.q) ? '' : html` disabled`}>Изчисти търсенето</button></p>`;
+const searchField = (ctx, rows, label) =>
+  searchBox(ctx, 'bill', label, resultCount(ctx, rows.length));
 const variantControl = (ctx) =>
   field({
     id: 'bill-variant',
@@ -332,12 +341,13 @@ export function institutionView(ctx) {
   const columns = [
     { key: 'name', label: 'Ведомство' },
     { key: 'article', label: 'Член' },
-    { key: 'code', label: 'Код' },
-    { key: 'variant', label: 'Вариант' },
+    // the budget code and the variant are for the CSV; on screen the variant is the page control
+    { key: 'code', label: 'Код', csvOnly: true },
+    { key: 'variant', label: 'Вариант', csvOnly: true },
     { key: 'expenditure', label: 'Разходи', unit: 'хил. €', num: true, d: 1 },
     { key: 'revenue', label: 'Собствени приходи', unit: 'хил. €', num: true, d: 1 },
     originCol,
-    { key: 'origin', label: 'Връзка към произхода' },
+    { key: 'origin', label: 'Връзка към произхода', csvOnly: true },
   ];
   const spec = {
     id: 's10-bill-chart',
@@ -370,8 +380,11 @@ export function institutionView(ctx) {
       'Бюджетите на ведомствата общо',
       kpiGrid([
         kpi({ label: 'Публикувани бюджети', value: items.length }),
-        kpi({ label: 'Разходи общо', value: total, unit: 'хил. €', d: 1 }),
-        kpi({ label: 'Собствени приходи', value: rev, unit: 'хил. €', d: 1 }),
+        kpi({ label: 'Разходи общо', mln: total == null ? null : total / 1000 }),
+        // without a printed revenue line for every article there is no total; „Предстои“ would promise one
+        rev == null
+          ? kpi({ label: 'Собствени приходи', value: 'Няма сбор', sub: 'липсва отпечатан ред' })
+          : kpi({ label: 'Собствени приходи', mln: rev / 1000 }),
       ]),
       {
         sub: `${labels[variant]}. Сборът е изчислен от отпечатаните заглавни редове по членове 2–48; не е целият държавен бюджет. ${variant === 'billMc' ? 'Показан е само публикуваният чл. 2 от варианта на МС.' : 'За чл. 5 липсва отпечатан приходен ред, затова общият сбор на собствените приходи не е наличен.'}`,
@@ -438,7 +451,7 @@ export function municipalityView(ctx) {
     const m = all.find((x) => x.id === String(ctx.params.code).toUpperCase());
     if (!m) ctx.notFound();
     return {
-      title: `Община ${m.displayName}${all.filter((x) => x.displayName === m.displayName).length > 1 ? ' · ' + m.region : ''}`,
+      title: `Община ${m.displayName}${all.filter((x) => x.displayName === m.displayName).length > 1 ? ' · ' + m.regionName : ''}`,
       crumbs: listCrumbs(ctx, `Община ${m.displayName}`),
       lede: 'Проект 2027: основните бюджетни взаимоотношения по чл. 52 и разбивката на делегираните дейности по чл. 53. Сумите са в хил. евро.',
       body: html`${municipalTable(
@@ -502,7 +515,7 @@ export function municipalityView(ctx) {
       d: 1,
     })),
     originCol,
-    { key: 'origin', label: 'Връзка към произхода' },
+    { key: 'origin', label: 'Връзка към произхода', csvOnly: true },
   ];
   return {
     lede: 'Трансферите към всички 265 общини по чл. 52 от проекта за 2027 г. Делегираните дейности са разпределени по чл. 53; не са допълнителен трансфер.',
@@ -522,7 +535,7 @@ export function municipalityView(ctx) {
           value: region,
           options: [
             { value: '', label: 'Всички области' },
-            ...[...new Map(all.map((m) => [m.regionId || m.region, m.region])).entries()].map(
+            ...[...new Map(all.map((m) => [m.regionId || m.region, m.regionName])).entries()].map(
               ([value, label]) => ({ value, label }),
             ),
           ],
@@ -687,6 +700,156 @@ export function debtView(ctx) {
       ${publication(doc)}`,
   };
 }
+/* ------------------------------------------------------------------ S34 · investment projects (Appendix 2) */
+// Sum of the printed cells only (tenths, as published); an empty cell is not a zero and is left out.
+const printedSum = (cells) => {
+  const xs = cells.filter((c) => cellValue(c) !== null);
+  return xs.length ? xs.reduce((sum, c) => sum + Math.round(c.value * 10), 0) / 10 : null;
+};
+const toMln = (v) => (v == null ? null : v / 1000);
+// "Министерство на транспорта и съобщенията/Национална компания „…“" → the company that carries out the project
+const shortInstitution = (name) =>
+  (name.includes('/') ? name.slice(name.indexOf('/') + 1) : name)
+    .replace(/^Национална компания /, 'НК ')
+    .replace(/^Държавно предприятие /, 'ДП ')
+    .replace(/^Министерство на /, 'М-во на ')
+    .replace(/^“/, '„')
+    .trim();
+const projectCells = (r) => FRAMEWORK.map((_, i) => r.cells[i]);
+const projectColumns = (unit, d) => [
+  {
+    key: 'name',
+    label: 'Проект',
+    fmt: (v, r) => html`${v}<span class="proj-inst small muted">${r.institution}</span>`,
+  },
+  { key: 'institution', label: 'Ведомство', csvOnly: true },
+  { key: 'id', label: 'Номер в приложението', csvOnly: true },
+  ...FRAMEWORK.map((key, i) => ({
+    key: 'y' + i,
+    label: periodByKey(key).label,
+    unit,
+    num: true,
+    d,
+  })),
+  { key: 'note', label: 'Бележка', csvOnly: true },
+];
+const projectRow = (r, scale) => ({
+  id: r.id,
+  name: r.name,
+  institution: r.institution,
+  ...Object.fromEntries(
+    projectCells(r).map((c, i) => ['y' + i, cellValue(c) == null ? null : scale(c.value)]),
+  ),
+  note: Object.values(r.gaps || {}).join(' '),
+});
+const projectRows = (ctx, projects) =>
+  projects
+    .filter((r) => matches(`${r.name} ${r.institution} ${r.id}`, ctx.query.q))
+    .map((r) => projectRow(r, (v) => v));
+const projectCount = (n) => `Намерени проекти: ${num(n)}.`;
+function projectsBlocks(ctx, doc) {
+  const projects = doc.projects || [];
+  const sums = FRAMEWORK.map((key) => cellValue(doc.projectAnnualSums?.[key]));
+  const byInstitution = new Map();
+  for (const r of projects)
+    byInstitution.set(r.institution, [...(byInstitution.get(r.institution) || []), r.cells[0]]);
+  const ranked = [...byInstitution]
+    .map(([name, cells]) => ({ name, value: printedSum(cells) }))
+    .filter((x) => x.value != null)
+    .sort((a, b) => b.value - a.value);
+  const SHOWN = 6;
+  const others = printedSum(ranked.slice(SHOWN).map((x) => ({ value: x.value })));
+  const parts = [
+    ...ranked.slice(0, SHOWN),
+    ...(others == null ? [] : [{ name: 'Други ведомства', value: others }]),
+  ];
+  const top = ranked[0];
+  const spec = {
+    id: 's34-projects-by-institution',
+    title: 'По ведомства, 2027',
+    type: 'barh',
+    unit: 'млн. €',
+    d: 0,
+    categories: parts.map((x) =>
+      x.name === 'Други ведомства' ? x.name : shortInstitution(x.name),
+    ),
+    series: [{ name: '2027', color: '--exp', data: parts.map((x) => toMln(x.value)) }],
+    // Long ministry names wrap instead of being cut: room for up to three lines per bar.
+    labelWidth: 'auto',
+    labelOverflow: 'break',
+    height: 60 * parts.length + 40,
+  };
+  const biggest = [...projects]
+    .sort((a, b) => (printedSum(projectCells(b)) ?? 0) - (printedSum(projectCells(a)) ?? 0))
+    .slice(0, 10);
+  const status = {
+    ...frameworkStatus,
+    share: { period: '2027.draft / 2028.forecast / 2029.forecast', unit: 'млн. €' },
+  };
+  // One block: the three year totals, where the 2027 money goes, the ten largest projects and, folded, the full list.
+  return base(
+    ctx,
+    's34-projects',
+    'Инвестиционни проекти 2027–2029',
+    html`${kpiGrid(
+      FRAMEWORK.map((key, i) => kpi({ label: periodByKey(key).label, mln: toMln(sums[i]), d: 2 })),
+    )}
+    ${
+      sums[0] != null && top
+        ? html`<p>
+            Законопроектът предвижда ${money(toMln(sums[0]))} за ${num(projects.length)} инвестиционни
+            проекта през 2027 г. Най-голяма част е за ${top.name}: ${money(toMln(top.value))}.
+          </p>`
+        : ''
+    }
+    ${chart(spec)}
+    <h3>Най-големите проекти</h3>
+    <p class="small muted">Подредени по сумата за трите години, в милиони евро.</p>
+    ${dataTable({
+      id: 's34-projects-table',
+      caption: 'Десетте проекта с най-голяма сума за 2027–2029, в млн. евро',
+      columns: projectColumns('млн. €', 1),
+      rows: biggest.map((r) => projectRow(r, (v) => v / 1000)),
+      note: '— сумата за годината не е посочена в законопроекта.',
+    })}
+    ${disclosure({
+      id: 's34-all-projects',
+      title: `Всички ${num(projects.length)} инвестиционни проекта`,
+      open: !!cleanSearch(ctx.query.q),
+      body: html`${searchBox(ctx, 's34', 'Намери проект', projectCount(projectRows(ctx, projects).length))}
+        <p class="small muted">Сумите са в хиляди евро.</p>
+        ${dataTable({
+          id: 's34-project-details',
+          caption: `Приложение 2, ${num(projects.length)} проекта, в хил. евро`,
+          columns: projectColumns('хил. €', 1),
+          rows: projectRows(ctx, projects),
+          empty: 'Няма проекти за това търсене. Провери думите или изчисти търсенето.',
+          note: '— сумата за годината не е посочена в законопроекта.',
+        })}`,
+    })}`,
+    {
+      sub: 'Сбор на годишните суми на проектите от Приложение 2 на законопроекта. Законопроектът не дава общ ред, а празните клетки не означават нулев разход.',
+      ...status,
+      // The block's CSV is the full project list (not the chart above it).
+      share: {
+        ...status.share,
+        unit: 'хил. €',
+        table: () =>
+          tableData({
+            columns: projectColumns('хил. €', 1),
+            rows: projects.map((r) => projectRow(r, (v) => v)),
+          }),
+      },
+    },
+  );
+}
+export const mountProjectSearch = (root, ctx) =>
+  wireSearch(root, ctx, {
+    prefix: 's34',
+    table: 's34-project-details',
+    rows: () => projectRows(ctx, ctx.data.budget2027?.projects || []),
+    count: projectCount,
+  });
 export function billOverview(ctx) {
   if (unavailable(ctx)) return unavailable(ctx);
   const doc = ctx.data.budget2027,
@@ -748,47 +911,7 @@ export function billOverview(ctx) {
           <a href="${ctx.href('S13', {}, { per: '2027.draft' })}">Прогнозна рамка 2027–2029</a>
         </li>
       </ul>
-      ${base(
-        ctx,
-        's34-projects',
-        'Инвестиционни проекти 2027–2029',
-        dataTable({
-          id: 's34-projects-table',
-          caption: 'Приложение 2, годишни суми в хил. евро',
-          columns: [{ key: 'period', label: 'Период' }, ...cellColumns()],
-          rows: FRAMEWORK.map((key) =>
-            cellRow('Сбор на публикуваните годишни стойности', doc.projectAnnualSums[key], {
-              ...frameworkRow(key),
-            }),
-          ),
-        }),
-        {
-          sub: 'Изчислен сбор само на отпечатаните числови клетки в 226 проекта, не отпечатан общ ред. Празните клетки не са оценка за нулев разход. Произходът съдържа всички участващи клетки.',
-          ...frameworkStatus,
-          share: { period: '2027.draft / 2028.forecast / 2029.forecast', unit: 'хил. €' },
-        },
-      )}
-      ${disclosure({
-        id: 's34-all-projects',
-        title: 'Всички инвестиционни проекти',
-        body: dataTable({
-          id: 's34-project-details',
-          caption: 'Приложение 2, 226 проекта',
-          columns: [
-            { key: 'period', label: 'Период' },
-            ...cellColumns(),
-            { key: 'gap', label: 'Липсваща стойност' },
-          ],
-          rows: doc.projects.flatMap((r) =>
-            FRAMEWORK.map((key, i) =>
-              cellRow(`${r.id}: ${r.name}`, r.cells[i], {
-                ...frameworkRow(key),
-                gap: r.gaps[i] || '',
-              }),
-            ),
-          ),
-        }),
-      })}
+      ${projectsBlocks(ctx, doc)}
       <p>
         <a href="${ctx.href('S34', {}, { dokument: 'plan' })}"
           >Предходна публикация: проект на бюджетен план до ЕК от 15.10.2026</a
@@ -797,12 +920,12 @@ export function billOverview(ctx) {
       ${publication(doc)}`,
   };
 }
-export function mountBillSearch(root, ctx) {
-  const input = root.querySelector('#bill-q');
+// Filters a table in place as the reader types and keeps ?q= in the address without re-rendering the screen.
+function wireSearch(root, ctx, { prefix, table, rows, count }) {
+  const input = root.querySelector(`#${prefix}-q`);
   if (!input) return;
-  const clear = root.querySelector('[data-bill-clear]');
-  const count = root.querySelector('#bill-count');
-  const table = municipalScreen(ctx) ? 's20-bill-table' : 's10-bill-table';
+  const clear = root.querySelector(`[data-${prefix}-clear]`);
+  const status = root.querySelector(`#${prefix}-count`);
   let timer;
   const change = () => {
     clearTimeout(timer);
@@ -810,9 +933,9 @@ export function mountBillSearch(root, ctx) {
     const query = cleanSearch(input.value);
     if (query === cleanSearch(ctx.query.q)) return;
     ctx.setQuery({ q: query || null }, { rerender: false });
-    const rows = municipalScreen(ctx) ? municipalityRows(ctx) : institutionRows(ctx);
-    updateRows(table, rows);
-    if (count) count.textContent = resultCount(ctx, rows.length);
+    const list = rows();
+    updateRows(table, list);
+    if (status) status.textContent = count(list.length);
   };
   const typing = (e) => {
     clearTimeout(timer);
@@ -847,16 +970,22 @@ export function mountBillSearch(root, ctx) {
     clear?.removeEventListener('click', reset);
   };
 }
+export const mountBillSearch = (root, ctx) =>
+  wireSearch(root, ctx, {
+    prefix: 'bill',
+    table: municipalScreen(ctx) ? 's20-bill-table' : 's10-bill-table',
+    rows: () => (municipalScreen(ctx) ? municipalityRows(ctx) : institutionRows(ctx)),
+    count: (n) => resultCount(ctx, n),
+  });
 
 // Separate phone presentation: the hidden desktop table still owns the unchanged CSV.
-function measureCards(measures) {
+// Phone cards show the values only; cell provenance stays in the CSV, as in the desktop table.
+// Each value names its desktop row (data-anchor-for), so a search link (?to=s12-II_7-1-1) also lands on the phone card.
+function measureCards(measures, table) {
   return html`<div class="measure-cards">${measures.map(
-    (r) => html`<div class="measure-card">
+    (r, rowIndex) => html`<div class="measure-card">
     <h3>${r.label}</h3>
-    <dl>${FRAMEWORK.map((key, k) => html`<div class="measure-value"><dt>${periodByKey(key).label}, млн. €</dt><dd>${cellValue(r.cells[k]) == null ? '—' : num(cellValue(r.cells[k]), 1)}${r.gaps[k] ? html`<small class="muted">${r.gaps[k]}</small>` : ''}</dd></div>`)}</dl>
-    <details class="measure-origin"><summary>Произход на стойностите</summary>
-      <dl>${FRAMEWORK.map((key, k) => html`<div><dt>${periodByKey(key).label}</dt><dd>${r.cells[k]?.provenance ? html`<a href="${provenanceUrl(r.cells[k])}">${r.cells[k].provenance}</a><p>${provenanceUrl(r.cells[k])}</p>` : 'Няма публикувана клетка'}</dd></div>`)}</dl>
-    </details>
+    <dl>${FRAMEWORK.map((key, k) => html`<div class="measure-value" data-anchor-for="s12-${table}-${rowIndex}-${k}"><dt>${periodByKey(key).label}, млн. €</dt><dd>${cellValue(r.cells[k]) == null ? '—' : num(cellValue(r.cells[k]), 1)}${r.gaps[k] ? html`<small class="muted">${r.gaps[k]}</small>` : ''}</dd></div>`)}</dl>
   </div>`,
   )}</div>`;
 }
@@ -897,7 +1026,7 @@ export function measuresView(ctx) {
           { key: 'gap', label: 'Липсваща стойност' },
         ],
         rows,
-      })}</div>${measureCards(doc.forecast[table])}`,
+      })}</div>${measureCards(doc.forecast[table], table)}`,
       {
         sub: 'Показани са отпечатаните ефекти и общият ред. Празните клетки не са нула. Знаците и разликите между годините са запазени.',
         ...frameworkStatus,
