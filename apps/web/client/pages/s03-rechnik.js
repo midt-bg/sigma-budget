@@ -498,7 +498,7 @@ function askForm(id, o) {
 }
 
 const credit = (g) =>
-  html`<p class="s03-credit small muted">Текст на речника: Работна група „Бюджет на светло“ ${srcTag(g.meta?.source || ['wg'], { asOf: g.meta?.asOf })}</p>`;
+  html`<p class="s03-credit small muted">${srcTag(g.meta?.source || ['wg'], { asOf: g.meta?.asOf })}</p>`;
 const disclaimer = (g) =>
   html`<p class="s03-note small muted"><strong>${g.intro.disclaimer.bold}</strong> ${g.intro.disclaimer.text}</p>`;
 

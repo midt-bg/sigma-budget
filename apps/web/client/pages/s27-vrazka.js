@@ -67,7 +67,7 @@ const TOPICS = [
   { value: 'grafiki', label: 'Графиките и сравненията' },
   { value: 'obyasneniya', label: 'Обясненията и речникът' },
   { value: 'kalkulator', label: 'Калкулаторът за моите данъци' },
-  { value: 'obshtini', label: 'Общини и проекти (предстои)' },
+  { value: 'obshtini', label: 'Общини и проекти' },
   { value: 'telefon', label: 'Достъпност и телефон' },
   { value: 'drugo', label: 'Нещо друго' },
 ];
@@ -230,7 +230,7 @@ function form(key, ctx, ctxInfo, draft) {
       <span class="s27-ok-ic" aria-hidden="true">${icon('checkCircle', { size: 24 })}</span>
       <div class="s27-ok-main">
         <h3 class="s27-ok-h" tabindex="-1">${feedback.SENT}</h3>
-        <p class="s27-ok-note">${feedback.TO ? html`Имейлът до ${feedback.TO} е готов: отвори го и го изпрати от пощата си. Копие остава долу, в „Записано в този браузър“.` : 'Изпращането към екипа още не е включено. Записахме съобщението в този браузър: виж го долу, в „Записано в този браузър“.'}</p>
+        <p class="s27-ok-note">${feedback.TO ? html`Имейлът до ${feedback.TO} е готов: отвори го и го изпрати от пощата си. Копие остава долу, в „Записано в този браузър“.` : 'Съобщението е запазено само в този браузър и не е изпратено. Виж го долу, в „Записано в този браузър“.'}</p>
         <p class="s27-warn" data-s27-warn hidden>${icon('alert', { size: 16 })}<span>Браузърът не позволява да се пази запис. Съобщението остава само докато не презаредиш страницата.</span></p>
         <div class="cluster">${feedback.TO ? html`<a class="btn btn-primary" data-s27-mail href="mailto:${feedback.TO}">${icon('message', { size: 16 })}<span>Отвори имейла</span></a>` : ''}<button type="button" class="btn" data-s27-again="${key}">${feedback.TO ? 'Изпрати още едно' : 'Напиши още едно'}</button></div>
       </div>
@@ -297,8 +297,8 @@ export function render(ctx) {
           })
         : callout({
             kind: 'info',
-            title: 'Изпращането предстои',
-            body: html`<p>Формулярът още не изпраща до екипа: написаното остава само в този браузър.</p>`,
+            title: 'Запазване в браузъра',
+            body: html`<p>Няма зададен адрес за получаване на съобщения. Написаното се запазва само в този браузър и не се изпраща.</p>`,
           })
     }
     <section class="s27-main" aria-labelledby="s27-main-h">
