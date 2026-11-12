@@ -50,9 +50,15 @@ def main():
                     assert row.locator('dd').inner_text().strip()
                     box = row.bounding_box()
                     assert box['x'] >= 0 and box['x'] + box['width'] <= 390
-                expect(card.locator('.measure-origin dl')).to_be_hidden()
-            cards.first.locator('summary').click()
-            expect(cards.first.locator('.measure-origin dl')).to_be_visible()
+                # Provenance hashes stay in the CSV, not on the phone cards.
+                assert card.locator('.measure-origin').count() == 0
+            checks += 1
+
+            # A search link to one measure value lands on its phone card (the desktop row is hidden).
+            go('/merki?per=2028.forecast&to=s12-II_7-1-1')
+            target = page.locator('[data-anchor-for="s12-II_7-1-1"]')
+            expect(target).to_be_focused()
+            expect(target).to_be_in_viewport()
             checks += 1
 
             # Export still has all three original rows and all provenance columns.
@@ -67,7 +73,33 @@ def main():
             page.set_viewport_size({'width': 820, 'height': 1180})
             expect(page.locator('.measure-cards').first).to_be_hidden()
             expect(page.locator('#s12-II_7-table')).to_be_visible()
-            assert page.locator('#s12-II_7-table th[scope="col"]').count() == 6
+            # Provenance hashes and links are CSV-only: period, indicator, value, missing value.
+            assert page.locator('#s12-II_7-table th[scope="col"]').count() == 4
+            assert page.locator('#s12-II_7-table').get_by_text('budget2027-provenance.json').count() == 0
+            checks += 1
+            go('/byudzhet-2027')
+            # Investment projects: three year totals, a chart by institution, the top ten (project + three years) and a searchable full list.
+            assert page.locator('#s34-projects .kpi').count() == 3
+            expect(page.locator('#s34-projects-by-institution-fig')).to_be_visible()
+            projects = page.locator('#s34-projects-table')
+            expect(projects).to_be_visible()
+            assert projects.locator('thead th').count() == 4
+            assert projects.locator('tbody tr').count() == 10
+            assert projects.get_by_text('budget2027-provenance.json').count() == 0
+            page.locator('#s34-all-projects > summary').click()
+            page.fill('#s34-q', 'струма')
+            expect(page.locator('#s34-count')).to_have_text(re.compile(r'^Намерени проекти: [1-9]\d?\.$'))
+            assert 0 < page.locator('#s34-project-details tbody tr').count() < 226
+            checks += 1
+            page.set_viewport_size({'width': 412, 'height': 900})
+            go('/byudzhet-2027')
+            assert page.evaluate('document.documentElement.scrollWidth') <= 412
+            assert page.locator('#s34-projects-table thead').evaluate('(e)=>e.getBoundingClientRect().height') <= 1
+            page.set_viewport_size({'width': 820, 'height': 1180})
+            checks += 1
+            go('/prognoza?per=2027.draft')
+            assert page.locator('.fig-table table').count() > 0
+            assert page.locator('.fig-table thead th', has_text='произход').count() == 0
             checks += 1
             go('/merki/kr1?per=2026.law')
             expect(page.locator('h1')).not_to_be_empty()
