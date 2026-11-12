@@ -8,7 +8,8 @@ import { parseHTML } from 'linkedom';
 import { MigratedScreen } from '../migration/registry';
 import { textModel } from '../lib/screens/text';
 import { renderScreen } from '../lib/screen.server';
-import { build, frameHtml, resolve } from '../../client/render.js';
+import { build, docTitle, frameHtml, resolve } from '../../client/render.js';
+import { head } from '../../client/seo.js';
 import { provideScope } from '../../client/env.js';
 import { data } from '../../client/data.js';
 import { csvFor, get as shareSpec, reset as resetShare } from '../../client/share.js';
@@ -152,15 +153,38 @@ for (const c of manifest.exportCases) {
 for (const c of manifest.cases.filter((c) => !c.query.demo)) {
   it(`${c.file} matches the current independent legacy renderer`, async () => {
     const url = new URL(c.address, manifest.origin);
-    provideScope(() => ({
+    const scope = {
       url,
       origin: url.origin,
       data: new Map(),
       state: requestState(c.query.per || null),
       load,
-    }));
+    };
+    provideScope(() => scope); // one scope per request, as on the server, so loaded files stay available to head()
+    // As the server does: core first, so the pending notes and dateModified come from the same frozen release.
+    await data.load('core');
     const route = resolve(c.address);
-    const legacy = String(frameHtml(await build(route.route, route.params, route.query)))
+    resetShare(route.route);
+    const vm = await build(route.route, route.params, route.query);
+    await data.load('releases/current'); // dateModified of the JSON-LD, as on the server
+    // The legacy title, head tags and JSON-LD stay pinned to the frozen capture (formerly the period-fixture regeneration check).
+    const { document: frozen } = parseHTML(launchCopy(fixture(c.file)));
+    const title = docTitle(vm),
+      metadata = head(vm, title);
+    expect(title).toBe(frozen.title);
+    for (const tag of metadata.tags)
+      expect(
+        [...frozen.querySelectorAll(tag.tag)].some((x) =>
+          Object.entries(tag.attrs as Record<string, string>).every(
+            ([k, v]) => x.getAttribute(k) === v,
+          ),
+        ),
+        `${c.file}: ${tag.tag} ${JSON.stringify(tag.attrs)}`,
+      ).toBe(true);
+    expect(JSON.parse(metadata.ld)).toEqual(
+      JSON.parse(publicOrganization(frozen.querySelector('#ld-page')!.textContent!)),
+    );
+    const legacy = String(frameHtml(vm))
       .replaceAll('href="#/', 'href="/')
       .replaceAll('href="data/', 'href="/data/')
       .replaceAll(
