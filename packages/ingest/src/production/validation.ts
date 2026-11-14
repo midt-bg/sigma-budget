@@ -1,3 +1,4 @@
+import { readDebtIssues } from './debt-issues.js';
 import { readTaxDatasets } from './taxes.js';
 import { isPublishedDataset } from '@sigma-budget/dataset-schema';
 import { isDeepStrictEqual } from 'node:util';
@@ -206,6 +207,14 @@ export function validateProduction(
           file + ': every published cell equals the pinned original and conversion',
         );
       }
+      const debt = readDebtIssues(context);
+      check.ok(
+        isPublishedDataset('debt-issues.json', c.get('debt-issues.json')),
+        'debt issues contract',
+      );
+      check.ok(isDeepStrictEqual(c.get('debt-issues.json'), debt), 'debt issues equal original');
+      for (const finding of debt.validation)
+        check.fact(finding.check + ': ' + finding.status + ' — ' + finding.reason);
       return check;
     },
   };

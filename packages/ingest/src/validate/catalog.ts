@@ -479,6 +479,11 @@ export function core(ctx: Context): Check {
       Array.from({ length: 7 }, (_, i) => `P0${i + 1}`).filter(
         (id) =>
           (id !== 'P05' || !Object.hasOwn(ctx.get('execution.json').data, '2022')) &&
+          (id !== 'P06' ||
+            !(
+              ctx.exists('debt-issues.json') &&
+              isPublishedDataset('debt-issues.json', ctx.get('debt-issues.json'))
+            )) &&
           (id !== 'P01' ||
             !['state-budget.json', 'kfp-subsectors.json'].every(
               (name) => ctx.exists(name) && isPublishedDataset(name, ctx.get(name)),

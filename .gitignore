@@ -68,3 +68,6 @@ coverage/
 !data/originals/state_budget/
 !data/originals/fiscal_quarterly/
 !data/originals/taxes-subsectors-acquisition.json
+
+!data/originals/debt/
+!data/originals/debt-issues-acquisition.json

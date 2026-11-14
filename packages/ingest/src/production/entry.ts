@@ -1,3 +1,4 @@
+import { readDebtIssues, registerDebtCatalog } from './debt-issues.js';
 import { mkdir, writeFile, cp, readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { join, dirname } from 'node:path';
@@ -37,11 +38,12 @@ export async function executeRelease(context: Readonly<ExecutionContext>): Promi
   );
   context = Object.freeze({ ...context, generatedIntermediates });
   registerTaxCatalog(prepared.input, context);
+  registerDebtCatalog(prepared.input, context);
   const graph = runGraph(
-    withProductionBudgets(
-      reviseLaunchTexts(wave13bStages(prepared.input)),
-      readTaxDatasets(context),
-    ),
+    withProductionBudgets(reviseLaunchTexts(wave13bStages(prepared.input)), {
+      ...readTaxDatasets(context),
+      'debt-issues.json': readDebtIssues(context),
+    }),
   );
   const failed = graph.states.filter((s) => s.status !== 'success');
   if (failed.length) throw new Error('Production graph failed: ' + JSON.stringify(failed));
