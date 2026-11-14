@@ -58,12 +58,16 @@ pipeline/environments.local.json
 # Компилираните TypeScript пакети (tsc -p tsconfig.build.json, outDir dist)
 /apps/*/dist/
 /packages/*/dist/
-# Покритието от pnpm test -- --coverage (vitest.shared.ts, reportsDirectory ./coverage)
+# Покритието от pnpm test -- --coverage (vitest.shared.ts, reportsDirectory ./coverage); в корена — при vitest, пуснат оттам
 /apps/*/coverage/
 /packages/*/coverage/
+/coverage/
 # Изходът от по-старата подредба в корена: статичният сайт (apps/web/scripts/ssr_parity.py --dist dist) и SSR build
 /dist/
 /build/
+# Изходът на setuptools за Python пакета (pip wheel ./pipeline, python -m build); изходната папка е pipeline/budget_pipeline/build/
+/pipeline/build/
+/pipeline/dist/
 # Генерираните типове на React Router и локалното състояние на wrangler (имена на инструменти, не на изходни папки)
 .react-router/
 .wrangler/

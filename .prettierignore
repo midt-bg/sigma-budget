@@ -24,4 +24,5 @@ reference/**
 # Coverage is generated evidence, not maintained source.
 apps/*/coverage/
 packages/*/coverage/
+/coverage/
 coverage-summary.md

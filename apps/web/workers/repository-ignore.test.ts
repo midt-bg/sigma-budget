@@ -1,19 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { devNull } from 'node:os';
 import { resolve } from 'node:path';
 import { getFileInfo } from 'prettier';
 
 const root = resolve(import.meta.dirname, '../../..');
-const git = (args: string[]) =>
-  spawnSync('git', args, { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
-/** the paths among `paths` that the ignore rules match, whether or not they exist or are tracked */
-function ignored(paths: string[]): string[] {
-  const result = spawnSync('git', ['check-ignore', '--no-index', '--stdin', '-z'], {
+// Only the rules of the repository are under test: the developer's own global ignore file must not change the outcome.
+const OWN_RULES = ['-c', `core.excludesFile=${devNull}`];
+const git = (args: string[], input?: string) =>
+  spawnSync('git', [...OWN_RULES, ...args], {
     cwd: root,
     encoding: 'utf8',
-    input: paths.join('\0') + '\0',
+    maxBuffer: 64 * 1024 * 1024,
+    input,
   });
+/** the paths among `paths` that the ignore rules match, whether or not they exist or are tracked */
+function ignored(paths: string[]): string[] {
+  const result = git(['check-ignore', '--no-index', '--stdin', '-z'], paths.join('\0') + '\0');
   // 0: some are ignored, 1: none is; anything else is an error of git itself
   expect(result.status === 0 || result.status === 1, result.stderr).toBe(true);
   return result.stdout.split('\0').filter(Boolean);
@@ -25,6 +29,9 @@ const prettierIgnored = async (path: string) =>
     })
   ).ignored;
 
+/** a Semgrep ignore rule that is not tied to one place: no leading slash, or a `**` segment inside it */
+const matchesAtAnyDepth = (rule: string) => !rule.startsWith('/') || /(^|\/)\*\*(\/|$)/.test(rule);
+
 // Live source and frozen evidence folders that happen to carry the name of a generated folder.
 const SOURCE = [
   'packages/ingest/src/build/new-builder.ts',
@@ -35,7 +42,7 @@ const SOURCE = [
   'packages/ingest/src/dist/reader.ts',
   'packages/ingest/src/coverage/rule.ts',
 ];
-// Where the tools write their output (react-router build, tsc outDir, vitest coverage, turbo, typegen, wrangler).
+// Where the tools write their output (react-router build, tsc outDir, vitest coverage, setuptools, turbo, typegen, wrangler).
 const GENERATED = [
   'apps/web/build/client/app.html',
   'apps/web/build/server/wrangler.json',
@@ -45,6 +52,9 @@ const GENERATED = [
   'packages/test-support/dist/index.js',
   'apps/web/coverage/coverage-summary.json',
   'packages/ingest/coverage/coverage-summary.json',
+  'coverage/coverage-summary.json',
+  'pipeline/build/lib/budget_pipeline/cli.py',
+  'pipeline/dist/budget_pipeline-1.0.0-py3-none-any.whl',
   'apps/web/.react-router/types/root.ts',
   'apps/web/.wrangler/state/v3/d1.sqlite',
   '.turbo/cookies/1.cookie',
@@ -98,6 +108,21 @@ describe('repository ignore rules', () => {
       .split('\n')
       .map((line) => line.trim())
       .filter((line) => line && !line.startsWith('#'));
-    expect(rules.filter((rule) => !rule.replace(/\/$/, '').includes('/'))).toEqual([]);
+    expect(rules.filter(matchesAtAnyDepth)).toEqual([]);
+  });
+
+  it('tell a rule anchored to the root from one that matches at any depth', () => {
+    for (const rule of [
+      'build/',
+      'tests',
+      '*.ts',
+      '**/build/**',
+      '/**/build/',
+      '/packages/**/build/',
+      'src/build/',
+    ])
+      expect(matchesAtAnyDepth(rule), rule).toBe(true);
+    for (const rule of ['/apps/web/public/vendor/', '/packages/*/dist/', '/tmp/scan.json'])
+      expect(matchesAtAnyDepth(rule), rule).toBe(false);
   });
 });
