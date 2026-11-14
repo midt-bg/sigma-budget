@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import { URL as NodeURL } from 'node:url';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { chromeDOM, chromeTree } from './chrome-tree';
+import { currentNavigation } from '../routes/launch-copy-test-helper';
 
 vi.mock('react-dom/client', async (importOriginal) => {
   const actual = await importOriginal<typeof client>();
@@ -23,7 +24,9 @@ vi.mock('../lib/legacy', async (importOriginal) => ({
 import core from '../routes/__fixtures__/core.json';
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-const frozen = readFileSync(new NodeURL('../routes/__fixtures__/S26.html', import.meta.url), 'utf8')
+const frozen = currentNavigation(
+  readFileSync(new NodeURL('../routes/__fixtures__/S26.html', import.meta.url), 'utf8'),
+)
   // The launch chrome removes the prototype badge, preserving the frozen capture.
   .replace(/<span class="badge-mock"[^>]*>[\s\S]*?<\/span>/, '')
   .replace(/<span class="theme-pick"[\s\S]*?<\/span>/, '')
@@ -101,7 +104,7 @@ for (const [id, focus] of [
   });
 }
 
-for (const selector of ['.sister-link', '[data-action="legend"]']) {
+for (const selector of ['.sister-link']) {
   it(`footer retains ${selector} focus when core data is late and then arrives`, async () => {
     document.documentElement.innerHTML = frozen
       .replace(/^<!doctype html>\s*/i, '')

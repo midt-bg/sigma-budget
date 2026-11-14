@@ -61,6 +61,14 @@ IGNORE_CONSOLE = [
     re.compile(r'^Failed to load resource', re.I),                    # the HTTP status is reported through the response events
     re.compile(r'preloaded using link preload but not used', re.I),   # three font preloads; a screen may not use them within seconds
 ]
+# the «Бюджет» group of the menu, in the order the owner set (desktop dropdown, phone «Меню», footer); the two renamed screens
+BUDGET_MENU = ['Бюджет 2027', 'Годишната рамка', 'Разходи', 'Приходи', 'Кой харчи', 'Мерки', 'Прогноза', 'Общини', 'Пътят на бюджета']
+DATA_MENU = ['Методология', 'Проверка на данните', 'Отворени данни и API', 'За проекта', 'Обратна връзка']
+FOOTER_JS = r"""() => ({
+  groups: Object.fromEntries([...document.querySelectorAll('#footer details.foot-grp')].map(d => [d.querySelector('summary').textContent.trim(), [...d.querySelectorAll('li a')].map(a => a.textContent.trim())])),
+  legend: !!document.querySelector('#footer [data-action="legend"]'),
+  sigma: (document.querySelector('#footer .fine .sister-link') || {}).textContent || ''
+})"""
 NEGATIVE_URLS = ['#/nyama-takava', '#/patevoditel/9', '#/prihodi/dds/x', '#/embed', '#/obshtina', '#/razhodi/a/b/c']
 
 # ------------------------------------------------------------------------------------------------------- findings (data)
@@ -1735,12 +1743,19 @@ def ch_popovers(w, cell, F, W, j, outs):
             esc_close('#btn-period', 'period (restricted screen)')
         page.evaluate("() => { location.hash = '#/razhodi'; }")
         wait_for(page, "() => { const a = document.querySelector('#view article.page'); return !!a && a.dataset.route === 'S07' && a.dataset.ready === '1'; }", timeout=6000)
-    # ---- Current (26.10, working-group feedback): the settings block is gone everywhere: no ⋯ popover, no footer settings button, no switches; «Легенда» stays as a footer entry
+    # ---- Current (26.10, working-group feedback): the settings block is gone everywhere: no ⋯ popover, no footer settings button, no switches
     if present(page, '#footer [data-action="settings"], [data-pref], #btn-more'):
         F('settings-gone', 'a settings control («Настройки», a [data-pref] switch or #btn-more) is still on the screen')
-    leg = page.evaluate("() => { const b = document.querySelector('#footer [data-action=\"legend\"]'); return b ? b.textContent.trim() : null; }")
-    if not leg or 'Легенда' not in leg:
-        F('settings-gone', f'the footer lost the «Легенда» entry (found {leg!r})')
+    # the owner removed the footer «Легенда» entry (the legend opens from the pages, see ch_mockbar); the СИГМА link stays in the fine print
+    foot = page.evaluate(FOOTER_JS)
+    if foot['legend']:
+        F('footer', 'the footer still has the «Легенда» entry (removed: the legend opens from the pages)')
+    if 'СИГМА' not in foot['sigma']:
+        F('footer', f'the footer fine print lost the СИГМА link (found {foot["sigma"]!r})')
+    if foot['groups'].get('Бюджет') != BUDGET_MENU:
+        F('footer', f'the footer «Бюджет» group is {foot["groups"].get("Бюджет")}, expected {BUDGET_MENU}')
+    if foot['groups'].get('Данни и проект') != DATA_MENU:
+        F('footer', f'the footer «Данни и проект» group is {foot["groups"].get("Данни и проект")}, expected {DATA_MENU}')
     # an old stored value is never read: stale switches in localStorage must not turn anything on
     page.evaluate("() => localStorage.setItem('bns.prefs.v1', JSON.stringify({ onlyReal: true, perPerson: true, leva: true, sources: true }))")
     page.reload(wait_until='domcontentloaded')
@@ -1765,6 +1780,10 @@ def ch_popovers(w, cell, F, W, j, outs):
             links = page.evaluate("() => [...document.querySelectorAll('.popover[role=\"dialog\"] a[href^=\"#/\"]')].map(a => a.getAttribute('href'))")
             if not links:
                 F('header-nav', f'the dropdown of header group {i} has no links')
+            want = {2: BUDGET_MENU, 4: DATA_MENU}.get(i)
+            got = page.evaluate("() => [...document.querySelectorAll('.popover[role=\"dialog\"] a[href^=\"#/\"]')].map(a => a.textContent.trim())")
+            if want and got != want:
+                F('header-nav', f'the dropdown of header group {i} lists {got}, expected {want}')
             esc_close(sel, f'header group {i}')
     for gone in ('#btn-sources', '#btn-more', '#link-tax'):
         if present(page, gone):
@@ -1802,6 +1821,11 @@ def ch_phone(w, cell, F, W, j, outs):
         F('sheet', 'the phone «Меню» does not start with the red «Бюджет 2027» button')
     if st['links'] < 15:
         F('sheet', f'the "Още" sheet lists only {st["links"]} screens (expected the whole menu)')
+    drawer = page.evaluate("() => Object.fromEntries([...document.querySelectorAll('dialog.sheet[open] .more-grp')].map(g => [g.querySelector('h3').textContent.trim(), [...g.querySelectorAll('.more-list a')].map(a => a.textContent.trim())]))")
+    if drawer.get('Бюджет') != BUDGET_MENU:
+        F('sheet', f'the phone «Меню» lists the «Бюджет» group as {drawer.get("Бюджет")}, expected {BUDGET_MENU}')
+    if drawer.get('Данни и проект') != DATA_MENU:
+        F('sheet', f'the phone «Меню» lists the «Данни и проект» group as {drawer.get("Данни и проект")}, expected {DATA_MENU}')
     if st['users'] != 0 or st['themes'] != 0 or st['boxes']:   # Current (26.10): the whole «Настройки» block is gone from the drawer
         F('sheet', f'the phone menu still has settings (user types {st["users"]}, themes {st["themes"]}, toggles {st["boxes"]})')
     if not st['foc']:
@@ -1843,6 +1867,21 @@ def ch_phone(w, cell, F, W, j, outs):
             F('sheet-focus', f'after choosing a period the focus is on {act(page)["sig"]}, not back on #btn-period')
     else:
         F('sheet', 'the period button opens nothing on a phone')
+    # the narrowest phone (320px, the reflow width of WCAG 1.4.10): the magnifier and «Меню» keep 44px targets (they were 40px wide below
+    # 340px) and the tools stay clear of the wordmark
+    page.set_viewport_size({'width': 320, 'height': 800})
+    settle(page, 120)
+    hb = page.evaluate("""() => { const box = (s) => { const e = document.querySelector(s); if (!e || !e.getClientRects().length) return null; const r = e.getBoundingClientRect(); return { l: r.left, r: r.right, w: r.width, h: r.height }; };
+        return { brand: box('#topbar .brand'), period: box('#btn-period'), search: box('#btn-search'), menu: box('#btn-menu'), sw: document.documentElement.scrollWidth, vw: innerWidth }; }""")
+    for key in ('search', 'menu'):
+        b = hb[key]
+        if not b or b['w'] < 44 or b['h'] < 44:
+            F('target-size', f'at 320px the header #btn-{key} is {b and round(b["w"])}x{b and round(b["h"])}px (minimum 44x44)')
+    tools = [b for b in (hb['period'], hb['search'], hb['menu']) if b]
+    if hb['brand'] and tools and min(b['l'] for b in tools) < hb['brand']['r'] + 8:
+        F('layout', f'at 320px the header tools come within 8px of the wordmark (wordmark ends at {round(hb["brand"]["r"])}, tools start at {round(min(b["l"] for b in tools))})')
+    if hb['sw'] > hb['vw'] or max(b['r'] for b in tools) > hb['vw']:
+        F('layout', f'at 320px the header does not fit the viewport (scrollWidth {hb["sw"]}, tools end at {round(max(b["r"] for b in tools))})')
 
 
 RETIRED_NOTICE_JS = r"""() => {
@@ -1858,7 +1897,7 @@ RETIRED_NOTICE_JS = r"""() => {
 
 
 def ch_mockbar(w, cell, F, W, j, outs):
-    """The retired sample-data notice stays absent; the footer legend remains accessible."""
+    """The retired sample-data notice stays absent; the legend remains accessible from the pages (S24), not from the footer."""
     o = begin(w, cell, '#/', outs)
     if not o:
         return
@@ -1870,7 +1909,12 @@ def ch_mockbar(w, cell, F, W, j, outs):
             F('mockbar', f'retired sample-data notice returned {when}: {st}')
 
     absent('on a fresh visit')
-    legend = '#footer [data-action="legend"]'
+    page.evaluate("() => { location.hash = '#/danni'; }")
+    # S24 loads its catalogue before it is ready: the harness timeout, not a short fixed one
+    if not wait_for(page, "() => { const a = document.querySelector('#view article.page'); return !!a && a.dataset.route === 'S24' && a.dataset.ready === '1'; }", timeout=w.opts['timeout']):
+        F('legend', 'S24 did not open, so its legend button could not be tried')
+        return
+    legend = '#view .s24-status [data-action="legend"]'
     page.click(legend)
     if wait_there(page, 'dialog.sheet[open]'):
         statuses = page.locator('dialog.sheet[open] [data-st]').evaluate_all(
@@ -1880,9 +1924,9 @@ def ch_mockbar(w, cell, F, W, j, outs):
         page.keyboard.press('Escape')
         wait_gone(page, 'dialog.sheet')
         if not is_active(page, legend):
-            F('sheet-focus', f'after closing the legend the focus is on {act(page)["sig"]}, not its footer button')
+            F('sheet-focus', f'after closing the legend the focus is on {act(page)["sig"]}, not the S24 button that opened it')
     else:
-        F('legend', 'the footer legend button opens nothing')
+        F('legend', 'the legend button of S24 opens nothing')
     page.reload(wait_until='domcontentloaded')
     w.ready(page)
     absent('after reload')
