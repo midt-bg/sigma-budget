@@ -1891,7 +1891,10 @@ const historicalEmbeds = {
 };
 
 export function render(ctx) {
-  if (isFramework(ctx)) return html`${debtView(ctx)}${debtIssues(ctx)}`;
+  if (isFramework(ctx)) {
+    const page = debtView(ctx);
+    return { ...page, body: html`${page.body}${debtIssues(ctx)}` };
+  }
   const M = model(ctx);
   const F = finModel(M);
   const top =
