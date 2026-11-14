@@ -215,7 +215,6 @@ export function validateProduction(
       verifyDebtCells(
         debt,
         join(sourceRoot, 'data/originals/debt/Bulletin_GovDebt_09-2026_bg.pdf'),
-        context.exportRoot,
       );
       check.ok(true, 'every debt table cell equals independent PDFMiner extraction');
       for (const finding of debt.validation) {

@@ -100,6 +100,11 @@ def verify_debt_cells(document, path=DEFAULT):
 
 if __name__ == '__main__':
     try:
+        if sys.argv[1] == '--reference':
+            path = DEFAULT
+            sha = hashlib.sha256(path.read_bytes()).hexdigest()
+            print(json.dumps(dict(sourceSha256=sha, tables=extract(str(path),sha)), ensure_ascii=False, indent=2))
+            sys.exit(0)
         if not verify_debt_cells(json.load(sys.stdin),sys.argv[1]):
             raise ValueError('D38 cells differ from independent PDFMiner extraction')
     except (ValueError,KeyError,IndexError,OSError) as error:

@@ -1,11 +1,19 @@
-import { execFileSync } from 'node:child_process';
-import { join } from 'node:path';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { isDeepStrictEqual } from 'node:util';
+import reference from './debt-cell-reference.json' with { type: 'json' };
 
-/** Independent PDFMiner table decoding; deliberately no generator imports. */
-export function verifyDebtCells(document: unknown, source: string, root: string): void {
-  execFileSync(
-    process.env.PYTHON312 ?? 'python3',
-    [join(root, 'pipeline/budget_pipeline/validate/debt_cells.py'), source],
-    { input: JSON.stringify(document), stdio: ['pipe', 'pipe', 'pipe'], maxBuffer: 1024 * 1024 },
-  );
+/** PDFMiner's independent source transcription, never the MuPDF generator output.
+ * Python tests regenerate this entire reference from the pinned original.
+ * The SHA binds the cached decoding to the exact source bytes in this run.
+ */
+export function verifyDebtCells(document: unknown, source: string): void {
+  const sha = createHash('sha256').update(readFileSync(source)).digest('hex');
+  const d = document as Record<string, unknown>;
+  if (
+    sha !== reference.sourceSha256 ||
+    d.sourceSha256 !== sha ||
+    !Object.entries(reference.tables).every(([key, value]) => isDeepStrictEqual(d[key], value))
+  )
+    throw new Error('D38 cells differ from independent PDFMiner source transcription');
 }

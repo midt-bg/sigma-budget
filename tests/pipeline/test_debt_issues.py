@@ -36,3 +36,9 @@ class DebtIssuesContract(unittest.TestCase):
             for key in path[:-1]: row=row[key]
             row[path[-1]]=value+1 if isinstance(value,(int,float)) else value+' changed'
             self.assertFalse(verify_debt_cells(d),str(path))
+
+    def test_typescript_reference_is_fresh_independent_pdf_decoding(self):
+        from budget_pipeline.validate.debt_cells import extract,DEFAULT,SOURCE
+        root=Path(__file__).resolve().parents[2]
+        stored=json.loads((root/'packages/ingest/src/production/debt-cell-reference.json').read_text())
+        self.assertEqual(stored,dict(sourceSha256=SOURCE,tables=extract(str(DEFAULT),SOURCE)))

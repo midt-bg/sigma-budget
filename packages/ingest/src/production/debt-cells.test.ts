@@ -6,7 +6,7 @@ const root = resolve(import.meta.dirname, '../../../..');
 const source = resolve(root, 'data/originals/debt/Bulletin_GovDebt_09-2026_bg.pdf');
 const load = () => JSON.parse(readFileSync(resolve(root, 'data/release/debt-issues.json'), 'utf8'));
 it('independently verifies every published debt table cell', () => {
-  expect(() => verifyDebtCells(load(), source, root)).not.toThrow();
+  expect(() => verifyDebtCells(load(), source)).not.toThrow();
 });
 for (const [table, field] of [
   ['domestic', 'price'],
@@ -22,9 +22,11 @@ for (const [table, field] of [
     const row = d[table][0];
     row[field] =
       typeof row[field] === 'number'
-        ? row[field] + (field === 'nominal' ? 1 : 0.01)
+        ? field === 'nominal'
+          ? row[field] + 1
+          : Math.round(row[field] * 100 + 1) / 100
         : field === 'maturity'
           ? row[field].replace(/^\d{4}/, (y: string) => String(Number(y) + 1))
           : d.domestic[1].isin;
-    expect(() => verifyDebtCells(d, source, root)).toThrow();
+    expect(() => verifyDebtCells(d, source)).toThrow();
   });
