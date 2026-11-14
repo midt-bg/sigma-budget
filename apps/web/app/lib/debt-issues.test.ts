@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 // @vitest-environment jsdom
 import { readFileSync } from 'node:fs';
 import { expect, it, vi } from 'vitest';
@@ -5,7 +6,7 @@ import * as share from '../../client/share.js';
 import { debtIssues } from '../../client/ui/debt-issues.js';
 it('shows the dated nominal snapshot, a maturity chart/table and unconverted USD', () => {
   const data = JSON.parse(
-    readFileSync(new URL('../../../../data/release/debt-issues.json', import.meta.url), 'utf8'),
+    readFileSync(resolve(import.meta.dirname, '../../../../data/release/debt-issues.json'), 'utf8'),
   );
   const spy = vi.spyOn(share, 'attach');
   const text = String(debtIssues({ data: { 'debt-issues': data } }));
