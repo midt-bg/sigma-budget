@@ -1,3 +1,5 @@
+import { programmeSupplementGuard } from './programme-supplements.js';
+export * from './programme-supplements.js';
 import { debtIssuesGuard } from './debt-issues.js';
 export { debtIssuesGuard, validDebtIsin } from './debt-issues.js';
 export { budgetSourceCells } from './budget-source-cells.js';
@@ -263,6 +265,14 @@ export const datasetGuards = {
     check: record,
     notes: array,
   }),
+  'ministries/0100.json': (value: unknown): value is Record<string, any> =>
+    programmeSupplementGuard(value) && value.id === '0100',
+  'ministries/1800.json': (value: unknown): value is Record<string, any> =>
+    programmeSupplementGuard(value) && value.id === '1800',
+  'ministries/2300.json': (value: unknown): value is Record<string, any> =>
+    programmeSupplementGuard(value) && value.id === '2300',
+  'ministries/7400.json': (value: unknown): value is Record<string, any> =>
+    programmeSupplementGuard(value) && value.id === '7400',
   'ministries/0200.json': ministryGuard,
   'ministries/0300.json': ministryGuard,
   'ministries/0400.json': ministryGuard,

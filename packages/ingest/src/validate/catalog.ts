@@ -478,6 +478,18 @@ export function core(ctx: Context): Check {
       iterable(pending, kind(pending, core, 'pending')).sort(),
       Array.from({ length: 7 }, (_, i) => `P0${i + 1}`).filter(
         (id) =>
+          (id !== 'P03' ||
+            !(
+              Array.isArray(ctx.get('ministries.json')?.items) &&
+              ctx
+                .get('ministries.json')
+                .items.some((item: any) => item?.programs?.tier === 'source-verified') &&
+              ['0100', '1800', '2300', '7400'].every(
+                (code) =>
+                  ctx.exists(`ministries/${code}.json`) &&
+                  isPublishedDataset(`ministries/${code}.json`, ctx.get(`ministries/${code}.json`)),
+              )
+            )) &&
           (id !== 'P05' || !Object.hasOwn(ctx.get('execution.json').data, '2022')) &&
           (id !== 'P06' ||
             !(

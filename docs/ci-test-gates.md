@@ -41,3 +41,12 @@ Browser bootstrap не променя apt sources. След потвърдени
 `client/chrome-boot.js` се включва чрез `client/**/*.js`, а новите screen модули и `migration/screens.ts` - чрез `app/**/*.{ts,tsx}`. Всички те участват и във format gate. Manifest файловете с `build:release` също се форматират. `tests/e2e/boot.py`, `tests/release/test_build_artifact.py` и `apps/web/scripts/build.py` са Python: извън Prettier/V8 обхвата, с отделни Python unit/e2e проверки в site workflow. След rebase форматът се регенерира чрез Prettier в отделен format-only commit; последващите CI поправки са самостоятелни commits. Format конфликти не се разрешават на ръка.
 
 Parity report пътищата се дефинират само в `coverage.env` на site workflow. Turbo strict mode ги пропуска изрично през `globalPassThroughEnv`, а upload стъпките ползват `${{ env.<REPORT> }}`. Всички 12 отчета се генерират и при успешни тестове: преди run се изчистват стари файлове, след run се проверява всеки JSON поотделно, включително четирите Wave15 отчета. Задължителните uploads остават с `if-no-files-found: error`; липсващ отчет не се игнорира.
+
+Проверките на допълнението към P03 използват оригиналните програмни PDF-и,
+които са пинирани и се намират в одобрения CI входен архив. Jobs `coverage` и
+`build` изчакват `node-inputs`; `restore-programme-test-inputs.mjs` удостоверява
+архива и възстановява само четирите необходими документа. Вече наличен оригинал
+се проверява, без да се презаписва. Независимият PDFMiner прочит и отрицателните
+тестове са задължителни; липсващ или променен документ проваля проверката.
+Съществуващите архивни ID, размер, SHA-256 и входен snapshot остават същите,
+защото оригиналите вече са включени в архива.

@@ -32,6 +32,7 @@ jobs:
     uses: ./.github/workflows/security.yml
 
   coverage:
+    needs: [node-inputs]
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -68,8 +69,14 @@ jobs:
           python -m pip install --require-hashes -r tests/requirements-dev.lock -r pipeline/requirements.lock
           python -m pip install --no-deps -e pipeline
           pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: registered-node-input-archive
+          path: ${{ runner.temp }}/registered-node-input-archive
+      - name: Restore the four pinned programme originals for independent checks
+        run: node scripts/restore-programme-test-inputs.mjs "$RUNNER_TEMP/registered-node-input-archive/registered-node-inputs.tar.gz"
       - name: Coverage gate self-tests
-        run: node --test scripts/check-coverage.test.mjs scripts/ci-gates.test.mjs scripts/ci-install-browser.test.mjs scripts/check-parity-reports.test.mjs
+        run: node --test scripts/check-coverage.test.mjs scripts/ci-gates.test.mjs scripts/ci-install-browser.test.mjs scripts/check-parity-reports.test.mjs scripts/restore-programme-test-inputs.test.mjs
       - name: Coverage baseline ratchet against target
         env:
           COVERAGE_BASE_REF: ${{ github.base_ref }}
@@ -157,6 +164,7 @@ jobs:
           if-no-files-found: error
 
   build:
+    needs: [node-inputs]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -177,6 +185,12 @@ jobs:
           python -m pip install --no-deps -e pipeline
           bash scripts/ci-install-browser.sh
           pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: registered-node-input-archive
+          path: ${{ runner.temp }}/registered-node-input-archive
+      - name: Restore the four pinned programme originals for independent checks
+        run: node scripts/restore-programme-test-inputs.mjs "$RUNNER_TEMP/registered-node-input-archive/registered-node-inputs.tar.gz"
       - name: Check repository formatting
         run: pnpm format:check
       - name: TypeScript

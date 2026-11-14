@@ -1,3 +1,5 @@
+import { verifyPublishedProgrammes } from './programmes.js';
+import { programmeReferences } from '@sigma-budget/dataset-schema';
 import { verifyDebtCells } from './debt-cells.js';
 import { readTaxDatasets } from './taxes.js';
 import { isPublishedDataset } from '@sigma-budget/dataset-schema';
@@ -206,6 +208,13 @@ export function validateProduction(
           isDeepStrictEqual(actual, expected),
           file + ': every published cell equals the pinned original and conversion',
         );
+      }
+      for (const [code, reference] of Object.entries(programmeReferences)) {
+        verifyPublishedProgrammes(
+          c.get(`ministries/${code}.json`),
+          join(sourceRoot, 'data/originals/program_budgets', reference.file),
+        );
+        check.ok(true, `Every programme cell for ${code} equals independent PDFMiner decoding`);
       }
       const debt = c.get('debt-issues.json');
       check.ok(
