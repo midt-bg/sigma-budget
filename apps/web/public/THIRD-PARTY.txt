@@ -5,8 +5,11 @@
    The colour palette (OKLch values converted to sRGB), the type stacks and scale, the 8-pt spacing scale, the page rhythm
    (max widths, gutters) and the component recipes (masthead, breadcrumb strip, key facts, totals band, flags/chips, callout,
    source line, tables, ranked bars, tabs, filter bar) of this v4 trial are derived from the CSS of СИГМА
-   (apps/web/app/styles/*.css). No СИГМА code, logo, wordmark or artwork is copied; the values were re-implemented under
-   this prototype's own class names. This prototype is not СИГМА and is not an official site.
+   (apps/web/app/styles/*.css). No СИГМА code is copied; the values were re-implemented under this prototype's own class
+   names. The brand artwork of СИГМА is used under the same licence: sigma-logo.svg (the logo in the header), favicon.ico,
+   favicon-16.png, favicon-32.png and apple-touch-icon.png are unchanged copies of the files in apps/web/public of СИГМА,
+   and icon-192.png, icon-512.png and og.png are drawn from its mark (logo-icon.svg there, kept unchanged as
+   apps/web/scripts/sigma-mark.svg in the repository of СИГМА Бюджет). This prototype is not СИГМА and is not an official site.
 
    MIT License
 
