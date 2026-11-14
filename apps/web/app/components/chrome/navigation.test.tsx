@@ -25,9 +25,12 @@ const BUDGET_NAMES = [
 ];
 const byId = Object.fromEntries(ROUTES.map((r) => [r.id, r]));
 const ROOT = fileURLToPath(new URL('../../../../../', import.meta.url));
-// the names with their capital, in any inflection (the article form too); the lower-case phrases of running text are not names.
-// Split, so that this file does not match its own scan.
-const OLD_NAMES = new RegExp(['Данни и ' + 'методик', 'Данни и ' + 'проверк'].join('|'));
+// the names with their capital, in any inflection (the article form too), or in any case when quoted as a name; the lower-case phrases
+// of running text are not names. Split, so that this file does not match its own scan.
+const OLD = ['анни и ' + 'методик', 'анни и ' + 'проверк'];
+const OLD_NAMES = new RegExp(
+  [...OLD.map((name) => 'Д' + name), ...OLD.map((name) => '[„“”"«][Дд]' + name)].join('|'),
+);
 const FROZEN = [
   /(^|\/)(__fixtures__|fixtures|vendor)\//,
   /^(data|pipeline|reference)\//,
@@ -82,6 +85,23 @@ describe('the «Бюджет» group', () => {
   it('has that order in the route table too (the screen lists of S24 and S27, the sitemap and search ties follow it)', () => {
     expect(ROUTES.filter((r) => r.group === 'budget' && r.nav).map((r) => r.id)).toEqual(BUDGET);
   });
+});
+
+describe('one order of the screens', () => {
+  it('the route table lists the screens of the menu in the order of the menu', () => {
+    const menu = NAV_GROUPS.flatMap(([, ids]) => ids);
+    expect(ROUTES.filter((r) => menu.includes(r.id)).map((r) => r.id)).toEqual(menu);
+  });
+
+  it('a screen that is not in the menu follows its parent or stands after all menu screens', () => {
+    const ids = ROUTES.map((r) => r.id);
+    const menu = NAV_GROUPS.flatMap(([, list]) => list);
+    const lastOfMenu = Math.max(...menu.map((id) => ids.indexOf(id)));
+    for (const r of ROUTES.filter((route) => !menu.includes(route.id))) {
+      if (r.parent) expect(ids.indexOf(r.id)).toBe(ids.indexOf(r.parent) + 1);
+      else expect(ids.indexOf(r.id)).toBeGreaterThan(lastOfMenu);
+    }
+  });
 
   it('is listed in that order in both footers', () => {
     for (const doc of [footer(), legacyFooter()])
@@ -120,10 +140,16 @@ describe('header targets', () => {
         // a rule for the button itself (with a pseudo-class at most), not for something inside it
         sel
           .split(',')
-          .some((part) => /\.(nav-search|menu-btn)(:[\w-]+(\([^)]*\))?)*\s*$/.test(part)),
+          .some((part) =>
+            /(\.(nav-search|menu-btn)|#btn-(search|menu))(:[\w-]+(\([^)]*\))?)*\s*$/.test(part),
+          ),
       )
       .flatMap(([, sel, body]) =>
-        [...body.matchAll(/(?:^|;|\s)((?:min-)?(?:width|height)):\s*(\d+(?:\.\d+)?)px/g)]
+        [
+          ...body.matchAll(
+            /(?:^|;|\s)((?:min-|max-)?(?:width|height|inline-size|block-size)):\s*(\d+(?:\.\d+)?)px/g,
+          ),
+        ]
           .filter(([, , px]) => Number(px) < 44)
           .map(([, prop, px]) => `${sel.trim()} { ${prop}: ${px}px }`),
       );

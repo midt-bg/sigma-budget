@@ -771,7 +771,8 @@ body.bare .page {
 }
 /* The fine print is one wrapping row of items on the same baseline (the СИГМА link is taller on touch screens). The separator of an item
    sits in the gap before it, so an item that starts a line has its separator outside the box, where it is clipped: no line starts or ends
-   with a lone «·». The clip margin keeps the focus ring of a link at the edge visible. */
+   with a lone «·». The clip is a clip-path drawn a little outside the box, so the focus ring of a link at the edge stays whole
+   (overflow-clip-margin would do the same, but Safari does not have it). */
 .footer .fine {
   display: flex;
   flex-wrap: wrap;
@@ -779,8 +780,7 @@ body.bare .page {
   gap: var(--sp-1) var(--sp-5);
   padding-top: var(--sp-3);
   border-top: 1px solid var(--rule);
-  overflow: clip;
-  overflow-clip-margin: var(--sp-1);
+  clip-path: inset(calc(-1 * var(--sp-1)));
 }
 .footer .fine > * + *::before {
   content: '·';

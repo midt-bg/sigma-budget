@@ -51,6 +51,21 @@
       }
     ],
     [
+      "S04",
+      "5-minuti",
+      "/5-minuti",
+      "s04-5-minuti",
+      "Бюджетът за 5 минути",
+      "learn",
+      "clock",
+      {
+        "short": "За 5 минути",
+        "next": ["S06", "S03"],
+        "desc": "Шест кратки сцени за бюджета; под всяка — връзки към точните екрани с подробности.",
+        "periods": "none"
+      }
+    ],
+    [
       "S03",
       "rechnik",
       "/rechnik/:term?",
@@ -67,17 +82,43 @@
       }
     ],
     [
-      "S04",
-      "5-minuti",
-      "/5-minuti",
-      "s04-5-minuti",
-      "Бюджетът за 5 минути",
-      "learn",
-      "clock",
+      "S15",
+      "izpalnenie",
+      "/izpalnenie/:sub(byudzheti)?",
+      "s15-izpalnenie",
+      "Месечни отчети",
+      "exec",
+      "gauge",
       {
-        "short": "За 5 минути",
-        "next": ["S06", "S03"],
-        "desc": "Шест кратки сцени за бюджета; под всяка — връзки към точните екрани с подробности.",
+        "query": ["mesec", "obhvat", "rez", "g1", "g2", "pera", "pokazatel", "ed", "prag", "pok"],
+        "short": "Месечни отчети",
+        "step": 6,
+        "next": ["S17"],
+        "periods": "none",
+        "samples": [
+          "#/izpalnenie",
+          "#/izpalnenie?mesec=1",
+          "#/izpalnenie?rez=mesec",
+          "#/izpalnenie?obhvat=nat",
+          "#/izpalnenie?g1=2024&g2=2025",
+          "#/izpalnenie/byudzheti"
+        ],
+        "desc": "Две години един до друг: колко е събрано и изразходвано до избрания месец."
+      }
+    ],
+    [
+      "S16",
+      "novo",
+      "/novo",
+      "s16-novo",
+      "Какво ново?",
+      "exec",
+      "newspaper",
+      {
+        "query": ["vid"],
+        "short": "Какво ново",
+        "next": ["S15"],
+        "desc": "Последните отчети, решения и данни.",
         "periods": "none"
       }
     ],
@@ -322,66 +363,18 @@
       }
     ],
     [
-      "S31",
-      "bvp",
-      "/bvp",
-      "s31-bvp",
-      "БВП: колко расте икономиката?",
-      "debt",
-      "barChart",
+      "S18",
+      "danaci",
+      "/danaci",
+      "s18-danaci",
+      "Моите данъци",
+      "tax",
+      "percent",
       {
-        "query": ["y", "sy"],
-        "short": "БВП",
-        "next": ["S13"],
-        "periods": "all",
-        "samples": [
-          "#/bvp",
-          "#/bvp?per=2026.expected",
-          "#/bvp?per=2027.draft",
-          "#/bvp?per=2029.forecast"
-        ],
-        "desc": "Колко расте икономиката: БВП, потреблението, инвестициите, износът и вносът по години."
-      }
-    ],
-    [
-      "S15",
-      "izpalnenie",
-      "/izpalnenie/:sub(byudzheti)?",
-      "s15-izpalnenie",
-      "Месечни отчети",
-      "exec",
-      "gauge",
-      {
-        "query": ["mesec", "obhvat", "rez", "g1", "g2", "pera", "pokazatel", "ed", "prag", "pok"],
-        "short": "Месечни отчети",
-        "step": 6,
-        "next": ["S17"],
-        "periods": "none",
-        "samples": [
-          "#/izpalnenie",
-          "#/izpalnenie?mesec=1",
-          "#/izpalnenie?rez=mesec",
-          "#/izpalnenie?obhvat=nat",
-          "#/izpalnenie?g1=2024&g2=2025",
-          "#/izpalnenie/byudzheti"
-        ],
-        "desc": "Две години един до друг: колко е събрано и изразходвано до избрания месец."
-      }
-    ],
-    [
-      "S16",
-      "novo",
-      "/novo",
-      "s16-novo",
-      "Какво ново?",
-      "exec",
-      "newspaper",
-      {
-        "query": ["vid"],
-        "short": "Какво ново",
-        "next": ["S15"],
-        "desc": "Последните отчети, решения и данни.",
-        "periods": "none"
+        "step": 8,
+        "next": ["S24", "S01"],
+        "desc": "Колко внасяш ти от трудовата си заплата и къде отиват парите.",
+        "periods": ["2026.law"]
       }
     ],
     [
@@ -410,18 +403,25 @@
       }
     ],
     [
-      "S18",
-      "danaci",
-      "/danaci",
-      "s18-danaci",
-      "Моите данъци",
-      "tax",
-      "percent",
+      "S31",
+      "bvp",
+      "/bvp",
+      "s31-bvp",
+      "БВП: колко расте икономиката?",
+      "debt",
+      "barChart",
       {
-        "step": 8,
-        "next": ["S24", "S01"],
-        "desc": "Колко внасяш ти от трудовата си заплата и къде отиват парите.",
-        "periods": ["2026.law"]
+        "query": ["y", "sy"],
+        "short": "БВП",
+        "next": ["S13"],
+        "periods": "all",
+        "samples": [
+          "#/bvp",
+          "#/bvp?per=2026.expected",
+          "#/bvp?per=2027.draft",
+          "#/bvp?per=2029.forecast"
+        ],
+        "desc": "Колко расте икономиката: БВП, потреблението, инвестициите, износът и вносът по години."
       }
     ],
     [
@@ -442,6 +442,21 @@
       }
     ],
     [
+      "S35",
+      "proverka",
+      "/proverka",
+      "s35-proverka",
+      "Проверка на данните",
+      "ref",
+      "checkCircle",
+      {
+        "short": "Проверка на данните",
+        "next": ["S24", "S25"],
+        "periods": "none",
+        "desc": "Изданието на данните на сайта: оригиналите и файловете с SHA-256, кодът, проверките, как всеки го пресъздава и историята на изданията."
+      }
+    ],
+    [
       "S25",
       "api",
       "/api",
@@ -455,21 +470,6 @@
         "next": ["S01"],
         "desc": "Файловете с данни, схемите и как да ги ползваш.",
         "periods": "none"
-      }
-    ],
-    [
-      "S35",
-      "proverka",
-      "/proverka",
-      "s35-proverka",
-      "Проверка на данните",
-      "ref",
-      "checkCircle",
-      {
-        "short": "Проверка на данните",
-        "next": ["S24", "S25"],
-        "periods": "none",
-        "desc": "Изданието на данните на сайта: оригиналите и файловете с SHA-256, кодът, проверките, как всеки го пресъздава и историята на изданията."
       }
     ],
     [
