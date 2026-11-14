@@ -62,9 +62,9 @@ export function debtIssues(ctx) {
      { key: 'isin', label: 'ISIN' },
      { key: 'offered', label: 'Предложено', num: true, fmt: (v) => num(v, 0) },
      { key: 'approved', label: 'Одобрено', num: true, fmt: (v) => num(v, 0) },
-     { key: 'price', label: 'Цена за 100 EUR', num: true },
-     { key: 'yield', label: 'Доходност, %', num: true },
-     { key: 'coverage', label: 'Покритие', num: true },
+     { key: 'price', label: 'Цена за 100 EUR', num: true, d: 2 },
+     { key: 'yield', label: 'Доходност, %', num: true, d: 2 },
+     { key: 'coverage', label: 'Покритие', num: true, d: 2 },
    ],
    rows: d.auctions,
  })}
