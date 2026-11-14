@@ -48,6 +48,7 @@ export function debtIssuesGuard(v: unknown): v is Record<string, import('./guard
     !record(v) ||
     !metaGuard(v.meta) ||
     v.meta.id !== 'D38' ||
+    v.meta.asOf !== '2026-09-30' ||
     v.meta.status !== 'real' ||
     v.meta.mock !== false ||
     v.schema !== 'debt-issues/1' ||
@@ -96,7 +97,14 @@ export function debtIssuesGuard(v: unknown): v is Record<string, import('./guard
   if (
     !array(v.maturity) ||
     v.maturity.length !== 4 ||
-    !v.maturity.every(shape({ label: string, residualTenths: positive }))
+    !v.maturity.every(
+      (r, i) =>
+        shape({ label: string, residualTenths: positive })(r) &&
+        r.residualTenths <= 1000 &&
+        (i === 0
+          ? !Object.hasOwn(r, 'originalTenths')
+          : positive(r.originalTenths) && r.originalTenths <= 1000),
+    )
   )
     return false;
   return (
@@ -110,7 +118,7 @@ export function debtIssuesGuard(v: unknown): v is Record<string, import('./guard
     v.validation.every(
       shape({
         check: string,
-        status: (x: unknown): x is string => x === 'неизпълнимо',
+        outcome: (x: unknown): x is string => x === 'неизпълнимо',
         reason: string,
       }),
     )

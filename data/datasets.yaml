@@ -630,17 +630,6 @@ datasets:
   screens:
   - S15
   - S16
-- id: p06
-  catalogId: P06
-  title: Падежи и емисии на държавния дълг
-  status: pending
-  files: []
-  reason: Падежите и емисиите на държавните ценни книжа не са включени в портала.
-  expected: Данни за държавния дълг, minfin.bg
-  sources:
-  - minfin
-  screens:
-  - S17
 - id: p07
   catalogId: P07
   title: Съдържанието и ефектът на 69-те предложения между първо и второ четене

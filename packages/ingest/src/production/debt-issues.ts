@@ -256,12 +256,12 @@ export function parseDebtIssues(pdf: PdfDocument, buildDate: string) {
     validation: [
       {
         check: 'Външни емисии: общ EUR сбор',
-        status: 'неизпълнимо',
+        outcome: 'неизпълнимо',
         reason: 'Емисия в USD без публикувана EUR равностойност или валутен курс.',
       },
       {
         check: 'Външни емисии: EUR подсбор',
-        status: 'неизпълнимо',
+        outcome: 'неизпълнимо',
         reason: 'В таблицата няма отпечатан отделен EUR подсбор.',
       },
     ],

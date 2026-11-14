@@ -213,8 +213,10 @@ export function validateProduction(
         'debt issues contract',
       );
       check.ok(isDeepStrictEqual(c.get('debt-issues.json'), debt), 'debt issues equal original');
-      for (const finding of debt.validation)
-        check.fact(finding.check + ': ' + finding.status + ' — ' + finding.reason);
+      for (const finding of debt.validation) {
+        check.fact(finding.check + ': ' + finding.outcome + ' — ' + finding.reason);
+        check.warn(finding.check + ': ' + finding.outcome + ' — ' + finding.reason);
+      }
       return check;
     },
   };

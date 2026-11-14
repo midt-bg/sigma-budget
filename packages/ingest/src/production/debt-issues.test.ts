@@ -17,7 +17,7 @@ it('reads all pinned tables with exact units and source identities', () => {
   expect(result.auctions).toHaveLength(12);
   expect(result.external.filter((r) => r.currency === 'USD')).toHaveLength(1);
   expect(result.external.every((r) => !Object.hasOwn(r, 'eur'))).toBe(true);
-  expect(result.validation.every((r) => r.status === 'неизпълнимо')).toBe(true);
+  expect(result.validation.every((r) => r.outcome === 'неизпълнимо')).toBe(true);
   expect(result.maturity[0]).not.toHaveProperty('originalTenths');
 });
 it('checks ISIN formats and check digits', () => {
