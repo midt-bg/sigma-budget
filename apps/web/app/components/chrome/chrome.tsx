@@ -50,7 +50,7 @@ export const TABS = SECTIONS;
 export const NAV_GROUPS: [string, string[]][] = [
   ['Начало', ['S01', 'S04', 'S03']],
   ['Изпълнение', ['S15', 'S16']],
-  ['Бюджет', ['S07', 'S06', 'S10', 'S12', 'S13', 'S34', 'S14', 'S20', 'S05']],
+  ['Бюджет', ['S34', 'S05', 'S07', 'S06', 'S10', 'S12', 'S13', 'S20', 'S14']],
   ['Данъци и контекст', ['S18', 'S17', 'S31']],
   ['Данни и проект', ['S24', 'S35', 'S25', 'S26', 'S27']],
 ];
@@ -324,9 +324,6 @@ export function footerHtml(o: { wide?: boolean; cur?: string; from?: string } = 
             Данни от официални източници. Законопроектите, прогнозите и отчетите са обозначени.
           </span>
           <span>{sigmaLink('sister-link')}</span>
-          <button type="button" className="link-btn" data-action="legend">
-            Легенда: какво означават белезите
-          </button>
         </div>
       </div>
     </>

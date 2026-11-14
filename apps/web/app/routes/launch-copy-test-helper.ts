@@ -6,6 +6,37 @@ export const publicOrganization = (html: string) =>
     .replaceAll('Работна група „Бюджет на светло“', 'СИГМА Бюджет')
     .replaceAll(',"alternateName":"СИГМА Бюджет"', '');
 
+// The owner renamed two screens (their addresses stay), reordered the «Бюджет» menu group and removed the footer legend entry (the legend
+// stays on the pages). Historical captures keep the old chrome and names; adapt exactly these parts and fail if one is not found.
+// (the old names are split, so that the scan of live files in navigation.test.tsx does not match them here)
+export const SCREEN_RENAMES = [
+  ['Данни и ' + 'методика', 'Методология'],
+  ['Данни и ' + 'проверка', 'Проверка на данните'],
+] as const;
+export const BUDGET_GROUP = ['S34', 'S05', 'S07', 'S06', 'S10', 'S12', 'S13', 'S20', 'S14'];
+export const currentScreenNames = (html: string) =>
+  SCREEN_RENAMES.reduce((s, [from, to]) => s.replaceAll(from, to), html);
+export function currentNavigation(html: string) {
+  const legend =
+    /\s*<button type="button" class="link-btn" data-action="legend">Легенда: какво означават белезите<\/button>/;
+  const group = /(<summary[^>]*>Бюджет<\/summary><ul>)([\s\S]*?)(<\/ul>)/;
+  if (!legend.test(html) || !group.test(html))
+    throw new Error('the capture has no footer legend or «Бюджет» group');
+  return currentScreenNames(html)
+    .replace(legend, '')
+    .replace(group, (_, open: string, items: string, close: string) => {
+      const byRoute = new Map(
+        [...items.matchAll(/<li>[\s\S]*?<\/li>/g)].map(([li]) => [
+          /data-route="(S\d+)"/.exec(li)![1],
+          li,
+        ]),
+      );
+      if ([...byRoute.keys()].sort().join() !== [...BUDGET_GROUP].sort().join())
+        throw new Error(`unexpected «Бюджет» group: ${[...byRoute.keys()].join()}`);
+      return open + BUDGET_GROUP.map((id) => byRoute.get(id)).join('') + close;
+    });
+}
+
 // Only the shared missing-data presentation changes; preserve headings, links and controls.
 export function finalPendingCopy(html: string) {
   const { document } = parseHTML(html.replaceAll('Предстои', 'Няма данни'));
@@ -52,7 +83,7 @@ export function finalApiCopy(html: string) {
   });
   document.querySelectorAll('p').forEach((node) => {
     if (node.textContent?.startsWith('В истинския портал предлагаме'))
-      node.innerHTML = 'Историята на изданията е в <a href="/proverka">„Данни и проверка“</a>.';
+      node.innerHTML = 'Историята на изданията е в <a href="/proverka">„Проверка на данните“</a>.';
   });
   document.querySelector('.s25-set-d')?.remove(); // Dataset descriptions contain internal release notes.
   const meta = document.getElementById('s25-c-meta');

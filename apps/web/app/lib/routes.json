@@ -82,6 +82,23 @@
       }
     ],
     [
+      "S34",
+      "byudzhet-2027",
+      "/byudzhet-2027",
+      "s34-byudzhet-2027",
+      "Бюджет 2027",
+      "budget",
+      "fileText",
+      {
+        "short": "Бюджет 2027",
+        "next": ["S13"],
+        "periods": "none",
+        "samples": ["#/byudzhet-2027"],
+        "desc": "Законопроектът за държавния бюджет за 2027 г. и АСБП 2027–2029, публикувани от МФ на 06.11.2026. Проект, не приет закон.",
+        "query": ["variant", "dokument"]
+      }
+    ],
+    [
       "S05",
       "pari",
       "/pari",
@@ -99,29 +116,6 @@
           "#/pari?per=2027.draft",
           "#/pari?per=2029.forecast"
         ]
-      }
-    ],
-    [
-      "S06",
-      "prihodi",
-      "/prihodi/:source?",
-      "s06-prihodi",
-      "Откъде идват парите?",
-      "budget",
-      "trendingUp",
-      {
-        "query": ["sort", "dir", "izgled"],
-        "short": "Приходи",
-        "step": 2,
-        "next": ["S07"],
-        "samples": [
-          "#/prihodi",
-          "#/prihodi/dds",
-          "#/prihodi?per=2026.expected",
-          "#/prihodi?per=2027.draft",
-          "#/prihodi?per=2029.forecast"
-        ],
-        "desc": "Данъци, осигуровки, неданъчни приходи и помощи: кой колко носи."
       }
     ],
     [
@@ -166,6 +160,29 @@
           "#/razhodi/obrazovanie?per=2029.forecast"
         ],
         "desc": "Какво влиза във функцията и как се променя през годините."
+      }
+    ],
+    [
+      "S06",
+      "prihodi",
+      "/prihodi/:source?",
+      "s06-prihodi",
+      "Откъде идват парите?",
+      "budget",
+      "trendingUp",
+      {
+        "query": ["sort", "dir", "izgled"],
+        "short": "Приходи",
+        "step": 2,
+        "next": ["S07"],
+        "samples": [
+          "#/prihodi",
+          "#/prihodi/dds",
+          "#/prihodi?per=2026.expected",
+          "#/prihodi?per=2027.draft",
+          "#/prihodi?per=2029.forecast"
+        ],
+        "desc": "Данъци, осигуровки, неданъчни приходи и помощи: кой колко носи."
       }
     ],
     [
@@ -256,6 +273,55 @@
       }
     ],
     [
+      "S20",
+      "obshtini",
+      "/obshtini",
+      "s20-obshtini",
+      "Моята община",
+      "budget",
+      "map",
+      {
+        "query": ["oblast", "view", "sort", "dir", "q"],
+        "short": "Общини",
+        "next": ["S24"],
+        "desc": "Годишни трансфери от държавния бюджет към общините. Проект 2027 и АСБП 2027–2029; историческият закон за 2026 г. е отделен.",
+        "periods": ["2026.law", "2027.draft", "2028.forecast", "2029.forecast"]
+      }
+    ],
+    [
+      "S21",
+      "obshtina",
+      "/obshtina/:code",
+      "s21-obshtina",
+      "Община",
+      "budget",
+      "map",
+      {
+        "next": ["S20"],
+        "parent": "S20",
+        "nav": false,
+        "query": ["q", "oblast", "sort", "dir"],
+        "samples": ["#/obshtina/BLG03"],
+        "desc": "Годишни трансфери към една община. Проект 2027 и АСБП 2027–2029; историческият закон за 2026 г. е отделен.",
+        "periods": ["2026.law", "2027.draft", "2028.forecast", "2029.forecast"]
+      }
+    ],
+    [
+      "S14",
+      "zakon",
+      "/zakon",
+      "s14-zakon",
+      "Пътят на бюджета",
+      "budget",
+      "scale",
+      {
+        "short": "Пътят на бюджета",
+        "next": ["S15"],
+        "desc": "Как бюджетът за 2026 стига от внасянето до обнародването и какво се променя между проекта и приетия закон.",
+        "periods": ["2026.law"]
+      }
+    ],
+    [
       "S31",
       "bvp",
       "/bvp",
@@ -275,38 +341,6 @@
           "#/bvp?per=2029.forecast"
         ],
         "desc": "Колко расте икономиката: БВП, потреблението, инвестициите, износът и вносът по години."
-      }
-    ],
-    [
-      "S34",
-      "byudzhet-2027",
-      "/byudzhet-2027",
-      "s34-byudzhet-2027",
-      "Бюджет 2027",
-      "budget",
-      "fileText",
-      {
-        "short": "Бюджет 2027",
-        "next": ["S13"],
-        "periods": "none",
-        "samples": ["#/byudzhet-2027"],
-        "desc": "Законопроектът за държавния бюджет за 2027 г. и АСБП 2027–2029, публикувани от МФ на 06.11.2026. Проект, не приет закон.",
-        "query": ["variant", "dokument"]
-      }
-    ],
-    [
-      "S14",
-      "zakon",
-      "/zakon",
-      "s14-zakon",
-      "Пътят на бюджета",
-      "budget",
-      "scale",
-      {
-        "short": "Пътят на бюджета",
-        "next": ["S15"],
-        "desc": "Как бюджетът за 2026 стига от внасянето до обнародването и какво се променя между проекта и приетия закон.",
-        "periods": ["2026.law"]
       }
     ],
     [
@@ -391,40 +425,6 @@
       }
     ],
     [
-      "S20",
-      "obshtini",
-      "/obshtini",
-      "s20-obshtini",
-      "Моята община",
-      "budget",
-      "map",
-      {
-        "query": ["oblast", "view", "sort", "dir", "q"],
-        "short": "Общини",
-        "next": ["S24"],
-        "desc": "Годишни трансфери от държавния бюджет към общините. Проект 2027 и АСБП 2027–2029; историческият закон за 2026 г. е отделен.",
-        "periods": ["2026.law", "2027.draft", "2028.forecast", "2029.forecast"]
-      }
-    ],
-    [
-      "S21",
-      "obshtina",
-      "/obshtina/:code",
-      "s21-obshtina",
-      "Община",
-      "budget",
-      "map",
-      {
-        "next": ["S20"],
-        "parent": "S20",
-        "nav": false,
-        "query": ["q", "oblast", "sort", "dir"],
-        "samples": ["#/obshtina/BLG03"],
-        "desc": "Годишни трансфери към една община. Проект 2027 и АСБП 2027–2029; историческият закон за 2026 г. е отделен.",
-        "periods": ["2026.law", "2027.draft", "2028.forecast", "2029.forecast"]
-      }
-    ],
-    [
       "S24",
       "danni",
       "/danni/:set?",
@@ -434,7 +434,7 @@
       "database",
       {
         "query": ["status", "ekran", "izvor", "q"],
-        "short": "Данни и методика",
+        "short": "Методология",
         "next": ["S25", "S01"],
         "samples": ["#/danni", "#/danni/execution"],
         "desc": "Каталог на наборите, източниците и методиката.",
@@ -462,11 +462,11 @@
       "proverka",
       "/proverka",
       "s35-proverka",
-      "Данни и проверка",
+      "Проверка на данните",
       "ref",
       "checkCircle",
       {
-        "short": "Данни и проверка",
+        "short": "Проверка на данните",
         "next": ["S24", "S25"],
         "periods": "none",
         "desc": "Изданието на данните на сайта: оригиналите и файловете с SHA-256, кодът, проверките, как всеки го пресъздава и историята на изданията."
