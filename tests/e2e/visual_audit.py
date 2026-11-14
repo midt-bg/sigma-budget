@@ -82,6 +82,10 @@ def main():
             assert page.locator('#s12-II_7-table').get_by_text('budget2027-provenance.json').count() == 0
             checks += 1
             go('/byudzhet-2027')
+            # The answer first: six key figures of 2027, the comparison with 2026 and 2025 and the capital expenditure.
+            assert page.locator('#b27-nakratko .kpi').count() == 6
+            expect(page.locator('#b27-sravnenie-table')).to_be_visible()
+            expect(page.locator('#b27-kapitalovi-fig')).to_be_visible()
             # Investment projects: three year totals, a chart by institution, the top ten (project + three years) and a searchable full list.
             assert page.locator('#s34-projects .kpi').count() == 3
             expect(page.locator('#s34-projects-by-institution-fig')).to_be_visible()

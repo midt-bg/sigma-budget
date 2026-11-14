@@ -12,7 +12,6 @@ import {
   institutions,
   cellValue,
   strictSum,
-  headline,
   municipalRows,
   stateDebt,
   provenanceUrl,
@@ -850,7 +849,8 @@ export const mountProjectSearch = (root, ctx) =>
     rows: () => projectRows(ctx, ctx.data.budget2027?.projects || []),
     count: projectCount,
   });
-export function billOverview(ctx) {
+/** S34 for the November bill: the Council of Ministers variant here, the main bill through `main(doc, article1)` (pages/budget-2027-overview.js) */
+export function billOverview(ctx, main) {
   if (unavailable(ctx)) return unavailable(ctx);
   const doc = ctx.data.budget2027,
     variant = variantOf(ctx),
@@ -882,43 +882,7 @@ export function billOverview(ctx) {
         </p>
         ${publication(doc)}`,
     };
-  return {
-    title: 'Бюджет 2027',
-    lede: 'Официални данни от законопроекта за 2027 г. и АСБП 2027–2029 на Министерството на финансите, публикувани на 06.11.2026. За 2028–2029 г. стойностите са прогноза.',
-    body: html`${variantControl(ctx)}${base(
-      ctx,
-      's34-bill',
-      'Държавен бюджет по чл. 1',
-      kpiGrid(
-        ['I', 'II'].map((s, i) =>
-          kpi({
-            label: ['Приходи', 'Разходи'][i],
-            value: cellValue(headline(b, s)),
-            unit: 'хил. €',
-            d: 1,
-          }),
-        ),
-      ),
-      { sub: labels[variant] },
-    )}
-      <ul>
-        <li><a href="${ctx.href('S10', {}, keep(ctx))}">Бюджети на ведомствата</a></li>
-        <li><a href="${ctx.href('S20', {}, { per: '2027.draft' })}">Трансфери към общините</a></li>
-        <li>
-          <a href="${ctx.href('S17', {}, { per: '2027.draft' })}">Дълг и предложени граници</a>
-        </li>
-        <li>
-          <a href="${ctx.href('S13', {}, { per: '2027.draft' })}">Прогнозна рамка 2027–2029</a>
-        </li>
-      </ul>
-      ${projectsBlocks(ctx, doc)}
-      <p>
-        <a href="${ctx.href('S34', {}, { dokument: 'plan' })}"
-          >Предходна публикация: проект на бюджетен план до ЕК от 15.10.2026</a
-        >
-      </p>
-      ${publication(doc)}`,
-  };
+  return main(doc, b);
 }
 // Filters a table in place as the reader types and keeps ?q= in the address without re-rendering the screen.
 function wireSearch(root, ctx, { prefix, table, rows, count }) {
