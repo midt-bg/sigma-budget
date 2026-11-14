@@ -39,4 +39,8 @@ def valid_debt_issues(d):
     if not isinstance(d.get('differences'),dict) or any(type(v) is not int for v in d['differences'].values()): return False
     if not isinstance(d.get('limitations'),list) or not all(isinstance(t,str) for t in d['limitations']): return False
     v=d.get('validation')
-    return isinstance(v,list) and len(v)==2 and all(isinstance(r,dict) and r.get('outcome')=='неизпълнимо' and all(isinstance(r.get(k),str) for k in ('check','reason')) for r in v)
+    contract = isinstance(v,list) and len(v)==2 and all(isinstance(r,dict) and r.get('outcome')=='неизпълнимо' and all(isinstance(r.get(k),str) for k in ('check','reason')) for r in v)
+
+    if not contract: return False
+    from budget_pipeline.validate.debt_cells import verify_debt_cells
+    return verify_debt_cells(d)

@@ -1,4 +1,4 @@
-import { readDebtIssues } from './debt-issues.js';
+import { verifyDebtCells } from './debt-cells.js';
 import { readTaxDatasets } from './taxes.js';
 import { isPublishedDataset } from '@sigma-budget/dataset-schema';
 import { isDeepStrictEqual } from 'node:util';
@@ -207,12 +207,17 @@ export function validateProduction(
           file + ': every published cell equals the pinned original and conversion',
         );
       }
-      const debt = readDebtIssues(context);
+      const debt = c.get('debt-issues.json');
       check.ok(
         isPublishedDataset('debt-issues.json', c.get('debt-issues.json')),
         'debt issues contract',
       );
-      check.ok(isDeepStrictEqual(c.get('debt-issues.json'), debt), 'debt issues equal original');
+      verifyDebtCells(
+        debt,
+        join(sourceRoot, 'data/originals/debt/Bulletin_GovDebt_09-2026_bg.pdf'),
+        context.exportRoot,
+      );
+      check.ok(true, 'every debt table cell equals independent PDFMiner extraction');
       for (const finding of debt.validation) {
         check.fact(finding.check + ': ' + finding.outcome + ' — ' + finding.reason);
         check.warn(finding.check + ': ' + finding.outcome + ' — ' + finding.reason);
