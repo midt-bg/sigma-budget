@@ -1,0 +1,4 @@
+# Semgrep scans every file that Git tracks (.gitignore is honoured on its own).
+# Without this file Semgrep falls back to its built-in list of bare folder names (build/, dist/, test/, tests/,
+# vendor/ and others), which silently skipped live source: packages/ingest/src/build/, tests/ and the test folders.
+# Add a path here only with a reason; never a bare folder name that can match source.
