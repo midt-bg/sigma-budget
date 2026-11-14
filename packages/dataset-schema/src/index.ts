@@ -1,3 +1,5 @@
+import { debtIssuesGuard } from './debt-issues.js';
+export { debtIssuesGuard, validDebtIsin } from './debt-issues.js';
 export { budgetSourceCells } from './budget-source-cells.js';
 import { stateBudgetGuard, kfpSubsectorsGuard } from './budget-tables.js';
 import {
@@ -75,6 +77,7 @@ const cigaretteTaxGuard = shape({
   quote: string,
 });
 export const datasetGuards = {
+  'debt-issues.json': debtIssuesGuard,
   'state-budget.json': stateBudgetGuard,
   'kfp-subsectors.json': kfpSubsectorsGuard,
   'budget2027.json': shape({

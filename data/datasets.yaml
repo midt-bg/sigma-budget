@@ -630,17 +630,6 @@ datasets:
   screens:
   - S15
   - S16
-- id: p06
-  catalogId: P06
-  title: Падежи и емисии на държавния дълг
-  status: pending
-  files: []
-  reason: Падежите и емисиите на държавните ценни книжа не са включени в портала.
-  expected: Данни за държавния дълг, minfin.bg
-  sources:
-  - minfin
-  screens:
-  - S17
 - id: p07
   catalogId: P07
   title: Съдържанието и ефектът на 69-те предложения между първо и второ четене
@@ -799,3 +788,21 @@ datasets:
   checked: '2026-11-14'
   limitations:
   - 'Празните клетки са запазени според оригиналите; точните разлики в сборовете са описани и обвързани с SHA-256 на източника.'
+
+- id: debt-issues
+  catalogId: D38
+  title: 'Държавен дълг: емисии и аукциони'
+  status: real
+  files: [data/release/debt-issues.json]
+  producer: packages/ingest/src/production/debt-issues.ts
+  inputs: [debt-issues]
+  schema: docs/data-spec.md
+  screens: [S17, S35]
+  period: '2026-09-30'
+  scope: 'държавен дълг, по номинал, предварителни данни на МФ'
+  unit: EUR; USD
+  rebuild: ./budget build
+  checked: '2026-11-14'
+  limitations:
+  - 'Емисия XS2890436087 е в USD и не е превалутирана. Общият EUR сбор не може да бъде сверен без курс, който липсва в бюлетина.'
+  - 'Отпечатана е матуритетна структура по срокове; годишен погасителен график не е включен.'
