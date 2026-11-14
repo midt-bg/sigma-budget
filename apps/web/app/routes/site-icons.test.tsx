@@ -1,9 +1,10 @@
 // The icons of the site are those of СИГМА: the white magnifier-„С“ with the map of Bulgaria on a deep-red tile. favicon.ico,
 // favicon-16/32.png and apple-touch-icon.png are byte copies of the files of СИГМА (apps/web/public of midt-bg/sigma); icon-192/512.png
 // and og.png are drawn by apps/web/scripts/make_images.py. The old bar-chart mark is gone from every live file.
+import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { inflateSync } from 'node:zlib';
 import { renderToString } from 'react-dom/server';
@@ -22,6 +23,12 @@ const COPIED_FROM_SIGMA = {
   'favicon-32.png': '67b02d5b7037b9c62c78b602edb6b45186db186fabb4846d7bb9ee05c373cbb2',
   'apple-touch-icon.png': '8a4ef887fb3cd6bbc345b5ceef9a07288c52465b07d3d8a2ea1d43353cf18f71',
 };
+// what apps/web/scripts/make_images.py drew; after a deliberate redraw the new sums go here
+const DRAWN = {
+  'icon-192.png': 'd1245ba0fb7d68cc7292f2e9e987727892c7cac5e275e83f1c2f39cf821d751e',
+  'icon-512.png': 'c04282993118c45e916a0dd09c15363ad3e38cdf0d97955ec568066bb334c85a',
+  'og.png': 'c307537356d307e46d60184ac0c8ddf71bf6cc6f04fd8dda937a15e9c535796a',
+};
 // the head links of СИГМА (apps/web/app/root.tsx there), in its order
 const ICON_LINKS = [
   { rel: 'icon', href: '/favicon.ico', sizes: '48x48' },
@@ -31,7 +38,8 @@ const ICON_LINKS = [
 ];
 // split, so that this file does not match its own scan
 const OLD_FAVICON = '/favicon' + '.svg';
-const BAR_MARK = ['x="13' + '.3"', 'x="21' + '.6"', 'cx="24' + '.3"'];
+// the two taller bars of the old mark; both together, so that one coincidental coordinate in another drawing is not an alarm
+const BAR_MARK = ['x="13' + '.3"', 'x="21' + '.6"'];
 const TILE = [0x7c, 0x04, 0x0d];
 
 /** rel, href, sizes and type of every icon or manifest <link> of an HTML document */
@@ -95,33 +103,24 @@ function decodePng(bytes: Buffer) {
 /** the size of a PNG from its header, without decoding it */
 const pngSize = (bytes: Buffer) => [bytes.readUInt32BE(16), bytes.readUInt32BE(20)];
 
-/** the live files of the repository: everything but generated output and the frozen evidence that .prettierignore names */
-const SKIP_DIRS = new Set([
-  '.git',
-  'node_modules',
-  'build',
-  'dist',
-  'coverage',
-  'tmp',
-  '.react-router',
-  '.wrangler',
-  '.turbo',
-  '__fixtures__',
-  'fixtures',
-  'vendor',
-]);
-const SKIP_TOP = new Set(['data', 'pipeline', 'reference']);
+/** The live files of the repository: what git tracks or would track (new files that are not ignored), without the frozen evidence that
+ *  .prettierignore names (fixtures, official data, the historical pipeline and references, vendored bytes). Generated output is not
+ *  tracked, so a source folder that happens to be called build is read like any other. */
+const FROZEN = [
+  /(^|\/)(__fixtures__|fixtures|vendor)\//,
+  /^(data|pipeline|reference)\//,
+  /^packages\/ingest\/src\/production\/historical\//,
+];
 const TEXT = /\.(tsx?|m?js|cjs|py|json|jsonc|html|css|md|ya?ml|toml|txt|svg|xml|sh)$/;
-function* liveFiles(dir = ROOT): Generator<string> {
-  for (const name of readdirSync(dir)) {
-    const path = join(dir, name);
-    const rel = relative(ROOT, path);
-    if (statSync(path).isDirectory()) {
-      if (SKIP_DIRS.has(name) || (dir === ROOT && SKIP_TOP.has(name))) continue;
-      if (rel === join('packages', 'ingest', 'src', 'production', 'historical')) continue;
-      yield* liveFiles(path);
-    } else if (TEXT.test(name)) yield rel;
-  }
+function liveFiles(): string[] {
+  const listed = execFileSync(
+    'git',
+    ['ls-files', '-z', '--cached', '--others', '--exclude-standard'],
+    { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 },
+  );
+  return listed
+    .split('\0')
+    .filter((rel) => rel && TEXT.test(rel) && !FROZEN.some((frozen) => frozen.test(rel)));
 }
 
 describe('the icons of СИГМА', () => {
@@ -200,12 +199,24 @@ describe('the icons of СИГМА', () => {
     expect(pngSize(pub('og.png'))).toEqual([1200, 630]);
   });
 
+  it.each(Object.entries(DRAWN))('%s is the image drawn from the mark of СИГМА', (name, hash) => {
+    expect(sha256(pub(name))).toBe(hash);
+  });
+
   it('no live file names the old SVG favicon or carries the bar-chart mark', () => {
-    const offenders: string[] = [];
-    for (const rel of liveFiles()) {
-      const text = readFileSync(join(ROOT, rel), 'utf8');
-      if (text.includes(OLD_FAVICON) || BAR_MARK.some((m) => text.includes(m))) offenders.push(rel);
-    }
+    const files = liveFiles();
+    // the sweep reads the sources, also those in a folder named build
+    expect(files).toContain('apps/web/app/root.tsx');
+    expect(files.some((rel) => rel.startsWith('packages/ingest/src/build/'))).toBe(true);
+    const offenders = files.filter((rel) => {
+      let text: string;
+      try {
+        text = readFileSync(join(ROOT, rel), 'utf8');
+      } catch {
+        return false; // deleted in the working tree, not yet in the index
+      }
+      return text.includes(OLD_FAVICON) || BAR_MARK.every((m) => text.includes(m));
+    });
     expect(offenders).toEqual([]);
   });
 });
