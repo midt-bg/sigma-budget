@@ -53,7 +53,7 @@ pnpm typecheck
 python -m budget_pipeline.validate.registry check
 ./budget-python validate --site # историческата публикувана снимка е неизменна
 python -m budget_pipeline.validate.datasets
-tmp/venv/bin/python -m tests.release.compat_check
+node tests/release/compat_check.mjs
 tmp/venv/bin/python -m apps.web.scripts.query_check
 PATH="$PWD/tmp/venv/bin:$PATH" PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers pnpm build:release --env staging --noindex
 # След това Worker-ът се стартира с pnpm dev; пълната проверка върви срещу него:
@@ -62,7 +62,7 @@ PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.s
 
 Регресията за ранния мобилен tap се проверява с `python -m tests.e2e.boot --url http://127.0.0.1:8814/` срещу сглобения Worker. Release smoke проверките са `python -m unittest tests.release.test_build_artifact`; release командата проверява и действителния артефакт преди успех.
 
-Останалите браузърни проверки са `redirects.py`, `calc_check.py`, `share_check.py`, `accept.py` и `motion.py` в `tests/e2e/`. Те използват временния статичен сайт. `overlap.py` и `perf.py` проверяват припокриване и работа при ограничен процесор. Очакваните числа се четат от текущите данни чрез `expect.py`. Интеграционните проверки `tests/release/release_check.py` и `restore_drill.py` изискват Node, OpenSSL и локален Worker.
+Останалите браузърни проверки са `redirects.py`, `calc_check.py`, `share_check.py`, `accept.py` и `motion.py` в `tests/e2e/`. Те използват временния статичен сайт. `overlap.py` и `perf.py` проверяват припокриване и работа при ограничен процесор. Очакваните числа се четат от текущите данни чрез `expect.py`. Интеграционните проверки `node tests/release/release_check.mjs` и `node tests/release/restore_drill.mjs` изискват само Node и локален Worker.
 
 ## Данни и издания
 
