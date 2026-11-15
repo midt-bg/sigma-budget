@@ -70,9 +70,8 @@ for (const width of [1280, 390, 320])
           await page.addInitScript(observeLayoutShifts);
           await page.goto(siteURL + '/index.html' + route);
           await expect(page.locator('h1')).toBeVisible();
-          // Preserve the layout-shift observation window for both motion preferences.
-          for (let sample = 0; sample < 12; sample++) await page.waitForTimeout(120);
-          await page.waitForTimeout(1500);
+          // Layout shifts are collected for three seconds: longer than the entrance and count-up.
+          await page.waitForTimeout(3000);
           shifts.push(await page.evaluate(() => window.__cls));
         } finally {
           await context.close();

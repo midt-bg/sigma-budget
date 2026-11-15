@@ -88,12 +88,9 @@ for (const choice of ['period', 'default-period', 'same-default-period', 'unit',
     try {
       const page = await context.newPage();
       if (['default-period', 'same-default-period'].includes(choice))
-        await page.addInitScript(() => {
-          localStorage.setItem(
-            'bns.prefs.v1',
-            JSON.stringify({ period: '2026.draft', unit: 'eur' }),
-          );
-        });
+        await page.addInitScript(
+          "localStorage.setItem('bns.prefs.v1', JSON.stringify({period:'2026.draft', unit:'eur'}))",
+        );
       const release = gate();
       await page.route('**/data/core.json', async (request) => {
         await release.promise;
@@ -105,11 +102,7 @@ for (const choice of ['period', 'default-period', 'same-default-period', 'unit',
       try {
         await page.goto(siteURL + '/razhodi', { waitUntil: 'domcontentloaded' });
         expect(
-          await page.evaluate(() =>
-            import(new URL('/js/router.js', location.href).href).then(
-              (m) => m.router.current === null,
-            ),
-          ),
+          await page.evaluate("import('/js/router.js').then(m => m.router.current === null)"),
           'interaction precedes startup',
         ).toBe(true);
         if (choice === 'period') {
@@ -132,11 +125,7 @@ for (const choice of ['period', 'default-period', 'same-default-period', 'unit',
               await page.keyboard.press('Escape');
           }
           expect(
-            await page.evaluate(() =>
-              import(new URL('/js/store.js', location.href).href).then((m) =>
-                m.store.get('period'),
-              ),
-            ),
+            await page.evaluate("import('/js/store.js').then(m => m.store.get('period'))"),
           ).toBe('2027.draft');
           expect(page.url()).not.toContain('per=');
         } else if (choice === 'unit') {
@@ -147,11 +136,7 @@ for (const choice of ['period', 'default-period', 'same-default-period', 'unit',
           expect(await page.getByText('Този блок не може да се споделя.').count()).toBe(0);
         }
         expect(
-          await page.evaluate(() =>
-            import(new URL('/js/router.js', location.href).href).then(
-              (m) => m.router.current === null,
-            ),
-          ),
+          await page.evaluate("import('/js/router.js').then(m => m.router.current === null)"),
           'startup still held',
         ).toBe(true);
       } finally {
@@ -160,29 +145,23 @@ for (const choice of ['period', 'default-period', 'same-default-period', 'unit',
       }
       await page.waitForSelector('article[data-route="S07"][data-ready="1"]');
       if (choice === 'period') {
-        expect(
-          await page.evaluate(() =>
-            import(new URL('/js/store.js', location.href).href).then((m) => m.store.get('period')),
-          ),
-        ).toBe('2024.report');
+        expect(await page.evaluate("import('/js/store.js').then(m => m.store.get('period'))")).toBe(
+          '2024.report',
+        );
         expect(page.url()).toContain('per=2024.report');
       } else if (['default-period', 'same-default-period'].includes(choice)) {
         await page.waitForFunction(
-          () => !Object.hasOwn(JSON.parse(localStorage.getItem('bns.prefs.v1')!), 'period'),
+          "() => !Object.hasOwn(JSON.parse(localStorage.getItem('bns.prefs.v1')), 'period')",
         );
         await page.waitForSelector('article[data-route="S07"][data-ready="1"]');
-        expect(
-          await page.evaluate(() =>
-            import(new URL('/js/store.js', location.href).href).then((m) => m.store.get('period')),
-          ),
-        ).toBe('2027.draft');
+        expect(await page.evaluate("import('/js/store.js').then(m => m.store.get('period'))")).toBe(
+          '2027.draft',
+        );
         expect(page.url()).not.toContain('per=');
       } else if (choice === 'unit') {
-        expect(
-          await page.evaluate(() =>
-            import(new URL('/js/store.js', location.href).href).then((m) => m.store.get('unit')),
-          ),
-        ).toBe('pct');
+        expect(await page.evaluate("import('/js/store.js').then(m => m.store.get('unit'))")).toBe(
+          'pct',
+        );
         expect(await page.locator('.unit-switch input[value="pct"]').isChecked()).toBe(true);
         expect(page.url()).toContain('unit=pct');
       } else await page.waitForSelector('dialog[open] .share-menu');
@@ -212,11 +191,9 @@ for (const control of ['period', 'search'])
             .locator('input[type=radio]:not(:disabled)')
             .evaluateAll((nodes) => nodes.map((n) => (n as HTMLInputElement).value)),
         ).toEqual(['2026.law']);
-        expect(
-          await page.evaluate(() =>
-            import(new URL('/js/store.js', location.href).href).then((m) => m.store.get('period')),
-          ),
-        ).toBe('2026.law');
+        expect(await page.evaluate("import('/js/store.js').then(m => m.store.get('period'))")).toBe(
+          '2026.law',
+        );
       } else {
         await page.locator('#btn-search').click();
         await page.waitForSelector('dialog.palette[open] input');
@@ -241,42 +218,23 @@ for (const pattern of ['**/screen-S25-*.js', '**/text-*.js'])
         await request.continue();
         completed.release();
       });
+      const snapshot =
+        "Array.from(document.head.querySelectorAll('title, meta[name=description], meta[property], link[rel=canonical], #ld-page'), n => n.outerHTML)";
       let before: unknown;
       try {
         await page.goto(siteURL + '/', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('article[data-ready="1"]');
-        await page.evaluate(() =>
-          import(new URL('/js/router.js', location.href).href).then((m) => m.router.go('/api')),
-        );
+        await page.evaluate("import('/js/router.js').then(m => m.router.go('/api'))");
         await within(requested.promise, 10000, 'cancelled route module requested');
-        await page.evaluate(() =>
-          import(new URL('/js/router.js', location.href).href).then((m) => m.router.go('/razhodi')),
-        );
+        await page.evaluate("import('/js/router.js').then(m => m.router.go('/razhodi'))");
         await page.waitForSelector('article[data-route="S07"][data-ready="1"]');
-        before = await page.evaluate(() =>
-          Array.from(
-            document.head.querySelectorAll(
-              'title, meta[name=description], meta[property], link[rel=canonical], #ld-page',
-            ),
-            (n) => n.outerHTML,
-          ),
-        );
+        before = await page.evaluate(snapshot);
       } finally {
         release.release();
       }
       await within(completed.promise, 10000, 'cancelled module released');
       await page.waitForTimeout(500);
-      expect(
-        await page.evaluate(() =>
-          Array.from(
-            document.head.querySelectorAll(
-              'title, meta[name=description], meta[property], link[rel=canonical], #ld-page',
-            ),
-            (n) => n.outerHTML,
-          ),
-        ),
-        pattern,
-      ).toEqual(before);
+      expect(await page.evaluate(snapshot), pattern).toEqual(before);
       expect(await page.locator('article.page').getAttribute('data-route')).toBe('S07');
     } finally {
       release.release();
