@@ -409,8 +409,8 @@ it.each([1, 2])('derives dates and plural counts for %s records', async (count) 
   const text = overview.document.querySelector('article')!.textContent!;
   expect(text).toContain(`МФ, ${date(budget2027.publication)}.`);
   expect(text).toContain(`От ${date(dbp2027.doc.date)}, по ЕСС 2010.`);
-  if (count) expect(text).toContain(plural(count, 'бюджет', 'бюджета'));
-  expect(text).toContain(count ? plural(count, 'община', 'общини') : 'Всички общини');
+  expect(text).toContain(plural(count, 'бюджет', 'бюджета'));
+  expect(text).toContain(plural(count, 'община', 'общини'));
   expect(text).toContain(plural(count, 'проект', 'проекта'));
   const measures = await page('/merki?per=2027.draft', overrides);
   expect(measures.document.getElementById('s12-27-stage')!.textContent).toContain(
@@ -450,7 +450,6 @@ it('names the unclassified function in its lede and explains the law data gap pe
   expect(law.vm.lede?.replace(/\s/g, ' ')).toBe(
     'За 2026 г. няма разбивка по функции в избрания запис. Разходите, които не се вписват в другите функции.',
   );
-  expect(law.vm.lede).toContain('няма разбивка');
 });
 
 it('finds the Council decision number in the current release step', async () => {
