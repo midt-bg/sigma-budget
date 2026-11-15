@@ -9,6 +9,7 @@ import { model as catalogModel, screensOf } from '../../client/catalog.js';
 import { provideScope } from '../../client/env.js';
 import { resolve } from '../../client/render.js';
 import { redirectHash } from '../../client/redirects.js';
+import { browserRoutes } from '../../client/routes.js';
 import { getIndex } from '../../client/searchlib.js';
 import { requestState } from '../../client/store.js';
 import { NAV_GROUPS, footerHtml } from '../components/chrome/chrome';
@@ -51,6 +52,9 @@ describe('the retired S26 record', () => {
     expect(S26).toMatchObject({ retired: true, pattern: null, nav: false, next: [], samples: [] });
     expect(ROUTES.filter((r) => r.retired).map((r) => r.id)).toEqual(['S26']);
     expect(ROUTES.some((r) => r.next.includes('S26'))).toBe(false);
+    // the browser checks (tests/e2e/screens.py and others) walk window.__ROUTES__: a retired id must not be there to be visited
+    expect(browserRoutes().map((r) => r.id)).not.toContain('S26');
+    expect(browserRoutes()).toHaveLength(ROUTES.length - 1);
   });
 
   it('has no route module, no React or legacy screen and no page styles', () => {
