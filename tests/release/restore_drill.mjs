@@ -78,8 +78,8 @@ export function dumpRegistry(state) {
       if (runtime(name)) continue;
       schema.push(sql + ';');
       const columns = con
-        .prepare(`PRAGMA table_info(${ident(name)})`)
-        .all()
+        .prepare('SELECT name FROM pragma_table_info(?) ORDER BY cid')
+        .all(name)
         .map((c) => `quote(${ident(c.name)})`);
       const insert = `SELECT 'INSERT INTO ${ident(name).replaceAll("'", "''")} VALUES(' || ${columns.join(" || ',' || ")} || ')' AS line FROM ${ident(name)}`;
       for (const { line } of con.prepare(insert).all()) rows.push(line + ';');
