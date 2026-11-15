@@ -265,14 +265,14 @@ function sravnenie(ctx, m) {
   const lawNote = html`<p class="b27-note small">
     ${
       equal.length
-        ? html`По приетия закон за ${yr(2026)} ${equal.join(', ').replace(/, ([^,]+)$/, ' и $1')} са
+        ? html`Според разчетите към закона за ${yr(2026)} ${equal.join(', ').replace(/, ([^,]+)$/, ' и $1')} по КФП са
         същите като в очакваното изпълнение.`
         : ''
     }
-    ${differ.map(([w, a]) => html` По закона ${w} са ${mlnTxt(a)}.`)}
+    ${differ.map(([w, a]) => html` В разчетите към закона ${w} са ${mlnTxt(a)}.`)}
     ${
       ok(capexLaw) && ok(capexExp) && capexLaw !== capexExp
-        ? html` В разчетите към закона редът „Капиталови“ е ${mlnTxt(capexLaw)} и включва нетния прираст на държавния резерв; капиталовите разходи в очакваното изпълнение са ${mlnTxt(capexExp)}.`
+        ? html` В разчетите към закона редът „Капиталови“ е ${mlnTxt(capexLaw)} и включва нетния прираст на държавния резерв. В Приложение 3 на „${currentForecast}“ прирастът е в отделен ред „Прираст на държавния резерв и изкупуване на земеделска продукция“, а капиталовите разходи в очакваното изпълнение са ${mlnTxt(capexExp)}.`
         : ''
     }
     Числата за ${yr(2025)} са ${periodWord(ctx.data, COMPARE[0])} от „${previousForecast}“.
@@ -280,9 +280,6 @@ function sravnenie(ctx, m) {
   <p class="b27-note small">
     Дяловете от БВП за ${yr(2025)} са спрямо БВП от „${previousForecast}“,
     а за ${yr(2026)} и ${yr(2027)} — спрямо БВП от „${currentForecast}“ от ${date(ctx.data.budget2027.publication)} г.
-  </p>
-  <p class="b27-note small">
-    В Приложение 3 прирастът на резерва е в отделен ред „Прираст на държавния резерв и изкупуване на земеделска продукция“.
   </p>`;
   return block({
     id: 'b27-sravnenie',
@@ -422,7 +419,7 @@ function kapitalovi(ctx, m) {
       unit: 'млн. €',
       chart: spec.id,
       text: ok(capex)
-        ? `Капиталовите разходи по КФП в законопроекта за 2027 г. са ${bn(capex)}${ok(prev) ? `, при ${bn(prev)} очаквано за 2026 г.` : ''}.`
+        ? `Според разчетите към законопроекта за 2027 г. капиталовите разходи по КФП са ${bn(capex)}${ok(prev) ? `, при ${bn(prev)} очаквано за 2026 г.` : ''}.`
         : undefined,
     },
     body: html`<div class="stack">

@@ -225,7 +225,7 @@ function lawsPanel(ctx, all) {
     title: LAWS_LABEL,
     status: 'text',
     share: false,
-    sub: `Мерките от таблици II-7 и II-8 са подредени по закона, който мотивите посочват за всяка от тях. За ${plural(none, 'мярка', 'мерки')} мотивите не посочват закон.`,
+    sub: `Мерките от таблици II-7 и II-8 са подредени по закона, когато мотивите посочват такъв. За ${plural(none, 'мярка', 'мерки')} мотивите не посочват закон и те не са включени тук.`,
     body: html`<div class="m27-laws">${laws.map(
       ([law, list]) => html`<section class="m27-law">
         <h3 class="m27-group-h">${LAWS[law] || law}${LAWS[law] && LAWS[law] !== law ? html` <span class="m27-abbr">${law}</span>` : ''}</h3>

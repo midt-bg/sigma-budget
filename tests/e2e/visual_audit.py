@@ -43,7 +43,7 @@ def main():
                         assert button.evaluate('(e) => e.scrollWidth <= e.clientWidth + 1')
                 expect(page.locator('[role="tab"][data-key="zakoni"]')).to_contain_text('Мерки по закони')
                 expect(page.locator('#s12-27-zakoni')).to_contain_text(
-                    'Мерките от таблици II-7 и II-8 са подредени по закона, който мотивите посочват за всяка от тях.')
+                    'Мерките от таблици II-7 и II-8 са подредени по закона, когато мотивите посочват такъв.')
             page.locator('[role="tab"][data-key="prihodni"]').click()
             cards = page.locator('[role="tabpanel"]:not([hidden]) .m27-card')
             assert cards.count() > 0
