@@ -6,7 +6,7 @@
 // sum or difference of printed numbers that the text names. Block ids start with „b27-“: the „s34-“ ids of the October plan stay that
 // document's addresses (budget-documents.js).
 import { html } from '../html.js';
-import { num, pct, money, NBSP, DASH, arrow } from '../format.js';
+import { num, pct, money, date, NBSP, DASH, arrow } from '../format.js';
 import { block } from '../ui/block.js';
 import { kpi, kpiGrid } from '../ui/kpi.js';
 import { chart } from '../ui/chart.js';
@@ -260,6 +260,8 @@ function sravnenie(ctx, m) {
   const differ = same.filter(([, a, b]) => ok(a) && ok(b) && a !== b);
   const capexLaw = law.capex,
     capexExp = m.v('exp.capex', PREV);
+  const previousForecast = ctx.data.core.sources.asbp.title;
+  const currentForecast = ctx.data.core.sources.budget2027.title;
   const lawNote = html`<p class="b27-note small">
     ${
       equal.length
@@ -270,19 +272,17 @@ function sravnenie(ctx, m) {
     ${differ.map(([w, a]) => html` По закона ${w} са ${mlnTxt(a)}.`)}
     ${
       ok(capexLaw) && ok(capexExp) && capexLaw !== capexExp
-        ? html` Капиталовите разходи по закона са ${mlnTxt(capexLaw)}, а очакваните — ${mlnTxt(capexExp)}.`
+        ? html` В разчетите към закона редът „Капиталови“ е ${mlnTxt(capexLaw)} и включва нетния прираст на държавния резерв; капиталовите разходи в очакваното изпълнение са ${mlnTxt(capexExp)}.`
         : ''
     }
-    Числата за ${yr(2025)} са ${periodWord(ctx.data, COMPARE[0])} от бюджетната прогноза, публикувана с
-    бюджета за ${yr(2026)}
+    Числата за ${yr(2025)} са ${periodWord(ctx.data, COMPARE[0])} от „${previousForecast}“.
   </p>
   <p class="b27-note small">
-    За дяловете от БВП за ${yr(2025)} е използван БВП от юлската публикация на АСБП 2026–2028,
-    а за ${yr(2026)} и ${yr(2027)} — от ноемврийската публикация на АСБП 2027–2029.
+    Дяловете от БВП за ${yr(2025)} са спрямо БВП от „${previousForecast}“,
+    а за ${yr(2026)} и ${yr(2027)} — спрямо БВП от „${currentForecast}“ от ${date(ctx.data.budget2027.publication)} г.
   </p>
   <p class="b27-note small">
-    В разчетите към закона за ${yr(2026)} редът „Капиталови“ включва нетния прираст на държавния резерв.
-    В сравнението редът „Капиталови разходи“ е от Приложение 3, където прирастът на резерва е отделен ред.
+    В Приложение 3 прирастът на резерва е в отделен ред „Прираст на държавния резерв и изкупуване на земеделска продукция“.
   </p>`;
   return block({
     id: 'b27-sravnenie',
@@ -291,7 +291,7 @@ function sravnenie(ctx, m) {
     ...draftStatus,
     source: KFP_SOURCE,
     asOf: ctx.data.budget2027?.publication,
-    sub: 'Основните показатели на консолидираната фискална програма за три години: предварителен отчет, очаквано изпълнение и законопроект.',
+    sub: `Основните показатели на консолидираната фискална програма за три години: ${periodWord(ctx.data, COMPARE[0])}, очаквано изпълнение и законопроект.`,
     share: { period: COMPARE.join(' / '), unit: 'млн. €' },
     body: html`<div class="stack">
       ${chart(spec)}

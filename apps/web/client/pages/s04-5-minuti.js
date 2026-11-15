@@ -184,7 +184,7 @@ function scene1(ctx, core) {
   const g = (mln) => (mln / k.gdp?.mlnPrecise) * 100;
   const top = Math.max(rev, exp);
   const text = html`
-    <p>През ${ctx.period.year} г. планираните приходи по КФП са <strong>${amt(ctx, rev, g(rev))}</strong>, а разходите са <strong>${amt(ctx, exp, g(exp))}</strong>.</p>
+    <p>През ${ctx.period.year} г. по ${gl('kfp', 'КФП')} са планирани приходи от <strong>${amt(ctx, rev, g(rev))}</strong> и разходи от <strong>${amt(ctx, exp, g(exp))}</strong>.</p>
     <p>Разликата е <strong>${amt(ctx, gap, g(gap))}</strong>${or(alt(ctx, gap, g(gap), 1, true))}. Така се нарича ${gl('byudzheten-defitsit', 'дефицит')}: разходите по КФП са по-големи от приходите.</p>`;
   const id = twin(
     's04-fig1',
@@ -221,7 +221,7 @@ function scene1(ctx, core) {
     scope: 'kfp',
     source: ['budget2027'],
     asOf: selectPeriod(ctx.annualRaw?.outlook, ctx.period.key).publication,
-    share: `През ${ctx.period.year} г. държавата планира приходи от ${money(rev, { d: 1 })} и разходи от ${money(exp, { d: 1 })}; разликата е дефицит от ${money(gap, { d: 1 })}.`,
+    share: `През ${ctx.period.year} г. по КФП са планирани приходи от ${money(rev, { d: 1 })} и разходи от ${money(exp, { d: 1 })}; разликата е дефицит от ${money(gap, { d: 1 })}.`,
   });
 }
 

@@ -21,7 +21,7 @@ const annex3 = (label: string) =>
 const doc = release('budget2027');
 
 afterEach(() => provideScope(() => null));
-async function page(address: string) {
+async function page(address: string, overrides: Record<string, any> = {}) {
   const url = new URL(address, 'https://budget.test');
   const r = resolve(address);
   const scope = {
@@ -30,7 +30,7 @@ async function page(address: string) {
     state: requestState(r.query.per),
     data: new Map(),
     maps: {} as Record<string, Map<string, any>>,
-    load: async (name: string) => release(name),
+    load: async (name: string) => overrides[name] ?? release(name),
   };
   provideScope(() => scope);
   const vm = await build(r.route, r.params, r.query);
@@ -205,12 +205,16 @@ it('explains the GDP vintages, preliminary report and capital expenditure scope'
   const text = document.getElementById('b27-sravnenie')!.textContent!.replace(/\s+/g, ' ');
   expect(text).toContain('за три години: предварителен отчет, очаквано изпълнение и законопроект');
   expect(text).toContain(
-    'За дяловете от БВП за 2025 г. е използван БВП от юлската публикация на АСБП 2026–2028',
+    `Дяловете от БВП за 2025 г. са спрямо БВП от „${release('core').sources.asbp.title}“`,
   );
-  expect(text).toContain('за 2026 г. и 2027 г. — от ноемврийската публикация на АСБП 2027–2029');
-  expect(text).toContain('редът „Капиталови“ включва нетния прираст на държавния резерв');
   expect(text).toContain(
-    'редът „Капиталови разходи“ е от Приложение 3, където прирастът на резерва е отделен ред',
+    `за 2026 г. и 2027 г. — спрямо БВП от „${release('core').sources.budget2027.title}“ от 06.11.2026 г.`,
+  );
+  expect(text).toContain(
+    'В разчетите към закона редът „Капиталови“ е 9 408,1 млн. € и включва нетния прираст на държавния резерв; капиталовите разходи в очакваното изпълнение са 9 360,6 млн. €.',
+  );
+  expect(text).toContain(
+    'В Приложение 3 прирастът на резерва е в отделен ред „Прираст на държавния резерв и изкупуване на земеделска продукция“',
   );
   expect(tableData(scope.maps.table.get('b27-sravnenie-table')).columns[1]).toContain(
     'предв. отчет',
@@ -247,10 +251,10 @@ it('uses the motives terms for the measures and explains the law grouping', asyn
     'Подобряване на ефективността на механизмите за оценка и контрол при определяне на правото на достъп до лична помощ по Закона за личната помощ.',
   );
   expect(text('akciz-gaz', '.s12-name')).toBe(
-    'Ефект от нулевата ставка на акциза за втечнен нефтен газ (LPG) и природен газ',
+    'Ефект от нулевата ставка на акциза за втечнен нефтен газ (LPG) и природен газ за 1 октомври – 31 декември 2026 г.',
   );
   expect(text('akciz-zemedelie', '.s12-name')).toBe(
-    'Ефект от еднократната допълнителна отстъпка от акциза върху газьола в земеделието',
+    'Ефект от еднократната допълнителна отстъпка за 2026 г. от акциза върху газьола в първичното селскостопанско производство',
   );
   expect(document.querySelector('article')!.textContent).not.toMatch(
     /По-строга|по-строг контрол|Съкращението с|пропан-бутан|Краят на/,
@@ -261,7 +265,7 @@ it('uses the motives terms for the measures and explains the law grouping', asyn
   const group = document.getElementById('s12-27-zakoni')!;
   expect(group.querySelector('h2')!.textContent).toBe('Мерки по закони');
   expect(group.textContent).toContain(
-    'Приходните и разходните мерки са групирани по законите, за които се отнасят предвидените в мотивите промени.',
+    'Мерките от таблици II-7 и II-8 са подредени по закона, който мотивите посочват за всяка от тях.',
   );
   expect(group.querySelectorAll('.m27-law')).toHaveLength(
     Number(tab.querySelector('.tab-count')!.textContent!.split(' ')[0]),
@@ -276,4 +280,59 @@ it('uses the motives terms for the measures and explains the law grouping', asyn
   const old = await page('/merki?per=2026.law');
   expect(old.document.querySelector('article')!.textContent).toContain('Промени в други закони');
   expect(old.document.querySelector('article')!.textContent).not.toContain('Мерки по закони');
+});
+
+it('takes the report status, document names and publication date from the selected data', async () => {
+  const core = release('core');
+  core.sources.asbp.title = 'Предходна прогноза Тест';
+  core.sources.budget2027.title = 'Текуща прогноза Тест';
+  const outlook = release('outlook');
+  outlook.vintage[outlook.years.indexOf(2025)] = 'actual';
+  const budget2027 = release('budget2027');
+  budget2027.publication = '2026-11-07';
+  const { document } = await page('/byudzhet-2027', { core, outlook, budget2027 });
+  const text = document.getElementById('b27-sravnenie')!.textContent!.replace(/\s+/g, ' ');
+  expect(text).toContain('за три години: отчет, очаквано изпълнение и законопроект');
+  expect(text).toContain('Числата за 2025 г. са отчет от „Предходна прогноза Тест“.');
+  expect(text).toContain('Дяловете от БВП за 2025 г. са спрямо БВП от „Предходна прогноза Тест“');
+  expect(text).toContain('спрямо БВП от „Текуща прогноза Тест“ от 07.11.2026 г.');
+  expect(text).not.toMatch(/предварителен отчет|юлска|ноемврийска|АСБП 2026–2028|АСБП 2027–2029/);
+});
+
+it.each([
+  ['akciz-tyutyun', 'Изпреварващо изпълнение на акцизния календар за тютюневите изделия'],
+  [
+    'dds-tyutyun',
+    'Приходи от ДДС от изпреварващото изпълнение на акцизния календар за тютюневите изделия',
+  ],
+  ['sabiraemost-dds', 'Повишаване на събираемостта на ДДС'],
+  ['sabiraemost-kd-ddfl', 'Повишаване на събираемостта на корпоративния данък и ДДФЛ'],
+  [
+    'danak-imoti',
+    'Поетапно увеличение на базисната данъчна стойност при данъка върху недвижимите имоти',
+  ],
+  ['telk', 'Реформа в ТЕЛК: оценка и контрол при определяне на правото на достъп до лична помощ'],
+])('uses the source terminology in the title and law-index link of %s', async (id, expected) => {
+  const { document } = await page('/merki?per=2027.draft');
+  expect(document.querySelector(`#m27-${id} .s12-name`)!.textContent).toBe(expected);
+  const link = document.querySelector(`#s12-27-zakoni a[href*="to=m27-${id}"]`);
+  if (id !== 'danak-imoti') expect(link?.textContent).toBe(expected);
+});
+
+it('states the aim of health financing measures and quotes the expenditure-group term', async () => {
+  const { document } = await page('/merki?per=2027.draft&spisak=razhodni');
+  expect(document.querySelector('#m27-zdraveopazvane .s12-text')!.textContent).toBe(
+    'Мерки за оптимизиране на публичното финансиране на здравните дейности, насочени към подобряване на координацията, планирането и контрола върху разходите.',
+  );
+  expect(document.querySelector('#s12-II_8')!.textContent).toContain(
+    'Мерки за оптимизиране на разходите за персонал и за повишаване на ефективността на публичните разходи.',
+  );
+});
+
+it('shares the beginner revenue and expenditure sentence with its KFP scope', async () => {
+  const { scope } = await page('/5-minuti?per=2027.draft');
+  const text = scope.maps.share.get('s04-scene1').text.replace(/\s+/g, ' ');
+  expect(text).toBe(
+    'През 2027 г. по КФП са планирани приходи от 51,1 млрд. € и разходи от 56,0 млрд. €; разликата е дефицит от 4,9 млрд. €.',
+  );
 });
