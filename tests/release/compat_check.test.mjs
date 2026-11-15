@@ -55,6 +55,13 @@ test('an environment without a current release has nothing to read yet', async (
   assert.match(out, /no release is current there/);
 });
 
+test('a 404 that is not the answer of the Worker is not "no release yet"', async () => {
+  const routes = { '/api/releases/current': [404, { error: 'not found' }] };
+  const [code, out] = await environment(routes, (base) => check(['--env-url', base]));
+  assert.equal(code, 2, out);
+  assert.match(out, /HTTP 404, not from the Worker/);
+});
+
 test('a current release with a contract this code reads passes', async () => {
   const routes = {
     '/api/releases/current': [200, pointer],

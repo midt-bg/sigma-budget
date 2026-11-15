@@ -58,7 +58,7 @@ function files(dir) {
  * then indexes and triggers: a row may name a row of a table later in the alphabet (D1 checks foreign keys), and a trigger restored
  * before the rows would fire on them. The rows are written by SQLite's own quote(), as the sqlite3 .dump does.
  */
-export function dumpRegistry(state) {
+function dumpRegistry(state) {
   const db = files(join(state, 'v3/d1')).find(
     (f) => f.endsWith('.sqlite') && !f.endsWith('metadata.sqlite'),
   );
@@ -262,4 +262,4 @@ async function main() {
   return summary();
 }
 
-if (import.meta.main) process.exitCode = await main();
+process.exitCode = await main();

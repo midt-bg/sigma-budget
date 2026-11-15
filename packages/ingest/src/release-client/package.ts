@@ -1,4 +1,4 @@
-import { RELEASE_COMPATIBILITY } from '../release-build/compatibility.js';
+import { RELEASE_COMPATIBILITY } from '../release-build/contracts.js';
 import { verifyNodeProof } from './node-proof.js';
 import { join, resolve } from 'node:path';
 import { fileFacts, listFiles, readSafeBytes, safeDirectory, sha256 } from './files.js';

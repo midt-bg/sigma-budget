@@ -14,7 +14,7 @@ import {
   safeRelative,
   sha256,
 } from './files.js';
-import { RELEASE_COMPATIBILITY } from './compatibility.js';
+import { RELEASE_COMPATIBILITY } from './contracts.js';
 import { exportCommit, verifyExport, type ExportedCommit } from './export.js';
 import {
   mime,

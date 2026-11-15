@@ -249,7 +249,7 @@ export async function prepareOperator() {
     pathToFileURL(join(ROOT, 'packages/ingest/dist/release-build/types.js')).href
   );
   const compat = await import(
-    pathToFileURL(join(ROOT, 'packages/ingest/dist/release-build/compatibility.js')).href
+    pathToFileURL(join(ROOT, 'packages/ingest/dist/release-build/contracts.js')).href
   );
   return {
     groups: [...types.REQUIRED_VALIDATION_GROUPS, 'REGISTRY'],
@@ -336,7 +336,19 @@ export async function startWorker({ state, port, log, key, maxObjectBytes = 4096
   dev.stderr.pipe(out);
   let exited = false;
   dev.on('exit', () => (exited = true));
+  // wrangler runs in its own process group (so that stop() can end workerd with it), which also means that Ctrl+C in the terminal
+  // does not reach it: an interrupted check ends the group itself, otherwise wrangler and workerd would keep the port.
+  const interrupted = (signal) => {
+    try {
+      process.kill(-dev.pid, 'SIGTERM');
+    } catch {}
+    process.exit(signal === 'SIGINT' ? 130 : 143);
+  };
+  process.once('SIGINT', interrupted);
+  process.once('SIGTERM', interrupted);
   const stop = async () => {
+    process.off('SIGINT', interrupted);
+    process.off('SIGTERM', interrupted);
     if (exited) return;
     const gone = new Promise((r) => dev.once('exit', r));
     try {

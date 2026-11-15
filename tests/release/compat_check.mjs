@@ -6,7 +6,7 @@
 //
 // The code says which data contracts it reads in three places, and they must agree:
 //   apps/web/workers/api/store.js SUPPORTED                       what the Worker accepts in a manifest (it refuses to publish anything else)
-//   packages/ingest/src/release-build/compatibility.ts            what a release built by this code declares (and the operator reads)
+//   packages/ingest/src/release-build/contracts.ts                what a release built by this code declares (and the operator reads)
 //   apps/web/client/data.js parse                                 what the pages read: run here on the published execution.json, every
 //                                                                 amount must become a number
 // Then every release this code may meet must use a contract it reads: the releases published with the site, their execution.json, and
@@ -59,7 +59,6 @@ function checkManifest(m, where, sup) {
 async function read(url, timeoutMs) {
   return fetch(url, {
     headers: { 'User-Agent': 'compat-check' },
-    redirect: 'error',
     signal: AbortSignal.timeout(timeoutMs),
   });
 }
@@ -77,7 +76,7 @@ async function main(argv) {
   console.log('the code');
   const { SUPPORTED: w } = await import(new URL('apps/web/workers/api/store.js', ROOT).href);
   const { RELEASE_COMPATIBILITY: b } = await import(
-    new URL('packages/ingest/src/release-build/compatibility.ts', ROOT).href
+    new URL('packages/ingest/src/release-build/contracts.ts', ROOT).href
   );
   ok(
     Array.isArray(w?.execution) && w.execution.length > 0,
@@ -85,7 +84,7 @@ async function main(argv) {
   );
   ok(
     same(w, b),
-    `packages/ingest/src/release-build/compatibility.ts declares the same contracts as the Worker accepts (${JSON.stringify(b)})`,
+    `packages/ingest/src/release-build/contracts.ts declares the same contracts as the Worker accepts (${JSON.stringify(b)})`,
   );
   const ex = 'data/release/execution.json';
   const r = await clientParse(ex);
@@ -127,6 +126,12 @@ async function main(argv) {
     try {
       const res = await read(base + '/api/releases/current', 30_000);
       if (res.status === 404) {
+        // The Worker answers 404 with release_id: null while nothing is published; any other 404 is not this site.
+        const none = await res.json().catch(() => undefined);
+        if (none?.release_id !== null) {
+          console.error(`cannot read ${base}/api/releases/current: HTTP 404, not from the Worker`);
+          return 2;
+        }
         console.log('  —     no release is current there: nothing to read yet');
         return finish();
       }
