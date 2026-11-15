@@ -141,3 +141,16 @@ test('coverage CI checks the target baseline with history and env refs before ru
   });
   assert.ok(gate < job.steps.findIndex((step) => step.run === 'pnpm test -- --coverage'));
 });
+
+test('the Node suites run without a Python interpreter', () => {
+  const { parse } = createRequire(new URL('../packages/ingest/package.json', import.meta.url))(
+    'yaml',
+  );
+  const job = parse(workflow).jobs.coverage;
+  assert.ok(!job.steps.some((step) => step.uses?.startsWith('actions/setup-python@')));
+  assert.ok(!job.steps.some((step) => /\bpython3?\b|\bpip\b/.test(step.run ?? '')));
+  assert.ok(!Object.keys(job.env).some((name) => name.startsWith('PYTHON')));
+  const turbo = JSON.parse(readFileSync('turbo.json', 'utf8'));
+  for (const name of [...turbo.globalEnv, ...turbo.globalPassThroughEnv])
+    assert.ok(!name.startsWith('PYTHON'), `Turbo still passes ${name}`);
+});
