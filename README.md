@@ -56,13 +56,27 @@ python -m budget_pipeline.validate.datasets
 tmp/venv/bin/python -m tests.release.compat_check
 pnpm --filter @sigma-budget/web test # и списъците на заявките на екраните (app/lib/query-lists.test.ts)
 PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers pnpm build:release --env staging --noindex
-# След това Worker-ът се стартира с pnpm dev; пълната проверка върви срещу него:
+# В отделен терминал стартирайте Worker-а:
+pnpm exec wrangler dev -c apps/web/build/server/wrangler.json --ip 127.0.0.1 --port 8814
+# Пълната проверка върви срещу него:
 PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.screens --url http://127.0.0.1:8814/
 ```
 
-Регресията за ранния мобилен tap се проверява с `python -m tests.e2e.boot --url http://127.0.0.1:8814/` срещу сглобения Worker. Файловете на артефакта (`sitemap.xml`, `robots.txt`, `llms.txt`, `_headers`, маркираният service worker) се проверяват от `apps/web/scripts/release-artifact.test.ts` в `pnpm test`; release командата проверява и действителния артефакт преди успех.
+Регресията за ранния мобилен tap се проверява с `E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project worker boot.spec.ts` срещу сглобения Worker. Файловете на артефакта (`sitemap.xml`, `robots.txt`, `llms.txt`, `_headers`, маркираният service worker) се проверяват от `apps/web/scripts/release-artifact.test.ts` в `pnpm test`; release командата проверява и действителния артефакт преди успех.
 
-Останалите браузърни проверки са `redirects.py`, `calc_check.py`, `share_check.py`, `accept.py` и `motion.py` в `tests/e2e/`. Те използват временния статичен сайт. `overlap.py` проверява припокриванията. Очакваните числа се четат от текущите данни чрез `expect.py`. Интеграционните проверки `tests/release/release_check.py` и `restore_drill.py` изискват Node, OpenSSL и локален Worker.
+Playwright Test конфигурацията е в `tests/e2e/playwright.config.ts`, до общите fixtures и спецификациите. След стартиране на Worker от горния пример:
+
+```bash
+PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e
+# Само старите hash адреси, без Worker:
+PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers pnpm test:e2e --project static
+# Самостоятелен статичен сървър с path fallback:
+node apps/web/scripts/serve.ts --port 8000
+```
+
+Проектът `worker` включва `boot.spec.ts`, `security-headers.spec.ts`, `narrative-adoption.spec.ts` и `period-matrix.spec.ts`. Проектът `static` изпълнява `redirects.spec.ts` върху автоматично сглобените symlinks в `tmp/static-site`. Данните се четат от `data/release`, JavaScript - от `apps/web/build/client/js`; необходим е предварителен build. `serve.py` и `static_assets.py` остават за все още непренесените Python проверки.
+
+Останалите браузърни проверки са `calc_check.py`, `share_check.py`, `accept.py` и `motion.py` в `tests/e2e/`. Те използват временния статичен сайт. `overlap.py` проверява припокриванията. Очакваните числа се четат от текущите данни чрез `expect.py`. Интеграционните проверки `tests/release/release_check.py` и `restore_drill.py` изискват Node, OpenSSL и локален Worker.
 
 ## Данни и издания
 

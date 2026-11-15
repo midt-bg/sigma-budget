@@ -97,9 +97,19 @@ test('merged boot and route modules remain inside formatting and production cove
     assert.equal(info.inferredParser, 'json-stringify', file);
     assert.equal(info.ignored, false, file);
   }
-  // Python stays in its own unit/e2e gates; it is never presented as V8/Prettier coverage.
-  const python = await getFileInfo('tests/e2e/boot.py', { ignorePath: '.prettierignore' });
-  assert.equal(python.inferredParser, null);
+  // Browser specs are formatted and typechecked, but run in their own Playwright gate, outside production V8 coverage.
+  const boot = 'tests/e2e/worker/boot.spec.ts';
+  const info = await getFileInfo(boot, { ignorePath: '.prettierignore' });
+  assert.equal(info.inferredParser, 'typescript');
+  assert.equal(info.ignored, false);
+  assert.ok(existsSync(boot));
+  assert.match(
+    JSON.parse(readFileSync('package.json', 'utf8')).scripts.typecheck,
+    /tsc -p tests\/e2e\/tsconfig\.json/,
+  );
+  const tsconfig = JSON.parse(readFileSync('tests/e2e/tsconfig.json', 'utf8'));
+  assert.ok(tsconfig.include.some((glob) => matchesGlob('worker/boot.spec.ts', glob)));
+  assert.ok(!config.test.coverage.include.some((glob) => matchesGlob('../../' + boot, glob)));
 });
 
 test('every report reaches strict Turbo tasks and its upload uses the same env path', () => {
