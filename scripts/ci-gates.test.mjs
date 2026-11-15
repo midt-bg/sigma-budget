@@ -58,7 +58,7 @@ test('committed release checks use Node after authenticating the input snapshot'
     'yaml',
   );
   const jobs = parse(workflow).jobs;
-  for (const name of ['build', 'node-import']) {
+  for (const name of ['node-import']) {
     const job = jobs[name];
     assert.ok(!job.steps.some((step) => /setup-(python|uv)@/.test(step.uses ?? '')));
     assert.ok(!job.steps.some((step) => /\b(python[\d.]*|pip\d*|uv)\b/.test(step.run ?? '')));
@@ -84,6 +84,32 @@ test('committed release checks use Node after authenticating the input snapshot'
   assert.ok(!provenance['continue-on-error']);
   // Browser e2e and the historical data image still need Python until their later ports.
   assert.ok(jobs.check.steps.some((step) => step.uses?.startsWith('actions/setup-python@')));
+});
+
+test('the full pipeline suite retains Python and authenticated programme originals in build', () => {
+  const { parse } = createRequire(new URL('../packages/ingest/package.json', import.meta.url))(
+    'yaml',
+  );
+  const job = parse(workflow).jobs.build;
+  assert.ok(job.needs.includes('node-inputs'));
+  const steps = job.steps;
+  assert.ok(steps.some((step) => step.uses?.startsWith('actions/setup-python@')));
+  const tools = steps.findIndex((step) =>
+    step.run?.includes(
+      'python -m pip install --require-hashes -r tests/requirements-dev.lock -r pipeline/requirements.lock',
+    ),
+  );
+  const restore = steps.findIndex(
+    (step) =>
+      step.run ===
+      'node scripts/restore-programme-test-inputs.mjs "$RUNNER_TEMP/registered-node-input-archive/registered-node-inputs.tar.gz"',
+  );
+  const tests = steps.findIndex(
+    (step) => step.run === 'python -m unittest discover -s tests/pipeline -t .',
+  );
+  assert.ok(tools >= 0 && restore > tools && tests > restore);
+  assert.equal(steps[tests].if, undefined);
+  assert.ok(!steps[tests]['continue-on-error']);
 });
 
 test('the build job checks the registries with the TypeScript validator after building it', () => {

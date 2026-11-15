@@ -156,13 +156,22 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      # The complete legacy unittest suite still re-decodes independent PDF references and checks live site content.
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: tests/requirements-dev.lock
       - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24'
           cache: pnpm
       - name: Install tools
-        run: pnpm install --frozen-lockfile
+        run: |
+          python -m pip install --require-hashes -r tests/requirements-dev.lock -r pipeline/requirements.lock
+          python -m pip install --no-deps -e pipeline
+          pnpm install --frozen-lockfile
       - name: Install the Chromium of the pinned Playwright
         run: bash scripts/ci-install-browser.sh
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
@@ -183,6 +192,8 @@ jobs:
         run: node packages/ingest/dist/validate/cli.js --live --only REGISTRY
       - name: Check committed annual provenance API responses and membership
         run: node tests/release/budget_provenance_check.mjs
+      - name: All pipeline regressions, independent PDF references and live site content
+        run: python -m unittest discover -s tests/pipeline -t .
       - name: Compatibility of code and data (stage E)
         run: node tests/release/compat_check.mjs
       - name: Build the Worker for staging and check every screen
@@ -228,8 +239,6 @@ jobs:
         with:
           name: build
           path: apps/web/build
-      - name: Unit checks of the Python browser checker
-        run: python -m unittest tests.pipeline.test_screen_checker_url
       - name: Screens, accessibility and layout (against the built Worker)
         run: |
           pnpm exec wrangler dev -c apps/web/build/server/wrangler.json --ip 127.0.0.1 --port 8814 --persist-to "$RUNNER_TEMP/state" > "$RUNNER_TEMP/wrangler.log" 2>&1 &

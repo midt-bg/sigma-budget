@@ -1,5 +1,7 @@
 {
   ".github/workflows/site.yml": [
+    "python -m pip install --require-hashes -r tests/requirements-dev.lock -r pipeline/requirements.lock",
+    "python -m pip install --no-deps -e pipeline",
     "pnpm exec playwright install --with-deps chromium",
     "python -m pip install --require-hashes -r tests/requirements-dev.lock -r pipeline/requirements.lock",
     "python -m pip install --no-deps -e pipeline",
@@ -13,6 +15,6 @@
     "pnpm exec playwright install --with-deps chromium",
     "node tests/release/budget_provenance_check.mjs",
     "./budget check-site --inputs \"$RUNNER_TEMP/registered-node-inputs\"",
-    "python -m unittest tests.pipeline.test_screen_checker_url"
+    "python -m unittest discover -s tests/pipeline -t ."
   ]
 }

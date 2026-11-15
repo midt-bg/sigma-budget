@@ -1,13 +1,35 @@
-import { afterEach, expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import { mkdtemp, mkdir, writeFile, readFile, rm, symlink } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
 import { canonicalJson } from '@sigma-budget/ingest/release-client';
 import { sitePackage, productionCli } from './production-cli.js';
+import * as releaseBuild from '@sigma-budget/ingest/release-build';
+import * as production from '@sigma-budget/ingest/production';
+
+vi.mock('@sigma-budget/ingest/release-build', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@sigma-budget/ingest/release-build')>();
+  return {
+    ...actual,
+    exportCommit: vi.fn(actual.exportCommit),
+    prepareInputs: vi.fn(actual.prepareInputs),
+    stageInputs: vi.fn(actual.stageInputs),
+    checkReleaseDirectory: vi.fn(actual.checkReleaseDirectory),
+  };
+});
+vi.mock('@sigma-budget/ingest/production', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@sigma-budget/ingest/production')>();
+  return {
+    ...actual,
+    loadProduction: vi.fn(actual.loadProduction),
+    validateProduction: vi.fn(actual.validateProduction),
+  };
+});
 
 const roots: string[] = [];
 afterEach(async () => {
+  vi.clearAllMocks();
   for (const root of roots.splice(0)) await rm(root, { recursive: true, force: true });
 });
 async function fixture() {
@@ -93,4 +115,45 @@ it('requires an explicit snapshot and rejects replay options on check-site', asy
     expect(errors).toHaveLength(1);
     expect(errors[0]).toMatch(/Required option --inputs|Unknown option --skip-published/);
   }
+});
+it('exits 2 when the current production rules reject the committed site semantically', async () => {
+  const f = await fixture();
+  // Use installed archive-reader assets; no input decoding is needed for this failure-injection test.
+  await symlink(
+    resolve(import.meta.dirname, '../../../packages/ingest/node_modules'),
+    join(f.root, 'node_modules'),
+  );
+  vi.mocked(releaseBuild.exportCommit).mockResolvedValueOnce({
+    commit: 'a'.repeat(40),
+    files: {},
+  } as never);
+  vi.mocked(releaseBuild.prepareInputs).mockResolvedValueOnce({ inputs: [] } as never);
+  vi.mocked(releaseBuild.stageInputs).mockResolvedValueOnce(undefined);
+  vi.mocked(releaseBuild.checkReleaseDirectory).mockResolvedValueOnce({
+    manifest: { processing: { parameters: { build_date: '2026-11-14' } } },
+  } as never);
+  const prepared = {} as Awaited<ReturnType<typeof production.loadProduction>>;
+  vi.mocked(production.loadProduction).mockResolvedValueOnce(prepared);
+  vi.mocked(production.validateProduction).mockImplementationOnce(() => {
+    throw new Error('Production validation failed: semantic negative control');
+  });
+  const errors: string[] = [],
+    messages: string[] = [];
+  const code = await productionCli(['check-site', '--inputs', join(f.root, 'inputs')], {
+    root: f.root,
+    error: (s) => errors.push(s),
+    write: (s) => messages.push(s),
+  });
+  expect(production.validateProduction).toHaveBeenCalledWith(
+    expect.objectContaining({
+      buildDate: '2026-11-14',
+      candidateRoot: expect.stringContaining('site-package'),
+    }),
+    prepared,
+  );
+  expect(code).toBe(2);
+  expect(messages).toEqual([]);
+  expect(errors.map((s) => JSON.parse(s))).toEqual([
+    { exit: 2, error: 'Production validation failed: semantic negative control' },
+  ]);
 });
