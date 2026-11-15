@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { lstat, readFile, readdir, realpath } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { compare, equal, type Difference } from '../parity/compare.js';
+import { verifyHistoricalPythonPin } from '../io/fixture-history.js';
 import { auditCatalogMetadata } from './catalog-metadata.js';
 import type { Wave13bInput } from './wave13b.js';
 
@@ -49,6 +50,10 @@ export async function loadWave13bReference(fixture: string) {
     throw new Error('Wrong proof baseline');
   const content = new Map<string, Buffer>();
   for (const [name, expected] of Object.entries(record.files)) {
+    if (name.endsWith('.py')) {
+      verifyHistoricalPythonPin(`wave13b/${name}`, expected);
+      continue;
+    }
     const data = await safe(name);
     if (sha(data) !== expected) throw new Error(`Proof hash mismatch: ${name}`);
     if (name === 'artifact-inventory.json' || name.startsWith('oracle/')) content.set(name, data);
