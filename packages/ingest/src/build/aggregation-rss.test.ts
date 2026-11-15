@@ -15,7 +15,12 @@ const donorCheck = JSON.parse(
     resolve(import.meta.dirname, '../../test/expected/aggregation-rss/donor-check.json'),
     'utf8',
   ),
-) as { donorSha256: string; casesSha256: string; oracleSha256: Record<string, string> };
+) as {
+  donorSha256: string;
+  casesSha256: string;
+  oracles: { case: string; sha256: string }[];
+};
+const oracleSha256 = new Map(donorCheck.oracles.map((o) => [o.case, o.sha256]));
 const sha256 = (file: string) => createHash('sha256').update(readFileSync(file)).digest('hex');
 const cases = JSON.parse(readFileSync(join(fixture, 'cases.json'), 'utf8')) as Record<
   string,
@@ -26,7 +31,7 @@ describe('RSS donor serializer', () => {
   it('uses the donor, cases and oracles confirmed by the Python donor check', () => {
     expect(sha256(join(fixture, 'donor/feed.py'))).toBe(donorCheck.donorSha256);
     expect(sha256(join(fixture, 'cases.json'))).toBe(donorCheck.casesSha256);
-    expect(Object.keys(donorCheck.oracleSha256).sort()).toEqual(Object.keys(cases).sort());
+    expect(donorCheck.oracles.map((o) => o.case).sort()).toEqual(Object.keys(cases).sort());
   });
   it.each(Object.entries(cases))(
     'matches Python UTF-8 bytes and XML semantics: %s',
@@ -36,7 +41,7 @@ describe('RSS donor serializer', () => {
         xml: string;
       };
       expect(Buffer.from(xml)).toEqual(Buffer.from(oracle.xml));
-      expect(sha256(join(fixture, 'oracle', `${name}.json`))).toBe(donorCheck.oracleSha256[name]);
+      expect(sha256(join(fixture, 'oracle', `${name}.json`))).toBe(oracleSha256.get(name));
     },
   );
   it('matches Python integer date tokens', () => {
