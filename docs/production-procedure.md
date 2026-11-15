@@ -26,7 +26,7 @@ pnpm exec wrangler d1 migrations apply DB --remote -c apps/web/wrangler.jsonc
       единствената врата към `/admin/*`), `SITE_ORIGIN`, `FEEDBACK_EMAIL`, `SIGMA_URL`, `NOINDEX` празно.
 - [ ] Access: self-hosted приложение за `<адрес>/admin/*` с Allow политика за операторите; `ACCESS_ISSUER` (`https://<team>.cloudflareaccess.com`)
       и `ACCESS_AUD` (Application Audience tag) в `apps/web/wrangler.jsonc`.
-- [ ] `pipeline/environments.json`: `production.url` е адресът.
+- [ ] `apps/etl/environments.json`: `production.url` е адресът.
 
 ## 2. Първо качване на кода
 
@@ -35,7 +35,7 @@ pnpm exec wrangler d1 migrations apply DB --remote -c apps/web/wrangler.jsonc
 ```bash
 git switch --detach <commit> && pnpm install --frozen-lockfile
 pnpm exec playwright install chromium && pnpm build:release --origin https://<адрес>   # build/ с проверка на всеки екран
-python3 -m tests.release.compat_check
+node tests/release/compat_check.mjs
 pnpm exec wrangler deploy -c apps/web/build/server/wrangler.json
 pnpm exec wrangler secret put OPERATORS -c apps/web/wrangler.jsonc                            # след deploy-а: таен ключ не може да носи името на променлива (код 10053)
 ```
@@ -65,7 +65,7 @@ cloudflared access login https://<адрес>/admin/operations
 ## 4. Следващо качване на кода
 
 1. CI е минал на commit-а в `main`.
-2. `python3 -m tests.release.compat_check --env-url https://<адрес>`: новият код чете текущото издание на production.
+2. `node tests/release/compat_check.mjs --env-url https://<адрес>`: новият код чете текущото издание на production.
 3. `pnpm build:release --origin https://<адрес>`, после `pnpm exec wrangler deploy -c apps/web/build/server/wrangler.json`.
 4. Проверката от стъпка 2.
 
