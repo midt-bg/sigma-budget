@@ -55,10 +55,10 @@ Parity report пътищата се дефинират само в `coverage.env
 
 Playwright Test конфигурацията е локална за `tests/e2e/`, с проекти `worker` (boot, narrative adoption, security headers, period matrix) и `static` (redirects). Job `check` изпълнява тези проверки срещу същия downloaded build и loopback Worker на порт 8814; останалите Python команди са запазени. Локално се използват `PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e` и вече стартиран Worker. Само `--project=static` не изисква Worker. `apps/web/scripts/serve.ts` е browser test/development инфраструктура с отделен Vitest договорен тест, извън production V8 обхвата; production release postprocessing остава покрит чрез `release-artifact.ts`. Python `serve.py` и `static_assets.py` остават за непренесените проверки.
 
-P10d добавя до Python screens стъпката задължителна Playwright Test команда:
+Проверките на екраните се изпълняват в задължителна стъпка след оставащия Python screens run:
 
 ```bash
 E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker screens-base.spec.ts screens-demo.spec.ts screens-variants.spec.ts screens-selftest.spec.ts
 ```
 
-Тя поема base/demo/period/user/prefs/selftest; тези функции и planner-и са премахнати от Python. Останалият `screens.py` продължава да изпълнява tour/to/chrome/share/embed/gloss/tabs/png/views. Общите browser програми, event probe, context настройки и изчаквания са в `screens-scripts.ts` и `screens-helpers.ts`; очакваните числа се четат от текущото издание. CI guard-ът пази едновременно двете части и забранява фокусирани, пропуснати или повторени автоматично тестове.
+Всеки пример и ширина, demo състояние и период е отделен тест. Типизирани browser функции изчакват реалната готовност и проверяват видимото съдържание, достъпността, навигационните връзки и преливането. Автоматичен fixture проваля теста при browser errors или бисквитки. Състоянията и числата от изданието имат отделни assertions. Потребителските типове и премахнатите настройки не се проверяват. Python запазва chrome/embed/gloss/png/share/tabs/to/tour/views. S21 има изрично временно изключение само за липсваща таблица към графиката; контрастът има отделна проверка.

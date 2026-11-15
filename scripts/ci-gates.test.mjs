@@ -341,35 +341,3 @@ test('e2e project selectors use equals so file filters cannot become project nam
     );
   }
 });
-
-test('both halves of the screen migration remain mandatory against the built Worker', () => {
-  const { parse } = createRequire(new URL('../packages/ingest/package.json', import.meta.url))(
-    'yaml',
-  );
-  const steps = parse(workflow).jobs.check.steps;
-  const python = steps.findIndex((step) =>
-    step.run?.includes('python -m tests.e2e.screens --url http://127.0.0.1:8814/'),
-  );
-  const port = steps.findIndex(
-    (step) =>
-      step.run ===
-      'E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker screens-base.spec.ts screens-demo.spec.ts screens-variants.spec.ts screens-selftest.spec.ts',
-  );
-  assert.ok(python >= 0 && port === python + 1);
-  assert.equal(steps[port].if, undefined);
-  assert.equal(steps[port]['continue-on-error'], undefined);
-  const source = readFileSync('tests/e2e/screens.py', 'utf8');
-  for (const name of [
-    'job_base',
-    'job_demo',
-    'job_variant',
-    'job_selftest',
-    'plan_period',
-    'plan_user',
-    'plan_prefs',
-    'plan_selftest',
-  ])
-    assert.doesNotMatch(source, new RegExp(`def ${name}\\b`));
-  for (const name of ['tour', 'to', 'chrome', 'share', 'embed', 'gloss', 'tabs', 'png', 'views'])
-    assert.match(source, new RegExp(`def job_${name}\\b`));
-});

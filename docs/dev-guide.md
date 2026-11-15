@@ -986,7 +986,7 @@ html`<a href="${ctx.href('funkciya', { fn:'obrazovanie' })}">Образован�
 ```bash
 # от корена на хранилището; средата е tmp/venv, а Chromium е в tmp/pw-browsers (и двете са извън git — виж .gitignore)
 PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.screens --route S06            # един екран, всички негови примерни адреси
-PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker screens-base.spec.ts --grep "screen audit S06" # audit на един екран
+PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker screens-base.spec.ts --grep "S06 desktop" # audit на един екран
 PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.screens --quick               # съкратен вариант на оставащите Python семейства
 PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.screens                       # останалите семейства: 1280 и 400 px, светла тема
 PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.screens --url http://127.0.0.1:8000/   # вече пуснат сървър
@@ -994,7 +994,7 @@ PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.s
 
 `--route` приема id (`S06`) или ключ (`prihodi`). Проверката пуска собствен локален сървър върху `apps/web/`. Изходен код 0 само когато всичко е зелено. Статичният root се сглобява чрез `static_assets.py`; пренесените audit проверки изискват Worker по примера по-долу.
 
-Двете части заедно проверяват примерните адреси при 1280 и 400 px в светла тема: няма грешки или изключения в конзолата (404 за липсващ файл `/data/…` е само предупреждение „предстоящ файл с данни“); няма `NaN`/`undefined`/`Infinity`/`null`/`[object Object]` в текста или SVG; няма хоризонтално превъртане на страницата (освен вътре в `.table-wrap`); точно един `h1`; `document.title` се е променил; фокусът е на `h1` след навигация; целта на „Следва“ съществува; `?demo=loading|empty|error|pending|offline` рисува правилния компонент за състояние; ключовете в `data-src` съществуват в `core.sources`; всяка повърхност `[data-mock]` има значка или щриховка; примерните блокове са означени в текста за споделяне/CSV/PNG.
+Двете части заедно проверяват примерните адреси при 1280 и 400 px в светла тема: няма грешки или изключения в конзолата (липсващият rates dataset е допустим само за S18); няма `NaN`/`undefined`/`Infinity`/`null`/`[object Object]` в текста или SVG; няма хоризонтално превъртане на страницата (освен вътре в `.table-wrap`); точно един `h1`; `document.title` се е променил; фокусът е на `h1` след навигация; целта на „Следва“ съществува; `?demo=loading|empty|error|pending|offline` рисува правилния компонент за състояние; ключовете в `data-src` съществуват в `core.sources`; всяка повърхност `[data-mock]` има значка или щриховка; примерните блокове са означени в текста за споделяне/CSV/PNG.
 
 По-старите тагове пазят `check_mock_vN.py` и съответната историческа документация. В текущото дърво `screens.py` изпълнява tour, `?to=`, chrome, share, embed, glossary, tabs, PNG и views. `-v` отпечатва всяка Python находка с всичките ѝ клетки и адреси; `--strict` превръща предупрежденията в отказ. За един audit се използва TypeScript командата с `--grep` от горния пример. Проверка на данните: `./budget check-site --inputs /path/to/registered-node-inputs`.
 
@@ -1013,14 +1013,14 @@ PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers pnpm test:e2e --project=static
 
 `node apps/web/scripts/serve.ts --port 8000` стартира статичния вариант самостоятелно; `--dir` избира друга директория. Поддържат се същите file/path/embed fallback правила, MIME, HEAD и 404 като Python сървъра. `apps/web/scripts/serve.test.ts` проверява този договор. Python `serve.py` и `static_assets.py` остават, докато `calc_check`, `share_check`, `accept`, `motion` и `overlap` още ги използват.
 
-Преносът на `screens.py` е разделен на три PR-а. В P10d се изпълняват `screens-base.spec.ts`, `screens-demo.spec.ts`, `screens-variants.spec.ts` и `screens-selftest.spec.ts`; Python командата изпълнява само останалите семейства. Двете команди заедно са пълната проверка:
+Проверките на екраните се изпълняват с четирите `screens-*.spec.ts` срещу Worker. Всеки пример и ширина има отделен тест с timeout 150 s; събитията от браузъра и бисквитките се проверяват автоматично. Готовността включва графиките, шрифтовете и изображенията. Deep pass отваря подробностите, посещава табовете и превърта до края. Отделни тестове обединяват видимите стойности на S01/S15/S18 и ги сравняват с изданието. Проверяват се петте състояния и поддържаните/неподдържаните периоди. Всички находки провалят теста. За S21 временно е изключена само липсващата таблица към графиката; сайтът се поправя отделно.
 
 ```bash
 E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker screens-base.spec.ts screens-demo.spec.ts screens-variants.spec.ts screens-selftest.spec.ts
 PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.screens --url http://127.0.0.1:8814/
 ```
 
-`tests/e2e/screens-helpers.ts` пази context настройките, discovery, reset, Probe, collect, settle/deep pass, audit и bounded waits. `screens-scripts.ts` съдържа пренесените browser програми; `screens-values.ts` чете очакваните стойности от изданието. Warning остава warning; failure блокира Playwright Test. Стойностите се обединяват между всички примери и двете ширини на един екран. Няма глобален списък между тестовете; `expect.soft` пази отказите до края на теста, а Playwright дава общия exit status. `E2E_SCREENS_SHOTS=1` запазва снимка на първия пример за всяка ширина в `tmp/render-check-v6`, както предишното `--shots`. `E2E_SCREENS_AXE=FILE|URL` включва същата допълнителна serious/critical axe проверка като предишното `--axe`; без нея основният audit е непроменен. Планът и точното съответствие по функции/редове са в PR за P10d. P10e добавя tour/to/chrome/tabs, P10f - share/embed/gloss/png/views; всяка част премахва съответните Python функции и planner-и.
+Останалите семейства chrome/embed/gloss/png/share/tabs/to/tour/views продължават да се изпълняват от Python командата. Контрастът се проверява отделно.
 
 За текущата v6 основната проверка работи с намалено движение. `tests/e2e/motion.py` проверява включените и изключените анимации, крайните стойности, фокуса, разкриването при скрол и PNG подготовката. `tests/e2e/overlap.py` обхожда маршрутите при 1920/1440/1280/1241/1181/1024/768/390/320 px: припокривания, преливане, печат, клик, клавиатура и история. Неговият `--quick` вариант е включен в `accept.py`; при отделна пълна проверка може да се изпълни `accept.py numbers layout`, за да не се повтаря. Пускат се със същите `tmp/venv` и `PLAYWRIGHT_BROWSERS_PATH` като останалите инструменти.
 

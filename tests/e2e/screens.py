@@ -36,8 +36,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]            # repository root (this file is tests/e2e/screens.py)
 P_ROOT = ROOT                                         # older name of ROOT
 SITE = __import__("tests.e2e.static_assets", fromlist=["root"]).root()                                  # the site  (version current: run at the tag current release)
-SHOT_DIR = ROOT / 'tmp' / 'render-check-v6'                 # screenshots (gitignored)
-INPUT_SUMS = ROOT / 'data' / 'originals.sha256'
 if 'PLAYWRIGHT_BROWSERS_PATH' not in os.environ and (P_ROOT / 'tmp' / 'pw-browsers').is_dir():
     os.environ['PLAYWRIGHT_BROWSERS_PATH'] = str(P_ROOT / 'tmp' / 'pw-browsers')
 
@@ -49,7 +47,6 @@ CELLS = {
 QUICK_CELLS = ['1280-light', '400-light']
 FAMILIES = ['tour', 'to', 'chrome', 'share', 'embed', 'gloss', 'tabs', 'png', 'views']   # Light palette only; OS preference regression is in visual_audit.py.
 DEFAULT_OFF = set()                                                  # families that run only when asked for (none now)
-PREFS_KEY = 'bns.prefs.v1'
 THEME_SUFFIX = ' · СИГМА Бюджет'
 # console / network noise that is expected and not a defect of the site
 IGNORE_CONSOLE = [
