@@ -44,6 +44,16 @@ test('all independent Python and provenance commands survive the consolidation',
   assert.doesNotMatch(wave, /vitest run/);
 });
 
+test('the build job checks the registries with the TypeScript validator after building it', () => {
+  const build = workflow.slice(workflow.indexOf('\n  build:\n'));
+  const compile = build.indexOf('pnpm --filter @sigma-budget/etl... build');
+  const check = build.indexOf(
+    '- name: Check the source and dataset registries\n        run: node packages/ingest/dist/validate/cli.js --live --only REGISTRY\n',
+  );
+  assert.ok(compile >= 0 && check > compile, 'the registry check runs on the built validator');
+  assert.doesNotMatch(workflow, /budget_pipeline\.validate\.registry/);
+});
+
 test('security covers other PR targets without duplicating main PR checks', () => {
   const { parse } = createRequire(new URL('../packages/ingest/package.json', import.meta.url))(
     'yaml',

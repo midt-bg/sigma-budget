@@ -200,7 +200,7 @@ jobs:
           pnpm --filter @sigma-budget/etl... build
           pnpm exec budget-ts freshness
       - name: Check the source and dataset registries
-        run: python -m budget_pipeline.validate.registry check
+        run: node packages/ingest/dist/validate/cli.js --live --only REGISTRY
       - name: Check the unchanged historical Python publication against its manifest
         run: ./budget-python validate --site
       - name: Validate the data

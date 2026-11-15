@@ -39,27 +39,47 @@ function glob(pattern: string, path: string): boolean {
   }
   return new RegExp(r + '$', 's').test(path);
 }
-/** A producer is a Python module command; module names cannot escape the tree. */
+const CODE_PATH =
+  /^(?:packages|apps)\/(?:[A-Za-z0-9_][A-Za-z0-9_.-]*\/)*[A-Za-z0-9_][A-Za-z0-9_.-]*\.(?:ts|mts|mjs|js)$/;
+const HISTORY_PATH = /^(?:[A-Za-z0-9_][A-Za-z0-9_.-]*\/)*[A-Za-z0-9_][A-Za-z0-9_.-]*$/;
+const REPOSITORY = /^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
+const COMMIT = /^[0-9a-f]{40}$/;
+/** A producer, parser or layer is a TypeScript (or JavaScript) module of this repository: an exact
+ * repository-relative path under packages/ or apps/, never a command, a test, built output or a path
+ * that leaves the tree. The caller checks that the file exists. */
 export function script(entry: string): string {
-  if (
-    [
-      'packages/ingest/src/production/taxes-reader.ts',
-      'packages/ingest/src/production/taxes.ts',
-      'packages/ingest/src/production/debt-issues.ts',
-      'packages/ingest/src/production/programmes.ts',
-    ].includes(entry)
-  )
-    return entry;
   if (!entry) return entry;
-  const parts =
-    entry.match(/(?:[^\s'\"]+|'[^']*'|"[^"]*")+/g)?.map((x) => x.replace(/^(['"])(.*)\1$/, '$2')) ??
-    [];
-  if (parts.length < 3 || parts[0] !== 'python' || parts[1] !== '-m')
-    throw new Error(`producer must be a python -m command: ${entry}`);
-  const module = parts[2]!;
-  if (!/^[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*$/.test(module))
-    throw new Error(`unsafe producer module: ${module}`);
-  return `pipeline/${module.replaceAll('.', '/')}.py`;
+  if (
+    typeof entry !== 'string' ||
+    !CODE_PATH.test(entry) ||
+    entry.split('/').includes('dist') ||
+    /\.test\.[a-z]+$/.test(entry)
+  )
+    throw new Error(`producer must be a TypeScript module path under packages/ or apps/: ${entry}`);
+  return entry;
+}
+/** Code that produced a frozen input once and is no longer in the tree: it is named by the repository
+ * and the full commit where it lives, not by a path that must exist in this checkout. */
+export interface HistoricalProducer {
+  repository: string;
+  commit: string;
+  path: string;
+}
+export function historicalProducer(entry: unknown): HistoricalProducer | null {
+  if (entry === null || typeof entry !== 'object' || Array.isArray(entry)) return null;
+  const value = entry as Record<string, unknown>;
+  if (JSON.stringify(Object.keys(value).sort()) !== '["commit","path","repository"]')
+    throw new Error(
+      `a historical producer has exactly repository, commit and path: ${JSON.stringify(entry)}`,
+    );
+  const { repository, commit, path } = value;
+  if (typeof repository !== 'string' || !REPOSITORY.test(repository))
+    throw new Error(`unsafe historical producer repository: ${String(repository)}`);
+  if (typeof commit !== 'string' || !COMMIT.test(commit))
+    throw new Error(`a historical producer names a full commit: ${String(commit)}`);
+  if (typeof path !== 'string' || !HISTORY_PATH.test(path))
+    throw new Error(`unsafe historical producer path: ${String(path)}`);
+  return { repository, commit, path };
 }
 class Report {
   constructor(private readonly observer?: () => void) {}
@@ -153,7 +173,8 @@ export function validateRegistry(root: string, options: RegistryOptions = {}): R
       r.ok(k in s, `source ${s.id ?? 'None'}: no ${k}`);
     r.ok(access.has(s.access), `source ${s.id}: access ${repr(s.access)}`);
     r.ok(acquisition.has(s.acquisition), `source ${s.id}: acquisition ${repr(s.acquisition)}`);
-    for (const p of (s.parser || '').split(', '))
+    r.ok(s.parser == null || typeof s.parser === 'string', `source ${s.id}: parser must be text`);
+    for (const p of (typeof s.parser === 'string' ? s.parser : '').split(', '))
       if (p) r.ok(file(root, script(p)), `source ${s.id}: parser ${p} does not exist`);
     for (const f of s.files || [])
       patterns.push({ pat: f.path, owner: `source ${s.id}`, entry: f });
@@ -182,9 +203,14 @@ export function validateRegistry(root: string, options: RegistryOptions = {}): R
         `described-input requires provenance and no producer/dependencies: ${i.path}`,
       );
     }
+    const past = historicalProducer(i.producer);
     r.ok(
-      i.producer == null || file(root, script(i.producer)),
+      i.producer == null || past || file(root, script(i.producer)),
       `intermediate ${i.path}: producer ${i.producer ?? 'None'} does not exist`,
+    );
+    r.ok(
+      !('historical_producer' in i),
+      `intermediate ${i.path}: historical_producer is replaced by a producer with repository, commit and path`,
     );
     r.ok(
       typeof i.reproducible === 'boolean',
@@ -193,6 +219,10 @@ export function validateRegistry(root: string, options: RegistryOptions = {}): R
     r.ok(
       i.producer != null || !truth(i.reproducible),
       `intermediate ${i.path}: reproducible without a producer`,
+    );
+    r.ok(
+      !past || !truth(i.reproducible),
+      `intermediate ${i.path}: reproducible, but its producer exists only in history`,
     );
     for (const x of i.inputs || [])
       r.ok(known.has(x) || other.test(x), `intermediate ${i.path}: unknown input ${x}`);
@@ -260,9 +290,14 @@ export function validateRegistry(root: string, options: RegistryOptions = {}): R
         `dataset ${did}: pending but has files`,
       );
     } else {
+      const past = historicalProducer(d.producer);
       r.ok(
-        file(root, script(d.producer || '')),
+        past || file(root, script(d.producer || '')),
         `dataset ${did}: producer ${d.producer ?? 'None'} does not exist`,
+      );
+      r.ok(
+        !past || (!truth(d.rebuild) && truth(d.notRebuilt)),
+        `dataset ${did}: a producer that exists only in history cannot rebuild it (rebuild null, notRebuilt says why)`,
       );
       for (const layer of d.layers || [])
         r.ok(file(root, script(layer)), `dataset ${did}: layer ${layer} does not exist`);

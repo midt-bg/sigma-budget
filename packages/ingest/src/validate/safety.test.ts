@@ -27,7 +27,7 @@ function fixture(root: string): void {
     hash = createHash('sha256').update(seed).digest('hex');
   make(root, 'data/inputs/seed.txt', seed);
   make(root, 'data/originals.sha256', `${hash}  data/inputs/seed.txt\n`);
-  make(root, 'pipeline/budget_pipeline/example.py', 'ok = True\n');
+  make(root, 'apps/example/src/producer.ts', 'export const ok = true;\n');
   make(root, 'docs/schema.md', 'schema');
   const source = {
     schema: 1,
@@ -44,7 +44,7 @@ function fixture(root: string): void {
   };
   const base = {
     status: 'real',
-    producer: 'python -m budget_pipeline.example',
+    producer: 'apps/example/src/producer.ts',
     inputs: ['src'],
     schema: 'docs/schema.md',
     scope: 'test',
@@ -80,25 +80,113 @@ it('checks real file hashes, producer paths, ownership and tracked code', () => 
   const root = mkdtempSync(join(tmpdir(), 'sigma-registry-'));
   try {
     fixture(root);
-    const opts = { trackedPaths: ['pipeline/budget_pipeline/example.py'] };
+    const opts = { trackedPaths: ['apps/example/src/producer.ts'] };
     expect(inputs(new Context(root)).problems).toEqual([]);
     expect(validateRegistry(root, opts).errors).toEqual([]);
     make(root, 'data/inputs/seed.txt', 'changed');
     expect(inputs(new Context(root)).problems).toContain(
       'pinned input files changed: data/inputs/seed.txt',
     );
-    make(root, 'pipeline/budget_pipeline/example.py', "a = '/home/test/private/file'\n");
+    make(root, 'apps/example/src/producer.ts', "const a = '/home/test/private/file';\n");
     expect(validateRegistry(root, opts).errors).toContain(
-      "pipeline/budget_pipeline/example.py:1: an absolute path of a machine: a = '/home/test/private/file'",
+      "apps/example/src/producer.ts:1: an absolute path of a machine: const a = '/home/test/private/file';",
     );
-    expect(script("python -m 'budget_pipeline.example' --flag")).toBe(
-      'pipeline/budget_pipeline/example.py',
-    );
-    expect(() => script('python -m ../../outside')).toThrow('unsafe producer');
+    expect(script('apps/example/src/producer.ts')).toBe('apps/example/src/producer.ts');
+    for (const entry of [
+      "python -m 'budget_pipeline.example' --flag",
+      'apps/../../outside.ts',
+      'node apps/example/src/producer.ts',
+    ])
+      expect(() => script(entry)).toThrow('TypeScript module path');
     const source = JSON.parse(readFileSync(join(root, 'data/sources.yaml'), 'utf8'));
     source.sources[0].files[0].path = '../outside';
     make(root, 'data/sources.yaml', JSON.stringify(source));
     expect(() => validateRegistry(root, opts)).toThrow('unsafe registry path');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+it('names current TypeScript producers by path and retired ones by repository and commit', () => {
+  const root = mkdtempSync(join(tmpdir(), 'sigma-registry-producers-'));
+  const commit = 'c1744b700dec7ddac9af33164f170f7ea449584c';
+  const past = (extra: Record<string, unknown> = {}) => ({
+    repository: 'https://github.com/midt-bg/sigma-budget',
+    commit,
+    path: 'pipeline/budget_pipeline/extract/example.py',
+    ...extra,
+  });
+  try {
+    fixture(root);
+    make(root, 'data/inputs/frozen.json', '{}\n');
+    const opts = { trackedPaths: [] };
+    const read = (name: string) => JSON.parse(readFileSync(join(root, name), 'utf8'));
+    const edit = (
+      change: (sources: any, datasets: any) => void,
+    ): ReturnType<typeof validateRegistry> => {
+      fixture(root);
+      const sources = read('data/sources.yaml'),
+        datasets = read('data/datasets.yaml');
+      sources.intermediates.push({
+        path: 'data/inputs/frozen.json',
+        producer: past(),
+        inputs: ['src'],
+        reproducible: false,
+        pinned: false,
+      });
+      change(sources, datasets);
+      make(root, 'data/sources.yaml', JSON.stringify(sources));
+      make(root, 'data/datasets.yaml', JSON.stringify(datasets));
+      return validateRegistry(root, opts);
+    };
+    expect(edit(() => {}).errors).toEqual([]);
+    expect(
+      edit((s) => (s.sources[0].parser = 'apps/example/src/producer.ts, apps/example/src/gone.ts'))
+        .errors,
+    ).toEqual(['source src: parser apps/example/src/gone.ts does not exist']);
+    expect(edit((s) => (s.sources[0].parser = ['apps/example/src/producer.ts'])).errors).toEqual([
+      'source src: parser must be text',
+    ]);
+    expect(edit((_, d) => (d.datasets[0].producer = 'apps/example/src/gone.ts')).errors).toEqual([
+      'dataset item: producer apps/example/src/gone.ts does not exist',
+    ]);
+    expect(edit((_, d) => (d.datasets[0].layers = ['apps/example/src/gone.ts'])).errors).toEqual([
+      'dataset item: layer apps/example/src/gone.ts does not exist',
+    ]);
+    expect(edit((s) => (s.intermediates[0].reproducible = true)).errors).toEqual([
+      'intermediate data/inputs/frozen.json: reproducible, but its producer exists only in history',
+    ]);
+    expect(
+      edit((s) => {
+        s.intermediates[0].producer = null;
+        s.intermediates[0].historical_producer = 'reference/prototype/tools/example.py';
+      }).errors,
+    ).toEqual([
+      'intermediate data/inputs/frozen.json: historical_producer is replaced by a producer with repository, commit and path',
+    ]);
+    expect(edit((_, d) => (d.datasets[0].producer = past())).errors).toEqual([
+      'dataset item: a producer that exists only in history cannot rebuild it (rebuild null, notRebuilt says why)',
+    ]);
+    expect(
+      edit((_, d) =>
+        Object.assign(d.datasets[0], {
+          producer: past(),
+          rebuild: null,
+          notRebuilt: 'the producer is retired',
+        }),
+      ).errors,
+    ).toEqual([]);
+    for (const [producer, message] of [
+      ['python -m budget_pipeline.example', 'TypeScript module path'],
+      ['packages/ingest/src/production/taxes.test.ts', 'TypeScript module path'],
+      ['packages/ingest/dist/production/taxes.js', 'TypeScript module path'],
+      ['docs/schema.md', 'TypeScript module path'],
+      [past({ commit: commit.slice(0, 8) }), 'full commit'],
+      [past({ repository: 'http://github.com/midt-bg/sigma-budget' }), 'repository'],
+      [past({ path: '../outside.py' }), 'unsafe historical producer path'],
+      [past({ path: '/abs/outside.py' }), 'unsafe historical producer path'],
+      [past({ note: 'extra' }), 'exactly repository, commit and path'],
+    ] as const)
+      expect(() => edit((s) => (s.intermediates[0].producer = producer))).toThrow(message);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
