@@ -159,7 +159,12 @@ function nakratko(ctx, m) {
         delta: ok(change(debtNow, debtBefore).pct)
           ? { value: change(debtNow, debtBefore).pct, d: 1, label: 'спрямо края на 2026' }
           : null,
-        sub: ok(cellValue(debt?.pctGdp)) ? `${pct(cellValue(debt.pctGdp), 1)} от БВП` : '',
+        sub: [
+          ok(cellValue(debt?.pctGdp)) ? `${pct(cellValue(debt.pctGdp), 1)} от БВП` : '',
+          ok(debtBefore) ? `в края на ${yr(2026)}: ${bn(debtBefore)}` : '',
+        ]
+          .filter(Boolean)
+          .join(' · '),
       }),
     ],
     { label: 'Основни числа на проекта за 2027 г.' },
@@ -373,7 +378,7 @@ function kapitalovi(ctx, m) {
   const annex9 = doc.forecast?.annex9 || [];
   const municipal = annex9.find((r) => /Целева субсидия за капиталови разходи/.test(r.label));
   const municipalNow = cellValue(municipal?.cells?.['0']);
-  // S10 and S11 print the capital expenditure of one budget at a time; the ranking of all budgets is only here
+  // S10 has no column for capital expenditure and S11 prints one budget at a time; the ranking of all budgets is only here
   const inst = capexByInstitution(ctx);
   const SHOWN = 8;
   const rest = inst.list.slice(SHOWN);
@@ -470,6 +475,8 @@ function kapitalovi(ctx, m) {
   });
 }
 
+/* ---------------------------------------------------------------- 4 · Инвестиционни проекти: projectsBlocks (pages/bill-views.js) */
+
 /* ---------------------------------------------------------------- 5 · Разходи по функции */
 // S07 shows the functions of 2027–2029; the change against the expected result of 2026 is only here.
 function twoYears(ctx, list, idPrefix) {
@@ -532,7 +539,7 @@ function razhodi(ctx) {
   const low = (s) => s.charAt(0).toLowerCase() + s.slice(1);
   return block({
     id: 'b27-razhodi',
-    title: 'Разходи: за какво отиват парите',
+    title: 'Разходи по функции: за какво отиват парите',
     scope: 'kfp',
     ...draftStatus,
     source: ['budget2027'],
