@@ -198,12 +198,16 @@ test('every browser spec stays formatted, typechecked and strict in the independ
       !coverage.test.coverage.include.some((glob) => matchesGlob('../../' + file, glob)),
       file,
     );
+  }
+  // The fixtures and helpers count too: an automatic fixture there could skip every test, and a local `retries` would undo the config.
+  for (const file of globSync('tests/e2e/**/*.ts').filter(
+    (name) => name !== 'tests/e2e/playwright.config.ts',
+  ))
     assert.doesNotMatch(
       readFileSync(file, 'utf8'),
-      /\.\s*(?:only|skip|fixme)\s*\(|\btest\s*\.\s*fail\s*\(/,
-      file + ': focused, skipped or expected-failing checks are forbidden',
+      /\.\s*(?:only|skip|fixme|fail)\s*\(|\bretries\b/,
+      file + ': focused, skipped, expected-failing or retried checks are forbidden',
     );
-  }
 });
 
 test('failed e2e diagnostics are uploaded before any later test invocation can clean them', () => {

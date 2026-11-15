@@ -129,12 +129,16 @@ test('Python path rules, GET/HEAD, MIME, query, cache, missing files and compose
 
 /** Send the literal request target, without fetch/URL normalizing encoded dot segments. */
 async function rawGet(url: string, path: string) {
-  return new Promise<{ status: number; body: string }>((resolve, reject) => {
+  return new Promise<{ status: number; body: string; location?: string }>((resolve, reject) => {
     const req = request(url, { path }, (response) => {
       const chunks: Buffer[] = [];
       response.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
       response.on('end', () =>
-        resolve({ status: response.statusCode!, body: Buffer.concat(chunks).toString('utf8') }),
+        resolve({
+          status: response.statusCode!,
+          body: Buffer.concat(chunks).toString('utf8'),
+          location: response.headers.location,
+        }),
       );
       response.on('error', reject);
     });
@@ -153,6 +157,10 @@ test('plain-handler mode has no shell or HTML rename and preserves directory/fil
   mkdirSync(join(dir, 'listing'));
   writeFileSync(join(dir, 'listing/a & b.txt'), 'entry');
   writeFileSync(join(dir, 'screen.html'), 'screen');
+  // The static root of the browser checks is composed of directory symlinks (data, js).
+  const outside = directory();
+  writeFileSync(join(outside, 'core.json'), '{}');
+  symlinkSync(outside, join(dir, 'data'));
   const site = await startStaticServer(dir, 0, { fallback: false });
   try {
     for (const path of ['/missing', '/screen', '/embed/test.json', '/vedomstvo/0200/0200.01.00']) {
@@ -178,6 +186,17 @@ test('plain-handler mode has no shell or HTML rename and preserves directory/fil
       expect(await response.text()).toBe(body);
       expect(response.headers.get('content-type')).toBe('text/html');
     }
+    const linked = await fetch(site.url + '/data/core.json');
+    expect(linked.status).toBe(200);
+    expect(await linked.text()).toBe('{}');
+    expect(linked.headers.get('content-type')).toBe('application/json');
+    expect((await fetch(site.url + '/data', { redirect: 'manual' })).status).toBe(301);
+    // A trailing slash after a file name is not that file.
+    expect((await fetch(site.url + '/screen.html/')).status).toBe(404);
+    // Leading slashes collapse, so the directory redirect cannot name another host.
+    const doubled = await rawGet(site.url, '//nested?x=1');
+    expect(doubled.status).toBe(301);
+    expect(doubled.location).toBe('/nested/?x=1');
     const listing = await fetch(site.url + '/listing/');
     expect(listing.status).toBe(200);
     expect(await listing.text()).toContain('<a href="a%20%26%20b.txt">a &amp; b.txt</a>');
@@ -224,6 +243,10 @@ for (const fallback of [false, true])
         expect(response.status, path).toBe(404);
         expect(response.body).toContain('Error code: 404');
       }
+      // A name the file system refuses is a missing file, not the end of the process.
+      const refused = await rawGet(site.url, '/' + 'a'.repeat(300) + '.json');
+      expect(refused.status).toBe(404);
+      expect(refused.body).toContain('Error code: 404');
       expect(await (await fetch(site.url + '/index.html')).text()).toBe('shell'); // process survives
     } finally {
       await site.close();

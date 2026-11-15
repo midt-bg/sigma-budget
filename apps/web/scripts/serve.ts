@@ -117,102 +117,117 @@ export async function startStaticServer(
       error(501, `Unsupported method ('${req.method}')`, 'Server does not support this operation');
       return;
     }
-    const raw = (req.url ?? '/').split(/[?#]/)[0]!;
+    // http.server collapses leading slashes, so a directory redirect never names another host.
+    const url = (req.url ?? '/').replace(/^\/{2,}/, '/');
+    const raw = url.split(/[?#]/)[0]!;
     const decoded = unquote(raw);
     if (decoded.includes('\0')) {
       error(404, 'File not found', 'Nothing matches the given URI');
       return;
     }
-    const rel = posix.normalize(decoded).replace(/^\/+|\/+$/g, '') || 'index.html';
-    if (fallback) {
-      let file: string | undefined;
-      for (const candidate of [
-        join(base, rel),
-        join(base, rel + '.html'),
-        join(base, rel, 'index.html'),
-      ]) {
-        if (!contained(base, candidate)) break;
-        if (isFile(candidate)) {
-          file = candidate;
-          break;
+    // A path the file system refuses (too long a name, a symlink loop, no permission) is a missing file, as in http.server.
+    try {
+      answer();
+    } catch {
+      if (res.headersSent) res.destroy();
+      else error(404, 'File not found', 'Nothing matches the given URI');
+    }
+    function answer() {
+      const rel = posix.normalize(decoded).replace(/^\/+|\/+$/g, '') || 'index.html';
+      if (fallback) {
+        let file: string | undefined;
+        for (const candidate of [
+          join(base, rel),
+          join(base, rel + '.html'),
+          join(base, rel, 'index.html'),
+        ]) {
+          if (!contained(base, candidate)) break;
+          if (isFile(candidate)) {
+            file = candidate;
+            break;
+          }
+        }
+        if (file && extname(file) === '.html' && basename(file) !== posix.basename(decoded)) {
+          send(readFileSync(file));
+          return;
+        }
+        if (!file && !(FILE_EXT.test(raw) && !raw.startsWith('/embed/'))) {
+          send(shell!);
+          return;
         }
       }
-      if (file && extname(file) === '.html' && basename(file) !== posix.basename(decoded)) {
-        send(readFileSync(file));
+      // SimpleHTTPRequestHandler's ordinary-file path translation (symlinks allowed).
+      let ordinary = join(
+        base,
+        ...posix
+          .normalize(decoded)
+          .split('/')
+          .filter((p) => p && p !== '.' && p !== '..'),
+      );
+      if (statSync(ordinary, { throwIfNoEntry: false })?.isDirectory()) {
+        if (!raw.endsWith('/')) {
+          const suffix = url.slice(raw.length);
+          res.writeHead(301, {
+            Location: raw + '/' + suffix,
+            'Content-Length': '0',
+            ...cacheHeaders,
+          });
+          res.end();
+          return;
+        }
+        const index = ['index.html', 'index.htm'].map((name) => join(ordinary, name)).find(isFile);
+        if (index) ordinary = index;
+        else {
+          const escape = (value: string) =>
+            value
+              .replaceAll('&', '&amp;')
+              .replaceAll('<', '&lt;')
+              .replaceAll('>', '&gt;')
+              .replaceAll('"', '&quot;')
+              .replaceAll("'", '&#x27;');
+          const display = escape(decoded);
+          const items = readdirSync(ordinary)
+            .sort((a, b) =>
+              a.toLowerCase() < b.toLowerCase() ? -1 : a.toLowerCase() > b.toLowerCase() ? 1 : 0,
+            )
+            .map((name) => {
+              const path = join(ordinary, name);
+              const dir = statSync(path, { throwIfNoEntry: false })?.isDirectory();
+              const link = name + (dir ? '/' : '');
+              const label = name + (lstatSync(path).isSymbolicLink() ? '@' : dir ? '/' : '');
+              return `<li><a href="${encodeURIComponent(link).replaceAll('%2F', '/').replaceAll("'", '%27')}">${escape(label)}</a></li>`;
+            })
+            .join('\n');
+          send(
+            `<!DOCTYPE HTML>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<title>Directory listing for ${display}</title>\n</head>\n<body>\n<h1>Directory listing for ${display}</h1>\n<hr>\n<ul>\n${items ? items + '\n' : ''}</ul>\n<hr>\n</body>\n</html>\n`,
+          );
+          return;
+        }
+      } else if (raw.endsWith('/')) {
+        // SimpleHTTPRequestHandler: a trailing slash after a file name is not that file.
+        error(404, 'File not found', 'Nothing matches the given URI');
         return;
       }
-      if (!file && !(FILE_EXT.test(raw) && !raw.startsWith('/embed/'))) {
-        send(shell!);
+      if (!isFile(ordinary)) {
+        error(404, 'File not found', 'Nothing matches the given URI');
         return;
       }
+      const stat = statSync(ordinary);
+      if (!req.headers['if-none-match'] && req.headers['if-modified-since']) {
+        const since = Date.parse(req.headers['if-modified-since']);
+        if (Number.isFinite(since) && Math.floor(stat.mtimeMs / 1000) <= Math.floor(since / 1000)) {
+          res.writeHead(304, cacheHeaders);
+          res.end();
+          return;
+        }
+      }
+      res.setHeader('Last-Modified', stat.mtime.toUTCString());
+      send(
+        readFileSync(ordinary),
+        200,
+        TYPES[extname(ordinary.replace(/\.br$/, '')).toLowerCase()] ?? 'application/octet-stream',
+      );
     }
-    // SimpleHTTPRequestHandler's ordinary-file path translation (symlinks allowed).
-    let ordinary = join(
-      base,
-      ...posix
-        .normalize(decoded)
-        .split('/')
-        .filter((p) => p && p !== '.' && p !== '..'),
-    );
-    if (statSync(ordinary, { throwIfNoEntry: false })?.isDirectory()) {
-      if (!raw.endsWith('/')) {
-        const suffix = (req.url ?? '').slice(raw.length);
-        res.writeHead(301, {
-          Location: raw + '/' + suffix,
-          'Content-Length': '0',
-          ...cacheHeaders,
-        });
-        res.end();
-        return;
-      }
-      const index = ['index.html', 'index.htm'].map((name) => join(ordinary, name)).find(isFile);
-      if (index) ordinary = index;
-      else {
-        const escape = (value: string) =>
-          value
-            .replaceAll('&', '&amp;')
-            .replaceAll('<', '&lt;')
-            .replaceAll('>', '&gt;')
-            .replaceAll('"', '&quot;')
-            .replaceAll("'", '&#x27;');
-        const display = escape(decoded);
-        const items = readdirSync(ordinary)
-          .sort((a, b) =>
-            a.toLowerCase() < b.toLowerCase() ? -1 : a.toLowerCase() > b.toLowerCase() ? 1 : 0,
-          )
-          .map((name) => {
-            const path = join(ordinary, name);
-            const dir = statSync(path, { throwIfNoEntry: false })?.isDirectory();
-            const link = name + (dir ? '/' : '');
-            const label = name + (lstatSync(path).isSymbolicLink() ? '@' : dir ? '/' : '');
-            return `<li><a href="${encodeURIComponent(link).replaceAll('%2F', '/').replaceAll("'", '%27')}">${escape(label)}</a></li>`;
-          })
-          .join('\n');
-        send(
-          `<!DOCTYPE HTML>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<title>Directory listing for ${display}</title>\n</head>\n<body>\n<h1>Directory listing for ${display}</h1>\n<hr>\n<ul>\n${items ? items + '\n' : ''}</ul>\n<hr>\n</body>\n</html>\n`,
-        );
-        return;
-      }
-    }
-    if (!isFile(ordinary)) {
-      error(404, 'File not found', 'Nothing matches the given URI');
-      return;
-    }
-    const stat = statSync(ordinary);
-    if (!req.headers['if-none-match'] && req.headers['if-modified-since']) {
-      const since = Date.parse(req.headers['if-modified-since']);
-      if (Number.isFinite(since) && Math.floor(stat.mtimeMs / 1000) <= Math.floor(since / 1000)) {
-        res.writeHead(304, cacheHeaders);
-        res.end();
-        return;
-      }
-    }
-    res.setHeader('Last-Modified', stat.mtime.toUTCString());
-    send(
-      readFileSync(ordinary),
-      200,
-      TYPES[extname(ordinary.replace(/\.br$/, '')).toLowerCase()] ?? 'application/octet-stream',
-    );
   });
   await new Promise<void>((done, reject) => {
     server.once('error', reject);
