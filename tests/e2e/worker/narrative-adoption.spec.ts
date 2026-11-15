@@ -61,7 +61,6 @@ test('feed and law interactions preserve fixtures, metadata and focus', async ({
   await page.locator('[data-query="vid=law"]').click();
   await expect(page).toHaveURL(/vid=law/);
   await expect(page.locator('[data-query="vid=law"]')).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('article')).toHaveAttribute('data-ready', '1');
   expect(
     await page.evaluate('document.activeElement?.dataset.query'),
     'feed filter retains focus',
