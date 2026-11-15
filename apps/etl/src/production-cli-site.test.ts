@@ -9,7 +9,7 @@ import * as releaseBuild from '@sigma-budget/ingest/release-build';
 import * as production from '@sigma-budget/ingest/production';
 
 vi.mock('@sigma-budget/ingest/release-build', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@sigma-budget/ingest/release-build')>();
+  const actual = await importOriginal<typeof releaseBuild>();
   return {
     ...actual,
     exportCommit: vi.fn(actual.exportCommit),
@@ -19,7 +19,7 @@ vi.mock('@sigma-budget/ingest/release-build', async (importOriginal) => {
   };
 });
 vi.mock('@sigma-budget/ingest/production', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@sigma-budget/ingest/production')>();
+  const actual = await importOriginal<typeof production>();
   return {
     ...actual,
     loadProduction: vi.fn(actual.loadProduction),
