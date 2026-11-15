@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import {
   mkdtempSync,
   mkdirSync,
@@ -83,6 +84,28 @@ it('checks real file hashes, producer paths, ownership and tracked code', () => 
     const opts = { trackedPaths: ['apps/example/src/producer.ts'] };
     expect(inputs(new Context(root)).problems).toEqual([]);
     expect(validateRegistry(root, opts).errors).toEqual([]);
+    for (const place of ['parser', 'producer', 'layer', 'intermediate']) {
+      fixture(root);
+      const sources = JSON.parse(readFileSync(join(root, 'data/sources.yaml'), 'utf8'));
+      const datasets = JSON.parse(readFileSync(join(root, 'data/datasets.yaml'), 'utf8'));
+      const path = 'apps/example/src/untracked.ts';
+      make(root, path, 'export const ok = true;\n');
+      if (place === 'parser') sources.sources[0].parser = path;
+      else if (place === 'producer') datasets.datasets[0].producer = path;
+      else if (place === 'layer') datasets.datasets[0].layers = [path];
+      else
+        sources.intermediates.push({
+          path: 'data/inputs/seed.txt',
+          producer: path,
+          reproducible: true,
+        });
+      make(root, 'data/sources.yaml', JSON.stringify(sources));
+      make(root, 'data/datasets.yaml', JSON.stringify(datasets));
+      expect(validateRegistry(root, opts).errors).toContain(
+        `registry module is not tracked: ${path}`,
+      );
+    }
+    fixture(root);
     make(root, 'data/inputs/seed.txt', 'changed');
     expect(inputs(new Context(root)).problems).toContain(
       'pinned input files changed: data/inputs/seed.txt',
@@ -108,7 +131,13 @@ it('checks real file hashes, producer paths, ownership and tracked code', () => 
 });
 it('names current TypeScript producers by path and retired ones by repository and commit', () => {
   const root = mkdtempSync(join(tmpdir(), 'sigma-registry-producers-'));
-  const commit = 'c1744b700dec7ddac9af33164f170f7ea449584c';
+  const git = (args: string[]) =>
+    execFileSync('git', args, {
+      cwd: root,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }).trim();
+  let commit: string;
   const past = (extra: Record<string, unknown> = {}) => ({
     repository: 'https://github.com/midt-bg/sigma-budget',
     commit,
@@ -117,8 +146,23 @@ it('names current TypeScript producers by path and retired ones by repository an
   });
   try {
     fixture(root);
+    const historicalPath = past().path;
+    make(root, historicalPath, '# frozen producer\n');
+    git(['init', '-q']);
+    git(['add', '.']);
+    git([
+      '-c',
+      'user.name=Test',
+      '-c',
+      'user.email=test@example.invalid',
+      'commit',
+      '-qm',
+      'test fixture',
+    ]);
+    commit = git(['rev-parse', 'HEAD']);
+    rmSync(join(root, historicalPath));
     make(root, 'data/inputs/frozen.json', '{}\n');
-    const opts = { trackedPaths: [] };
+    const opts = { trackedPaths: ['apps/example/src/producer.ts'] };
     const read = (name: string) => JSON.parse(readFileSync(join(root, name), 'utf8'));
     const edit = (
       change: (sources: any, datasets: any) => void,
@@ -139,6 +183,19 @@ it('names current TypeScript producers by path and retired ones by repository an
       return validateRegistry(root, opts);
     };
     expect(edit(() => {}).errors).toEqual([]);
+    expect(edit(() => {}).notes).toBeUndefined();
+    for (const extra of [{ commit: '0'.repeat(40) }, { path: 'pipeline/missing.py' }]) {
+      const producer = past(extra);
+      for (const owner of ['intermediate', 'dataset']) {
+        const result = edit((s, d) => {
+          if (owner === 'intermediate') s.intermediates[0].producer = producer;
+          else Object.assign(d.datasets[0], { producer, rebuild: null, notRebuilt: 'retired' });
+        });
+        expect(result.errors).toEqual([
+          `historical producer commit/path does not exist: ${producer.commit}:${producer.path}`,
+        ]);
+      }
+    }
     expect(
       edit((s) => (s.sources[0].parser = 'apps/example/src/producer.ts, apps/example/src/gone.ts'))
         .errors,
@@ -187,6 +244,19 @@ it('names current TypeScript producers by path and retired ones by repository an
       [past({ note: 'extra' }), 'exactly repository, commit and path'],
     ] as const)
       expect(() => edit((s) => (s.intermediates[0].producer = producer))).toThrow(message);
+    // Real shallow Git metadata: missing older objects cannot be distinguished from typos here.
+    make(root, '.git/shallow', commit + '\n');
+    const shallow = edit((s) => (s.intermediates[0].producer = past({ commit: '0'.repeat(40) })));
+    expect(shallow.errors).toEqual([]);
+    expect(shallow.notes).toEqual([
+      'Historical producer commit/path verification skipped: shallow checkout',
+    ]);
+    rmSync(join(root, '.git'), { recursive: true });
+    const exported = edit(() => {});
+    expect(exported.errors).toEqual([]);
+    expect(exported.notes).toEqual([
+      'Historical producer commit/path verification skipped: exported tree has no Git history',
+    ]);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -266,6 +336,8 @@ it('preserves pinned inputs and other context input trees, including an aliased 
   const err = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
   try {
     fixture(root);
+    execFileSync('git', ['init', '-q'], { cwd: root });
+    execFileSync('git', ['add', 'apps/example/src/producer.ts'], { cwd: root });
     const seed = '{"value":1}\n';
     make(root, 'data/inputs/seed.json', seed);
     const pins = join(root, 'data/originals.sha256');

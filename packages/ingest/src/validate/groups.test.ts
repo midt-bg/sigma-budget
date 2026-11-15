@@ -89,15 +89,17 @@ function prepare(root: string, ops: any[]): string[] {
  * corpus baseline commit. The oracle's messages get the same replacement, and every other registry
  * rule is still compared with the donor. */
 const BASELINE = '05d6f6eeca9991468f3c94c3c9c26e87d5b0fae0';
-function modernize(root: string): [string, string][] {
+function modernize(root: string, trackedPaths: Set<string>): [string, string][] {
   const renamed = new Map<string, string>();
   const standIn = (entry: unknown): unknown => {
     if (typeof entry !== 'string' || !entry.includes('python -m ')) return entry;
     const parts = entry.split(', ').map((command) => {
       const module = /^python -m (budget_pipeline(?:\.\w+)+)(?: .*)?$/.exec(command)?.[1];
       if (!module) return command;
-      const donor = join(root, 'pipeline', module.replaceAll('.', '/') + '.py'),
+      const donorPath = `pipeline/${module.replaceAll('.', '/')}.py`,
+        donor = join(root, donorPath),
         path = `packages/wave14/${module.replaceAll('.', '/')}.ts`;
+      if (trackedPaths.has(donorPath)) trackedPaths.add(path);
       if (existsSync(donor)) {
         mkdirSync(dirname(join(root, path)), { recursive: true });
         writeFileSync(join(root, path), '');
@@ -188,9 +190,18 @@ describe('frozen Python wave14 corpus', () => {
             let result: unknown,
               expected = oracle[test.name][group];
             if (group === 'REGISTRY') {
-              const renamed = modernize(root);
+              const trackedPaths = new Set([...tracked, ...added]);
+              const renamed = modernize(root, trackedPaths);
               expected = modernExpectation(expected, renamed);
-              result = validateRegistry(root, { trackedPaths: [...tracked, ...added] });
+              const { notes, ...checked } = validateRegistry(root, {
+                trackedPaths: [...trackedPaths],
+              });
+              // This copied corpus has no .git. Check the new diagnostic separately; all donor
+              // errors, ownership and closure results retain the exact comparison below.
+              expect(notes).toEqual([
+                'Historical producer commit/path verification skipped: exported tree has no Git history',
+              ]);
+              result = checked;
             } else if (oracle[test.name][group].crash) {
               try {
                 functions[group]!(ctx);

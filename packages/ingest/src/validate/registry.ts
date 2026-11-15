@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import { join } from 'node:path';
 import { parseYaml } from '../io/registry.js';
 import { files, protectDeclaredInput, rejectInputInventory, safePath } from './context.js';
 import { pyRepr as repr, pyTruth as truth } from './checks.js';
@@ -46,14 +47,27 @@ const REPOSITORY = /^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 const COMMIT = /^[0-9a-f]{40}$/;
 /** A producer, parser or layer is a TypeScript (or JavaScript) module of this repository: an exact
  * repository-relative path under packages/ or apps/, never a command, a test, built output or a path
- * that leaves the tree. The caller checks that the file exists. */
+ * that leaves the tree. The caller checks that the file exists and is tracked. */
 export function script(entry: string): string {
   if (!entry) return entry;
   if (
     typeof entry !== 'string' ||
     !CODE_PATH.test(entry) ||
-    entry.split('/').includes('dist') ||
-    /\.test\.[a-z]+$/.test(entry)
+    entry
+      .split('/')
+      .some((part) =>
+        [
+          'dist',
+          'test',
+          'tests',
+          'fixtures',
+          '__fixtures__',
+          'node_modules',
+          'test-support',
+        ].includes(part),
+      ) ||
+    entry.startsWith('apps/web/build/') ||
+    /\.(?:test|spec)\.|\.d\.(?:ts|mts)$/.test(entry)
   )
     throw new Error(`producer must be a TypeScript module path under packages/ or apps/: ${entry}`);
   return entry;
@@ -97,6 +111,7 @@ const file = (root: string, p: string): boolean => {
 };
 export interface RegistryResult {
   errors: string[];
+  notes?: string[];
   gaps: Record<string, string[]>;
   describedInputs: string[];
   sourceExceptions: Record<string, string>;
@@ -164,6 +179,65 @@ export function validateRegistry(root: string, options: RegistryOptions = {}): R
     sources = sreg.sources as any[],
     inter = (sreg.intermediates || []) as any[],
     ds = dreg.datasets as any[];
+  let tracked: string[];
+  try {
+    tracked =
+      options.trackedPaths ??
+      execFileSync('git', ['ls-files', '-z'], { cwd: root, encoding: 'utf8' })
+        .split('\0')
+        .filter(Boolean);
+  } catch {
+    tracked = [];
+    r.errors.push('git ls-files failed: the absolute-path check needs a git checkout');
+  }
+  const trackedSet = new Set(tracked);
+  const currentModule = (entry: string): boolean => {
+    const path = script(entry);
+    if (!file(root, path)) return false;
+    r.ok(trackedSet.has(path), `registry module is not tracked: ${path}`);
+    return true;
+  };
+  const notes: string[] = [];
+  let history: 'full' | 'skipped' | 'failed' | undefined;
+  const verified = new Map<string, boolean>();
+  const git = (args: string[]) =>
+    execFileSync('git', ['--no-replace-objects', ...args], {
+      cwd: root,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+  const verifyHistorical = (past: HistoricalProducer): void => {
+    if (!history) {
+      if (!existsSync(join(root, '.git'))) {
+        history = 'skipped';
+        notes.push(
+          'Historical producer commit/path verification skipped: exported tree has no Git history',
+        );
+      } else {
+        try {
+          const shallow = git(['rev-parse', '--is-shallow-repository']);
+          if (shallow !== 'true' && shallow !== 'false') throw new Error('unknown Git history');
+          history = shallow === 'true' ? 'skipped' : 'full';
+          if (history === 'skipped')
+            notes.push('Historical producer commit/path verification skipped: shallow checkout');
+        } catch {
+          history = 'failed';
+          r.ok(false, 'cannot inspect Git history for historical producers');
+        }
+      }
+    }
+    if (history !== 'full') return;
+    const ref = `${past.commit}:${past.path}`;
+    if (!verified.has(ref)) {
+      try {
+        git(['cat-file', '-e', `${past.commit}^{commit}`]);
+        verified.set(ref, git(['cat-file', '-t', ref]) === 'blob');
+      } catch {
+        verified.set(ref, false);
+      }
+    }
+    r.ok(verified.get(ref), `historical producer commit/path does not exist: ${ref}`);
+  };
   const ids = sources.map((s) => s.id),
     ipaths = inter.map((i) => i.path),
     patterns: { pat: string; owner: string; entry: any }[] = [];
@@ -175,7 +249,7 @@ export function validateRegistry(root: string, options: RegistryOptions = {}): R
     r.ok(acquisition.has(s.acquisition), `source ${s.id}: acquisition ${repr(s.acquisition)}`);
     r.ok(s.parser == null || typeof s.parser === 'string', `source ${s.id}: parser must be text`);
     for (const p of (typeof s.parser === 'string' ? s.parser : '').split(', '))
-      if (p) r.ok(file(root, script(p)), `source ${s.id}: parser ${p} does not exist`);
+      if (p) r.ok(currentModule(p), `source ${s.id}: parser ${p} does not exist`);
     for (const f of s.files || [])
       patterns.push({ pat: f.path, owner: `source ${s.id}`, entry: f });
   }
@@ -204,8 +278,9 @@ export function validateRegistry(root: string, options: RegistryOptions = {}): R
       );
     }
     const past = historicalProducer(i.producer);
+    if (past) verifyHistorical(past);
     r.ok(
-      i.producer == null || past || file(root, script(i.producer)),
+      i.producer == null || past || currentModule(i.producer),
       `intermediate ${i.path}: producer ${i.producer ?? 'None'} does not exist`,
     );
     r.ok(
@@ -291,8 +366,9 @@ export function validateRegistry(root: string, options: RegistryOptions = {}): R
       );
     } else {
       const past = historicalProducer(d.producer);
+      if (past) verifyHistorical(past);
       r.ok(
-        past || file(root, script(d.producer || '')),
+        past || currentModule(d.producer || ''),
         `dataset ${did}: producer ${d.producer ?? 'None'} does not exist`,
       );
       r.ok(
@@ -300,7 +376,7 @@ export function validateRegistry(root: string, options: RegistryOptions = {}): R
         `dataset ${did}: a producer that exists only in history cannot rebuild it (rebuild null, notRebuilt says why)`,
       );
       for (const layer of d.layers || [])
-        r.ok(file(root, script(layer)), `dataset ${did}: layer ${layer} does not exist`);
+        r.ok(currentModule(layer), `dataset ${did}: layer ${layer} does not exist`);
       r.ok(
         truth(d.rebuild) || truth(d.notRebuilt),
         `dataset ${did}: neither rebuild nor notRebuilt`,
@@ -365,17 +441,6 @@ export function validateRegistry(root: string, options: RegistryOptions = {}): R
       o.length === 1,
       `${f} belongs to ${!o.length ? 'no dataset' : `${o.length} datasets (${o.join(', ')})`}`,
     );
-  let tracked: string[];
-  try {
-    tracked =
-      options.trackedPaths ??
-      execFileSync('git', ['ls-files', '-z'], { cwd: root, encoding: 'utf8' })
-        .split('\0')
-        .filter(Boolean);
-  } catch {
-    tracked = [];
-    r.errors.push('git ls-files failed: the absolute-path check needs a git checkout');
-  }
   for (const rel of tracked) {
     if (
       !['pipeline/', 'apps/', 'tests/', '.github/'].some((p) => rel.startsWith(p)) ||
@@ -426,6 +491,7 @@ export function validateRegistry(root: string, options: RegistryOptions = {}): R
   }
   return {
     errors: r.errors,
+    ...(notes.length ? { notes } : {}),
     gaps,
     describedInputs: inter.filter((i) => i.category === 'described-input').map((i) => i.path),
     sourceExceptions: Object.fromEntries(
