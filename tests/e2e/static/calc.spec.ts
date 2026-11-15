@@ -159,7 +159,7 @@ test('salary engine and indirect tax cases', async ({ context, page, siteURL }) 
   }
   expect
     .soft(
-      Boolean(invalid[1]!.err) && invalid[2]!.err !== null && Boolean(invalid[3]!.err),
+      Boolean(invalid[1]!.err) && invalid[2]!.err != null && Boolean(invalid[3]!.err),
       'invalid errors',
     )
     .toBe(true);
