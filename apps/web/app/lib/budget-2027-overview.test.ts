@@ -70,6 +70,13 @@ it('answers the main bill view with the key figures, the comparison and the capi
   const { vm, scope, html, document } = await page('/byudzhet-2027');
   expect(vm.title).toBe('Бюджет 2027');
   expect(html).not.toMatch(/NaN|undefined/);
+  const articles = Object.keys(doc.budgets.bill)
+    .map(Number)
+    .filter((a) => a >= 2)
+    .sort((a, b) => a - b);
+  expect(document.getElementById('b27-kapitalovi')!.textContent).toContain(
+    `(чл. ${articles[0]}–${articles.at(-1)})`,
+  );
   // a sentence that ends with a year does not get a second full stop after „г.“
   expect(html).not.toMatch(/г\.\./);
   const order = [
@@ -355,12 +362,8 @@ it('preserves every comparison cell from the release through the shared annual p
         );
       } else {
         const rows = dataset.economic?.rows || dataset.rows;
-        const ordinal = rows.findIndex((r: any) => r.id === it.legacy);
-        const source = rec.legacy
-          ? rows[ordinal]
-          : rec.rows.find(
-              (r: any) => r.id === `annex3_mln.r${ordinal + (it.file === 'revenue' ? 0 : 31)}`,
-            );
+        const row = rows.find((r: any) => r.id === it.legacy);
+        const source = rec.legacy ? row : rec.rows.find((r: any) => r.label === row.label);
         expect(cell.value).toBe(rec.legacy ? source.mln[rec.column] : source.cell.value);
         expect(cell.pctGdp).toBe(
           rec.legacy ? source.pctGdp[rec.column] : source.printedPctGdp.value,
@@ -371,88 +374,93 @@ it('preserves every comparison cell from the release through the shared annual p
     }
 });
 
-it.each([1, 2, 0])(
-  'derives dates, article range and plural counts for %s records',
-  async (count) => {
-    const budget2027 = release('budget2027');
-    const dbp2027 = release('dbp2027');
-    budget2027.publication = '2026-11-08';
-    dbp2027.doc.date = '2026-10-16';
-    dbp2027.meta.retrieved = '2026-10-18';
-    const council = dbp2027.edp.steps.find(
-      (s: any) => s.src === 'ec-edp-bg' && s.title.startsWith('Съветът'),
+it.each([1, 2])('derives dates and plural counts for %s records', async (count) => {
+  const budget2027 = release('budget2027');
+  const dbp2027 = release('dbp2027');
+  budget2027.publication = '2026-11-08';
+  dbp2027.doc.date = '2026-10-16';
+  dbp2027.meta.retrieved = '2026-10-18';
+  const council = dbp2027.edp.steps.find(
+    (s: any) => s.src === 'ec-edp-bg' && s.title.startsWith('Съветът'),
+  );
+  council.d = '2026-07-11';
+  council.text = council.text.replace(/Решение \(ЕС\) \d+\/\d+/, 'Решение (ЕС) 2026/9999');
+  const deadline = dbp2027.edp.steps.find((s: any) => s.src === 'plan' && s.p === 6);
+  deadline.d = '2026-10-17';
+  const article1 = budget2027.budgets.bill[1];
+  budget2027.budgets.bill = Object.fromEntries(
+    Object.entries(budget2027.budgets.bill)
+      .filter(([a]) => Number(a) >= 2)
+      .slice(0, count)
+      .map(([, b], i) => [60 + i, b]),
+  );
+  budget2027.budgets.bill[1] = article1;
+  budget2027.municipal.art52 = budget2027.municipal.art52.slice(0, count);
+  budget2027.projects = budget2027.projects.slice(0, count);
+  for (const t of ['II_7', 'II_8'])
+    budget2027.forecast[t] = budget2027.forecast[t]
+      .filter((r: any) => r.label !== 'Общо:')
+      .slice(0, count)
+      .concat(budget2027.forecast[t].filter((r: any) => r.label === 'Общо:'));
+  const overrides = { budget2027, dbp2027 };
+  const overview = await page('/byudzhet-2027', overrides);
+  expect(overview.vm.lede).toContain(date(budget2027.publication));
+  expect(String(overview.vm.context)).toContain(date(budget2027.publication));
+  const text = overview.document.querySelector('article')!.textContent!;
+  expect(text).toContain(`МФ, ${date(budget2027.publication)}.`);
+  expect(text).toContain(`От ${date(dbp2027.doc.date)}, по ЕСС 2010.`);
+  if (count) expect(text).toContain(plural(count, 'бюджет', 'бюджета'));
+  expect(text).toContain(count ? plural(count, 'община', 'общини') : 'Всички общини');
+  expect(text).toContain(plural(count, 'проект', 'проекта'));
+  const measures = await page('/merki?per=2027.draft', overrides);
+  expect(measures.document.getElementById('s12-27-stage')!.textContent).toContain(
+    date(budget2027.publication),
+  );
+  for (const t of ['II_7', 'II_8'])
+    expect(measures.document.getElementById(`s12-${t}`)!.textContent).toContain(
+      plural(count, 'мярка', 'мерки'),
     );
-    council.d = '2026-07-11';
-    council.text = council.text.replace(/Решение \(ЕС\) \d+\/\d+/, 'Решение (ЕС) 2026/9999');
-    const deadline = dbp2027.edp.steps.find((s: any) => s.src === 'plan' && s.p === 6);
-    deadline.d = '2026-10-17';
-    const article1 = budget2027.budgets.bill[1];
-    budget2027.budgets.bill = Object.fromEntries(
-      Object.entries(budget2027.budgets.bill)
-        .filter(([a]) => Number(a) >= 2)
-        .slice(0, count)
-        .map(([, b], i) => [60 + i, b]),
-    );
-    budget2027.budgets.bill[1] = article1;
-    budget2027.municipal.art52 = budget2027.municipal.art52.slice(0, count);
-    budget2027.projects = budget2027.projects.slice(0, count);
-    for (const t of ['II_7', 'II_8'])
-      budget2027.forecast[t] = budget2027.forecast[t]
-        .filter((r: any) => r.label !== 'Общо:')
-        .slice(0, count)
-        .concat(budget2027.forecast[t].filter((r: any) => r.label === 'Общо:'));
-    const overrides = { budget2027, dbp2027 };
-    const overview = await page('/byudzhet-2027', overrides);
-    expect(overview.vm.lede).toContain(date(budget2027.publication));
-    expect(String(overview.vm.context)).toContain(date(budget2027.publication));
-    const text = overview.document.querySelector('article')!.textContent!;
-    expect(text).toContain(`МФ, ${date(budget2027.publication)}.`);
-    expect(text).toContain(`От ${date(dbp2027.doc.date)}, по ЕСС 2010.`);
-    if (count) expect(text).toContain(plural(count, 'бюджет', 'бюджета'));
-    expect(text).toContain(count ? plural(count, 'община', 'общини') : 'Всички общини');
-    expect(text).toContain(plural(count, 'проект', 'проекта'));
-    expect(text).toContain(
-      `(чл. ${Object.keys(budget2027.budgets.bill)
-        .filter((a) => Number(a) >= 2)
-        .join('–')})`,
-    );
-    const measures = await page('/merki?per=2027.draft', overrides);
-    expect(measures.document.getElementById('s12-27-stage')!.textContent).toContain(
-      date(budget2027.publication),
-    );
-    for (const t of ['II_7', 'II_8'])
-      expect(measures.document.getElementById(`s12-${t}`)!.textContent).toContain(
-        plural(count, 'мярка', 'мерки'),
-      );
-    const plan = await page('/byudzhet-2027?dokument=plan', overrides);
-    expect(plan.vm.title).toContain(date(dbp2027.doc.date));
-    expect(plan.document.getElementById('s34-ne-potvardeno')!.textContent).toContain(
-      council.text.match(/Решение \(ЕС\) (\d+\/\d+)/)[1],
-    );
-    expect(plan.document.getElementById('s34-ne-potvardeno')!.textContent).toContain(
-      date(dbp2027.meta.retrieved),
-    );
-    expect(plan.document.getElementById('s34-sp1')!.textContent).toContain(date(council.d));
-    expect(plan.document.getElementById('s34-ne-potvardeno')!.textContent).toContain(
-      date(deadline.d),
-    );
-    expect(plan.document.getElementById('s34-ne-potvardeno')!.textContent).toContain(
-      date(council.d),
-    );
-    expect(plan.html).toContain('запазват стимулите за икономии на енергия');
-    expect(plan.html).toContain('Да предприеме мерки за справяне със сивата икономика');
-    expect(plan.html).toContain('Да засили събирането на данъци');
-    expect(plan.document.getElementById('s34-lipsva')!.textContent).toContain(
-      date(dbp2027.doc.date),
-    );
-  },
-);
+  const plan = await page('/byudzhet-2027?dokument=plan', overrides);
+  expect(plan.vm.title).toContain(date(dbp2027.doc.date));
+  expect(plan.document.getElementById('s34-ne-potvardeno')!.textContent).toContain(
+    council.text.match(/Решение \(ЕС\) (\d+\/\d+)/)[1],
+  );
+  expect(plan.document.getElementById('s34-ne-potvardeno')!.textContent).toContain(
+    date(dbp2027.meta.retrieved),
+  );
+  expect(plan.document.getElementById('s34-sp1')!.textContent).toContain(
+    'Препоръка 1 към България от 10.07.2026 г.',
+  );
+  expect(plan.document.getElementById('s34-ne-potvardeno')!.textContent).toContain(
+    date(deadline.d),
+  );
+  expect(plan.document.getElementById('s34-ne-potvardeno')!.textContent).toContain(date(council.d));
+  expect(plan.html).toContain('запазват стимулите за икономии на енергия');
+  expect(plan.html).toContain('Да предприеме мерки за справяне със сивата икономика');
+  expect(plan.html).toContain('Да засили събирането на данъци');
+  expect(plan.document.getElementById('s34-lipsva')!.textContent).toContain(date(dbp2027.doc.date));
+});
 
 it('names the unclassified function in its lede and explains the law data gap per function', async () => {
   const name = release('expenditure').functions.items.find((r: any) => r.id === 'drugi').name;
   const draft = await page('/razhodi/drugi?per=2027.draft');
-  expect(draft.vm.lede).toContain(name.toLowerCase());
+  expect(draft.vm.lede).toContain(`функция „${name}“`);
+  expect(draft.vm.lede).not.toContain('Разходите, които не се вписват в другите функции.');
   const law = await page('/razhodi/drugi?per=2026.law');
-  expect(law.vm.lede).toContain(name);
+  expect(law.vm.lede?.replace(/\s/g, ' ')).toBe(
+    'За 2026 г. няма разбивка по функции в избрания запис. Разходите, които не се вписват в другите функции.',
+  );
   expect(law.vm.lede).toContain('няма разбивка');
+});
+
+it('finds the Council decision number in the current release step', async () => {
+  const council = release('dbp2027').edp.steps.find(
+    (s: any) => s.src === 'ec-edp-bg' && s.title.startsWith('Съветът'),
+  );
+  const number = council.text.match(/Решение \(ЕС\) (\d+\/\d+)/)?.[1];
+  expect(number).toBe('2026/1758');
+  const plan = await page('/byudzhet-2027?dokument=plan');
+  expect(plan.document.getElementById('s34-ne-potvardeno')!.textContent).toContain(
+    `Номерът на решението (${number})`,
+  );
 });

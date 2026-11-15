@@ -331,6 +331,10 @@ function capexByInstitution(ctx) {
 
 function kapitalovi(ctx, m) {
   const doc = ctx.data.budget2027;
+  const articles = institutions(doc)
+    .map((i) => i.article)
+    .sort((a, b) => a - b);
+  const articleRange = `${articles[0]}–${articles.at(-1)}`;
   const series = CAPEX_YEARS.map((k) => ({ key: k, cell: cellOf(ctx.data, 'exp.capex', k) }));
   const kind = (k) => periodByKey(k).status;
   const pick = (test) =>
@@ -476,13 +480,7 @@ function kapitalovi(ctx, m) {
         unitLabel: 'млн. €',
       })}
       <p class="b27-note small muted">
-        Редът „Капиталови разходи“ от бюджета на всяко ведомство по законопроекта (чл. ${institutions(
-          doc,
-        )
-          .map((i) => i.article)
-          .sort((a, b) => a - b)
-          .filter((a, i, all) => i === 0 || i === all.length - 1)
-          .join('–')}).
+        Редът „Капиталови разходи“ от бюджета на всяко ведомство по законопроекта (чл. ${articleRange}).
         ${ok(inst.total) ? html`Сборът е ${bn(inst.total / 1000)}.` : ''}
         <a href="${to(ctx, 's34-projects')}">Всички инвестиционни проекти</a> ·
         <a href="${ctx.href('S10', {}, { per: DRAFT })}">Бюджетите на ведомствата</a>
@@ -647,6 +645,7 @@ function vedomstva(ctx) {
 // The rest of the draft has its own screens: one card for each, with one or two figures of 2027 and a link that keeps the 2027 period.
 const mlnSigned = (v) => `${signed(v)}${NBSP}млн.${NBSP}€`;
 function more(ctx, doc, b) {
+  const plan = ctx.data.dbp2027?.doc?.date;
   const per = { per: DRAFT };
   const say = (text, ...values) => (values.every(ok) ? text : '');
   // revenue: the biggest source (S06 shows them all and 2028–2029)
@@ -731,7 +730,7 @@ function more(ctx, doc, b) {
       ctx.href('S34', {}, { dokument: 'plan' }),
       'Предходна публикация',
       'Проект на бюджетен план до ЕК',
-      `От ${date(ctx.data.dbp2027?.doc?.date)}, по ЕСС 2010.`,
+      plan ? `От ${date(plan)}, по ЕСС 2010.` : 'По ЕСС 2010.',
     ],
   ];
   return html`<section class="b27-more" id="b27-more" aria-labelledby="b27-more-h">
