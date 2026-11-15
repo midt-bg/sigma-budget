@@ -6,7 +6,9 @@ datasets:
   status: real
   files:
   - data/release/outlook.json
-  producer: packages/ingest/src/build/fiscal-annual.ts
+  producer: packages/ingest/src/build/fiscal.ts
+  layers:
+  - packages/ingest/src/build/fiscal-annual.ts
   inputs:
   - data/originals/asbp/asbp_tables.json
   - data/cache/research/mf-umtbf-2026-2028/extracts/pdf_pages_clean.json
@@ -58,7 +60,9 @@ datasets:
   status: real
   files:
   - data/release/revenue.json
-  producer: packages/ingest/src/build/fiscal-annual.ts
+  producer: packages/ingest/src/build/fiscal.ts
+  layers:
+  - packages/ingest/src/build/fiscal-annual.ts
   inputs:
   - data/originals/asbp/asbp_tables.json
   - data/inputs/budget_forecast_2027.json
@@ -79,7 +83,9 @@ datasets:
   status: real
   files:
   - data/release/expenditure.json
-  producer: packages/ingest/src/build/fiscal-annual.ts
+  producer: packages/ingest/src/build/fiscal-expenditure.ts
+  layers:
+  - packages/ingest/src/build/fiscal-annual.ts
   inputs:
   - data/originals/asbp/asbp_tables.json
   - data/inputs/cofog_bg.json
@@ -434,6 +440,8 @@ datasets:
   files:
   - data/release/glossary.json
   producer: packages/ingest/src/build/editorial.ts
+  layers:
+  - packages/ingest/src/build/aggregation-layers.ts
   inputs:
   - data/inputs/editorial/glossary.json
   schema: docs/data-spec.md
