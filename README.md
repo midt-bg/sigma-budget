@@ -69,17 +69,21 @@ Playwright Test конфигурацията е в `tests/e2e/playwright.config.
 
 ```bash
 PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e
-# Само старите hash адреси, без Worker:
+# Статични проверки на старите hash адреси, без Worker:
 PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers pnpm test:e2e --project=static
 # Самостоятелен статичен сървър с path fallback:
 node apps/web/scripts/serve.ts --port 8000
 ```
 
-Проектът `worker` включва `boot.spec.ts`, `security-headers.spec.ts`, `narrative-adoption.spec.ts` и `period-matrix.spec.ts`. Проектът `static` изпълнява `redirects.spec.ts` върху автоматично сглобените symlinks в `tmp/static-site`. Данните се четат от `data/release`, JavaScript - от `apps/web/build/client/js`; необходим е предварителен build. `serve.py` и `static_assets.py` остават за все още непренесените Python проверки.
+Проектът `worker` включва boot, security headers, narrative adoption, period matrix и новите `metadata-adoption.spec.ts`, `public-bill-lists.spec.ts`, `share-units.spec.ts`, `react-bridge.spec.ts`. Отделният `react-bridge-topbar.spec.ts` е ръчен follow-up: пълното обхождане на Worker проекта го включва и отчита известния отказ за премахнатия от React image preload. CI използва явни файлови филтри и не включва този случай. Проектът `static` изпълнява `redirects.spec.ts` върху автоматично сглобените symlinks в `tmp/static-site`. Данните се четат от `data/release`, JavaScript - от `apps/web/build/client/js`; необходим е предварителен build. `serve.py` и `static_assets.py` остават за все още непренесените Python проверки.
 
-При пренос настройката за service worker се задава изрично според всеки оригинален context. `narrative-adoption.spec.ts` използва `serviceWorkers: 'allow'`, останалите четири спецификации - `'block'`. `metadata_adoption.py` и някои contexts в `overlap.py` и `light_contrast.py` също допускат service worker; общата настройка не трябва да подменя тези случаи. Статичният fixture използва `startStaticServer(directory, 0, { fallback: false })`, както обикновения Python файлов сървър: липсващ адрес връща 404 и няма `.html` преименуване. CLI сървърът запазва path fallback; отделен тест може да го включи само с обяснена причина. Конфигурацията задава по подразбиране `tmp/pw-browsers`, без да заменя вече зададен `PLAYWRIGHT_BROWSERS_PATH`.
+При пренос настройката за service worker се задава изрично според всеки оригинален context. `narrative-adoption.spec.ts` използва `serviceWorkers: 'allow'`, останалите четири спецификации - `'block'`. `metadata-adoption.spec.ts` и някои contexts в `overlap.py` и `light_contrast.py` също допускат service worker; общата настройка не трябва да подменя тези случаи. Статичният fixture използва `startStaticServer(directory, 0, { fallback: false })`, както обикновения Python файлов сървър: липсващ адрес връща 404 и няма `.html` преименуване. CLI сървърът запазва path fallback; отделен тест може да го включи само с обяснена причина. Конфигурацията задава по подразбиране `tmp/pw-browsers`, без да заменя вече зададен `PLAYWRIGHT_BROWSERS_PATH`.
 
 Останалите браузърни проверки са `calc_check.py`, `share_check.py`, `accept.py` и `motion.py` в `tests/e2e/`. Те използват временния статичен сайт. `overlap.py` проверява припокриванията. Очакваните числа се четат от текущите данни чрез `expect.py`. Интеграционните проверки `node tests/release/release_check.mjs` и `node tests/release/restore_drill.mjs` изискват Node, pnpm и инсталираните зависимости; Worker-ът се пуска от самите проверки.
+
+Ръчните site инструменти са TypeScript. `node apps/web/scripts/make-images.ts --out tmp/images` генерира `og.png`, `icon-512.png`, `icon-192.png`; без `--out` се записва в `apps/web/public`. Нужни са същият Chromium и Charter/XCharter. При преноса и трите PNG са байтово идентични със стария инструмент и tracked файловете, без нова зависимост.
+
+`node apps/web/scripts/hrefs.ts [--all]` проверява literal hash адресите в release данните и JS. Правилото е точно това на Python (премахват се само редове с начален `//`); при текущия код изходът е 1 за три примерни адреса в коментари. Vitest пази лексикалното правило, а пълното обхождане остава ръчно до решение за тези коментари. `node apps/web/scripts/ssr-parity.ts --dist dist --url http://127.0.0.1:8814` сравнява HTML документите; `--baseline-url http://127.0.0.1:8813` сравнява status и bytes за всички runtime samples между два Worker-а. Parser/CLI договорът се проверява с Vitest в `pnpm test`. Подробности и известни находки: [CI проверки](docs/ci-test-gates.md).
 
 ## Данни и издания
 

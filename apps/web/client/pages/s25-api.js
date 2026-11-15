@@ -152,7 +152,7 @@ function codes(set) {
   const part = isMulti(set) ? set.parts[0] : null;
   const url = C.fileUrl(part ? part.file : set.file);
   const name = C.dlName(set, part);
-  const json = set.ext === 'json';
+  const json = part ? /\.json$/i.test(part.file) : set.ext === 'json';
   const curl = ['# Свали файла', `curl -sSf -o ${name} "${url}"`];
   if (json) curl.push('', '# Покажи блока meta (нужен е jq)', `jq .meta ${name}`);
   const py = json
