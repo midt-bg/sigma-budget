@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures.ts';
+import { test, expect, enableHashRoutes } from '../fixtures.ts';
 import { measureLayout } from '../overlap-probes.ts';
 import type { BrowserContext } from '@playwright/test';
 test.use({ serviceWorkers: 'allow' });
@@ -9,69 +9,67 @@ test('overlap quick: all routes, sticky positions, print and extra samples', asy
 }) => {
   test.setTimeout(600_000);
   const base = siteURL + '/index.html';
-  await page.addInitScript(() => {
-    window.__HASH_ROUTES__ = true;
-  });
+  await enableHashRoutes(page);
   await page.goto(base);
-  await page.waitForTimeout(800);
+  await expect(page.locator('article.page')).toHaveAttribute('data-ready', '1');
   const routes: { id: string; bare?: boolean; samples: string[] }[] = (
     await page.evaluate(() => window.__ROUTES__)
-  ).filter((r: { bare?: boolean }) => !r.bare);
+  ).filter((route: { bare?: boolean }) => !route.bare);
+  expect(routes.length).toBeGreaterThanOrEqual(26);
   await page.close();
-  for (const r of routes) if (!r.samples.length) r.samples = ['#/nyama-takava-stranitsa'];
-  const ctx = async (w: number) => {
-    const c = await browser.newContext({
+  for (const route of routes)
+    if (!route.samples.length) route.samples = ['#/nyama-takava-stranitsa'];
+  const createContext = async (width: number) => {
+    const context = await browser.newContext({
       serviceWorkers: 'block',
       reducedMotion: 'reduce',
-      hasTouch: w < 700,
-      viewport: { width: w, height: w >= 700 ? 900 : 844 },
+      hasTouch: width < 700,
+      viewport: { width: width, height: width >= 700 ? 900 : 844 },
     });
-    await c.addInitScript(() => {
-      window.__HASH_ROUTES__ = true;
-    });
-    return c;
+    await enableHashRoutes(context);
+    return context;
   };
-  const load = async (c: BrowserContext, h: string, errors: string[]) => {
-    const pg = await c.newPage();
-    pg.on('console', (m) => {
-      if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 140));
+  const load = async (context: BrowserContext, h: string, errors: string[]) => {
+    const page = await context.newPage();
+    page.on('console', (message) => {
+      if (message.type() === 'error') errors.push('console: ' + message.text().slice(0, 140));
     });
-    pg.on('pageerror', (e) => errors.push('pageerror: ' + String(e).slice(0, 140)));
-    pg.on('requestfailed', (r) => errors.push('request: ' + r.url().slice(-60)));
-    await pg.goto(base + h);
-    try {
-      await pg.waitForSelector("article.page[data-ready='1']", { timeout: 9000 });
-    } catch {
-      errors.push('the screen never became ready');
-    }
-    await pg.waitForTimeout(350);
-    return pg;
+    page.on('pageerror', (e) => errors.push('pageerror: ' + String(e).slice(0, 140)));
+    page.on('requestfailed', (route) => errors.push('request: ' + route.url().slice(-60)));
+    await page.goto(base + h);
+    await expect(page.locator('article.page')).toHaveAttribute('data-ready', '1', {
+      timeout: 9000,
+    });
+    await page.evaluate(() => document.fonts.ready.then(() => undefined));
+    return page;
   };
-  for (const w of [1440, 1241, 390]) {
-    const c = await ctx(w);
+  for (const width of [1440, 1241, 390]) {
+    const context = await createContext(width);
     try {
-      for (const r of routes)
-        await test.step(`${w} ${r.id}`, async () => {
+      for (const route of routes)
+        await test.step(`${width} ${route.id}`, async () => {
           const errors: string[] = [],
-            pg = await load(c, r.samples[0]!, errors);
+            page = await load(context, route.samples[0]!, errors);
           try {
-            expect.soft(await pg.evaluate(measureLayout), `${w} ${r.id}: banner`).toEqual([]);
-            expect.soft(errors, `${w} ${r.id}: errors`).toEqual([]);
-            for (const frac of w === 390 ? [0.33, 0.66, 1] : [1]) {
-              await pg.evaluate(
+            expect
+              .soft(await page.evaluate(measureLayout), `${width} ${route.id}: banner`)
+              .toEqual([]);
+            expect.soft(errors, `${width} ${route.id}: errors`).toEqual([]);
+            for (const frac of width === 390 ? [0.33, 0.66, 1] : [1]) {
+              await page.evaluate(
                 (f) => window.scrollTo(0, (document.body.scrollHeight - innerHeight) * f),
                 frac,
               );
-              await pg.waitForTimeout(140);
-              const findings: { k: string; m: string }[] = await pg.evaluate(measureLayout);
+              await expect(page.locator('article.page')).toBeVisible();
+              const findings: { k: string; m: string }[] = await page.evaluate(measureLayout);
               expect
                 .soft(
                   findings.filter((f) => ['overlap', 'outside'].includes(f.k)),
-                  `${w} ${r.id}: scroll ${frac}`,
+                  `${width} ${route.id}: scroll ${frac}`,
                 )
                 .toEqual([]);
             }
-            const under = await pg.evaluate(() => {
+            const under = await page.evaluate(() => {
               const t = document.getElementById('tabbar');
               if (!t || getComputedStyle(t).display === 'none') return null;
               const top = t.getBoundingClientRect().top;
@@ -86,36 +84,36 @@ test('overlap quick: all routes, sticky positions, print and extra samples', asy
               });
               return bad.length ? bad[0]!.textContent!.trim().slice(0, 24) : null;
             });
-            expect.soft(under, `${w} ${r.id}: under tabbar`).toBeNull();
-            if (w === 390) {
-              await pg.emulateMedia({ media: 'print' });
-              await pg.waitForTimeout(120);
-              const ph = await pg.evaluate(() => [
+            expect.soft(under, `${width} ${route.id}: under tabbar`).toBeNull();
+            if (width === 390) {
+              await page.emulateMedia({ media: 'print' });
+              await expect(page.locator('h1')).toBeVisible();
+              const printLayout = await page.evaluate(() => [
                 document.documentElement.scrollWidth - document.documentElement.clientWidth,
                 !!document.querySelector('h1') &&
                   document.querySelector('h1')!.getBoundingClientRect().height > 0,
               ]);
-              expect.soft(ph[0], r.id + ': print overflow').toBeLessThanOrEqual(1);
-              expect.soft(ph[1], r.id + ': print heading').toBe(true);
+              expect.soft(printLayout[0], route.id + ': print overflow').toBeLessThanOrEqual(1);
+              expect.soft(printLayout[1], route.id + ': print heading').toBe(true);
             }
           } finally {
-            await pg.close();
+            await page.close();
           }
         });
     } finally {
-      await c.close();
+      await context.close();
     }
   }
-  const c = await ctx(1280);
+  const context = await createContext(1280);
   try {
-    for (const r of routes)
-      for (const h of r.samples.slice(1))
-        await test.step(r.id + ' ' + h, async () => {
+    for (const route of routes)
+      for (const h of route.samples.slice(1))
+        await test.step(route.id + ' ' + h, async () => {
           const errors: string[] = [],
-            pg = await load(c, h, errors);
+            page = await load(context, h, errors);
           try {
             expect.soft(errors, h + ': errors').toEqual([]);
-            const findings: { k: string; m: string }[] = await pg.evaluate(measureLayout);
+            const findings: { k: string; m: string }[] = await page.evaluate(measureLayout);
             expect
               .soft(
                 findings.filter((f) => ['overlap', 'hscroll'].includes(f.k)),
@@ -123,10 +121,10 @@ test('overlap quick: all routes, sticky positions, print and extra samples', asy
               )
               .toEqual([]);
           } finally {
-            await pg.close();
+            await page.close();
           }
         });
   } finally {
-    await c.close();
+    await context.close();
   }
 });

@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures.ts';
+import { test, expect, enableHashRoutes } from '../fixtures.ts';
 import { VIEWS, readControls, visibleShareIds } from '../share-probes.ts';
 import type { Page } from '@playwright/test';
 test.use({
@@ -7,19 +7,17 @@ test.use({
   reducedMotion: 'reduce',
 });
 async function settle(page: Page) {
-  await page.waitForSelector('h1', { timeout: 8000 });
-  await page.waitForTimeout(700);
+  await expect(page.locator('h1')).toBeVisible({ timeout: 8000 });
+  await expect(page.locator('article.page')).toHaveAttribute('data-ready', '1');
 }
 const linkFor = async (id: string): Promise<string | null> => {
-  const m = await import(new URL('./js/share.js', location.href).href);
-  const s = m.get(id);
-  return s ? m.linkFor(s) : null;
+  const share = await import(new URL('./js/share.js', location.href).href);
+  const block = share.get(id);
+  return block ? share.linkFor(block) : null;
 };
 for (const view of VIEWS)
   test(`shared view ${view}`, async ({ context, page, browser, siteURL }) => {
-    await context.addInitScript(() => {
-      window.__HASH_ROUTES__ = true;
-    });
+    await enableHashRoutes(context);
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(String(e).slice(0, 120)));
     const base = siteURL + '/index.html';
@@ -31,9 +29,9 @@ for (const view of VIEWS)
     const want = new URLSearchParams(view.split('?')[1] ?? '');
     for (const id of ids.slice(0, 6)) {
       const link: string | null = await page.evaluate(linkFor, id);
-      expect.soft(Boolean(link), `${view} [${id}]: link`).toBe(true);
-      if (!link) continue;
-      const hash = link.split('#')[1]!;
+      expect(link, `${view} [${id}]: link`).toBeTruthy();
+      if (!link) throw new Error('Missing shared link');
+      const hash = link.slice(link.indexOf('#') + 1);
       const query = new URLSearchParams(hash.split('?')[1] ?? '');
       for (const [key, value] of want)
         expect.soft(query.get(key), `${view} [${id}] ?${key}`).toBe(value);
@@ -43,9 +41,7 @@ for (const view of VIEWS)
         reducedMotion: 'reduce',
       });
       try {
-        await fresh.addInitScript(() => {
-          window.__HASH_ROUTES__ = true;
-        });
+        await enableHashRoutes(fresh);
         const opened = await fresh.newPage();
         await opened.goto(base + '#' + hash);
         await settle(opened);
@@ -60,7 +56,7 @@ for (const view of VIEWS)
       const button = page.locator(`[data-share="${ids[0]}"]`).first();
       await button.scrollIntoViewIfNeeded();
       await button.click();
-      await page.waitForSelector('[data-act]', { timeout: 3000 });
+      await expect(page.locator('[data-act]').first()).toBeVisible({ timeout: 3000 });
       const acts: string[] = await page.evaluate(() =>
         [...document.querySelectorAll<HTMLElement>('[data-act]')].map((e) => e.dataset.act!),
       );
@@ -77,16 +73,14 @@ for (const view of VIEWS)
     expect.soft(errors, `${view}: script errors`).toEqual([]);
   });
 test('tax sharing never carries personal inputs', async ({ context, page, siteURL }) => {
-  await context.addInitScript(() => {
-    window.__HASH_ROUTES__ = true;
-  });
+  await enableHashRoutes(context);
   await page.goto(siteURL + '/index.html#/danaci?brutno=3000&zaplata=3000&demo=1');
   await settle(page);
   await page
     .locator('#s18-brutno, input[inputmode=decimal], input[type=text]')
     .first()
     .fill('3456');
-  await page.waitForTimeout(500);
+  await expect(page.locator('#s18-gross')).toHaveValue('3456');
   expect.soft(await page.evaluate(() => location.hash)).not.toContain('3456');
   const ids: string[] = await page.evaluate(visibleShareIds);
   for (const id of ids) {

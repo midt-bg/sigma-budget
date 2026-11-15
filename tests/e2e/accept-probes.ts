@@ -4,21 +4,22 @@ export const readComparisonGrid = () => {
   const out: Record<string, string[]> = {};
   g.querySelectorAll('tbody tr, tfoot tr').forEach((tr) => {
     const th = tr.querySelector('th');
-    const name = (th?.firstChild?.textContent ?? tr.children[0]?.textContent ?? '').trim();
+    const name = th?.textContent?.trim();
+    if (!name) throw new Error('Comparison row has no header text');
     out[name] = [...tr.children].map((c) => (c.textContent ?? '').replace(/\s+/g, ' ').trim());
   });
   return out;
 };
 export const ROUTES = [
-  ['home', '#/'],
-  ['izpalnenie', '#/izpalnenie'],
-  ['izp-2024', '#/izpalnenie?g1=2024&g2=2025&obhvat=eu&rez=mesec'],
-  ['razhodi', '#/razhodi'],
-  ['prihodi', '#/prihodi'],
-  ['danaci', '#/danaci'],
-  ['tarsene', '#/tarsene?q=%D0%94%D0%94%D0%A1'],
-  ['izp-budzheti', '#/izpalnenie/byudzheti'],
-  ['vedomstva', '#/vedomstva'],
+  ['home', '#/', 'S01'],
+  ['izpalnenie', '#/izpalnenie', 'S15'],
+  ['izp-2024', '#/izpalnenie?g1=2024&g2=2025&obhvat=eu&rez=mesec', 'S15'],
+  ['razhodi', '#/razhodi', 'S07'],
+  ['prihodi', '#/prihodi', 'S06'],
+  ['danaci', '#/danaci', 'S18'],
+  ['tarsene', '#/tarsene?q=%D0%94%D0%94%D0%A1', 'S28'],
+  ['izp-budzheti', '#/izpalnenie/byudzheti', 'S15'],
+  ['vedomstva', '#/vedomstva', 'S10'],
 ];
 export const measureTouchTargets = () => {
   const sel =

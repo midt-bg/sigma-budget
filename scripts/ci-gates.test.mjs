@@ -372,11 +372,3 @@ test('static browser gates run in order and use explicit context settings', () =
   const oracle = readFileSync('tests/e2e/expected.ts', 'utf8');
   assert.doesNotMatch(oracle, /from ['"][^'"]*(?:apps\/web|packages\/ingest)/);
 });
-
-test('release expectations reject missing and invalid numbers', async () => {
-  const { releaseNumber } = await import('../tests/e2e/expected.ts');
-  for (const value of [null, undefined, '', ' ', '0x10', false, NaN, Infinity])
-    assert.throws(() => releaseNumber(value));
-  assert.equal(releaseNumber('0.000'), 0);
-  assert.equal(releaseNumber('-3.075'), -3.075);
-});

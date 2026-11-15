@@ -9,41 +9,54 @@ type Execution = {
 export const execution: Execution = JSON.parse(
   readFileSync(new URL('../../data/release/execution.json', import.meta.url), 'utf8'),
 );
-export function releaseNumber(value: unknown): number {
-  if (
-    (typeof value !== 'number' && typeof value !== 'string') ||
-    (typeof value === 'string' &&
-      !/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(value.trim()))
-  )
-    throw new Error('Missing or invalid release number');
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) throw new Error('Non-finite release number');
-  return parsed;
+// Money records use thousandths of a million EUR. Keep them integral until display.
+export function releaseUnits(record: string, decimals = 3): number {
+  if (!/^-?\d+(?:\.\d+)?$/.test(record)) throw new Error('Invalid decimal record');
+  const negative = record.startsWith('-');
+  const [whole, fraction = ''] = record.replace(/^-/, '').split('.');
+  if (fraction.length > decimals) throw new Error('Unexpected decimal scale');
+  const units = Number(whole) * 10 ** decimals + Number(fraction.padEnd(decimals, '0'));
+  if (!Number.isSafeInteger(units)) throw new Error('Release amount exceeds integer precision');
+  return negative ? -units : units;
 }
-export function formatNumber(v: number, d = 2, sign = false) {
-  const s = Math.abs(v).toFixed(d).replace('.', ',');
-  return (v < 0 && Number(s.replace(',', '.')) !== 0 ? '−' : sign ? '+' : '') + s;
+export function formatUnits(units: number, scale: number, decimals = 2, sign = false) {
+  const divisor = 10 ** (scale - decimals);
+  const rounded = Math.floor((Math.abs(units) + divisor / 2) / divisor);
+  const digits = String(rounded).padStart(decimals + 1, '0');
+  const text = decimals ? digits.slice(0, -decimals) + ',' + digits.slice(-decimals) : digits;
+  return (units < 0 && rounded ? '−' : sign ? '+' : '') + text;
 }
 export function expectedPlan() {
   const { month, kfp } = execution.latest;
   const rows = ['rev', 'exp.total', 'exp.capex'];
-  const cur = rows.map((r) => (releaseNumber(kfp[r]!.cum) / releaseNumber(kfp[r]!.plan)) * 100);
-  const prev = rows.map((r) => execution.pace['2025']![r]![month - 1]!);
-  const bars = cur.flatMap((v, i) => [v, prev[i]!]);
+  const current = rows.map((row) => {
+    const amount = releaseUnits(kfp[row]!.cum),
+      plan = releaseUnits(kfp[row]!.plan);
+    const tenths = Math.floor((amount * 1000 + plan / 2) / plan);
+    return formatUnits(tenths, 1, 1) + '%';
+  });
+  const previous = rows.map(
+    (row) =>
+      formatUnits(releaseUnits(String(execution.pace['2025']![row]![month - 1]!), 2), 2, 1) + '%',
+  );
+  const bars = current.flatMap((text, index) => [text, previous[index]!]);
   return {
     month,
     sums: rows.map(
-      (r) =>
-        `${formatNumber(releaseNumber(kfp[r]!.cum) / 1000)} от ${formatNumber(releaseNumber(kfp[r]!.plan) / 1000)}`,
+      (row) =>
+        `${formatUnits(releaseUnits(kfp[row]!.cum), 6)} от ${formatUnits(releaseUnits(kfp[row]!.plan), 6)}`,
     ),
-    cur: cur.map((v) => formatNumber(v, 1) + '%'),
-    prev: prev.map((v) => formatNumber(v, 1) + '%'),
-    bars: bars.map((v) => formatNumber(v, 1) + '%'),
-    widths: bars.map((v) => Number(v.toFixed(1)) + '%'),
+    cur: current,
+    prev: previous,
+    bars,
+    widths: bars.map((text) => Number(text.replace('%', '').replace(',', '.')) + '%'),
   };
 }
+function cumulativeUnits(year: number, scope: string, row: string, month: number) {
+  return releaseUnits(execution.data[String(year)]![scope]![row]![month - 1]!);
+}
 export function cumulativeValue(year: number, scope: string, row: string, month: number) {
-  return releaseNumber(execution.data[String(year)]![scope]![row]![month - 1]!);
+  return cumulativeUnits(year, scope, row, month) / 1000;
 }
 export function executionValue(
   year: number,
@@ -53,21 +66,22 @@ export function executionValue(
   mode: string,
 ) {
   return (
-    cumulativeValue(year, scope, row, month) -
-    (mode === 'kum' || month === 1 ? 0 : cumulativeValue(year, scope, row, month - 1))
+    (cumulativeUnits(year, scope, row, month) -
+      (mode === 'kum' || month === 1 ? 0 : cumulativeUnits(year, scope, row, month - 1))) /
+    1000
   );
 }
 export function expectedComparison() {
   const { month, asOf } = execution.latest;
-  const y = Number(asOf.slice(0, 4));
+  const year = Number(asOf.slice(0, 4));
   const rows = ['rev', 'exp.total', 'balance'];
-  const a = rows.map((r) => cumulativeValue(y - 1, 'kfp', r, month));
-  const b = rows.map((r) => cumulativeValue(y, 'kfp', r, month));
+  const previous = rows.map((row) => cumulativeUnits(year - 1, 'kfp', row, month));
+  const current = rows.map((row) => cumulativeUnits(year, 'kfp', row, month));
   return {
-    prev: a.map((v) => formatNumber(v / 1000)),
-    cur: b.map((v) => formatNumber(v / 1000)),
-    diff: [0, 1].map((i) => formatNumber((b[i]! - a[i]!) / 1000, 2, true)),
-    balanceDiff: formatNumber(Math.abs(b[2]! - a[2]!) / 1000),
+    prev: previous.map((value) => formatUnits(value, 6)),
+    cur: current.map((value) => formatUnits(value, 6)),
+    diff: [0, 1].map((index) => formatUnits(current[index]! - previous[index]!, 6, 2, true)),
+    balanceDiff: formatUnits(Math.abs(current[2]! - previous[2]!), 6),
   };
 }
 

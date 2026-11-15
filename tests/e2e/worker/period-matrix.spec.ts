@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { test, expect } from '../fixtures.ts';
+import { test, expect, enableHashRoutes } from '../fixtures.ts';
 import { downloadBytes } from '../helpers.ts';
 test.use({ serviceWorkers: 'block' });
 // Parse first-response HTML without executing its scripts, as html.unescape/re.sub did.
@@ -54,7 +54,7 @@ for (const hashMode of [false, true]) {
     test.use({ reducedMotion: 'reduce' });
     const address = '/' + (hashMode ? '#/pari' : 'pari');
     test.beforeEach(async ({ page }) => {
-      if (hashMode) await page.addInitScript('window.__HASH_ROUTES__=true');
+      if (hashMode) await enableHashRoutes(page);
     });
     for (const [requested, canonical, notice] of CASES)
       test(`first client paint ${requested}`, async ({ page, siteURL }) => {
@@ -63,8 +63,8 @@ for (const hashMode of [false, true]) {
         const url = siteURL + address + (requested ? '?per=' + requested : '');
         await page.goto(url);
         await page.waitForSelector(ready);
-        const state = await page.evaluate<{ period: string }>(
-          "import('/js/store.js').then(m => m.store.snapshot())",
+        const state = await page.evaluate<{ period: string }>(() =>
+          import(new URL('/js/store.js', location.href).href).then((m) => m.store.snapshot()),
         );
         expect.soft(state.period, 'client canonical state ' + requested).toBe(canonical);
         expect.soft(page.url(), 'first client paint keeps input URL ' + requested).toBe(url);
@@ -86,7 +86,8 @@ for (const hashMode of [false, true]) {
         await page.goto(siteURL + address);
         await page.waitForFunction((p) => location.href.includes('per=' + p), canonical);
         await page.waitForFunction(
-          "async p => (await import('/js/store.js')).store.get('period')===p",
+          async (p) =>
+            (await import(new URL('/js/store.js', location.href).href)).store.get('period') === p,
           canonical,
         );
         expect
@@ -99,20 +100,33 @@ for (const hashMode of [false, true]) {
     for (const variant of ['url-wins', 'corrupt', 'blocked'])
       test(`preferences ${variant}`, async ({ page, siteURL }) => {
         if (variant === 'blocked')
-          await page.addInitScript(
-            "Object.defineProperty(window,'localStorage',{get(){throw new DOMException('blocked','SecurityError')}})",
-          );
+          await page.addInitScript(() => {
+            Object.defineProperty(window, 'localStorage', {
+              get() {
+                throw new DOMException('blocked', 'SecurityError');
+              },
+            });
+          });
         else if (variant === 'corrupt')
-          await page.addInitScript("localStorage.setItem('bns.prefs.v1','broken')");
+          await page.addInitScript(() => {
+            localStorage.setItem('bns.prefs.v1', 'broken');
+          });
         else
-          await page.addInitScript(
-            "localStorage.setItem('bns.prefs.v1',JSON.stringify({period:'2027.forecast',unit:'eur'}))",
-          );
+          await page.addInitScript(() => {
+            localStorage.setItem(
+              'bns.prefs.v1',
+              JSON.stringify({ period: '2027.forecast', unit: 'eur' }),
+            );
+          });
         await page.goto(siteURL + address + (variant === 'url-wins' ? '?per=2026.expected' : ''));
         await page.waitForSelector(ready);
         expect
           .soft(
-            await page.evaluate("import('/js/store.js').then(m => m.store.get('period'))"),
+            await page.evaluate(() =>
+              import(new URL('/js/store.js', location.href).href).then((m) =>
+                m.store.get('period'),
+              ),
+            ),
             variant + ' state',
           )
           .toBe(variant === 'url-wins' ? '2026.expected' : '2027.draft');

@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures.ts';
+import { test, expect, enableHashRoutes } from '../fixtures.ts';
 import {
   calculatorResults,
   indirectTaxResults,
@@ -9,11 +9,9 @@ import { salaryModel, insurableIncomeCaps } from '../expected.ts';
 test.use({ serviceWorkers: 'block', reducedMotion: 'reduce' });
 
 test('salary engine and indirect tax cases', async ({ context, page, siteURL }) => {
-  await context.addInitScript(() => {
-    window.__HASH_ROUTES__ = true;
-  });
+  await enableHashRoutes(context);
   await page.goto(siteURL + '/index.html#/danaci');
-  await page.waitForSelector('#s18-view', { timeout: 8000 });
+  await expect(page.locator('#s18-view')).toBeVisible({ timeout: 8000 });
   const ref = [
     ['1500', 'from'],
     ['1500', 'until'],
@@ -63,26 +61,35 @@ test('salary engine and indirect tax cases', async ({ context, page, siteURL }) 
   // The result is JSON from the browser probe, not a shared production type/model.
   const results = await page.evaluate(calculatorResults, cases);
   for (const [i, c] of cases.entries()) {
-    const o = results[i]!,
+    const result = results[i]!,
       tag = JSON.stringify(c);
-    expect.soft(o.kind, tag).toBe('ok');
-    if (o.kind !== 'ok') continue;
-    const m = salaryModel(c.gross, c.rules, c.tzpb);
+    expect.soft(result.kind, tag).toBe('ok');
+    if (result.kind !== 'ok') continue;
+    const expected = salaryModel(c.gross, c.rules, c.tzpb);
     for (const k of ['emp', 'tax', 'er', 'net', 'yEmp', 'yTax', 'yEr'] as const)
-      expect.soft(Math.abs(o[k] - m[k]), `${tag}: ${k}`).toBeLessThanOrEqual(0.005);
+      expect.soft(Math.abs(result[k] - expected[k]), `${tag}: ${k}`).toBeLessThanOrEqual(0.005);
     expect
-      .soft(Math.abs(o.net + o.emp + o.tax - Number(c.gross)), tag + ': gross sum')
+      .soft(Math.abs(result.net + result.emp + result.tax - Number(c.gross)), tag + ': gross sum')
       .toBeLessThan(0.005);
-    expect.soft(Math.abs(o.total - o.emp - o.tax - o.er), tag + ': total').toBeLessThan(0.005);
     expect
-      .soft(Math.abs(o.yTotal - o.yEmp - o.yTax - o.yEr), tag + ': annual total')
+      .soft(Math.abs(result.total - result.emp - result.tax - result.er), tag + ': total')
       .toBeLessThan(0.005);
-    expect.soft(Boolean(o.funds?.length), tag + ': fund split').toBe(true);
-    if (o.funds?.length) {
+    expect
+      .soft(
+        Math.abs(result.yTotal - result.yEmp - result.yTax - result.yEr),
+        tag + ': annual total',
+      )
+      .toBeLessThan(0.005);
+    expect.soft(Boolean(result.funds?.length), tag + ': fund split').toBe(true);
+    if (result.funds?.length) {
       expect
         .soft(
           Math.abs(
-            o.funds.reduce((s: number, x: { you: number | null }) => s + (x.you || 0), 0) - o.emp,
+            result.funds.reduce(
+              (s: number, indirectResults: { you: number | null }) =>
+                s + (indirectResults.you || 0),
+              0,
+            ) - result.emp,
           ),
           tag + ': personal funds',
         )
@@ -90,31 +97,38 @@ test('salary engine and indirect tax cases', async ({ context, page, siteURL }) 
       expect
         .soft(
           Math.abs(
-            o.funds.reduce((s: number, x: { boss: number | null }) => s + (x.boss || 0), 0) - o.er,
+            result.funds.reduce(
+              (s: number, indirectResults: { boss: number | null }) =>
+                s + (indirectResults.boss || 0),
+              0,
+            ) - result.er,
           ),
           tag + ': employer funds',
         )
         .toBeLessThan(0.005);
       expect
         .soft(
-          o.funds.every(
-            (x: { id: string; you: number | null }) => x.you === null || x.id !== 'tzpb',
+          result.funds.every(
+            (indirectResults: { id: string; you: number | null }) =>
+              indirectResults.you === null || indirectResults.id !== 'tzpb',
           ),
           tag + ': no personal ТЗПБ',
         )
         .toBe(true);
     }
     if (c.rules === 'year') {
-      expect.soft(o.year, tag + ': year').toBeTruthy();
+      expect.soft(result.year, tag + ': year').toBeTruthy();
       expect
         .soft(
-          o.periods.map((p: { months: number }) => p.months),
+          result.periods.map((p: { months: number }) => p.months),
           tag + ': periods',
         )
         .toEqual([7, 5]);
     } else
-      expect.soft(o.capped, tag + ': cap').toBe(Number(c.gross) > insurableIncomeCaps[c.rules]!);
-    expect.soft(o.text, tag).not.toMatch(/NaN|undefined/);
+      expect
+        .soft(result.capped, tag + ': cap')
+        .toBe(Number(c.gross) > insurableIncomeCaps[c.rules]!);
+    expect.soft(result.text, tag).not.toMatch(/NaN|undefined/);
   }
   const r = results[0]!;
   expect
@@ -168,144 +182,155 @@ test('salary engine and indirect tax cases', async ({ context, page, siteURL }) 
   );
   expect
     .soft(
-      spelled.every((o: { kind: string; net: number }) => o.kind === 'ok' && o.net === 1163.97),
+      spelled.every(
+        (result: { kind: string; net: number }) => result.kind === 'ok' && result.net === 1163.97,
+      ),
       'spelled amounts',
     )
     .toBe(true);
 
-  const x = await page.evaluate(indirectTaxResults);
-  const near = (a: number | null, b: number) => a !== null && Math.abs(a - b) < 1e-8;
+  const indirectResults = await page.evaluate(indirectTaxResults);
+  const amountMatches = (a: number | null, b: number) => a !== null && Math.abs(a - b) < 1e-8;
   expect
     .soft(
-      x.untaxed.kind === 'definition' && x.untaxed.basis.startsWith('ЗДДС'),
+      indirectResults.untaxed.kind === 'definition' &&
+        indirectResults.untaxed.basis.startsWith('ЗДДС'),
       'untaxed definition',
     )
     .toBe(true);
-  expect.soft(x.hasExtractedZero).toBe(false);
-  expect.soft(near(x.rows[0]!.fuelExcise, 3.6302), 'petrol coefficient').toBe(true);
-  expect.soft(near(x.rows[1]!.fuelExcise, 3.3029), 'diesel coefficient').toBe(true);
-  expect.soft(near(x.rows[0]!.vat, 20 + 9 + 20 / 6 + 3 / 6), 'gross VAT').toBe(true);
+  expect.soft(indirectResults.hasExtractedZero).toBe(false);
+  expect
+    .soft(amountMatches(indirectResults.rows[0]!.fuelExcise, 3.6302), 'petrol coefficient')
+    .toBe(true);
+  expect
+    .soft(amountMatches(indirectResults.rows[1]!.fuelExcise, 3.3029), 'diesel coefficient')
+    .toBe(true);
+  expect
+    .soft(amountMatches(indirectResults.rows[0]!.vat, 20 + 9 + 20 / 6 + 3 / 6), 'gross VAT')
+    .toBe(true);
   for (const [i, want] of [
     [0, 2.4],
     [2, 3.64],
     [3, 2.52],
     [4, 3.69],
   ] as const)
-    expect.soft(near(x.rows[i]!.tobaccoExcise, want), `dated tobacco ${i}`).toBe(true);
-  for (const i of [5, 6, 7, 8]) expect.soft(x.rows[i]!.total, `missing ${i}`).toBeNull();
-  expect.soft(x.rows[9]!.total).toBe(0);
+    expect
+      .soft(amountMatches(indirectResults.rows[i]!.tobaccoExcise, want), `dated tobacco ${i}`)
+      .toBe(true);
+  for (const i of [5, 6, 7, 8])
+    expect.soft(indirectResults.rows[i]!.total, `missing ${i}`).toBeNull();
+  expect.soft(indirectResults.rows[9]!.total).toBe(0);
   expect
     .soft(
-      x.views.every((v: { unavailable: boolean } | null) => v && !v.unavailable),
+      indirectResults.views.every((v: { unavailable: boolean } | null) => v && !v.unavailable),
       'only-real estimate',
     )
     .toBe(true);
-  for (const row of x.errors)
+  for (const row of indirectResults.errors)
     expect
       .soft(Boolean(row.error) && row.status === 'invalid' && row.total === null, row.key)
       .toBe(true);
-  expect.soft(x.blank).toEqual({ status: 'missing', error: null });
+  expect.soft(indirectResults.blank).toEqual({ status: 'missing', error: null });
   for (const [i, status] of ['missing', 'invalid', 'unsupported'].entries()) {
-    expect.soft(x.dateCases[i]!.status).toBe(status);
-    expect.soft(x.dateCases[i]!.total).toBeNull();
+    expect.soft(indirectResults.dateCases[i]!.status).toBe(status);
+    expect.soft(indirectResults.dateCases[i]!.total).toBeNull();
   }
   expect
-    .soft(Boolean(x.dateCases[1]!.error) && Boolean(x.dateCases[2]!.error), 'date errors')
+    .soft(
+      Boolean(indirectResults.dateCases[1]!.error) && Boolean(indirectResults.dateCases[2]!.error),
+      'date errors',
+    )
     .toBe(true);
   for (const key of ['fractional', 'zeroPrice', 'unknownFuel'] as const)
-    expect.soft(Boolean(x[key]), key).toBe(true);
+    expect.soft(Boolean(indirectResults[key]), key).toBe(true);
   expect
     .soft(
-      near(x.decimalPrices.fuelPrice, 1.605) && near(x.decimalPrices.tobaccoPrice, 3.512),
+      amountMatches(indirectResults.decimalPrices.fuelPrice, 1.605) &&
+        amountMatches(indirectResults.decimalPrices.tobaccoPrice, 3.512),
       'decimal prices',
     )
     .toBe(true);
-  const refs = x.references;
-  expect.soft(refs.shown).toEqual(['1,605', '3,51']);
+  const referencePrices = indirectResults.references;
+  expect.soft(referencePrices.shown).toEqual(['1,605', '3,51']);
   expect
     .soft(
-      near(refs.before.fuelPrice, refs.expected[0]!) &&
-        near(refs.before.tobaccoPrice, refs.expected[1]!),
+      amountMatches(referencePrices.before.fuelPrice, referencePrices.expected[0]!) &&
+        amountMatches(referencePrices.before.tobaccoPrice, referencePrices.expected[1]!),
       'source precision',
     )
     .toBe(true);
   expect
     .soft(
-      near(refs.edited.fuelPrice, 1.605) && near(refs.edited.tobaccoPrice, 3.51),
+      amountMatches(referencePrices.edited.fuelPrice, 1.605) &&
+        amountMatches(referencePrices.edited.tobaccoPrice, 3.51),
       'entered precision',
     )
     .toBe(true);
-  expect.soft(near(refs.diesel.fuelPrice, refs.expected[2]!), 'diesel precision').toBe(true);
+  expect
+    .soft(
+      amountMatches(referencePrices.diesel.fuelPrice, referencePrices.expected[2]!),
+      'diesel precision',
+    )
+    .toBe(true);
 });
 
-for (const w of [1280, 390])
-  test(`calculator screen ${w}`, async ({ browser, siteURL }) => {
-    const ctx = await browser.newContext({
+for (const width of [1280, 390])
+  test(`calculator screen ${width}`, async ({ browser, siteURL }) => {
+    const context = await browser.newContext({
       serviceWorkers: 'block',
       reducedMotion: 'reduce',
-      hasTouch: w < 700,
-      viewport: { width: w, height: w >= 700 ? 900 : 844 },
+      hasTouch: width < 700,
+      viewport: { width, height: width >= 700 ? 900 : 844 },
     });
     try {
-      await ctx.addInitScript(() => {
-        window.__HASH_ROUTES__ = true;
-      });
-      const page = await ctx.newPage(),
+      await enableHashRoutes(context);
+      const page = await context.newPage(),
         errors: string[] = [];
-      page.on('console', (m) => {
-        if (m.type() === 'error') errors.push(m.text().slice(0, 160));
+      page.on('console', (message) => {
+        if (message.type() === 'error') errors.push(message.text().slice(0, 160));
       });
-      page.on('pageerror', (e) => errors.push('EXC ' + String(e).slice(0, 160)));
+      page.on('pageerror', (error) => errors.push(String(error).slice(0, 160)));
       await page.goto(siteURL + '/index.html#/danaci');
-      await page.waitForSelector('#s18-view', { timeout: 8000 });
-      await page.waitForTimeout(500);
-      const text = async (id: string) =>
-        (await page.locator('#' + id).textContent())!.replace(/[    ]/g, ' ');
-      const tx = () => text('s18-view');
-      for (const s of ['1 163,97', '206,70', '129,33', '283,80', '336,03'])
-        expect.soft(await tx()).toContain(s);
-      expect.soft(await page.evaluate(() => location.hash)).toBe('#/danaci');
-      await page.fill('#s18-gross', '2 345,67');
-      await page.waitForTimeout(200);
-      let h: string = await page.evaluate(() => location.href);
-      expect
-        .soft(
-          !['2345', '2%20345', 'gross'].some((k) => h.includes(k)) &&
-            !h.split('#')[1]!.includes('?'),
-          'salary URL',
-        )
-        .toBe(true);
-      const base = await tx();
-      await page.check('#s18-rules-until', { force: true });
-      await page.waitForTimeout(200);
-      expect.soft(await tx(), 'period changes result').not.toBe(base);
-      await page.check('#s18-rules-year', { force: true });
-      await page.waitForTimeout(200);
-      expect.soft(await tx()).toContain('средно на месец');
-      expect.soft(await tx()).toContain('За цялата 2026');
-      await page.check('#s18-rules-from', { force: true });
-      await page.fill('#s18-gross', 'abc');
-      await page.waitForTimeout(200);
-      expect.soft(await tx()).not.toMatch(/\d,\d\d\s*€/);
-      expect.soft(await page.locator('#s18-gross-err').count()).toBe(1);
-      await page.fill('#s18-gross', '1500');
-      await page.waitForTimeout(200);
-      expect.soft(await tx()).toContain('1 163,97');
-      for (const d of ['s18-funds', 's18-how', 's18-sources', 's18-receipt', 's18-indirect'])
-        await page.evaluate((id) => {
-          const d = document.querySelector<HTMLDetailsElement>('#' + id);
-          if (d) d.open = true;
-        }, d);
-      await page.waitForTimeout(200);
-      const funds = await text('s18-funds-view'),
-        how = await text('s18-how-view');
-      for (const s of ['ДОО', 'ТЗПБ', '6,00', '163,80']) expect.soft(funds).toContain(s);
-      for (const s of ['1 500,00 € × 13,78%', '206,70', '283,80']) expect.soft(how).toContain(s);
-      expect.soft(await page.isChecked('#s18-ind')).toBe(false);
-      const main = await tx();
-      await page.check('#s18-ind', { force: true });
-      expect.soft(await page.inputValue('#s18-fuelPrice')).toBe('1,605');
-      expect.soft(await page.inputValue('#s18-tobaccoPrice')).toBe('3,51');
+      const result = page.locator('#s18-view'),
+        gross = page.locator('#s18-gross');
+      await expect(result).toBeVisible({ timeout: 8000 });
+      for (const amount of ['1 163,97', '206,70', '129,33', '283,80', '336,03'])
+        await expect(result).toContainText(amount);
+      expect(new URL(page.url()).hash).toBe('#/danaci');
+      await gross.fill('2 345,67');
+      await expect(gross).toHaveValue('2 345,67');
+      const salaryLink = page.url();
+      expect(salaryLink).not.toMatch(/2345|2%20345|gross/);
+      expect(salaryLink.slice(salaryLink.indexOf('#') + 1)).not.toContain('?');
+      const previousResult = await result.textContent();
+      await page.locator('#s18-rules-until').check({ force: true });
+      await expect(result).not.toHaveText(previousResult!);
+      await page.locator('#s18-rules-year').check({ force: true });
+      await expect(result).toContainText('средно на месец');
+      await expect(result).toContainText('За цялата 2026');
+      await page.locator('#s18-rules-from').check({ force: true });
+      await gross.fill('abc');
+      await expect(result).not.toContainText(/\d,\d\d\s*€/);
+      await expect(page.locator('#s18-gross-err')).toBeVisible();
+      await gross.fill('1500');
+      await expect(result).toContainText('1 163,97');
+      for (const id of ['s18-funds', 's18-how', 's18-sources', 's18-receipt', 's18-indirect']) {
+        const disclosure = page.locator('#' + id);
+        if (!(await disclosure.evaluate((element) => (element as HTMLDetailsElement).open)))
+          await disclosure.locator('summary').first().click();
+        await expect(disclosure).toHaveAttribute('open');
+      }
+      for (const text of ['ДОО', 'ТЗПБ', '6,00', '163,80'])
+        await expect(page.locator('#s18-funds-view')).toContainText(text);
+      for (const text of ['1 500,00 € × 13,78%', '206,70', '283,80'])
+        await expect(page.locator('#s18-how-view')).toContainText(text);
+      const indirectToggle = page.locator('#s18-ind'),
+        indirectResult = page.locator('#s18-ind-view');
+      await expect(indirectToggle).not.toBeChecked();
+      const directResult = await result.textContent();
+      await indirectToggle.check({ force: true });
+      await expect(page.locator('#s18-fuelPrice')).toHaveValue('1,605');
+      await expect(page.locator('#s18-tobaccoPrice')).toHaveValue('3,51');
       for (const [key, value] of [
         ['purchases', '120'],
         ['reduced', '109'],
@@ -313,10 +338,9 @@ for (const w of [1280, 390])
         ['fuel', '0'],
         ['tobacco', '0'],
       ] as const)
-        await page.fill('#s18-' + key, value);
-      await page.waitForTimeout(250);
-      expect.soft((await text('s18-ind-view')).toLowerCase()).toContain('ориентировъчно');
-      expect.soft(await tx()).toBe(main);
+        await page.locator('#s18-' + key).fill(value);
+      await expect(indirectResult).toContainText(/ориентировъчно/i);
+      await expect(result).toHaveText(directResult!);
       for (const key of [
         'purchases',
         'reduced',
@@ -327,38 +351,36 @@ for (const w of [1280, 390])
         'tobaccoPrice',
         'sticks',
       ]) {
-        const selector = '#s18-' + key,
-          previous = await page.inputValue(selector);
-        await page.fill(selector, '-1');
-        expect.soft(await page.getAttribute(selector, 'aria-invalid'), key).toBe('true');
-        expect.soft(await page.locator(selector + '-err').count(), key).toBe(1);
-        expect.soft(await page.locator('#s18-ind-view').innerText(), key).toContain('Поправи');
-        await page.fill(selector, previous);
-        expect.soft(await page.getAttribute(selector, 'aria-invalid'), key).toBeNull();
+        const field = page.locator('#s18-' + key),
+          previousValue = await field.inputValue();
+        await field.fill('-1');
+        await expect(field).toHaveAttribute('aria-invalid', 'true');
+        await expect(page.locator('#s18-' + key + '-err')).toBeVisible();
+        await expect(indirectResult).toContainText('Поправи');
+        await field.fill(previousValue);
+        await expect(field).not.toHaveAttribute('aria-invalid');
       }
-      await page.fill('#s18-reduced', '');
-      expect.soft(await page.locator('#s18-ind-view').innerText()).toContain('Липсва');
-      expect.soft(await page.getAttribute('#s18-reduced', 'aria-invalid')).toBeNull();
-      await page.fill('#s18-reduced', '109');
-      await page.fill('#s18-tobacco', '1');
-      await page.fill('#s18-sticks', '20');
-      await page.fill('#s18-date', '2026-07-31');
-      expect.soft(await page.getAttribute('#s18-date', 'aria-invalid')).toBe('true');
-      expect.soft(await page.locator('#s18-ind-view').innerText()).toContain('проверени ставки');
-      await page.fill('#s18-date', '2026-11-08');
-      await page.fill('#s18-tobacco', '0');
-      await page.fill('#s18-sticks', '');
-      h = await page.evaluate(() => location.href);
-      expect.soft(h.split('#')[1]).not.toContain('?');
-      expect
-        .soft(
-          await page.evaluate(
-            () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-          ),
-        )
-        .toBeLessThanOrEqual(0);
-      expect.soft(errors).toEqual([]);
+      await page.locator('#s18-reduced').fill('');
+      await expect(indirectResult).toContainText('Липсва');
+      await expect(page.locator('#s18-reduced')).not.toHaveAttribute('aria-invalid');
+      await page.locator('#s18-reduced').fill('109');
+      await page.locator('#s18-tobacco').fill('1');
+      await page.locator('#s18-sticks').fill('20');
+      await page.locator('#s18-date').fill('2026-07-31');
+      await expect(page.locator('#s18-date')).toHaveAttribute('aria-invalid', 'true');
+      await expect(indirectResult).toContainText('проверени ставки');
+      await page.locator('#s18-date').fill('2026-11-08');
+      await page.locator('#s18-tobacco').fill('0');
+      await page.locator('#s18-sticks').fill('');
+      const sharedLink = page.url();
+      expect(sharedLink.slice(sharedLink.indexOf('#') + 1)).not.toContain('?');
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        ),
+      ).toBeLessThanOrEqual(0);
+      expect(errors).toEqual([]);
     } finally {
-      await ctx.close();
+      await context.close();
     }
   });

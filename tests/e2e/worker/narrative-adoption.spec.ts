@@ -5,6 +5,13 @@ import { downloadBytes } from '../helpers.ts';
 import { ROOT } from '../../../apps/web/scripts/serve.ts';
 test.use({ serviceWorkers: 'allow' });
 
+declare global {
+  interface Window {
+    firstArticle: Element | null;
+    firstHeading: Element | null;
+    queryCalls: unknown[];
+  }
+}
 const FIXTURES = join(ROOT, 'apps/web/app/routes/__fixtures__');
 const fixture = (name: string) => readFileSync(join(FIXTURES, name), 'utf8');
 const text = (els: Element[]) => els.map((e) => e.textContent!.replace(/\s+/g, ' ').trim());
@@ -20,14 +27,21 @@ for (const path of ['/novo', '/novo?vid=law', '/zakon', '/zakon?per=2026.draft']
     page.on('console', (m) => {
       if (m.type() === 'error') errors.push(m.text());
     });
-    await page.addInitScript(
-      "window.firstArticle=null;window.firstHeading=null;new MutationObserver(()=>{window.firstArticle ||= document.querySelector('article.page');window.firstHeading ||= document.querySelector('article h1');}).observe(document,{subtree:true,childList:true});",
-    );
+    await page.addInitScript(() => {
+      window.firstArticle = null;
+      window.firstHeading = null;
+      new MutationObserver(() => {
+        window.firstArticle ||= document.querySelector('article.page');
+        window.firstHeading ||= document.querySelector('article h1');
+      }).observe(document, { subtree: true, childList: true });
+    });
     await page.goto(siteURL + path);
     await page.waitForSelector('article[data-ready="1"]');
     expect(
       await page.evaluate(
-        "window.firstArticle === document.querySelector('article.page') && window.firstHeading === document.querySelector('article h1')",
+        () =>
+          window.firstArticle === document.querySelector('article.page') &&
+          window.firstHeading === document.querySelector('article h1'),
       ),
       path + ': server DOM adopted',
     ).toBe(true);
@@ -57,25 +71,29 @@ test('feed and law interactions preserve fixtures, metadata and focus', async ({
 }) => {
   await page.goto(siteURL + '/novo');
   await page.waitForSelector('article[data-ready="1"]');
-  await page.evaluate(`(() => {
+  await page.evaluate(() => {
     window.queryCalls = [];
     const replace = history.replaceState.bind(history);
     history.replaceState = (...args) => {
-      if (new Error().stack.includes('setQuery')) window.queryCalls.push(args[2]);
+      if ((new Error().stack ?? '').includes('setQuery')) window.queryCalls.push(args[2]);
       return replace(...args);
     };
-  })()`);
+  });
   await page.locator('[data-query="vid=law"]').focus();
   await page.locator('[data-query="vid=law"]').click();
   await page.waitForFunction(
-    `() => location.search.includes('vid=law') && document.querySelector('[data-query="vid=law"]')?.getAttribute('aria-pressed') === 'true' && document.querySelector('article')?.dataset.ready === '1'`,
+    () =>
+      location.search.includes('vid=law') &&
+      document.querySelector('[data-query="vid=law"]')?.getAttribute('aria-pressed') === 'true' &&
+      document.querySelector('article')?.dataset.ready === '1',
   );
   await page.evaluate(twoFrames);
-  expect(await page.evaluate('window.queryCalls.length'), 'feed filter invokes setQuery once').toBe(
-    1,
-  );
   expect(
-    await page.evaluate('document.activeElement?.dataset.query'),
+    await page.evaluate(() => window.queryCalls.length),
+    'feed filter invokes setQuery once',
+  ).toBe(1);
+  expect(
+    await page.evaluate(() => document.activeElement?.getAttribute('data-query')),
     'feed filter retains focus',
   ).toBe('vid=law');
   await page.locator('#s16-b-summary [data-src]').click();
@@ -144,7 +162,7 @@ test('feed and law interactions preserve fixtures, metadata and focus', async ({
       'sorted law rows equal independent main fixture',
     ).toEqual(await expected.locator(sorted).evaluateAll(text));
     expect(
-      await page.evaluate('document.activeElement?.dataset.key'),
+      await page.evaluate(() => document.activeElement?.getAttribute('data-key')),
       'sorting retains focus',
     ).toBe('law');
     const beforeUnit = await page.locator('#view article.page').elementHandle();
@@ -168,7 +186,7 @@ test('feed and law interactions preserve fixtures, metadata and focus', async ({
       await page.locator(kpis).evaluateAll(text),
       'GDP percentages equal independent main fixture',
     ).toEqual(await expected.locator(kpis).evaluateAll(text));
-    expect(await page.evaluate('document.activeElement.id'), 'unit switch retains focus').toBe(
+    expect(await page.evaluate(() => document.activeElement!.id), 'unit switch retains focus').toBe(
       's14-unit-pct',
     );
     await page.goto(siteURL + '/zakon?to=s14-t-chl1-redove');
