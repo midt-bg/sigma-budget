@@ -139,6 +139,16 @@ export function annualView(dataset, kind, outlook, key) {
     return {
       ...row,
       mln: chartSeries(at, (i) => row.mln?.[i]),
+      provenance: records.map((p) =>
+        p.legacy
+          ? null
+          : physical(
+              p,
+              p.status === 'law'
+                ? 'annex1_execution2026.r' + lawRows[row.id]
+                : 'annex3_mln.r' + (ordinal + (kind === 'revenue' ? 0 : 31)),
+            )?.provenance || '',
+      ),
       pctGdp: chartSeries(
         (p) => {
           const id = 'annex3_mln.r' + (ordinal + (kind === 'revenue' ? 0 : 31));
