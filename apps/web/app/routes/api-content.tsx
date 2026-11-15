@@ -316,7 +316,7 @@ function excerpt(meta: FileMeta) {
   return { text, cut };
 }
 
-/** the code of the three examples; a set that is not JSON (the RSS feed) is read as text */
+/** Examples for the selected file format. */
 function codes(set: CatalogueSet, origin?: string, dataBase = '/data/') {
   const part = isMulti(set) ? set.parts[0] : null;
   const file = part ? part.file : set.file;

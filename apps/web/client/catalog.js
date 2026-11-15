@@ -519,5 +519,11 @@ export function rich(text, M) {
 /** Format of the selected catalogue file, including a multipart example. */
 export function fileKind(set) {
   const file = set.file || set.parts?.[0]?.file || '';
-  return /\.json$/i.test(file) ? 'json' : /\.(xml|rss)$/i.test(file) ? 'rss' : 'text';
+  return /\.json$/i.test(file)
+    ? 'json'
+    : set.mediaType === 'application/rss+xml' ||
+        /\.rss$/i.test(file) ||
+        /(?:^|\/)feed\.xml$/i.test(file)
+      ? 'rss'
+      : 'text';
 }
