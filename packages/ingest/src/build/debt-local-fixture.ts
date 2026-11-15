@@ -45,7 +45,7 @@ export async function loadDebtLocalFixture(path: string, buildDate: string) {
   }
   for (const [name, hash] of Object.entries(manifest.inputSha256)) {
     if (name.endsWith('.py')) {
-      verifyHistoricalPythonPin(`debt-local/${name}`, hash);
+      verifyHistoricalPythonPin(`debt-local/${name}`, hash, resolve(root, name));
       continue;
     }
     const bytes = await readFile(await checked(name));

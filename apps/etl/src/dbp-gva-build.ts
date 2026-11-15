@@ -78,7 +78,7 @@ export async function dbpGvaBuildCli(args: string[]): Promise<number> {
     if (name.startsWith('/') || name.split('/').some((x) => x === '..' || x === '.'))
       throw new Error('Invalid inventory path');
     if (name.endsWith('.py')) {
-      verifyHistoricalPythonPin(`dbp-gva/${name}`, hash);
+      verifyHistoricalPythonPin(`dbp-gva/${name}`, hash, resolve(fixture, name));
       continue;
     }
     const file = join(fixture, name);

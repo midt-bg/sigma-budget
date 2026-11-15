@@ -51,7 +51,7 @@ export async function loadWave13aFixture(base: string, buildDate: string): Promi
   for (const name of required.filter((name) => !name.startsWith('wave13a/published/'))) {
     if (name === 'wave13a/law-donor.py') {
       // Keep the original inventory bytes; this removed source pin is historical.
-      verifyHistoricalPythonPin(name, hashes[name]);
+      verifyHistoricalPythonPin(name, hashes[name], resolve(base, name));
       continue;
     }
     const data = await read(name);

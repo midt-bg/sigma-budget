@@ -3,6 +3,8 @@ export * from './parity/compare.js';
 export * from './parity/policy.js';
 export * from './parity/cli.js';
 export * from './io/data.js';
+// Fixture commands only (budget-ts build --scope <fixture scope>, wave13b-live),
+// not ./budget build/validate, release or the Worker. History is read lazily.
 export { verifyHistoricalPythonPin } from './io/fixture-history.js';
 export * from './io/registry.js';
 export * from './common/metadata.js';

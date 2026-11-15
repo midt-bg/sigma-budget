@@ -1,4 +1,7 @@
-import { readFileSync } from 'node:fs';
+import { lstatSync, readFileSync } from 'node:fs';
+
+// Only fixture-scope commands (budget-ts build --scope <fixture scope>, wave13b-live)
+// read this test history. ./budget build/validate, release and the Worker do not use it.
 
 type PythonFixtureHistory = {
   lastPresentCommit: string;
@@ -12,7 +15,11 @@ export function readPythonFixtureHistory(): PythonFixtureHistory {
 }
 
 /** A removed source pin is a historical fact, never a substitute for a DATA checksum. */
-export function verifyHistoricalPythonPin(path: string, sha256: unknown): void {
+export function verifyHistoricalPythonPin(
+  path: string,
+  sha256: unknown,
+  file: string | URL = new URL(`../../test/fixtures/${path}`, import.meta.url),
+): void {
   const pythonFixtureHistory = readPythonFixtureHistory();
   const record = Object.hasOwn(pythonFixtureHistory.files, path)
     ? pythonFixtureHistory.files[path]
@@ -27,4 +34,11 @@ export function verifyHistoricalPythonPin(path: string, sha256: unknown): void {
     !/^[a-f0-9]{40}$/.test(pythonFixtureHistory.lastPresentCommit)
   )
     throw new Error(`Invalid historical Python fixture pin: ${path}`);
+  try {
+    lstatSync(file);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return;
+    throw error;
+  }
+  throw new Error(`Historical Python fixture is present: ${path}`);
 }

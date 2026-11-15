@@ -51,7 +51,7 @@ export async function loadWave13bReference(fixture: string) {
   const content = new Map<string, Buffer>();
   for (const [name, expected] of Object.entries(record.files)) {
     if (name.endsWith('.py')) {
-      verifyHistoricalPythonPin(`wave13b/${name}`, expected);
+      verifyHistoricalPythonPin(`wave13b/${name}`, expected, resolve(base, name));
       continue;
     }
     const data = await safe(name);
