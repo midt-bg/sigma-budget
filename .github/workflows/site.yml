@@ -73,7 +73,7 @@ jobs:
       - name: Restore the four pinned programme originals for independent checks
         run: node scripts/restore-programme-test-inputs.mjs "$RUNNER_TEMP/registered-node-input-archive/registered-node-inputs.tar.gz"
       - name: Coverage gate self-tests
-        run: node --test scripts/check-coverage.test.mjs scripts/ci-gates.test.mjs scripts/check-parity-reports.test.mjs scripts/restore-programme-test-inputs.test.mjs
+        run: node --test scripts/check-coverage.test.mjs scripts/ci-gates.test.mjs scripts/ci-install-browser.test.mjs scripts/check-parity-reports.test.mjs scripts/restore-programme-test-inputs.test.mjs
       - name: Coverage baseline ratchet against target
         env:
           COVERAGE_BASE_REF: ${{ github.base_ref }}
@@ -182,8 +182,7 @@ jobs:
           python -m pip install --no-deps -e pipeline
           pnpm install --frozen-lockfile
       - name: Install the Chromium of the pinned Playwright
-        timeout-minutes: 10
-        run: pnpm exec playwright install --with-deps chromium
+        run: bash scripts/ci-install-browser.sh
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: registered-node-input-archive
@@ -249,8 +248,7 @@ jobs:
           python -m pip install --no-deps -e pipeline
           pnpm install --frozen-lockfile
       - name: Install the Chromium of the pinned Playwright (the same browser build as the Python Playwright of tests/requirements-dev.lock)
-        timeout-minutes: 10
-        run: pnpm exec playwright install --with-deps chromium
+        run: bash scripts/ci-install-browser.sh
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: build
@@ -663,8 +661,7 @@ jobs:
       - name: Actual Node readers, complete rules, double build and local recorded-code replay
         run: node scripts/node-import-acceptance.mjs "$RUNNER_TEMP/registered-node-inputs" "$RUNNER_TEMP/node-acceptance" 2026-11-14
       - name: Provision the Chromium of the pinned Playwright (outside import runtime)
-        timeout-minutes: 10
-        run: pnpm exec playwright install --with-deps chromium
+        run: bash scripts/ci-install-browser.sh
       - name: Package the fresh Node candidate and exercise its Worker and browser identity
         run: node scripts/node-candidate-site-acceptance.mjs "$RUNNER_TEMP/node-acceptance/candidate" "$RUNNER_TEMP/node-site"
       - name: Protected checkout state

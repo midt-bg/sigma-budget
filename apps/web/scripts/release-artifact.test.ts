@@ -2,7 +2,6 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { gzipSync } from 'node:zlib';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   checkArtifact,
@@ -201,8 +200,10 @@ describe('the deploy artifact', () => {
   });
 
   it('measures gzip as zlib level 9 does', () => {
+    // The expected size is frozen from Python's GzipFile(mtime=0, compresslevel=9), which wrote these numbers into the published
+    // catalogs. zlib in Node may compress to another length, so it is not the reference.
     const raw = Buffer.from('<rss>' + 'бюджет '.repeat(500) + '</rss>');
-    expect(gzSize(raw)).toBe(gzipSync(raw, { level: 9 }).length);
+    expect(gzSize(raw)).toBe(79);
     expect(gzSize(new Uint8Array())).toBe(20);
   });
 });
@@ -238,8 +239,7 @@ describe('the crawl', () => {
 
   it('a ready screen passes; each broken part of it fails', () => {
     const built = new Set(['/', '/razhodi']);
-    const desc =
-      'ÐÐ¿Ð¸ÑÐ°Ð½Ð¸Ðµ Ð½Ð° Ð½Ð°ÑÐ°Ð»Ð½Ð°ÑÐ° ÑÑÑÐ°Ð½Ð¸ÑÐ°, Ð´Ð¾ÑÑÐ°ÑÑÑÐ½Ð¾ Ð´ÑÐ»Ð³Ð¾ Ð·Ð° ÑÑÑÑÐ°ÑÐºÐ¸ÑÐµ.';
+    const desc = 'Описание на началната страница, достатъчно дълго за търсачките.';
     const ok = page({ desc, links: ['/razhodi?per=1', '/data/catalog.json'] });
     expect(checkPage('/', ok, built, 'https://example.test')).toEqual([]);
     const fails = (o: Partial<PageInfo>, path = '/') =>

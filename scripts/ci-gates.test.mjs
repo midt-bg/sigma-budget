@@ -23,22 +23,24 @@ test('one Node suite command and explicit deploy barrier', () => {
 test('all independent Python and provenance commands survive the consolidation', () => {
   const evidence = JSON.parse(readFileSync('scripts/ci-provenance-commands.json', 'utf8'));
   for (const [path, commands] of Object.entries(evidence)) {
-    const current = readFileSync(path, 'utf8')
+    const raw = readFileSync(path, 'utf8')
       .split('\n')
       .map((x) => x.trim().replace(/^(?:- )?run: /, ''));
+    const current = raw.map((x) =>
+      x === 'bash scripts/ci-install-browser.sh'
+        ? 'pnpm exec playwright install --with-deps chromium'
+        : x,
+    );
     for (const command of commands) assert.ok(current.includes(command), command);
     const browserInstall = 'pnpm exec playwright install --with-deps chromium';
     assert.equal(
       current.filter((command) => command === browserInstall).length,
       commands.filter((command) => command === browserInstall).length,
-      `${path}: every browser setup must use the pinned npm Playwright`,
+      `${path}: every browser setup must retain the checked retry wrapper`,
     );
     assert.ok(
-      !current.some(
-        (command) =>
-          /playwright install|ci-install-browser/.test(command) && command !== browserInstall,
-      ),
-      `${path}: a browser setup outside the pinned npm Playwright`,
+      !raw.some((command) => /playwright install/.test(command)),
+      `${path}: a browser setup outside the checked retry wrapper`,
     );
   }
   // the Python browser checks that remain run on the browser build the npm Playwright installs: both stay on one version
