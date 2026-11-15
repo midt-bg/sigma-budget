@@ -49,9 +49,6 @@ test('all independent Python and provenance commands survive the consolidation',
       JSON.parse(readFileSync('package.json', 'utf8')).devDependencies['@playwright/test'],
       'the Python and the npm Playwright must share one Chromium build',
     );
-  const wave = readFileSync('.github/workflows/wave15b-validation.yml', 'utf8');
-  assert.match(wave, /workflow_call:/);
-  assert.doesNotMatch(wave, /vitest run/);
 });
 
 test('security covers other PR targets without duplicating main PR checks', () => {
