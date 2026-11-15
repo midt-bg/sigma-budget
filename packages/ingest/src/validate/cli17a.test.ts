@@ -18,8 +18,20 @@ const cli = join(repo, 'packages/ingest/dist/validate/cli17a.js');
 const fixture = new URL('../../test/fixtures/validate17a/corpus/', import.meta.url);
 const overlay = new URL('../../test/fixtures/validate17a/overlay/', import.meta.url);
 const candidates = join(repo, 'tmp/ts-migration/candidates/17a');
+// Each test has 30 s; a hung CLI is killed a little before that, so the failure names it instead of a late test timeout.
+const RUN_TIMEOUT_MS = 25_000;
 function run(args: string[], cwd = repo) {
-  return spawnSync(process.execPath, [cli, ...args], { cwd, encoding: 'utf8' });
+  const result = spawnSync(process.execPath, [cli, ...args], {
+    cwd,
+    encoding: 'utf8',
+    timeout: RUN_TIMEOUT_MS,
+  });
+  if (result.status === null)
+    throw new Error(
+      `cli17a ${args.join(' ')} did not exit within ${RUN_TIMEOUT_MS} ms ` +
+        `(signal ${result.signal}${result.error ? `, ${result.error.message}` : ''})`,
+    );
+  return result;
 }
 it('compiled CLI rejects unsupported selections without making report directories', () => {
   const root = mkdtempSync(join(tmpdir(), 'sigma-17a-cli-'));
