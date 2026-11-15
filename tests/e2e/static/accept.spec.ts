@@ -1,7 +1,12 @@
-import { evaluateProbe } from '../helpers.ts';
 import { test, expect } from '../fixtures.ts';
-import { GRID_JS, TARGET_JS, OVERFLOW_JS, FOCUS_JS, ROUTES } from '../accept-probes.ts';
-import { plan, compare, cum, val } from '../expected.ts';
+import {
+  readComparisonGrid,
+  measureTouchTargets,
+  measureOverflow,
+  inspectFocus,
+  ROUTES,
+} from '../accept-probes.ts';
+import { expectedPlan, expectedComparison, cumulativeValue, executionValue } from '../expected.ts';
 test.use({
   serviceWorkers: 'block',
   viewport: { width: 1280, height: 900 },
@@ -21,7 +26,9 @@ function number(s: string) {
 }
 test('acceptance numbers from independent release data', async ({ context, page, siteURL }) => {
   test.setTimeout(180_000);
-  await context.addInitScript('window.__HASH_ROUTES__ = true');
+  await context.addInitScript(() => {
+    window.__HASH_ROUTES__ = true;
+  });
   const errors: string[] = [];
   page.on('console', (m) => {
     if (m.type() === 'error') errors.push(m.text().slice(0, 160));
@@ -31,8 +38,8 @@ test('acceptance numbers from independent release data', async ({ context, page,
   await page.goto(base + '#/');
   await page.waitForSelector('#s15-b-plan .s15-plan-row', { timeout: 8000 });
   const home = (await page.locator('#s15-b-plan').innerText()).replace(/[   ]/g, ' '),
-    P = plan(),
-    Q = compare();
+    P = expectedPlan(),
+    Q = expectedComparison();
   for (const s of [...P.sums, ...P.cur]) expect.soft(home, 'home plan ' + s).toContain(s);
   await page.goto(base + '#/izpalnenie');
   await page.waitForSelector('table.data', { timeout: 8000 });
@@ -65,7 +72,7 @@ test('acceptance numbers from independent release data', async ({ context, page,
           await page.goto(base + '#/izpalnenie' + q);
           await page.waitForSelector('#s15-t-grid', { timeout: 8000 });
           await page.waitForTimeout(120);
-          const grid: Record<string, string[]> | null = await evaluateProbe(page, GRID_JS);
+          const grid: Record<string, string[]> | null = await page.evaluate(readComparisonGrid);
           expect.soft(Boolean(grid), q + ': table').toBe(true);
           if (!grid) return;
           for (const [row, label] of rows) {
@@ -73,8 +80,8 @@ test('acceptance numbers from independent release data', async ({ context, page,
             expect.soft(Boolean(key), q + ': row ' + label).toBe(true);
             if (!key) continue;
             const got = grid[key]!.slice(1, 4).map(number),
-              want1 = val(g1, scope, row, month, mode) / 1000,
-              want2 = val(g2, scope, row, month, mode) / 1000;
+              want1 = executionValue(g1, scope, row, month, mode) / 1000,
+              want2 = executionValue(g2, scope, row, month, mode) / 1000;
             expect
               .soft(
                 got[0] !== null && Math.abs(got[0]! - want1) <= 0.0051,
@@ -97,8 +104,9 @@ test('acceptance numbers from independent release data', async ({ context, page,
               expect
                 .soft(
                   Math.abs(
-                    val(g2, scope, row, month, 'mesec') -
-                      (cum(g2, scope, row, month) - cum(g2, scope, row, month - 1)),
+                    executionValue(g2, scope, row, month, 'mesec') -
+                      (cumulativeValue(g2, scope, row, month) -
+                        cumulativeValue(g2, scope, row, month - 1)),
                   ),
                   q + ': adjacent reports ' + row,
                 )
@@ -114,7 +122,10 @@ test('acceptance numbers from independent release data', async ({ context, page,
     [2026, 'balance', -3.075],
   ] as const)
     expect
-      .soft(Math.abs(cum(g, 'kfp', row, 8) / 1000 - want), `brief cumulative ${g} ${row}`)
+      .soft(
+        Math.abs(cumulativeValue(g, 'kfp', row, 8) / 1000 - want),
+        `brief cumulative ${g} ${row}`,
+      )
       .toBeLessThan(0.0006);
   for (const [g, row, want] of [
     [2025, 'rev', 3.223],
@@ -125,7 +136,10 @@ test('acceptance numbers from independent release data', async ({ context, page,
     [2026, 'balance', -0.874],
   ] as const)
     expect
-      .soft(Math.abs(val(g, 'kfp', row, 8, 'mesec') / 1000 - want), `brief monthly ${g} ${row}`)
+      .soft(
+        Math.abs(executionValue(g, 'kfp', row, 8, 'mesec') / 1000 - want),
+        `brief monthly ${g} ${row}`,
+      )
       .toBeLessThan(0.0006);
   expect.soft(errors).toEqual([]);
 });
@@ -141,7 +155,9 @@ for (const w of [1280, 768, 640, 390, 360, 320])
       viewport: { width: w, height: w >= 700 ? 900 : 800 },
     });
     try {
-      await ctx.addInitScript('window.__HASH_ROUTES__ = true');
+      await ctx.addInitScript(() => {
+        window.__HASH_ROUTES__ = true;
+      });
       const page = await ctx.newPage(),
         errors: string[] = [];
       page.on('console', (m) => {
@@ -151,25 +167,28 @@ for (const w of [1280, 768, 640, 390, 360, 320])
       for (const [name, h] of ROUTES)
         await test.step(name!, async () => {
           await page.goto(siteURL + '/index.html' + h);
-          // As in Python, layout is measured even after a heading wait failure.
           try {
             await page.waitForSelector('h1', { timeout: 8000 });
           } catch {}
           await page.waitForTimeout(500);
-          const o = await evaluateProbe<{ page: number; wide: string[]; gridOver: number }>(
-            page,
-            OVERFLOW_JS,
-          );
+          const o = await page.evaluate(measureOverflow);
           expect.soft(o.page, name + ': page overflow').toBeLessThanOrEqual(0);
           expect.soft(o.wide, name + ': content overflow').toEqual([]);
           expect.soft(o.gridOver, name + ': grid overflow').toBeLessThanOrEqual(0);
-          const missing = await evaluateProbe(
-            page,
-            `() => [...document.querySelectorAll('figure .chart, .chart[data-ready="1"]')].filter(c => {const f=c.closest('figure, section.block');return f&&!f.querySelector('table, details.fig-table, [data-attach]');}).map(c=>c.id||c.className).slice(0,3)`,
+          const missing = await page.evaluate(() =>
+            [...document.querySelectorAll('figure .chart, .chart[data-ready="1"]')]
+              .filter((c) => {
+                const f = c.closest('figure, section.block');
+                return f && !f.querySelector('table, details.fig-table, [data-attach]');
+              })
+              .map((c) => c.id || c.className)
+              .slice(0, 3),
           );
           expect.soft(missing, name + ': chart table twins').toEqual([]);
           if (touch && [390, 768].includes(w))
-            expect.soft(await evaluateProbe(page, TARGET_JS), name + ': touch targets').toEqual([]);
+            expect
+              .soft(await page.evaluate(measureTouchTargets), name + ': touch targets')
+              .toEqual([]);
         });
       expect.soft(errors).toEqual([]);
     } finally {
@@ -184,7 +203,9 @@ for (const w of [1280, 390])
       viewport: { width: w, height: w >= 700 ? 900 : 800 },
     });
     try {
-      await ctx.addInitScript('window.__HASH_ROUTES__ = true');
+      await ctx.addInitScript(() => {
+        window.__HASH_ROUTES__ = true;
+      });
       const page = await ctx.newPage();
       for (const [name, h] of [
         ['home', '#/'],
@@ -201,12 +222,7 @@ for (const w of [1280, 390])
         const noring: string[] = [];
         for (let i = 0; i < 60; i++) {
           await page.keyboard.press('Tab');
-          const f = await evaluateProbe<{
-            n: string;
-            ring: boolean;
-            back: boolean;
-            tag: string;
-          } | null>(page, FOCUS_JS);
+          const f = await page.evaluate(inspectFocus);
           if (!f || f.tag === 'body') break;
           stops.push(f);
           if (!f.ring) noring.push(f.n);
@@ -227,7 +243,6 @@ for (const w of [1280, 390])
     }
   });
 test('retired dependencies and official replacements', async ({ browser, siteURL }) => {
-  // Original retired_examples used a default context: 1280 × 720, motion allowed.
   const context = await browser.newContext({
     serviceWorkers: 'block',
     viewport: { width: 1280, height: 720 },
@@ -235,18 +250,28 @@ test('retired dependencies and official replacements', async ({ browser, siteURL
   });
   try {
     const page = await context.newPage();
-    await context.addInitScript('window.__HASH_ROUTES__ = true');
+    await context.addInitScript(() => {
+      window.__HASH_ROUTES__ = true;
+    });
     await page.goto(siteURL + '/index.html#/razhodi/obrazovanie?per=2026.expected');
     await page.waitForSelector('#s08-godini');
     expect.soft(await page.locator('#s08-merki').count()).toBe(0);
-    const result: Record<string, string[]> = await evaluateProbe(
-      page,
-      `async()=>{
-    const s08=await import('./js/pages/s08-funkciya.js'),s12=await import('./js/pages/s12-merki.js'),s18=await import('./js/pages/s18-danaci.js');
-    const b=typeof s12.needs==='function'?[...new Set(['2026.law','2027.draft','2028.forecast','2029.forecast'].flatMap(key=>s12.needs({period:{key}})))]:s12.needs;
-    return {a:s08.needs,b,c:s18.needs};
-  }`,
-    );
+    const result: Record<string, string[]> = await page.evaluate(async () => {
+      const s08 = await import(new URL('./js/pages/s08-funkciya.js', location.href).href),
+        s12 = await import(new URL('./js/pages/s12-merki.js', location.href).href),
+        s18 = await import(new URL('./js/pages/s18-danaci.js', location.href).href);
+      const b =
+        typeof s12.needs === 'function'
+          ? [
+              ...new Set(
+                ['2026.law', '2027.draft', '2028.forecast', '2029.forecast'].flatMap((key) =>
+                  s12.needs({ period: { key } }),
+                ),
+              ),
+            ]
+          : s12.needs;
+      return { a: s08.needs, b, c: s18.needs };
+    });
     expect
       .soft(
         !result.a!.includes('measures?') &&

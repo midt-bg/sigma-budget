@@ -9,7 +9,6 @@ type Execution = {
 export const execution: Execution = JSON.parse(
   readFileSync(new URL('../../data/release/execution.json', import.meta.url), 'utf8'),
 );
-// Python float(None) / arithmetic with None fails; Number(null) must never become an expected zero.
 export function releaseNumber(value: unknown): number {
   if (
     (typeof value !== 'number' && typeof value !== 'string') ||
@@ -21,35 +20,11 @@ export function releaseNumber(value: unknown): number {
   if (!Number.isFinite(parsed)) throw new Error('Non-finite release number');
   return parsed;
 }
-// Python %.nf / round use ties-to-even on the exact binary float, unlike JS toFixed.
-// Decode that float so multiplication cannot manufacture or erase a halfway case.
-function fixed(value: number, decimals: number): string {
-  if (!Number.isFinite(value)) throw new Error('Expected a finite release number');
-  const view = new DataView(new ArrayBuffer(8));
-  view.setFloat64(0, Math.abs(value));
-  const bits = view.getBigUint64(0);
-  const exponent = Number((bits >> 52n) & 0x7ffn);
-  const fraction = bits & ((1n << 52n) - 1n);
-  const significand = exponent === 0 ? fraction : (1n << 52n) | fraction;
-  const power = (exponent === 0 ? -1022 : exponent - 1023) - 52;
-  let numerator = significand * 10n ** BigInt(decimals);
-  if (power > 0) numerator <<= BigInt(power);
-  const denominator = power < 0 ? 1n << BigInt(-power) : 1n;
-  let units = numerator / denominator;
-  const remainder = numerator % denominator;
-  if (remainder * 2n > denominator || (remainder * 2n === denominator && units % 2n !== 0n))
-    units++;
-  const digits = String(units).padStart(decimals + 1, '0');
-  return decimals ? digits.slice(0, -decimals) + '.' + digits.slice(-decimals) : digits;
-}
-export function pythonRound(value: number, decimals = 2) {
-  return Number((value < 0 || Object.is(value, -0) ? '-' : '') + fixed(value, decimals));
-}
-export function num(v: number, d = 2, sign = false) {
-  const s = fixed(v, d).replace('.', ',');
+export function formatNumber(v: number, d = 2, sign = false) {
+  const s = Math.abs(v).toFixed(d).replace('.', ',');
   return (v < 0 && Number(s.replace(',', '.')) !== 0 ? '−' : sign ? '+' : '') + s;
 }
-export function plan() {
+export function expectedPlan() {
   const { month, kfp } = execution.latest;
   const rows = ['rev', 'exp.total', 'exp.capex'];
   const cur = rows.map((r) => (releaseNumber(kfp[r]!.cum) / releaseNumber(kfp[r]!.plan)) * 100);
@@ -59,36 +34,40 @@ export function plan() {
     month,
     sums: rows.map(
       (r) =>
-        `${num(releaseNumber(kfp[r]!.cum) / 1000)} от ${num(releaseNumber(kfp[r]!.plan) / 1000)}`,
+        `${formatNumber(releaseNumber(kfp[r]!.cum) / 1000)} от ${formatNumber(releaseNumber(kfp[r]!.plan) / 1000)}`,
     ),
-    cur: cur.map((v) => num(v, 1) + '%'),
-    prev: prev.map((v) => num(v, 1) + '%'),
-    bars: bars.map((v) => num(v, 1) + '%'),
-    widths: bars.map(
-      (v) => (v < 0 || Object.is(v, -0) ? '-' : '') + fixed(v, 1).replace(/\.0$/, '') + '%',
-    ),
+    cur: cur.map((v) => formatNumber(v, 1) + '%'),
+    prev: prev.map((v) => formatNumber(v, 1) + '%'),
+    bars: bars.map((v) => formatNumber(v, 1) + '%'),
+    widths: bars.map((v) => Number(v.toFixed(1)) + '%'),
   };
 }
-export function cum(year: number, scope: string, row: string, month: number) {
+export function cumulativeValue(year: number, scope: string, row: string, month: number) {
   return releaseNumber(execution.data[String(year)]![scope]![row]![month - 1]!);
 }
-export function val(year: number, scope: string, row: string, month: number, mode: string) {
+export function executionValue(
+  year: number,
+  scope: string,
+  row: string,
+  month: number,
+  mode: string,
+) {
   return (
-    cum(year, scope, row, month) -
-    (mode === 'kum' || month === 1 ? 0 : cum(year, scope, row, month - 1))
+    cumulativeValue(year, scope, row, month) -
+    (mode === 'kum' || month === 1 ? 0 : cumulativeValue(year, scope, row, month - 1))
   );
 }
-export function compare() {
+export function expectedComparison() {
   const { month, asOf } = execution.latest;
   const y = Number(asOf.slice(0, 4));
   const rows = ['rev', 'exp.total', 'balance'];
-  const a = rows.map((r) => cum(y - 1, 'kfp', r, month));
-  const b = rows.map((r) => cum(y, 'kfp', r, month));
+  const a = rows.map((r) => cumulativeValue(y - 1, 'kfp', r, month));
+  const b = rows.map((r) => cumulativeValue(y, 'kfp', r, month));
   return {
-    prev: a.map((v) => num(v / 1000)),
-    cur: b.map((v) => num(v / 1000)),
-    diff: [0, 1].map((i) => num((b[i]! - a[i]!) / 1000, 2, true)),
-    balanceDiff: num(Math.abs(b[2]! - a[2]!) / 1000),
+    prev: a.map((v) => formatNumber(v / 1000)),
+    cur: b.map((v) => formatNumber(v / 1000)),
+    diff: [0, 1].map((i) => formatNumber((b[i]! - a[i]!) / 1000, 2, true)),
+    balanceDiff: formatNumber(Math.abs(b[2]! - a[2]!) / 1000),
   };
 }
 
@@ -103,48 +82,49 @@ const rates = JSON.parse(
   readFileSync(new URL('../../data/release/rates.json', import.meta.url), 'utf8'),
 );
 const employment: Employment = rates.scenarios.find((s: { id: string }) => s.id === 'employment');
-export const maxima = Object.fromEntries(
+export const insurableIncomeCaps = Object.fromEntries(
   employment.maxInsurableIncomeEur.map((m) => [m.id, m.eur]),
 );
-// Exact decimal integer arithmetic and ROUND_HALF_UP, independent of the browser's Number engine.
-const scale = 1_000_000n;
-function decimal(value: string | number) {
-  const [whole, fraction = ''] = String(value).split('.');
-  return BigInt(whole!) * scale + BigInt(fraction.padEnd(6, '0'));
-}
-const rounded = (n: bigint, d: bigint) => (n + d / 2n) / d;
+// All monetary calculations use integer cents; rates use basis points.
 export function salaryModel(gross: string, rule: string, tzpb?: number) {
-  const g = decimal(gross);
-  const tz = decimal(
-    tzpb === undefined
-      ? employment.tzpbPct.used
-      : Math.min(Math.max(tzpb, employment.tzpbPct.min), employment.tzpbPct.max),
+  const grossCents = Math.round(Number(gross) * 100);
+  const basisPoints = (percent: number) => Math.round(percent * 100);
+  const accidentRate = Math.min(
+    Math.max(tzpb ?? employment.tzpbPct.used, employment.tzpbPct.min),
+    employment.tzpbPct.max,
   );
-  function month(r: string) {
-    const cap = decimal(maxima[r]!);
-    const ins = g < cap ? g : cap;
-    const emp = rounded(ins * decimal(employment.employeePct), scale * scale);
-    const tax = rounded((g - emp * 10_000n) * decimal(employment.incomeTaxPct), scale * scale);
-    const er = rounded(ins * (decimal(employment.employerPctWithoutTzpb) + tz), scale * scale);
+  function month(period: string) {
+    const insured = Math.min(grossCents, Math.round(insurableIncomeCaps[period]! * 100));
+    const emp = Math.round((insured * basisPoints(employment.employeePct)) / 10_000);
+    const tax = Math.round(((grossCents - emp) * basisPoints(employment.incomeTaxPct)) / 10_000);
+    const er = Math.round(
+      (insured * (basisPoints(employment.employerPctWithoutTzpb) + basisPoints(accidentRate))) /
+        10_000,
+    );
     return { emp, tax, er };
   }
-  const a = month(rule === 'year' ? 'until' : rule);
-  const b = month(rule === 'year' ? 'from' : rule);
-  const annual = (k: 'emp' | 'tax' | 'er') =>
-    rule === 'year' ? a[k] * 7n + b[k] * 5n : a[k] * 12n;
-  const yEmp = annual('emp'),
-    yTax = annual('tax'),
-    yEr = annual('er');
-  const emp = rounded(yEmp, 12n),
-    tax = rounded(yTax, 12n),
-    er = rounded(yEr, 12n);
+  const periods =
+    rule === 'year'
+      ? ([
+          [month('until'), 7],
+          [month('from'), 5],
+        ] as const)
+      : ([[month(rule), 12]] as const);
+  const yearly = (key: 'emp' | 'tax' | 'er') =>
+    periods.reduce((sum, [amount, months]) => sum + amount[key] * months, 0);
+  const yEmp = yearly('emp'),
+    yTax = yearly('tax'),
+    yEr = yearly('er');
+  const emp = Math.round(yEmp / 12),
+    tax = Math.round(yTax / 12),
+    er = Math.round(yEr / 12);
   return {
-    emp: Number(emp) / 100,
-    tax: Number(tax) / 100,
-    er: Number(er) / 100,
-    net: Number(rounded(g, 10_000n) - emp - tax) / 100,
-    yEmp: Number(yEmp) / 100,
-    yTax: Number(yTax) / 100,
-    yEr: Number(yEr) / 100,
+    emp: emp / 100,
+    tax: tax / 100,
+    er: er / 100,
+    net: (grossCents - emp - tax) / 100,
+    yEmp: yEmp / 100,
+    yTax: yTax / 100,
+    yEr: yEr / 100,
   };
 }

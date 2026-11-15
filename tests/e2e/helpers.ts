@@ -19,17 +19,3 @@ export async function downloadBytes(download: Download): Promise<Buffer> {
   if (!path) throw new Error('Download did not produce a local file');
   return readFile(path);
 }
-
-/** Python Page.evaluate invokes function strings; JS Page.evaluate treats strings as expressions.
- * Keep the original probes intact and reproduce Python's expression-or-function semantics.
- */
-export async function evaluateProbe<T = unknown, A = undefined>(
-  page: import('@playwright/test').Page,
-  source: string,
-  arg?: A,
-): Promise<T> {
-  const argument = JSON.stringify(arg) ?? 'undefined';
-  return page.evaluate(
-    `((value) => typeof value === 'function' ? value(${argument}) : value)((${source}\n))`,
-  );
-}

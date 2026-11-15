@@ -1,16 +1,17 @@
-import { evaluateProbe } from '../helpers.ts';
 import { test, expect } from '../fixtures.ts';
 import {
-  JS_COMPUTE,
-  INDIRECT_JS,
+  calculatorResults,
+  indirectTaxResults,
   type ComputeResult,
   type IndirectResult,
 } from '../calc-probes.ts';
-import { salaryModel, maxima, pythonRound } from '../expected.ts';
+import { salaryModel, insurableIncomeCaps } from '../expected.ts';
 test.use({ serviceWorkers: 'block', reducedMotion: 'reduce' });
 
 test('salary engine and indirect tax cases', async ({ context, page, siteURL }) => {
-  await context.addInitScript('window.__HASH_ROUTES__ = true');
+  await context.addInitScript(() => {
+    window.__HASH_ROUTES__ = true;
+  });
   await page.goto(siteURL + '/index.html#/danaci');
   await page.waitForSelector('#s18-view', { timeout: 8000 });
   const ref = [
@@ -60,7 +61,7 @@ test('salary engine and indirect tax cases', async ({ context, page, siteURL }) 
   for (const tzpb of [0.4, 0.7, 1.1, 2.0, 0.1])
     for (const rules of ['from', 'year']) cases.push({ gross: '1800', rules, tzpb });
   // The result is JSON from the browser probe, not a shared production type/model.
-  const results = await evaluateProbe<ComputeResult[], Case[]>(page, JS_COMPUTE, cases);
+  const results = await page.evaluate(calculatorResults, cases);
   for (const [i, c] of cases.entries()) {
     const o = results[i]!,
       tag = JSON.stringify(c);
@@ -68,7 +69,7 @@ test('salary engine and indirect tax cases', async ({ context, page, siteURL }) 
     if (o.kind !== 'ok') continue;
     const m = salaryModel(c.gross, c.rules, c.tzpb);
     for (const k of ['emp', 'tax', 'er', 'net', 'yEmp', 'yTax', 'yEr'] as const)
-      expect.soft(Math.abs(pythonRound(o[k]) - m[k]), `${tag}: ${k}`).toBeLessThanOrEqual(0.005);
+      expect.soft(Math.abs(o[k] - m[k]), `${tag}: ${k}`).toBeLessThanOrEqual(0.005);
     expect
       .soft(Math.abs(o.net + o.emp + o.tax - Number(c.gross)), tag + ': gross sum')
       .toBeLessThan(0.005);
@@ -111,7 +112,8 @@ test('salary engine and indirect tax cases', async ({ context, page, siteURL }) 
           tag + ': periods',
         )
         .toEqual([7, 5]);
-    } else expect.soft(o.capped, tag + ': cap').toBe(Number(c.gross) > maxima[c.rules]!);
+    } else
+      expect.soft(o.capped, tag + ': cap').toBe(Number(c.gross) > insurableIncomeCaps[c.rules]!);
     expect.soft(o.text, tag).not.toMatch(/NaN|undefined/);
   }
   const r = results[0]!;
@@ -120,7 +122,7 @@ test('salary engine and indirect tax cases', async ({ context, page, siteURL }) 
     .toEqual([1163.97, 206.7, 129.33, 283.8]);
   for (const s of ['1 163,97', '206,70', '129,33', '283,80'])
     expect.soft(r.text.replace(/[  ]/g, ' ')).toContain(s);
-  const run = (cases: Case[]) => evaluateProbe<ComputeResult[], Case[]>(page, JS_COMPUTE, cases);
+  const run = (cases: Case[]) => page.evaluate(calculatorResults, cases);
   const a = await run([0.4, 1.1].map((tzpb) => ({ gross: '1800', rules: 'from', tzpb })));
   for (const k of ['net', 'emp', 'tax'] as const)
     expect.soft(a[0]![k], 'ТЗПБ personal ' + k).toBe(a[1]![k]);
@@ -144,10 +146,7 @@ test('salary engine and indirect tax cases', async ({ context, page, siteURL }) 
     ['yEr', 'er'],
   ] as const)
     expect
-      .soft(
-        Math.abs(y[2]![annual] - pythonRound(y[0]![monthly] * 7 + y[1]![monthly] * 5)),
-        annual + ': 7+5',
-      )
+      .soft(Math.abs(y[2]![annual] - (y[0]![monthly] * 7 + y[1]![monthly] * 5)), annual + ': 7+5')
       .toBeLessThan(0.005);
   const bad = ['', '0', '-5', 'abc', '1e3x', '0,00', '10000001', '  '];
   const invalid = await run(bad.map((gross) => ({ gross, rules: 'from' })));
@@ -174,7 +173,7 @@ test('salary engine and indirect tax cases', async ({ context, page, siteURL }) 
     )
     .toBe(true);
 
-  const x = await evaluateProbe<IndirectResult>(page, INDIRECT_JS);
+  const x = await page.evaluate(indirectTaxResults);
   const near = (a: number | null, b: number) => a !== null && Math.abs(a - b) < 1e-8;
   expect
     .soft(
@@ -248,7 +247,9 @@ for (const w of [1280, 390])
       viewport: { width: w, height: w >= 700 ? 900 : 844 },
     });
     try {
-      await ctx.addInitScript('window.__HASH_ROUTES__ = true');
+      await ctx.addInitScript(() => {
+        window.__HASH_ROUTES__ = true;
+      });
       const page = await ctx.newPage(),
         errors: string[] = [];
       page.on('console', (m) => {
@@ -263,10 +264,10 @@ for (const w of [1280, 390])
       const tx = () => text('s18-view');
       for (const s of ['1 163,97', '206,70', '129,33', '283,80', '336,03'])
         expect.soft(await tx()).toContain(s);
-      expect.soft(await evaluateProbe(page, 'location.hash')).toBe('#/danaci');
+      expect.soft(await page.evaluate(() => location.hash)).toBe('#/danaci');
       await page.fill('#s18-gross', '2 345,67');
       await page.waitForTimeout(200);
-      let h: string = await evaluateProbe(page, 'location.href');
+      let h: string = await page.evaluate(() => location.href);
       expect
         .soft(
           !['2345', '2%20345', 'gross'].some((k) => h.includes(k)) &&
@@ -274,7 +275,6 @@ for (const w of [1280, 390])
           'salary URL',
         )
         .toBe(true);
-      // Python's `... or True` was a tautology; retain the address/privacy assertion above.
       const base = await tx();
       await page.check('#s18-rules-until', { force: true });
       await page.waitForTimeout(200);
@@ -292,7 +292,10 @@ for (const w of [1280, 390])
       await page.waitForTimeout(200);
       expect.soft(await tx()).toContain('1 163,97');
       for (const d of ['s18-funds', 's18-how', 's18-sources', 's18-receipt', 's18-indirect'])
-        await evaluateProbe(page, 'id=>{const d=document.getElementById(id);if(d)d.open=true;}', d);
+        await page.evaluate((id) => {
+          const d = document.querySelector<HTMLDetailsElement>('#' + id);
+          if (d) d.open = true;
+        }, d);
       await page.waitForTimeout(200);
       const funds = await text('s18-funds-view'),
         how = await text('s18-how-view');
@@ -345,13 +348,12 @@ for (const w of [1280, 390])
       await page.fill('#s18-date', '2026-11-08');
       await page.fill('#s18-tobacco', '0');
       await page.fill('#s18-sticks', '');
-      h = await evaluateProbe(page, 'location.href');
+      h = await page.evaluate(() => location.href);
       expect.soft(h.split('#')[1]).not.toContain('?');
       expect
         .soft(
-          await evaluateProbe(
-            page,
-            'document.documentElement.scrollWidth-document.documentElement.clientWidth',
+          await page.evaluate(
+            () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
           ),
         )
         .toBeLessThanOrEqual(0);

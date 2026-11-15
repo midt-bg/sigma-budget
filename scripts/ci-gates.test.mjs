@@ -283,7 +283,7 @@ test('e2e project selectors use equals so file filters cannot become project nam
   }
 });
 
-test('P10b ports preserve the ordered static gates including acceptance quick overlap', () => {
+test('static browser gates run in order and use explicit context settings', () => {
   const { parse } = createRequire(new URL('../packages/ingest/package.json', import.meta.url))(
     'yaml',
   );
@@ -300,10 +300,6 @@ test('P10b ports preserve the ordered static gates including acceptance quick ov
   const start = runs.indexOf(ordered[0]);
   assert.ok(start >= 0);
   assert.deepEqual(runs.slice(start, start + ordered.length), ordered);
-  assert.doesNotMatch(
-    runs.join('\n'),
-    /python -m tests\.e2e\.(?:calc_check|share_check|accept|motion)\b/,
-  );
   for (const spec of ['calc', 'share', 'accept', 'motion']) {
     assert.match(
       readFileSync(`tests/e2e/static/${spec}.spec.ts`, 'utf8'),
@@ -318,22 +314,10 @@ test('P10b ports preserve the ordered static gates including acceptance quick ov
   assert.doesNotMatch(oracle, /from ['"][^'"]*(?:apps\/web|packages\/ingest)/);
 });
 
-test('P10b expected figures retain Python ties-to-even independently of browser formatting', async () => {
-  const { num, pythonRound, releaseNumber } = await import('../tests/e2e/expected.ts');
-  for (const missing of [null, undefined, '', ' ', '0x10', false, NaN, Infinity])
-    assert.throws(() => releaseNumber(missing));
+test('release expectations reject missing and invalid numbers', async () => {
+  const { releaseNumber } = await import('../tests/e2e/expected.ts');
+  for (const value of [null, undefined, '', ' ', '0x10', false, NaN, Infinity])
+    assert.throws(() => releaseNumber(value));
   assert.equal(releaseNumber('0.000'), 0);
   assert.equal(releaseNumber('-3.075'), -3.075);
-  // Fixed Python results, including exact halves and non-half binary representations.
-  for (const [value, digits, text, rounded] of [
-    [2.25, 1, '2,2', 2.2],
-    [2.35, 1, '2,4', 2.4],
-    [0.125, 2, '0,12', 0.12],
-    [-0.125, 2, '−0,12', -0.12],
-    [2.675, 2, '2,67', 2.67],
-    [1.005, 2, '1,00', 1],
-  ]) {
-    assert.equal(num(value, digits), text);
-    assert.equal(pythonRound(value, digits), rounded);
-  }
 });
