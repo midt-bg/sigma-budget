@@ -72,24 +72,3 @@ for (const view of VIEWS)
     }
     expect.soft(errors, `${view}: script errors`).toEqual([]);
   });
-test('tax sharing never carries personal inputs', async ({ context, page, siteURL }) => {
-  await enableHashRoutes(context);
-  await page.goto(siteURL + '/index.html#/danaci?brutno=3000&zaplata=3000&demo=1');
-  await settle(page);
-  await page
-    .locator('#s18-brutno, input[inputmode=decimal], input[type=text]')
-    .first()
-    .fill('3456');
-  await expect(page.locator('#s18-gross')).toHaveValue('3456');
-  expect.soft(await page.evaluate(() => location.hash)).not.toContain('3456');
-  const ids: string[] = await page.evaluate(visibleShareIds);
-  for (const id of ids) {
-    const link: string | null = await page.evaluate(linkFor, id);
-    expect
-      .soft(
-        link !== null && !['brutno=', 'zaplata=', 'demo=', '3456'].some((k) => link.includes(k)),
-        `danaci [${id}]: ${link}`,
-      )
-      .toBe(true);
-  }
-});

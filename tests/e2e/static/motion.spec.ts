@@ -17,7 +17,7 @@ async function motionContext(browser: Browser, width: number, reducedMotion: boo
 for (const reducedMotion of [true, false]) {
   test(
     reducedMotion
-      ? 'reduced motion shows final values immediately'
+      ? 'reduced motion shows final values without animation'
       : 'motion settles on final values',
     async ({ browser, siteURL }) => {
       const context = await motionContext(browser, 1280, reducedMotion);
@@ -25,18 +25,8 @@ for (const reducedMotion of [true, false]) {
         const page = await context.newPage();
         await page.goto(siteURL + '/index.html#/');
         await expect(page.locator('#s15-b-plan .prog-text').first()).toBeVisible();
-        if (!reducedMotion) {
-          // Measure the result after the visible entrance/count-up period, without retrying its text.
-          await page.waitForTimeout(3000);
-        }
-        const texts = await page.locator('#s15-b-plan .prog-text').allTextContents();
-        expect(texts).toEqual(plan.bars);
-        const widths = await page
-          .locator('#s15-b-plan .prog-fill')
-          .evaluateAll((elements) =>
-            elements.map((element) => (element as HTMLElement).style.width),
-          );
-        expect(widths).toEqual(plan.widths);
+        const percentages = page.locator('#s15-b-plan .prog-text');
+        await expect(percentages).toHaveText(plan.bars, { timeout: 3000 });
         const renderedWidths = await page
           .locator('#s15-b-plan .prog-fill')
           .evaluateAll((elements) =>

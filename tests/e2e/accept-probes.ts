@@ -101,85 +101,71 @@ export const measureOverflow = () => {
   };
 };
 export const inspectFocus = () => {
-  const el = document.activeElement;
-  if (!el || el === document.body) return null;
-  const cs = getComputedStyle(el),
-    r = el.getBoundingClientRect();
-  const ring =
-    (parseFloat(cs.outlineWidth) > 0 && cs.outlineStyle !== 'none') ||
-    (cs.boxShadow && cs.boxShadow !== 'none');
-  const wrap = el.closest('label, .seg, details, .field');
-  let ring2 = false;
-  if (!ring && wrap) {
-    const w = getComputedStyle(wrap);
-    ring2 =
-      (parseFloat(w.outlineWidth) > 0 && w.outlineStyle !== 'none') ||
-      (w.boxShadow !== '' && w.boxShadow !== 'none');
-  }
-  const sib = el.nextElementSibling; // a visually hidden radio draws its ring on the label
-  let ring3 = false;
-  if (!ring && !ring2 && el.id) {
-    const l = document.querySelector('label[for="' + CSS.escape(el.id) + '"]');
-    if (l) {
-      const w = getComputedStyle(l);
-      ring3 =
-        (parseFloat(w.outlineWidth) > 0 && w.outlineStyle !== 'none') ||
-        (w.boxShadow !== '' && w.boxShadow !== 'none');
-    }
-  }
-  const outline = cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0;
-  const lab = el.closest('label');
-  let ringL = false;
-  if (lab) {
-    const w = getComputedStyle(lab);
-    ringL = parseFloat(w.outlineWidth) > 0 && w.outlineStyle !== 'none';
-  }
-  const seg = !!el.closest('.seg');
-  let ring4 = false;
-  if (seg && el.nextElementSibling) {
-    const w = getComputedStyle(el.nextElementSibling);
-    ring4 =
-      (parseFloat(w.outlineWidth) > 0 && w.outlineStyle !== 'none') ||
-      (w.boxShadow !== '' && w.boxShadow !== 'none');
-  }
-  // a range input draws its ring on the thumb pseudo-element: look for that rule in the style sheets
-  const sliderRing =
-    el.matches('input[type=range]') &&
-    [...document.styleSheets].some((ss) => {
-      try {
-        return [...ss.cssRules].some(
-          (r) =>
-            r instanceof CSSStyleRule &&
-            r.selectorText &&
-            /focus-visible::-webkit-slider-thumb/.test(r.selectorText) &&
-            /outline:\s*[1-9]/.test(r.cssText),
-        );
-      } catch (e) {
-        return false;
-      }
+  const element = document.activeElement;
+  if (
+    !(element instanceof HTMLElement || element instanceof SVGElement) ||
+    element === document.body
+  )
+    return null;
+  const rectangle = element.getBoundingClientRect();
+  const candidates = [
+    ...new Set(
+      [
+        element,
+        ...['label', '.seg', 'details', '.field'].map((selector) => element.closest(selector)),
+        element.id ? document.querySelector('label[for="' + CSS.escape(element.id) + '"]') : null,
+        element.matches('input[type=radio], input[type=checkbox]')
+          ? element.nextElementSibling
+          : null,
+      ].filter((candidate): candidate is Element => candidate !== null),
+    ),
+  ];
+  const readStyles = () =>
+    candidates.flatMap((candidate) => {
+      const styles = [getComputedStyle(candidate)];
+      if (candidate === element && element.matches('input[type=range]'))
+        styles.push(getComputedStyle(element, '::-webkit-slider-thumb'));
+      return styles.map((style) => ({
+        outline: parseFloat(style.outlineWidth) > 0 && style.outlineStyle !== 'none',
+        shadow: style.boxShadow,
+      }));
     });
-  const prev = window.__prevFocus;
-  window.__prevFocus = el;
-  const back = !!(
-    prev &&
-    prev !== el &&
-    prev.isConnected &&
-    !(prev.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING)
-  );
+  const focused = readStyles();
+  let ring: boolean;
+  try {
+    element.blur();
+    const unfocused = readStyles();
+    ring = focused.some(
+      (style, index) =>
+        style.outline ||
+        (style.shadow !== 'none' &&
+          style.shadow !== '' &&
+          style.shadow !== unfocused[index]!.shadow),
+    );
+  } finally {
+    element.focus({ preventScroll: true });
+  }
+  const previous = window.__prevFocus;
+  window.__prevFocus = element;
   return {
-    back,
+    back: !!(
+      previous &&
+      previous !== element &&
+      previous.isConnected &&
+      !(previous.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING)
+    ),
     n: (
-      el.getAttribute('aria-label') ||
-      el.textContent ||
-      el.getAttribute('name') ||
-      el.id ||
-      el.tagName
+      element.getAttribute('aria-label') ||
+      element.textContent ||
+      element.getAttribute('name') ||
+      element.id ||
+      element.tagName
     )
       .trim()
       .replace(/\s+/g, ' ')
       .slice(0, 36),
-    tag: el.tagName.toLowerCase(),
-    top: Math.round(r.top + scrollY),
-    ring: !!(ring || ring2 || ring3 || ringL || ring4 || outline || sliderRing),
+    tag: element.tagName.toLowerCase(),
+    top: Math.round(rectangle.top + scrollY),
+    ring,
   };
 };

@@ -27,7 +27,8 @@ export function formatUnits(units: number, scale: number, decimals = 2, sign = f
   return (units < 0 && rounded ? '−' : sign ? '+' : '') + text;
 }
 export function expectedPlan() {
-  const { month, kfp } = execution.latest;
+  const { month, kfp, asOf } = execution.latest;
+  const year = Number(asOf.slice(0, 4));
   const rows = ['rev', 'exp.total', 'exp.capex'];
   const current = rows.map((row) => {
     const amount = releaseUnits(kfp[row]!.cum),
@@ -37,7 +38,11 @@ export function expectedPlan() {
   });
   const previous = rows.map(
     (row) =>
-      formatUnits(releaseUnits(String(execution.pace['2025']![row]![month - 1]!), 2), 2, 1) + '%',
+      formatUnits(
+        releaseUnits(String(execution.pace[String(year - 1)]![row]![month - 1]!), 2),
+        2,
+        1,
+      ) + '%',
   );
   const bars = current.flatMap((text, index) => [text, previous[index]!]);
   return {

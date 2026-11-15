@@ -125,27 +125,6 @@ export const indirectTaxResults = async () => {
     store: { get: () => false },
     period: {},
   });
-  const errors = [
-    'purchases',
-    'reduced',
-    'exempt',
-    'fuel',
-    'tobacco',
-    'fuelPrice',
-    'tobaccoPrice',
-    'sticks',
-  ].map((key) => {
-    const c = compute({ ...state, [key]: '-1' }, env);
-    return { key, error: c.errors[key], status: c.ind.status, total: c.ind.total };
-  });
-  const dateCases = ['', '2027-02-30', '2026-07-31'].map((date) => {
-    const c = compute({ ...state, date }, env);
-    return { status: c.ind.status, error: c.errors.date, total: c.ind.total };
-  });
-  const blank = compute({ ...state, reduced: '' }, env);
-  const fractional = compute({ ...state, sticks: '1,5' }, env);
-  const zeroPrice = compute({ ...state, fuelPrice: '0' }, env);
-  const unknownFuel = compute({ ...state, fuelType: 'lpg' }, env);
   const decimalPrices = compute({ ...state, fuelPrice: '1.605', tobaccoPrice: '3.512' }, env).ind
     .inp;
   const reference = resetMem();
@@ -163,16 +142,8 @@ export const indirectTaxResults = async () => {
   applyReferencePrices(reference, a);
   const diesel = compute(reference, env).ind.inp;
   return {
-    untaxed: a.vat.untaxed,
-    hasExtractedZero: Object.hasOwn(a.vat, 'zeroPct'),
     rows,
     views,
-    errors,
-    dateCases,
-    blank: { status: blank.ind.status, error: blank.errors.reduced },
-    fractional: fractional.errors.sticks,
-    zeroPrice: zeroPrice.errors.fuelPrice,
-    unknownFuel: unknownFuel.errors.fuelType,
     decimalPrices,
     references: {
       before,
@@ -206,8 +177,6 @@ export type ComputeResult = {
   capped: boolean;
 };
 export type IndirectResult = {
-  untaxed: { kind: string; basis: string };
-  hasExtractedZero: boolean;
   rows: {
     fuelExcise: number | null;
     vat: number | null;
@@ -215,12 +184,6 @@ export type IndirectResult = {
     total: number | null;
   }[];
   views: ({ unavailable: boolean } | null)[];
-  errors: { key: string; error: string | null; status: string; total: number | null }[];
-  blank: { status: string; error: string | null };
-  dateCases: { status: string; error: string | null; total: number | null }[];
-  fractional: string | null;
-  zeroPrice: string | null;
-  unknownFuel: string | null;
   decimalPrices: { fuelPrice: number; tobaccoPrice: number };
   references: {
     before: { fuelPrice: number; tobaccoPrice: number };

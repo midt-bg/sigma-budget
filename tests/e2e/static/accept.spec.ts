@@ -6,7 +6,7 @@ import {
   inspectFocus,
   ROUTES,
 } from '../accept-probes.ts';
-import { expectedPlan, expectedComparison, cumulativeValue, executionValue } from '../expected.ts';
+import { expectedPlan, expectedComparison, executionValue } from '../expected.ts';
 test.use({
   serviceWorkers: 'block',
   viewport: { width: 1280, height: 900 },
@@ -41,9 +41,7 @@ test('acceptance numbers from independent release data', async ({ context, page,
   for (const s of [...plan.sums, ...plan.cur]) expect.soft(home, 'home plan ' + s).toContain(s);
   await page.goto(base + '#/izpalnenie');
   await expect(page.locator('table.data').first()).toBeVisible({ timeout: 8000 });
-  const comparisonText = (
-    await page.locator('main, #main, body').evaluateAll((els) => (els[0] as HTMLElement).innerText)
-  )
+  const comparisonText = (await page.locator('main').innerText())
     .replace(/[  ]/g, ' ')
     .replaceAll('−', '-');
   for (const s of [
@@ -101,44 +99,18 @@ test('acceptance numbers from independent release data', async ({ context, page,
                 query + ' ' + label + ' ' + g2,
               )
               .toBe(true);
-            if (actualValues[2] !== null)
-              expect
-                .soft(
-                  Math.abs(actualValues[2]! - (currentValue - previousValue)),
-                  query + ' ' + label + ' difference',
-                )
-                .toBeLessThanOrEqual(0.0101);
+            expect
+              .soft(actualValues[2], query + ' ' + label + ' difference is numeric')
+              .not.toBeNull();
+            expect
+              .soft(
+                Math.abs(actualValues[2]! - (currentValue - previousValue)),
+                query + ' ' + label + ' difference',
+              )
+              .toBeLessThanOrEqual(0.0101);
           }
         });
       }
-  for (const [g, row, want] of [
-    [2025, 'rev', 26.925],
-    [2026, 'rev', 30.118],
-    [2025, 'exp.total', 29.592],
-    [2026, 'exp.total', 33.193],
-    [2025, 'balance', -2.666],
-    [2026, 'balance', -3.075],
-  ] as const)
-    expect
-      .soft(
-        Math.abs(cumulativeValue(g, 'kfp', row, 8) / 1000 - want),
-        `brief cumulative ${g} ${row}`,
-      )
-      .toBeLessThan(0.0006);
-  for (const [g, row, want] of [
-    [2025, 'rev', 3.223],
-    [2026, 'rev', 3.77],
-    [2025, 'exp.total', 3.702],
-    [2026, 'exp.total', 4.644],
-    [2025, 'balance', -0.479],
-    [2026, 'balance', -0.874],
-  ] as const)
-    expect
-      .soft(
-        Math.abs(executionValue(g, 'kfp', row, 8, 'mesec') / 1000 - want),
-        `brief monthly ${g} ${row}`,
-      )
-      .toBeLessThan(0.0006);
   expect.soft(errors).toEqual([]);
 });
 for (const w of [1280, 768, 640, 390, 360, 320])

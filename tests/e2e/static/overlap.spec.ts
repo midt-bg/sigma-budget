@@ -1,7 +1,7 @@
 import { test, expect, enableHashRoutes } from '../fixtures.ts';
 import { measureLayout } from '../overlap-probes.ts';
 import type { BrowserContext } from '@playwright/test';
-test.use({ serviceWorkers: 'allow' });
+test.use({ serviceWorkers: 'block' });
 test('overlap quick: all routes, sticky positions, print and extra samples', async ({
   browser,
   page,
@@ -52,7 +52,10 @@ test('overlap quick: all routes, sticky positions, print and extra samples', asy
             page = await load(context, route.samples[0]!, errors);
           try {
             expect
-              .soft(await page.evaluate(measureLayout), `${width} ${route.id}: banner`)
+              .soft(
+                await page.evaluate(measureLayout),
+                `${route.id} at ${width}px: initial layout findings`,
+              )
               .toEqual([]);
             expect.soft(errors, `${width} ${route.id}: errors`).toEqual([]);
             for (const frac of width === 390 ? [0.33, 0.66, 1] : [1]) {
@@ -60,7 +63,6 @@ test('overlap quick: all routes, sticky positions, print and extra samples', asy
                 (f) => window.scrollTo(0, (document.body.scrollHeight - innerHeight) * f),
                 frac,
               );
-              await expect(page.locator('article.page')).toBeVisible();
               const findings: { k: string; m: string }[] = await page.evaluate(measureLayout);
               expect
                 .soft(
