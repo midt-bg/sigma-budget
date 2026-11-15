@@ -1,3 +1,4 @@
+import { verifyHistoricalPythonPin } from '../io/fixture-history.js';
 import { cpSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -66,9 +67,11 @@ function normal(s: string): string {
   return s.replace(/(-?\d+)\.0(?!\d)/g, '$1').replaceAll('null', 'None');
 }
 describe('Python 3.12 pinned donor baseline and finite independent mutations', () => {
-  it('authenticates frozen donor/data bytes and pinned original dependencies', () => {
-    for (const [rel, digest] of Object.entries(manifest.frozen))
-      expect(sha256(readFileSync(join(fixture, rel))), rel).toBe(digest);
+  it('records historical donor pins and authenticates DATA bytes and original dependencies', () => {
+    for (const [rel, digest] of Object.entries(manifest.frozen)) {
+      if (rel.endsWith('.py')) verifyHistoricalPythonPin(`independent-rules/${rel}`, digest);
+      else expect(sha256(readFileSync(join(fixture, rel))), rel).toBe(digest);
+    }
     for (const [rel, digest] of Object.entries(manifest.requiredInputs))
       expect(sha256(readFileSync(requiredInput(rel))), rel).toBe(digest);
     expect(manifest.repositoryBaseline).toBe('3424bc998c726d6d511d4284295c54c50c42d099');

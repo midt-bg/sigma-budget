@@ -1,18 +1,18 @@
 # Law builder fixtures
 
+This directory contains frozen DATA fixtures. Python generators and donor copies have been removed; JSON, CSV, XML, hashes and oracle outputs are preserved byte for byte. TypeScript tests continue to compare against these expectations.
+
+The historical module paths, SHA-256 values and Git revisions are recorded in the [fixture origin index](../../README-fixtures.md). Existing provenance inventories retain their historical Python entries; they are not a current checkout file list.
+
 `inputs/` freezes the law cache, Parliament fields, parsed DV blocks, ministry
 input and source definitions used by the Python builder at revision `1843be0`.
 `original-hashes.json` records the hashes of the original archive members from
 which the parser evidence was captured. `provenance.json` pins both the frozen
 inputs and generated outputs. No live repository data is read by the generator.
 
-Verify that Python 3.12 regenerates every output byte for byte:
+The Python 3.12 outputs are retained byte for byte.
 
-```sh
-PYTHONPATH=pipeline tmp/venv-data/bin/python packages/ingest/test/fixtures/law/generate_oracle.py --check
-```
-
-Remove `--check` to regenerate. The cached Parliament proposals in this release
+The cached Parliament proposals in this release
 already contain decoded arrays. `literal-data.json` additionally records
 representative Python `ast.literal_eval` results; TypeScript accepts decoded
 data and does not evaluate Python literals. The optional Parliament ZIP was

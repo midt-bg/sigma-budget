@@ -1,16 +1,18 @@
 # Wave 14 validation evidence
 
-The baseline is `05d6f6eeca9991468f3c94c3c9c26e87d5b0fae0`. `corpus/` freezes the release files (including release manifests), input files, registries, original pins and route catalogue as bytes. Their hashes, the unchanged Python donor files and the scenario definitions are recorded in `groups-provenance.json`. `execution.json`, its unchanged donor and its independent projection oracle are separately pinned in `provenance.json`. The original production Python files are not used by regeneration.
+This directory contains frozen DATA fixtures. Python generators and donor copies have been removed; JSON, CSV, XML, hashes and oracle outputs are preserved byte for byte. TypeScript tests continue to compare against these expectations.
+
+The historical module paths, SHA-256 values and Git revisions are recorded in the [fixture origin index](../../README-fixtures.md). Existing provenance inventories retain their historical Python entries; they are not a current checkout file list.
+
+The baseline is `05d6f6eeca9991468f3c94c3c9c26e87d5b0fae0`. `corpus/` freezes the release files (including release manifests), input files, registries, original pins and route catalogue as bytes. Their hashes, the unchanged Python donor files and the scenario definitions are recorded in `groups-provenance.json`. `execution.json`, its unchanged donor and its independent projection oracle are separately pinned in `provenance.json`. The capture did not use the live production Python files.
 
 `tracked-paths.json` captures the baseline tracked path list. The test harness materializes empty files for source and documentation paths to reproduce existence checks; these placeholders are not source bytes. `code-path-capture.json` records hashes and the result of the donor's baseline tracked-code absolute-path scan. The real scanner and input hashing are additionally tested on a small independent filesystem tree, including injected unsafe paths. The privacy scan of non-data web assets is likewise a captured clean baseline; a synthetic leaking web asset exercises the warning path. The two described editorial inputs are included as bytes so their hashes are recomputed.
 
 Historical originals are not restored in this fixture. Consequently INPUTS reports the absent raw originals as a warning and verifies every included input from bytes. This does not claim to reconstruct data_europa, GISCO, debt originals or other historical source files. None of the fixture's placeholders is used as evidence for original file content.
 
-Regenerate and check with Python 3.12 and the locked pipeline requirements:
+The retained TypeScript checks can be run with:
 
 ```sh
-python packages/ingest/test/fixtures/validate14/generate_oracle.py --check
-python packages/ingest/test/fixtures/validate14/generate_groups_oracle.py --check
 pnpm --filter @sigma-budget/dataset-schema build
 WAVE14_PARITY_REPORT=tmp/ts-migration/candidates/14/report.json pnpm --filter @sigma-budget/ingest exec vitest run src/validate
 ```

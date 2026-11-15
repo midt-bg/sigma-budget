@@ -1,0 +1,1261 @@
+{
+  "lastPresentCommit": "7cc016407f87a2bfc4aa9d75e942edc5552cf3d3",
+  "files": {
+    "aggregation-rss/donor/feed.py": {
+      "sha256": "2e3a11cc4aa4424470141ba027172b5fda9910f8de8431da054a8e89466e66ed",
+      "lastChangedCommit": "56da73ad17829df281f92a44aa85fd36f255463b"
+    },
+    "aggregation-rss/generate_oracle.py": {
+      "sha256": "c386042bcce61c0505ec485da55d9a2e3a2d6555978d8174b12dc03262e3c74c",
+      "lastChangedCommit": "56da73ad17829df281f92a44aa85fd36f255463b"
+    },
+    "aggregation/donor/budget_pipeline/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "lastChangedCommit": "56da73ad17829df281f92a44aa85fd36f255463b"
+    },
+    "aggregation/donor/budget_pipeline/build/active_data.py": {
+      "sha256": "81f1ccbe6bfba7dd5b7718ccb786ca13396925b159777179d9778b6196a8aa97",
+      "lastChangedCommit": "56da73ad17829df281f92a44aa85fd36f255463b"
+    },
+    "aggregation/donor/budget_pipeline/build/apply_sources.py": {
+      "sha256": "85c440fadf503b821ffa7e698ae4f3297a9d3a03ac516fd75db41b9a0945c110",
+      "lastChangedCommit": "56da73ad17829df281f92a44aa85fd36f255463b"
+    },
+    "aggregation/donor/budget_pipeline/build/catalog_definitions.py": {
+      "sha256": "977312f85f6573612fce4b010f8d3325b64f210f2bf2a99f145a83b66f104892",
+      "lastChangedCommit": "56da73ad17829df281f92a44aa85fd36f255463b"
+    },
+    "aggregation/donor/budget_pipeline/build/core.py": {
+      "sha256": "37f36c65288754f3c6bd0f132da4114228aecfb2a65132058b5c846ec6734f6b",
+      "lastChangedCommit": "56da73ad17829df281f92a44aa85fd36f255463b"
+    },
+    "aggregation/donor/budget_pipeline/build/data_io.py": {
+      "sha256": "b827a40fe5c979f2cf0d689766fedc355fddeb8c897460578d6aeb26364b9d68",
+      "lastChangedCommit": "56da73ad17829df281f92a44aa85fd36f255463b"
+    },
+    "aggregation/donor/budget_pipeline/build/definitions.py": {
+      "sha256": "12ef622fd7515f520949a7c5ad446c407f8e5a96270824c1389f09e1f6e18437",
+      "lastChangedCommit": "56da73ad17829df281f92a44aa85fd36f255463b"
+    },
+    "aggregation/donor/budget_pipeline/build/feed.py": {
+      "sha256": "2e3a11cc4aa4424470141ba027172b5fda9910f8de8431da054a8e89466e66ed",
+      "lastChangedCommit": "56da73ad17829df281f92a44aa85fd36f255463b"
+    },
+    "aggregation/donor/budget_pipeline/build/fiscal.py": {
+      "sha256": "78af9a5df7a8a704848aac7470ca1c9c1899aed7037771c71272773f26c980d9",
+      "lastChangedCommit": "56da73ad17829df281f92a44aa85fd36f255463b"
+    },
+    "aggregation/donor/budget_pipeline/build/forecast_tables.py": {
+      "sha256": "caacfbe902403d10b93631fd9e191b9cd8613099b8fb4ce0fedc8b05afdc17a9",
+      "lastChangedCommit": "56da73ad17829df281f92a44aa85fd36f255463b"
+    },
+    "aggregation/donor/budget_pipeline/build/municipalities.py": {
+      "sha256": "bcbebd0cbf6c2a6a76bfaa62dd71d0b46aee01b8019e053d350a492cc329edf7",
+      "lastChangedCommit": "56da73ad17829df281f92a44aa85fd36f255463b"
+    },
+    "aggregation/donor/budget_pipeline/build/search.py": {
+      "sha256": "033f809e56864a772e1a92d3b3c2f761a012b7abb40345cd20ade2d7fc1a618c",
+      "lastChangedCommit": "56da73ad17829df281f92a44aa85fd36f255463b"
+    },
+    "aggregation/donor/budget_pipeline/build/wording.py": {
+      "sha256": "e351379a75b9220a073fc6c68684bc961a311cccaa7f8337003fdba109145942",
+      "lastChangedCommit": "56da73ad17829df281f92a44aa85fd36f255463b"
+    },
+    "aggregation/donor/budget_pipeline/validate/execution_contract.py": {
+      "sha256": "ffa32a7c6ee3a1ef661294049f77d8797a2e5dbc7fe4e160d7ebc5e7b5e70e5f",
+      "lastChangedCommit": "56da73ad17829df281f92a44aa85fd36f255463b"
+    },
+    "aggregation/generate_oracle.py": {
+      "sha256": "6014fd3e5c9985135a06f2333a19562bd84ae099bc54b8a8bc606bea72a79a84",
+      "lastChangedCommit": "690752022c850b04fb00c6aebbaa364200fd859e"
+    },
+    "catalog/donor/budget_pipeline/build/active_data.py": {
+      "sha256": "81f1ccbe6bfba7dd5b7718ccb786ca13396925b159777179d9778b6196a8aa97",
+      "lastChangedCommit": "0f4ebd47f03251a5a390c11e269e6039331cc5d3"
+    },
+    "catalog/donor/budget_pipeline/build/apply_sources.py": {
+      "sha256": "85c440fadf503b821ffa7e698ae4f3297a9d3a03ac516fd75db41b9a0945c110",
+      "lastChangedCommit": "0f4ebd47f03251a5a390c11e269e6039331cc5d3"
+    },
+    "catalog/donor/budget_pipeline/build/catalog.py": {
+      "sha256": "d3a88431190a559e0ee9345e569c78bd11d4bf4aeda4b88571e0f09c4d79a440",
+      "lastChangedCommit": "0f4ebd47f03251a5a390c11e269e6039331cc5d3"
+    },
+    "catalog/donor/budget_pipeline/build/catalog_definitions.py": {
+      "sha256": "977312f85f6573612fce4b010f8d3325b64f210f2bf2a99f145a83b66f104892",
+      "lastChangedCommit": "0f4ebd47f03251a5a390c11e269e6039331cc5d3"
+    },
+    "catalog/donor/budget_pipeline/build/catalog_refresh.py": {
+      "sha256": "3c1a38e10e73bc89ad197fa2cea3024697a0f656b357c5876ac00f0548e5ab9b",
+      "lastChangedCommit": "0f4ebd47f03251a5a390c11e269e6039331cc5d3"
+    },
+    "catalog/donor/budget_pipeline/build/data_io.py": {
+      "sha256": "b827a40fe5c979f2cf0d689766fedc355fddeb8c897460578d6aeb26364b9d68",
+      "lastChangedCommit": "0f4ebd47f03251a5a390c11e269e6039331cc5d3"
+    },
+    "catalog/donor/budget_pipeline/build/definitions.py": {
+      "sha256": "12ef622fd7515f520949a7c5ad446c407f8e5a96270824c1389f09e1f6e18437",
+      "lastChangedCommit": "0f4ebd47f03251a5a390c11e269e6039331cc5d3"
+    },
+    "catalog/donor/budget_pipeline/build/wording.py": {
+      "sha256": "e351379a75b9220a073fc6c68684bc961a311cccaa7f8337003fdba109145942",
+      "lastChangedCommit": "0f4ebd47f03251a5a390c11e269e6039331cc5d3"
+    },
+    "catalog/donor/budget_pipeline/routes.py": {
+      "sha256": "9a3394ed319834cf97cc85afc6aadbb501957c76b579faafa3f83008a4455c3f",
+      "lastChangedCommit": "4f322ddd9fbd4da25b552eaaa39e903a8eb97d4d"
+    },
+    "catalog/donor/budget_pipeline/validate/execution_contract.py": {
+      "sha256": "ffa32a7c6ee3a1ef661294049f77d8797a2e5dbc7fe4e160d7ebc5e7b5e70e5f",
+      "lastChangedCommit": "4f322ddd9fbd4da25b552eaaa39e903a8eb97d4d"
+    },
+    "catalog/generate_oracle.py": {
+      "sha256": "44cf0fbadc1cbabb17a5cda9a98c1f53761416ac870909115b41c199b126f857",
+      "lastChangedCommit": "4f322ddd9fbd4da25b552eaaa39e903a8eb97d4d"
+    },
+    "catalog/synthetic_primary.py": {
+      "sha256": "bf9d010d9c7757f4d094c357a1d498deaecca44cbbf5071d0973ebb55070658a",
+      "lastChangedCommit": "4f322ddd9fbd4da25b552eaaa39e903a8eb97d4d"
+    },
+    "common/generate_oracle.py": {
+      "sha256": "581e3cb2594d6eb7d5a0f311d6127697968f533d3915896ec7861506122ed4f7",
+      "lastChangedCommit": "4a193ddb246af0a06a7399cabfa325e169c22d59"
+    },
+    "components-rates/capture.py": {
+      "sha256": "841b1fd576824ff08de3c7cc30083ec340ba076905859bfad2430f7ea551a07d",
+      "lastChangedCommit": "05d6f6eeca9991468f3c94c3c9c26e87d5b0fae0"
+    },
+    "components-rates/generate_oracle.py": {
+      "sha256": "236e3912d091f0291df2db7fc4412c6c20f1429e2372d4ef8f9be6a7fa7bdb1b",
+      "lastChangedCommit": "05d6f6eeca9991468f3c94c3c9c26e87d5b0fae0"
+    },
+    "dbp-gva/donor/budget_plan.py": {
+      "sha256": "4b6362da4db933c41b2fcc04e575f64a73155a91367acc193bf57daedf12eb4d",
+      "lastChangedCommit": "2826c6c72479bfbaa898c99223ab3c2c51865228"
+    },
+    "dbp-gva/donor/gva_sectors.py": {
+      "sha256": "a04b836fb4cf716ff8edb856fe05528a40e8c8c607c70952912ae3e4d7c65691",
+      "lastChangedCommit": "2826c6c72479bfbaa898c99223ab3c2c51865228"
+    },
+    "dbp-gva/generate_oracle.py": {
+      "sha256": "bd024ee3e4a1d4e0afa8601ba92593d328847472d05e442855ab98373f9c4cf9",
+      "lastChangedCommit": "2826c6c72479bfbaa898c99223ab3c2c51865228"
+    },
+    "debt-local-validation/donor/budget_pipeline/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "lastChangedCommit": "0055e3172d713dd65cb1c1655ab7ef1fd771ff31"
+    },
+    "debt-local-validation/donor/budget_pipeline/validate/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "lastChangedCommit": "0055e3172d713dd65cb1c1655ab7ef1fd771ff31"
+    },
+    "debt-local-validation/donor/budget_pipeline/validate/checks.py": {
+      "sha256": "25d7d0e984c5214efb2786f0f72f50cd6666b5f4565802fbb998d1cd52cc0567",
+      "lastChangedCommit": "0055e3172d713dd65cb1c1655ab7ef1fd771ff31"
+    },
+    "debt-local-validation/donor/budget_pipeline/validate/debt.py": {
+      "sha256": "6c2924d0b94dbdb85122c923c48f2248c162b94aad411bc997b6150da161dacc",
+      "lastChangedCommit": "0055e3172d713dd65cb1c1655ab7ef1fd771ff31"
+    },
+    "debt-local-validation/donor/budget_pipeline/validate/local_finance.py": {
+      "sha256": "d03a74108cc213221800510dea2e3a3cbb8bf717403f4363f32d2291e6aa65a0",
+      "lastChangedCommit": "0055e3172d713dd65cb1c1655ab7ef1fd771ff31"
+    },
+    "debt-local-validation/generate_oracle.py": {
+      "sha256": "4fae928a3aa5b502bc763620494c027fe091eabf2b56f4c9d84a376dd7626685",
+      "lastChangedCommit": "0055e3172d713dd65cb1c1655ab7ef1fd771ff31"
+    },
+    "debt-local/capture_readers.py": {
+      "sha256": "ebf0932f0ddf3846295c997a939c358d0268fced95fd30e9f30172ca47546962",
+      "lastChangedCommit": "fbe76fbab2d524954dde829e5e2e295663a84d6a"
+    },
+    "debt-local/generate_oracle.py": {
+      "sha256": "914d7751a4e46bf6d13def2a82b7a258dcfa3b531d944863e9a9163156463396",
+      "lastChangedCommit": "fbe76fbab2d524954dde829e5e2e295663a84d6a"
+    },
+    "debt-local/python/budget_pipeline/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "lastChangedCommit": "fbe76fbab2d524954dde829e5e2e295663a84d6a"
+    },
+    "debt-local/python/budget_pipeline/build/data_io.py": {
+      "sha256": "b827a40fe5c979f2cf0d689766fedc355fddeb8c897460578d6aeb26364b9d68",
+      "lastChangedCommit": "fbe76fbab2d524954dde829e5e2e295663a84d6a"
+    },
+    "debt-local/python/budget_pipeline/build/debt.py": {
+      "sha256": "2635b923534636a36d2f84aa5cbe2031f3fc5e82aede59cd3e939a4f536ed0f2",
+      "lastChangedCommit": "fbe76fbab2d524954dde829e5e2e295663a84d6a"
+    },
+    "debt-local/python/budget_pipeline/build/debt_pdf.py": {
+      "sha256": "c716b7a1ee2dc8eeb29e2cc57f3bab3529598a05c062a7a68ce0dcf9caa88fdb",
+      "lastChangedCommit": "fbe76fbab2d524954dde829e5e2e295663a84d6a"
+    },
+    "debt-local/python/budget_pipeline/build/definitions.py": {
+      "sha256": "12ef622fd7515f520949a7c5ad446c407f8e5a96270824c1389f09e1f6e18437",
+      "lastChangedCommit": "fbe76fbab2d524954dde829e5e2e295663a84d6a"
+    },
+    "debt-local/python/budget_pipeline/build/fiscal.py": {
+      "sha256": "78af9a5df7a8a704848aac7470ca1c9c1899aed7037771c71272773f26c980d9",
+      "lastChangedCommit": "fbe76fbab2d524954dde829e5e2e295663a84d6a"
+    },
+    "debt-local/python/budget_pipeline/build/forecast_tables.py": {
+      "sha256": "caacfbe902403d10b93631fd9e191b9cd8613099b8fb4ce0fedc8b05afdc17a9",
+      "lastChangedCommit": "fbe76fbab2d524954dde829e5e2e295663a84d6a"
+    },
+    "debt-local/python/budget_pipeline/build/municipalities.py": {
+      "sha256": "bcbebd0cbf6c2a6a76bfaa62dd71d0b46aee01b8019e053d350a492cc329edf7",
+      "lastChangedCommit": "fbe76fbab2d524954dde829e5e2e295663a84d6a"
+    },
+    "debt-local/python/budget_pipeline/build/payments.py": {
+      "sha256": "4a67fbb7456414264e5ce8ebd56b8ad283e755a4d4eba82ed513491c8aceb3bb",
+      "lastChangedCommit": "fbe76fbab2d524954dde829e5e2e295663a84d6a"
+    },
+    "debt-local/python/budget_pipeline/extract/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "lastChangedCommit": "fbe76fbab2d524954dde829e5e2e295663a84d6a"
+    },
+    "debt-local/python/budget_pipeline/extract/budget_law_parser.py": {
+      "sha256": "f5c57b32da38e7e28fbbec6350c368173c195cf1b86d67a2368cc2b99651d746",
+      "lastChangedCommit": "fbe76fbab2d524954dde829e5e2e295663a84d6a"
+    },
+    "debt-local/stage-evidence/active_data.py": {
+      "sha256": "81f1ccbe6bfba7dd5b7718ccb786ca13396925b159777179d9778b6196a8aa97",
+      "lastChangedCommit": "fbe76fbab2d524954dde829e5e2e295663a84d6a"
+    },
+    "debt-local/stage-evidence/annual_periods.py": {
+      "sha256": "3a036c4d9e999897dc4737340da72772a27b8c1e40e3c5bff4f5b678d11a41cb",
+      "lastChangedCommit": "fbe76fbab2d524954dde829e5e2e295663a84d6a"
+    },
+    "debt-local/stage-evidence/apply_sources.py": {
+      "sha256": "85c440fadf503b821ffa7e698ae4f3297a9d3a03ac516fd75db41b9a0945c110",
+      "lastChangedCommit": "fbe76fbab2d524954dde829e5e2e295663a84d6a"
+    },
+    "debt-local/stage-evidence/budget_2027.py": {
+      "sha256": "dab10117524264be11f28be6d8325ca0b089f646d801751c0bd7974943d2850f",
+      "lastChangedCommit": "fbe76fbab2d524954dde829e5e2e295663a84d6a"
+    },
+    "debt-local/stage-evidence/catalog_refresh.py": {
+      "sha256": "c93f90e386676857b90f91916ed2834ad40e5da55bf051d59820ff904d33d08f",
+      "lastChangedCommit": "fbe76fbab2d524954dde829e5e2e295663a84d6a"
+    },
+    "debt-local/stage-evidence/rebuild.py": {
+      "sha256": "fa3d1d295296d7893169640ab87f2051748eb7ae7eccbd76d4274bc853240c6c",
+      "lastChangedCommit": "fbe76fbab2d524954dde829e5e2e295663a84d6a"
+    },
+    "debt-local/stage-evidence/wording.py": {
+      "sha256": "e351379a75b9220a073fc6c68684bc961a311cccaa7f8337003fdba109145942",
+      "lastChangedCommit": "fbe76fbab2d524954dde829e5e2e295663a84d6a"
+    },
+    "debt-local/test_readers.py": {
+      "sha256": "fa6dec0d262e49fa7ce39c4b21daf4fedda15c3d7c13470e081b58fb6ed1b7a6",
+      "lastChangedCommit": "fbe76fbab2d524954dde829e5e2e295663a84d6a"
+    },
+    "editorial/generate_oracle.py": {
+      "sha256": "9490c0dca1bfdafe7361600ebff62df99adb490a060990a82533b1fc77499e72",
+      "lastChangedCommit": "f23a7ca8790d473e342e427181723b37d060a57f"
+    },
+    "fiscal/generate_datasets.py": {
+      "sha256": "a9dacabf6564bcdefbe47b7f3f4b7b04b5b10433067b05fb6d3fba6dabf80073",
+      "lastChangedCommit": "f8d81d91b899d797fa6307366cf5b4a0ef7eedd4"
+    },
+    "fiscal/generate_oracle.py": {
+      "sha256": "0bf150aabca34f2ef1869987cf47c9b1793b86af1b4a222c099626f7ba026694",
+      "lastChangedCommit": "f8d81d91b899d797fa6307366cf5b4a0ef7eedd4"
+    },
+    "independent-rules/capture-nap.py": {
+      "sha256": "a3df7716a95527405fcfbc4702f54c28c7e2ff48cda07e34c26ce8c809540ad7",
+      "lastChangedCommit": "3fc2b670e79b2b5918a873e8568d48be3c210b40"
+    },
+    "independent-rules/donor/budget_pipeline/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "lastChangedCommit": "3fc2b670e79b2b5918a873e8568d48be3c210b40"
+    },
+    "independent-rules/donor/budget_pipeline/build/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "lastChangedCommit": "3fc2b670e79b2b5918a873e8568d48be3c210b40"
+    },
+    "independent-rules/donor/budget_pipeline/build/annual_periods.py": {
+      "sha256": "3a036c4d9e999897dc4737340da72772a27b8c1e40e3c5bff4f5b678d11a41cb",
+      "lastChangedCommit": "3fc2b670e79b2b5918a873e8568d48be3c210b40"
+    },
+    "independent-rules/donor/budget_pipeline/build/data_io.py": {
+      "sha256": "b827a40fe5c979f2cf0d689766fedc355fddeb8c897460578d6aeb26364b9d68",
+      "lastChangedCommit": "3fc2b670e79b2b5918a873e8568d48be3c210b40"
+    },
+    "independent-rules/donor/budget_pipeline/build/execution_law.py": {
+      "sha256": "3d4fd3da440a832dc3ba3aaa3cb6687e7e320a48784e411f0f1ee10493b68bf3",
+      "lastChangedCommit": "3fc2b670e79b2b5918a873e8568d48be3c210b40"
+    },
+    "independent-rules/donor/budget_pipeline/extract/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "lastChangedCommit": "3fc2b670e79b2b5918a873e8568d48be3c210b40"
+    },
+    "independent-rules/donor/budget_pipeline/extract/indirect_tax_evidence.py": {
+      "sha256": "62650741265a8111f580cabd07fa25e71550e260559a870100afd26071984b28",
+      "lastChangedCommit": "3fc2b670e79b2b5918a873e8568d48be3c210b40"
+    },
+    "independent-rules/donor/budget_pipeline/validate/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "lastChangedCommit": "3fc2b670e79b2b5918a873e8568d48be3c210b40"
+    },
+    "independent-rules/donor/budget_pipeline/validate/checks.py": {
+      "sha256": "25d7d0e984c5214efb2786f0f72f50cd6666b5f4565802fbb998d1cd52cc0567",
+      "lastChangedCommit": "3fc2b670e79b2b5918a873e8568d48be3c210b40"
+    },
+    "independent-rules/donor/budget_pipeline/validate/components.py": {
+      "sha256": "5bac6fde1850421a87310bd337c9849b936962f044d3dab22598e5005e3dc60e",
+      "lastChangedCommit": "3fc2b670e79b2b5918a873e8568d48be3c210b40"
+    },
+    "independent-rules/donor/budget_pipeline/validate/execution.py": {
+      "sha256": "03b1686fd7f067a9f0e1cea7729b924d46461c72f4d4341b4b422638d40003c0",
+      "lastChangedCommit": "3fc2b670e79b2b5918a873e8568d48be3c210b40"
+    },
+    "independent-rules/donor/budget_pipeline/validate/execution_contract.py": {
+      "sha256": "ffa32a7c6ee3a1ef661294049f77d8797a2e5dbc7fe4e160d7ebc5e7b5e70e5f",
+      "lastChangedCommit": "3fc2b670e79b2b5918a873e8568d48be3c210b40"
+    },
+    "independent-rules/donor/budget_pipeline/validate/indirect_taxes.py": {
+      "sha256": "038fedc70e8ffd575654c4a886ff8c9d675d3477bdef5e9764ec04d8cb074cea",
+      "lastChangedCommit": "3fc2b670e79b2b5918a873e8568d48be3c210b40"
+    },
+    "independent-rules/generate-oracle.py": {
+      "sha256": "5a967aea128ea25aa0e320bdf02bf3f77bbf436ec9daff82ea73bd09b64ef36c",
+      "lastChangedCommit": "7bd43e47c67abda4da8ed7f3c78bdaf8d892711d"
+    },
+    "indirect-taxes/capture.py": {
+      "sha256": "0256f2672c83c544ad6808c6d3fadebd24b9e6c69bf4994b526a2c3fbd5bed25",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "indirect-taxes/data_io_donor.py": {
+      "sha256": "b827a40fe5c979f2cf0d689766fedc355fddeb8c897460578d6aeb26364b9d68",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "indirect-taxes/donor.py": {
+      "sha256": "7e2800d7f04f6edfec601864cc9b918cd03a21a471623a7269884708f21e85cc",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "indirect-taxes/regenerate.py": {
+      "sha256": "c9cdb7a448b956c7af7498c60e0e498c802bbae8c1e420054bdbb368860ba4af",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "law/generate_oracle.py": {
+      "sha256": "ea34f0caece3a69f3a1bb217ca1439efdb2fa03dc3aa9bcfd8489fec97b4a69a",
+      "lastChangedCommit": "e16dc047d6134e08b6a80cfa5398e2fe1b2c121d"
+    },
+    "programmes/capture_pdf.py": {
+      "sha256": "1c7d6a05f3425bc8fede4dab08958bc34a731d3888131bd86cf8215af7f17acc",
+      "lastChangedCommit": "5aa584dcf8bf1fb44e62ff4f1b24c87b94b4197e"
+    },
+    "programmes/generate_oracle.py": {
+      "sha256": "70198db8200375f809770ba613f67e979bf9b761b31f145202c9cb7e7e5b6c38",
+      "lastChangedCommit": "5aa584dcf8bf1fb44e62ff4f1b24c87b94b4197e"
+    },
+    "validate14/donor/annual_periods.py": {
+      "sha256": "3a036c4d9e999897dc4737340da72772a27b8c1e40e3c5bff4f5b678d11a41cb",
+      "lastChangedCommit": "def05a6a59b060cc338773aa85734acf3f1b21fe"
+    },
+    "validate14/donor/checks.py": {
+      "sha256": "25d7d0e984c5214efb2786f0f72f50cd6666b5f4565802fbb998d1cd52cc0567",
+      "lastChangedCommit": "def05a6a59b060cc338773aa85734acf3f1b21fe"
+    },
+    "validate14/donor/datasets.py": {
+      "sha256": "02234d24a03c387690d03b714eb7d413d334726951bcfa0034bc0a6325778790",
+      "lastChangedCommit": "def05a6a59b060cc338773aa85734acf3f1b21fe"
+    },
+    "validate14/donor/foundations.py": {
+      "sha256": "c7b713c7c45798c528c0ba5e082b2127347a63ab6bed5bd50dd32ae7c59c452b",
+      "lastChangedCommit": "def05a6a59b060cc338773aa85734acf3f1b21fe"
+    },
+    "validate14/donor/registry.py": {
+      "sha256": "0cf9fbf594f875d199d04469a39a04cb8745707bfb194ee888d1bc8e26317b39",
+      "lastChangedCommit": "def05a6a59b060cc338773aa85734acf3f1b21fe"
+    },
+    "validate14/donor/routes.py": {
+      "sha256": "9a3394ed319834cf97cc85afc6aadbb501957c76b579faafa3f83008a4455c3f",
+      "lastChangedCommit": "def05a6a59b060cc338773aa85734acf3f1b21fe"
+    },
+    "validate14/execution_contract.py": {
+      "sha256": "ffa32a7c6ee3a1ef661294049f77d8797a2e5dbc7fe4e160d7ebc5e7b5e70e5f",
+      "lastChangedCommit": "def05a6a59b060cc338773aa85734acf3f1b21fe"
+    },
+    "validate14/generate_groups_oracle.py": {
+      "sha256": "9e691ed35713b8be3108da185ecdfde523ed1d3bd63d1196aec24bd2866f3154",
+      "lastChangedCommit": "def05a6a59b060cc338773aa85734acf3f1b21fe"
+    },
+    "validate14/generate_oracle.py": {
+      "sha256": "eafbc8585af36b136f24ccab54962dcdd056b97340c9d9e8e9893cf6b91d7159",
+      "lastChangedCommit": "def05a6a59b060cc338773aa85734acf3f1b21fe"
+    },
+    "validate15/compound/generate_oracle.py": {
+      "sha256": "17af02b0860f8f17d9e5022da3610b1c9748de6e45d5de2b149a09b9b108d473",
+      "lastChangedCommit": "44e0ff0f0684826b123b1ebb415ec64cc877db3c"
+    },
+    "validate15/donor/budgets.py": {
+      "sha256": "afbabe24c96182801efc1df1c0b8d4dd6ad69ddbdcf615fe029e2901cf0c53ef",
+      "lastChangedCommit": "d1accf8672a245d81b5358f11df00dbf0c27463f"
+    },
+    "validate15/donor/catalog.py": {
+      "sha256": "f656945429bec45296ec95519be2a187d14f4fabda5ff4a1ee91a9baa9dc53e6",
+      "lastChangedCommit": "d1accf8672a245d81b5358f11df00dbf0c27463f"
+    },
+    "validate15/donor/checks.py": {
+      "sha256": "25d7d0e984c5214efb2786f0f72f50cd6666b5f4565802fbb998d1cd52cc0567",
+      "lastChangedCommit": "d1accf8672a245d81b5358f11df00dbf0c27463f"
+    },
+    "validate15/donor/execution_contract.py": {
+      "sha256": "ffa32a7c6ee3a1ef661294049f77d8797a2e5dbc7fe4e160d7ebc5e7b5e70e5f",
+      "lastChangedCommit": "d1accf8672a245d81b5358f11df00dbf0c27463f"
+    },
+    "validate15/donor/fiscal.py": {
+      "sha256": "b47769a9a99163adf1000c3fbd7c9892e3b7823809f17ec78a935563d643d5b5",
+      "lastChangedCommit": "d1accf8672a245d81b5358f11df00dbf0c27463f"
+    },
+    "validate15/donor/law.py": {
+      "sha256": "de4dbeb83fa6b429b9dc97179f06d18057ebb60191617a1178e58e996b2a1d38",
+      "lastChangedCommit": "d1accf8672a245d81b5358f11df00dbf0c27463f"
+    },
+    "validate15/donor/routes.py": {
+      "sha256": "9a3394ed319834cf97cc85afc6aadbb501957c76b579faafa3f83008a4455c3f",
+      "lastChangedCommit": "d1accf8672a245d81b5358f11df00dbf0c27463f"
+    },
+    "validate15/generate_oracle.py": {
+      "sha256": "9d286f1f29fc5c2dba412c9c7ac792bf71ffc1326884ed18707eeaff0e83ab7d",
+      "lastChangedCommit": "d1accf8672a245d81b5358f11df00dbf0c27463f"
+    },
+    "validate15/generate_unicode.py": {
+      "sha256": "c36bcabf6cf7fa007a247615d0de28074e98dfac846fe2e7886b18b840e74142",
+      "lastChangedCommit": "c83875cb46986929bedd10d2c9b31c11992e3a89"
+    },
+    "validate15/iterable/generate_oracle.py": {
+      "sha256": "9bd1f6a692e38ac127393d05d5452f611fa62d85d273049f8559cafb691923e4",
+      "lastChangedCommit": "ea63aa6b3213ae5485fed8a355d8a5f898e267d5"
+    },
+    "validate15/native/generate_oracle.py": {
+      "sha256": "a9cba52bded25adee66761bc95414d81ed319edec9dd37b0d2bd16865d4353bf",
+      "lastChangedCommit": "f6e9b6107ae5846aabe0c1ed8c04eb425d354416"
+    },
+    "validate15b/audit_pdf.py": {
+      "sha256": "651cb1fe1bbb88737ee7aca50fa4818ffa859effc948642ce9f27174b6187881",
+      "lastChangedCommit": "f18eb33977af0a4278e23d2e1e080b1f53fe32ff"
+    },
+    "validate15b/donor/budget_pipeline/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "lastChangedCommit": "f18eb33977af0a4278e23d2e1e080b1f53fe32ff"
+    },
+    "validate15b/donor/budget_pipeline/build/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "lastChangedCommit": "f18eb33977af0a4278e23d2e1e080b1f53fe32ff"
+    },
+    "validate15b/donor/budget_pipeline/build/annual_periods.py": {
+      "sha256": "3a036c4d9e999897dc4737340da72772a27b8c1e40e3c5bff4f5b678d11a41cb",
+      "lastChangedCommit": "f18eb33977af0a4278e23d2e1e080b1f53fe32ff"
+    },
+    "validate15b/donor/budget_pipeline/build/budget_2027.py": {
+      "sha256": "dab10117524264be11f28be6d8325ca0b089f646d801751c0bd7974943d2850f",
+      "lastChangedCommit": "f18eb33977af0a4278e23d2e1e080b1f53fe32ff"
+    },
+    "validate15b/donor/budget_pipeline/build/data_io.py": {
+      "sha256": "b827a40fe5c979f2cf0d689766fedc355fddeb8c897460578d6aeb26364b9d68",
+      "lastChangedCommit": "f18eb33977af0a4278e23d2e1e080b1f53fe32ff"
+    },
+    "validate15b/donor/budget_pipeline/validate/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "lastChangedCommit": "f18eb33977af0a4278e23d2e1e080b1f53fe32ff"
+    },
+    "validate15b/donor/budget_pipeline/validate/annual_oracles.py": {
+      "sha256": "6cce4ec2592eb084b35e57b2b8fe9641fafa5cd54d3256cbe2886b8cebac3fc9",
+      "lastChangedCommit": "f18eb33977af0a4278e23d2e1e080b1f53fe32ff"
+    },
+    "validate15b/donor/budget_pipeline/validate/budget_2027.py": {
+      "sha256": "ed607b8498a9693c52c8398f4c70f7770b001aa7592c9bf079d7beca415453c2",
+      "lastChangedCommit": "f18eb33977af0a4278e23d2e1e080b1f53fe32ff"
+    },
+    "validate15b/donor/budget_pipeline/validate/checks.py": {
+      "sha256": "25d7d0e984c5214efb2786f0f72f50cd6666b5f4565802fbb998d1cd52cc0567",
+      "lastChangedCommit": "f18eb33977af0a4278e23d2e1e080b1f53fe32ff"
+    },
+    "validate15b/generate_helpers.py": {
+      "sha256": "218946f9b0d0cdb540a26e24bd4c663797286731dd046b6bbb3afa6895b76f49",
+      "lastChangedCommit": "f18eb33977af0a4278e23d2e1e080b1f53fe32ff"
+    },
+    "validate15b/generate_oracle.py": {
+      "sha256": "4cf20e4d9417cdd32961bf4ae94e3e67e889b59290e139f7425a21c682217e50",
+      "lastChangedCommit": "f18eb33977af0a4278e23d2e1e080b1f53fe32ff"
+    },
+    "validate15b/optional_values.py": {
+      "sha256": "e76c74832c91e18ab5c9d87e887ef6144842bbfb714ad1c37a89d504ba7afd33",
+      "lastChangedCommit": "c4b8005055958f9a7e6c7435d9416fe54efbd928"
+    },
+    "validate15b/source_methods.py": {
+      "sha256": "7adf84ffca85f68f3836d1fd70b53d9dd2cf0a56178367b1dc756a749eadfe34",
+      "lastChangedCommit": "5c9794c45d3fc6db7cc484ec41247cee2e65a622"
+    },
+    "validate15b/source_order.py": {
+      "sha256": "eba05cd45758a453994c1d30cab7afbafa53d17a88b926116c1d7d9a20fe230f",
+      "lastChangedCommit": "5cc735fd557c4818d8799e397d89fb0b1ba28051"
+    },
+    "validate17a/boundaries/generate_oracle.py": {
+      "sha256": "26ceb37fb9da8dd6e247194c86b775e079b8f0bd355af557826015010c275643",
+      "lastChangedCommit": "d34b389dca26f64285ca3d65a3f998a0d01eab32"
+    },
+    "validate17a/catalog-semantics/generate_oracle.py": {
+      "sha256": "c95877879262a124eca046543fcb39b6d29cc149a89e9b4ee6a45a26c41890bb",
+      "lastChangedCommit": "7d3506e5a872ef180687fb38ec3744e5a7a28789"
+    },
+    "validate17a/containers/generate_oracle.py": {
+      "sha256": "258e45d2f1bf34dafe1ccc743a252a14b13fed46db85d209aec3dc4e630a55fb",
+      "lastChangedCommit": "bae75dd5d741c934ace2c16e49a932c2b51b445b"
+    },
+    "validate17a/donor/budget_pipeline/routes.py": {
+      "sha256": "9a3394ed319834cf97cc85afc6aadbb501957c76b579faafa3f83008a4455c3f",
+      "lastChangedCommit": "d2e4395cd4889326e2c417b336fbd2287b64fdbf"
+    },
+    "validate17a/donor/budget_pipeline/validate/catalog.py": {
+      "sha256": "f656945429bec45296ec95519be2a187d14f4fabda5ff4a1ee91a9baa9dc53e6",
+      "lastChangedCommit": "d2e4395cd4889326e2c417b336fbd2287b64fdbf"
+    },
+    "validate17a/donor/budget_pipeline/validate/checks.py": {
+      "sha256": "25d7d0e984c5214efb2786f0f72f50cd6666b5f4565802fbb998d1cd52cc0567",
+      "lastChangedCommit": "d2e4395cd4889326e2c417b336fbd2287b64fdbf"
+    },
+    "validate17a/donor/budget_pipeline/validate/components.py": {
+      "sha256": "5bac6fde1850421a87310bd337c9849b936962f044d3dab22598e5005e3dc60e",
+      "lastChangedCommit": "d2e4395cd4889326e2c417b336fbd2287b64fdbf"
+    },
+    "validate17a/donor/budget_pipeline/validate/execution_contract.py": {
+      "sha256": "ffa32a7c6ee3a1ef661294049f77d8797a2e5dbc7fe4e160d7ebc5e7b5e70e5f",
+      "lastChangedCommit": "d2e4395cd4889326e2c417b336fbd2287b64fdbf"
+    },
+    "validate17a/donor/budget_pipeline/validate/search_feed.py": {
+      "sha256": "b473784911c4a709720a2d57b7b4556eecd993bffb09fbc78c4b023bac69773a",
+      "lastChangedCommit": "d2e4395cd4889326e2c417b336fbd2287b64fdbf"
+    },
+    "validate17a/generate_oracle.py": {
+      "sha256": "a834a8b2d739eb87e8918f08d8fd7e8c81fbcccf81a7a0609f9746cba3cee354",
+      "lastChangedCommit": "d2e4395cd4889326e2c417b336fbd2287b64fdbf"
+    },
+    "validate17a/gzip-cache/generate_oracle.py": {
+      "sha256": "e4ec82784e9b99ef65cbbdc5261cd37e5f213e1e0a9994330a54237166fa1b69",
+      "lastChangedCommit": "3c364e0ad601fb5344291641c7dccc52540e88e0"
+    },
+    "validate17a/integer-limit/generate_oracle.py": {
+      "sha256": "72cf797c96d466ab4bb5a893ad9ee97450586dc7f7a295e3f98a7f7195b9c5ae",
+      "lastChangedCommit": "d828a13ee0f565a1d4c10eb803be6e333e184938"
+    },
+    "validate17a/integer/generate_oracle.py": {
+      "sha256": "94245afbab2d0a82586eef569e5df3e387e606a7d762c81ba2029e136a731c1a",
+      "lastChangedCommit": "fe5aeab3b717117f1b11ac4d0180e01667ee93b1"
+    },
+    "validate17a/iterators/generate_oracle.py": {
+      "sha256": "5efe731619331990acfd8ba757dd82724a1f25424660009b37ba5d52179b6e7a",
+      "lastChangedCommit": "38a26103789f2185d44f9216694c6e13c127e6ee"
+    },
+    "validate17a/key-whitespace/generate_oracle.py": {
+      "sha256": "b7ba67fcb22cf5cc1abe5903c145033885f2431c1380997e038efef4ec5bb114",
+      "lastChangedCommit": "093366d33b5b32a6fa58ca086a90813869388f58"
+    },
+    "validate17a/membership/generate_oracle.py": {
+      "sha256": "15c09956d1f626475aeaa97ea6883a3a0f0c02dc1abd33ab131af6bf5e852e86",
+      "lastChangedCommit": "02a3942e1c2bcdf55a18b2c4df40fbccf851dd3e"
+    },
+    "validate17a/reader/generate_oracle.py": {
+      "sha256": "3ad9bdfcc40e9cb104443cf0d423afc0a0d67ac7e2b7ac7c03e707682d447768",
+      "lastChangedCommit": "65e1c10f2b9a0826d39f958b55ab1e0c9af401c5"
+    },
+    "validate17a/review/generate_oracle.py": {
+      "sha256": "8f0a5d0b28e50a38b7d2a06bc55b40904dfca4ea1c038834d8b2b702cfae173c",
+      "lastChangedCommit": "41ead80e1c5e5a75a04086109fe76451518670c0"
+    },
+    "validate17a/short-circuit/generate_oracle.py": {
+      "sha256": "b0016f05e239ba3d3bcb8772abb3e8ac37c3586597c2690c60192d09882f549f",
+      "lastChangedCommit": "4059cf326157e5d7da8d3edd9b1868212c0b6556"
+    },
+    "validate17a/source-strings/generate_oracle.py": {
+      "sha256": "97b62a1d221597c0433acb7ffa1469f213fc550ee6f5af4205b44cfdbc7a3533",
+      "lastChangedCommit": "39770320f6b6040c7438f125c180ab2bebecb6ff"
+    },
+    "validate17a/wrapper/base.py": {
+      "sha256": "8a4067e045e2b72eec24603f37b0d72ed37ee04b87f1713ebc6a4d3733791fe3",
+      "lastChangedCommit": "d2e4395cd4889326e2c417b336fbd2287b64fdbf"
+    },
+    "validate17a/wrapper/datasets.py": {
+      "sha256": "02234d24a03c387690d03b714eb7d413d334726951bcfa0034bc0a6325778790",
+      "lastChangedCommit": "d2e4395cd4889326e2c417b336fbd2287b64fdbf"
+    },
+    "validate17a/wrapper/foundations.py": {
+      "sha256": "c7b713c7c45798c528c0ba5e082b2127347a63ab6bed5bd50dd32ae7c59c452b",
+      "lastChangedCommit": "d2e4395cd4889326e2c417b336fbd2287b64fdbf"
+    },
+    "validate17a/wrapper/generate.py": {
+      "sha256": "79b43eb9c5bcbc18bbe016b9f4812360771f28a23abeabb39fc3d3f10a8b9e35",
+      "lastChangedCommit": "d2e4395cd4889326e2c417b336fbd2287b64fdbf"
+    },
+    "validate17a/year-keys/generate_oracle.py": {
+      "sha256": "8fd9b0509db844192562ac0fa0efb6a7775275d051590ba0b8b621b6997c68f5",
+      "lastChangedCommit": "39770320f6b6040c7438f125c180ab2bebecb6ff"
+    },
+    "validate17b/donor/pipeline/budget_pipeline/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "lastChangedCommit": "ddae190e2adb64dfdf57780b664aa8f2a8eb8c3a"
+    },
+    "validate17b/donor/pipeline/budget_pipeline/build/annual_periods.py": {
+      "sha256": "3a036c4d9e999897dc4737340da72772a27b8c1e40e3c5bff4f5b678d11a41cb",
+      "lastChangedCommit": "ddae190e2adb64dfdf57780b664aa8f2a8eb8c3a"
+    },
+    "validate17b/donor/pipeline/budget_pipeline/build/budget_2027.py": {
+      "sha256": "dab10117524264be11f28be6d8325ca0b089f646d801751c0bd7974943d2850f",
+      "lastChangedCommit": "ddae190e2adb64dfdf57780b664aa8f2a8eb8c3a"
+    },
+    "validate17b/donor/pipeline/budget_pipeline/build/data_io.py": {
+      "sha256": "b827a40fe5c979f2cf0d689766fedc355fddeb8c897460578d6aeb26364b9d68",
+      "lastChangedCommit": "ddae190e2adb64dfdf57780b664aa8f2a8eb8c3a"
+    },
+    "validate17b/donor/pipeline/budget_pipeline/extract/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "lastChangedCommit": "ddae190e2adb64dfdf57780b664aa8f2a8eb8c3a"
+    },
+    "validate17b/donor/pipeline/budget_pipeline/extract/indirect_tax_evidence.py": {
+      "sha256": "62650741265a8111f580cabd07fa25e71550e260559a870100afd26071984b28",
+      "lastChangedCommit": "ddae190e2adb64dfdf57780b664aa8f2a8eb8c3a"
+    },
+    "validate17b/donor/pipeline/budget_pipeline/routes.py": {
+      "sha256": "9a3394ed319834cf97cc85afc6aadbb501957c76b579faafa3f83008a4455c3f",
+      "lastChangedCommit": "ddae190e2adb64dfdf57780b664aa8f2a8eb8c3a"
+    },
+    "validate17b/donor/pipeline/budget_pipeline/validate/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "lastChangedCommit": "ddae190e2adb64dfdf57780b664aa8f2a8eb8c3a"
+    },
+    "validate17b/donor/pipeline/budget_pipeline/validate/annual_oracles.py": {
+      "sha256": "6cce4ec2592eb084b35e57b2b8fe9641fafa5cd54d3256cbe2886b8cebac3fc9",
+      "lastChangedCommit": "ddae190e2adb64dfdf57780b664aa8f2a8eb8c3a"
+    },
+    "validate17b/donor/pipeline/budget_pipeline/validate/base.py": {
+      "sha256": "8a4067e045e2b72eec24603f37b0d72ed37ee04b87f1713ebc6a4d3733791fe3",
+      "lastChangedCommit": "ddae190e2adb64dfdf57780b664aa8f2a8eb8c3a"
+    },
+    "validate17b/donor/pipeline/budget_pipeline/validate/budget_2027.py": {
+      "sha256": "ed607b8498a9693c52c8398f4c70f7770b001aa7592c9bf079d7beca415453c2",
+      "lastChangedCommit": "ddae190e2adb64dfdf57780b664aa8f2a8eb8c3a"
+    },
+    "validate17b/donor/pipeline/budget_pipeline/validate/budgets.py": {
+      "sha256": "afbabe24c96182801efc1df1c0b8d4dd6ad69ddbdcf615fe029e2901cf0c53ef",
+      "lastChangedCommit": "ddae190e2adb64dfdf57780b664aa8f2a8eb8c3a"
+    },
+    "validate17b/donor/pipeline/budget_pipeline/validate/catalog.py": {
+      "sha256": "f656945429bec45296ec95519be2a187d14f4fabda5ff4a1ee91a9baa9dc53e6",
+      "lastChangedCommit": "ddae190e2adb64dfdf57780b664aa8f2a8eb8c3a"
+    },
+    "validate17b/donor/pipeline/budget_pipeline/validate/checks.py": {
+      "sha256": "25d7d0e984c5214efb2786f0f72f50cd6666b5f4565802fbb998d1cd52cc0567",
+      "lastChangedCommit": "ddae190e2adb64dfdf57780b664aa8f2a8eb8c3a"
+    },
+    "validate17b/donor/pipeline/budget_pipeline/validate/components.py": {
+      "sha256": "5bac6fde1850421a87310bd337c9849b936962f044d3dab22598e5005e3dc60e",
+      "lastChangedCommit": "ddae190e2adb64dfdf57780b664aa8f2a8eb8c3a"
+    },
+    "validate17b/donor/pipeline/budget_pipeline/validate/datasets.py": {
+      "sha256": "02234d24a03c387690d03b714eb7d413d334726951bcfa0034bc0a6325778790",
+      "lastChangedCommit": "ddae190e2adb64dfdf57780b664aa8f2a8eb8c3a"
+    },
+    "validate17b/donor/pipeline/budget_pipeline/validate/debt.py": {
+      "sha256": "6c2924d0b94dbdb85122c923c48f2248c162b94aad411bc997b6150da161dacc",
+      "lastChangedCommit": "ddae190e2adb64dfdf57780b664aa8f2a8eb8c3a"
+    },
+    "validate17b/donor/pipeline/budget_pipeline/validate/execution.py": {
+      "sha256": "03b1686fd7f067a9f0e1cea7729b924d46461c72f4d4341b4b422638d40003c0",
+      "lastChangedCommit": "ddae190e2adb64dfdf57780b664aa8f2a8eb8c3a"
+    },
+    "validate17b/donor/pipeline/budget_pipeline/validate/execution_contract.py": {
+      "sha256": "ffa32a7c6ee3a1ef661294049f77d8797a2e5dbc7fe4e160d7ebc5e7b5e70e5f",
+      "lastChangedCommit": "ddae190e2adb64dfdf57780b664aa8f2a8eb8c3a"
+    },
+    "validate17b/donor/pipeline/budget_pipeline/validate/execution_reports.py": {
+      "sha256": "63c04bec1c3ada4a97962a2dcdb51709d60e4264a83e1d4865735b64f833948c",
+      "lastChangedCommit": "ddae190e2adb64dfdf57780b664aa8f2a8eb8c3a"
+    },
+    "validate17b/donor/pipeline/budget_pipeline/validate/fiscal.py": {
+      "sha256": "b47769a9a99163adf1000c3fbd7c9892e3b7823809f17ec78a935563d643d5b5",
+      "lastChangedCommit": "ddae190e2adb64dfdf57780b664aa8f2a8eb8c3a"
+    },
+    "validate17b/donor/pipeline/budget_pipeline/validate/foundations.py": {
+      "sha256": "c7b713c7c45798c528c0ba5e082b2127347a63ab6bed5bd50dd32ae7c59c452b",
+      "lastChangedCommit": "ddae190e2adb64dfdf57780b664aa8f2a8eb8c3a"
+    },
+    "validate17b/donor/pipeline/budget_pipeline/validate/groups.py": {
+      "sha256": "6e6f57cc6981e9fb787d300cd179b1f4c32d75c54bc6a5f1c7ac7477b84e2b51",
+      "lastChangedCommit": "ddae190e2adb64dfdf57780b664aa8f2a8eb8c3a"
+    },
+    "validate17b/donor/pipeline/budget_pipeline/validate/indirect_taxes.py": {
+      "sha256": "038fedc70e8ffd575654c4a886ff8c9d675d3477bdef5e9764ec04d8cb074cea",
+      "lastChangedCommit": "ddae190e2adb64dfdf57780b664aa8f2a8eb8c3a"
+    },
+    "validate17b/donor/pipeline/budget_pipeline/validate/law.py": {
+      "sha256": "de4dbeb83fa6b429b9dc97179f06d18057ebb60191617a1178e58e996b2a1d38",
+      "lastChangedCommit": "ddae190e2adb64dfdf57780b664aa8f2a8eb8c3a"
+    },
+    "validate17b/donor/pipeline/budget_pipeline/validate/local_finance.py": {
+      "sha256": "d03a74108cc213221800510dea2e3a3cbb8bf717403f4363f32d2291e6aa65a0",
+      "lastChangedCommit": "ddae190e2adb64dfdf57780b664aa8f2a8eb8c3a"
+    },
+    "validate17b/donor/pipeline/budget_pipeline/validate/search_feed.py": {
+      "sha256": "b473784911c4a709720a2d57b7b4556eecd993bffb09fbc78c4b023bac69773a",
+      "lastChangedCommit": "ddae190e2adb64dfdf57780b664aa8f2a8eb8c3a"
+    },
+    "validate17b/generate-extra.py": {
+      "sha256": "2778e40c45ef57573de951d0b93c1391183db9121a2c5bfba887505cc61f7254",
+      "lastChangedCommit": "34c1765228ecf5d5dfbb7a9d64afe80dbf2b40f7"
+    },
+    "validate17b/generate.py": {
+      "sha256": "caedf9367ad7af9516431a626f25e9c1cffe75e4f7bb1a0c9a08243b7b0a2499",
+      "lastChangedCommit": "ddae190e2adb64dfdf57780b664aa8f2a8eb8c3a"
+    },
+    "validate17b/population/generate.py": {
+      "sha256": "aa3addf26843ac5e2176b749e39bd096722918e1ee8d92b93af87a11f4fd740c",
+      "lastChangedCommit": "b3ec3ed7b128b7c14dcf2656a2e9271ce2a63238"
+    },
+    "validate17b/years/generate.py": {
+      "sha256": "92d4a8c3da91622c6460a223ddb6b2becaeb12b0171e65ab0806e19658d56439",
+      "lastChangedCommit": "c67b186f517e0dabc4fb86eca03f5c33c3fcf87d"
+    },
+    "wave13a/donor/annual_periods.py": {
+      "sha256": "3a036c4d9e999897dc4737340da72772a27b8c1e40e3c5bff4f5b678d11a41cb",
+      "lastChangedCommit": "fad2b9609511396ce02eb69e8c894dbd14d6d251"
+    },
+    "wave13a/donor/budget_2027.py": {
+      "sha256": "dab10117524264be11f28be6d8325ca0b089f646d801751c0bd7974943d2850f",
+      "lastChangedCommit": "fad2b9609511396ce02eb69e8c894dbd14d6d251"
+    },
+    "wave13a/donor/data_io.py": {
+      "sha256": "b827a40fe5c979f2cf0d689766fedc355fddeb8c897460578d6aeb26364b9d68",
+      "lastChangedCommit": "fad2b9609511396ce02eb69e8c894dbd14d6d251"
+    },
+    "wave13a/generate_budget.py": {
+      "sha256": "cbb2571691f31943e517e56d2647606baac5a887ff8468609d13564392beb8c0",
+      "lastChangedCommit": "11ebfe82f9b474e51f65c0312a1eaa3bf8471f0a"
+    },
+    "wave13a/generate_law_next.py": {
+      "sha256": "6080b6c48a678da85f373a688047dfff7c4ead207e742646d4c48da08475ccf6",
+      "lastChangedCommit": "516c2a70229ed08c2cfed2c0f9ef6887f1469d6b"
+    },
+    "wave13a/law-donor.py": {
+      "sha256": "ecdbc2fffd48630c9b2de59e0495966c30557ebc32ff5f0190ae6ef149eaee6a",
+      "lastChangedCommit": "516c2a70229ed08c2cfed2c0f9ef6887f1469d6b"
+    },
+    "wave13b/donor/budget_pipeline/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/active_data.py": {
+      "sha256": "81f1ccbe6bfba7dd5b7718ccb786ca13396925b159777179d9778b6196a8aa97",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/annual_periods.py": {
+      "sha256": "3a036c4d9e999897dc4737340da72772a27b8c1e40e3c5bff4f5b678d11a41cb",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/apply_sources.py": {
+      "sha256": "85c440fadf503b821ffa7e698ae4f3297a9d3a03ac516fd75db41b9a0945c110",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/budget_2027.py": {
+      "sha256": "dab10117524264be11f28be6d8325ca0b089f646d801751c0bd7974943d2850f",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/budget_plan.py": {
+      "sha256": "4b6362da4db933c41b2fcc04e575f64a73155a91367acc193bf57daedf12eb4d",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/budget_plan_check.py": {
+      "sha256": "876bd9dfd3da1e6c233c86fb989fb9dd7c9f22d3d4d3f63cfc80c86ba5fc27fd",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/budgets.py": {
+      "sha256": "c33c27b3f0f2bf13100babc8c3417a0c1fe931078ad493e7877751fb181469fd",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/catalog.py": {
+      "sha256": "d3a88431190a559e0ee9345e569c78bd11d4bf4aeda4b88571e0f09c4d79a440",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/catalog_definitions.py": {
+      "sha256": "977312f85f6573612fce4b010f8d3325b64f210f2bf2a99f145a83b66f104892",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/catalog_refresh.py": {
+      "sha256": "3c1a38e10e73bc89ad197fa2cea3024697a0f656b357c5876ac00f0548e5ab9b",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/components.py": {
+      "sha256": "6796a3cdeb99597d8bcfff9553cfcc48bd9ce63ec7888917314ef48fd653137b",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/context.py": {
+      "sha256": "8fba5fd6daf301c63c6ac315f7ea7d13493d2ac5088625e05f30a575074e0803",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/core.py": {
+      "sha256": "37f36c65288754f3c6bd0f132da4114228aecfb2a65132058b5c846ec6734f6b",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/data_io.py": {
+      "sha256": "b827a40fe5c979f2cf0d689766fedc355fddeb8c897460578d6aeb26364b9d68",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/datasets.py": {
+      "sha256": "2adb14c7e46a6ba583acfab8cce5d201938745ae5fd8289ceadad9310734d6c9",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/debt.py": {
+      "sha256": "2635b923534636a36d2f84aa5cbe2031f3fc5e82aede59cd3e939a4f536ed0f2",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/debt_pdf.py": {
+      "sha256": "c716b7a1ee2dc8eeb29e2cc57f3bab3529598a05c062a7a68ce0dcf9caa88fdb",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/definitions.py": {
+      "sha256": "12ef622fd7515f520949a7c5ad446c407f8e5a96270824c1389f09e1f6e18437",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/editorial.py": {
+      "sha256": "11a3252eb7d350a4b1cd5127a6f2208b9cdd44faa88808839cf2d65853c04d7e",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/execution_law.py": {
+      "sha256": "3d4fd3da440a832dc3ba3aaa3cb6687e7e320a48784e411f0f1ee10493b68bf3",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/feed.py": {
+      "sha256": "2e3a11cc4aa4424470141ba027172b5fda9910f8de8431da054a8e89466e66ed",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/fiscal.py": {
+      "sha256": "78af9a5df7a8a704848aac7470ca1c9c1899aed7037771c71272773f26c980d9",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/forecast_tables.py": {
+      "sha256": "caacfbe902403d10b93631fd9e191b9cd8613099b8fb4ce0fedc8b05afdc17a9",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/frozen_editorial.py": {
+      "sha256": "61dc6739fd46e33172f345bcb2a7516b50204218d59181acfda52bcf509fd0fa",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/guide.py": {
+      "sha256": "61623b6c0637f5c4ebfec6d56c3f6898c11526e2aa1f1997f94a5cc5ed7700f4",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/gva_sectors.py": {
+      "sha256": "a04b836fb4cf716ff8edb856fe05528a40e8c8c607c70952912ae3e4d7c65691",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/indirect_taxes.py": {
+      "sha256": "7e2800d7f04f6edfec601864cc9b918cd03a21a471623a7269884708f21e85cc",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/input_checksums.py": {
+      "sha256": "9ab0079ba0887040c18dff9cbc20ec654a281fbae87ddfb619f5e47130cd6267",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/law.py": {
+      "sha256": "ecdbc2fffd48630c9b2de59e0495966c30557ebc32ff5f0190ae6ef149eaee6a",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/measures.py": {
+      "sha256": "bcb2f6c0a15ce369e7b2dbfca81bb7ad892cc584a7849495cd68f01057d99989",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/municipalities.py": {
+      "sha256": "bcbebd0cbf6c2a6a76bfaa62dd71d0b46aee01b8019e053d350a492cc329edf7",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/payments.py": {
+      "sha256": "4a67fbb7456414264e5ce8ebd56b8ad283e755a4d4eba82ed513491c8aceb3bb",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/program_budget_pdf.py": {
+      "sha256": "090db34f52118e28ebc153eb4031530b307bfa1920343e758db6185c222f9fca",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/program_budgets.py": {
+      "sha256": "572bc6197ff00fdc4470ccaf3cbc51416b3f3a6d20f8ad0d0ec44848ca811e2e",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/rates.py": {
+      "sha256": "f70e3849599410e1a96552ca9388c06e583b8637c098b6044a02094a05f18211",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/rebuild.py": {
+      "sha256": "edea81fcd44d5ccb04753eb11e463a9a62c1c036170a7b39a51467c50040fc12",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/search.py": {
+      "sha256": "033f809e56864a772e1a92d3b3c2f761a012b7abb40345cd20ade2d7fc1a618c",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/build/wording.py": {
+      "sha256": "e351379a75b9220a073fc6c68684bc961a311cccaa7f8337003fdba109145942",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/cli.py": {
+      "sha256": "f6532097257ad019e7e1b80b78469b40d7b7f9ffb1e1c977bfc2f6c0e19db67c",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/environment.py": {
+      "sha256": "952814065e1f2e3f9223586925005ac8bbb7dce1c229a13c3fd8fb9a5fb510a9",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/extract/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/extract/asbp_pages.py": {
+      "sha256": "223a2f8c1808de9b14bb800356dc833b4412f8543b3fb9f332a02e6e0bd3343c",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/extract/asbp_tables.py": {
+      "sha256": "df2ba3330723d4d5723d36b7a92f99ec1d5359a6f5044c36cde94dfc404e2bce",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/extract/bill.py": {
+      "sha256": "98bc8ed3f94dcc3a71d28a0d3e8e00bdeaec761ad649f3aa6331f78d2cf03962",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/extract/budget_bill_2027.py": {
+      "sha256": "4f6c2f7c738531814bad2c044d05c9b5e5a653c3a85ec6e0952b057a5d422798",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/extract/budget_forecast_2027.py": {
+      "sha256": "38d9c3f2ef59f9b43c45a17d9a7eafb35d0c0d6650da104d73e80ff4c1f94ed0",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/extract/budget_law_parser.py": {
+      "sha256": "f5c57b32da38e7e28fbbec6350c368173c195cf1b86d67a2368cc2b99651d746",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/extract/dbp2027.py": {
+      "sha256": "86cb1ecf5541f2fa079018f611ce6815b91c3b4bd10339c5774f85b612cba699",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/extract/dv_laws.py": {
+      "sha256": "581a4a09989984e4e83fbe387456d60a3a5325a832012e1d2f0b6dfeb037deb5",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/extract/glossary.py": {
+      "sha256": "6a42b6e00de6107a23bc87c7d42b6bab92866782e32f907fa8b5a0dae69f215a",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/extract/indirect_tax_evidence.py": {
+      "sha256": "62650741265a8111f580cabd07fa25e71550e260559a870100afd26071984b28",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/extract/kfp_full.py": {
+      "sha256": "232e144e4394feeb61348f8fe2f6e88a58cff52b404481fd32c3c8093172093d",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/extract/legacy_inputs.py": {
+      "sha256": "2d0aa7697a60f20b05a037d32a712d4db24da0fa6bc7acd552fc9e02da99ff10",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/extract/program_budgets.py": {
+      "sha256": "356760b7b3fa76a31bd35085eb0f1e15f7b0c39693fb3d747c275bd0b29b7f00",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/offline.py": {
+      "sha256": "82c2e0f8d0991f9a99a8f4cf94b6609820a685456af670d6d7e0f3645cd5365b",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/routes.py": {
+      "sha256": "9a3394ed319834cf97cc85afc6aadbb501957c76b579faafa3f83008a4455c3f",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/sources/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/sources/access_probe.py": {
+      "sha256": "e16faef6da4db8224012aa16a569924e3dcae20e07c2dad9b581182ab952e91c",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/sources/boundaries.py": {
+      "sha256": "d3dc18f92a15142afccb730a0d2e3f9c404caef28c4d190c863e95d585c15c5b",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/sources/collect.py": {
+      "sha256": "5cc50a205846d878b64b8fb3230d1ab22b8c03fee54d18a0bbfdf901fb186b0f",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/sources/download.py": {
+      "sha256": "2459860317d29d2100a9db770bd1f10d90221346eb67e8ddbd2fb20d4df7f0d5",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/sources/originals.py": {
+      "sha256": "1fa07672d872983ecb9761b02dc3f3c23e6ae280ca43855616b5eddc5c1fff75",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/sources/payments.py": {
+      "sha256": "81b26c2417be50c56532da805917d76ad3c71042a80775132d0c720a82ebadaf",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/sources/prepare_inputs.py": {
+      "sha256": "cf035c7176a1de12d0d1782be0ced675fc66c4dfecd5cfd9543701ecbed6d646",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/validate/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/validate/annual_oracles.py": {
+      "sha256": "6cce4ec2592eb084b35e57b2b8fe9641fafa5cd54d3256cbe2886b8cebac3fc9",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/validate/base.py": {
+      "sha256": "8a4067e045e2b72eec24603f37b0d72ed37ee04b87f1713ebc6a4d3733791fe3",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/validate/budget_2027.py": {
+      "sha256": "ed607b8498a9693c52c8398f4c70f7770b001aa7592c9bf079d7beca415453c2",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/validate/budgets.py": {
+      "sha256": "afbabe24c96182801efc1df1c0b8d4dd6ad69ddbdcf615fe029e2901cf0c53ef",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/validate/catalog.py": {
+      "sha256": "f656945429bec45296ec95519be2a187d14f4fabda5ff4a1ee91a9baa9dc53e6",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/validate/checks.py": {
+      "sha256": "25d7d0e984c5214efb2786f0f72f50cd6666b5f4565802fbb998d1cd52cc0567",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/validate/components.py": {
+      "sha256": "5bac6fde1850421a87310bd337c9849b936962f044d3dab22598e5005e3dc60e",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/validate/datasets.py": {
+      "sha256": "02234d24a03c387690d03b714eb7d413d334726951bcfa0034bc0a6325778790",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/validate/debt.py": {
+      "sha256": "6c2924d0b94dbdb85122c923c48f2248c162b94aad411bc997b6150da161dacc",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/validate/execution.py": {
+      "sha256": "03b1686fd7f067a9f0e1cea7729b924d46461c72f4d4341b4b422638d40003c0",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/validate/execution_contract.py": {
+      "sha256": "ffa32a7c6ee3a1ef661294049f77d8797a2e5dbc7fe4e160d7ebc5e7b5e70e5f",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/validate/execution_reports.py": {
+      "sha256": "63c04bec1c3ada4a97962a2dcdb51709d60e4264a83e1d4865735b64f833948c",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/validate/fiscal.py": {
+      "sha256": "b47769a9a99163adf1000c3fbd7c9892e3b7823809f17ec78a935563d643d5b5",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/validate/foundations.py": {
+      "sha256": "c7b713c7c45798c528c0ba5e082b2127347a63ab6bed5bd50dd32ae7c59c452b",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/validate/groups.py": {
+      "sha256": "6e6f57cc6981e9fb787d300cd179b1f4c32d75c54bc6a5f1c7ac7477b84e2b51",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/validate/indirect_taxes.py": {
+      "sha256": "038fedc70e8ffd575654c4a886ff8c9d675d3477bdef5e9764ec04d8cb074cea",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/validate/law.py": {
+      "sha256": "de4dbeb83fa6b429b9dc97179f06d18057ebb60191617a1178e58e996b2a1d38",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/validate/local_finance.py": {
+      "sha256": "d03a74108cc213221800510dea2e3a3cbb8bf717403f4363f32d2291e6aa65a0",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/donor/budget_pipeline/validate/registry.py": {
+      "sha256": "0cf9fbf594f875d199d04469a39a04cb8745707bfb194ee888d1bc8e26317b39",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave13b/generate_oracle.py": {
+      "sha256": "faec1c6a06fd4a40e0290d0a4eb4289422b4b9614c5197921f793276891cbb73",
+      "lastChangedCommit": "f8e7f7af6547252dfe9010f22e18fa4548d170b3"
+    },
+    "wave17c/check_provenance.py": {
+      "sha256": "afef415952e18aac7c47e31f23975526e8b50b67f538d39506cb2a719f306d59",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/corpus/pipeline/budget_pipeline/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/corpus/pipeline/budget_pipeline/build/annual_periods.py": {
+      "sha256": "3a036c4d9e999897dc4737340da72772a27b8c1e40e3c5bff4f5b678d11a41cb",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/corpus/pipeline/budget_pipeline/build/budget_2027.py": {
+      "sha256": "dab10117524264be11f28be6d8325ca0b089f646d801751c0bd7974943d2850f",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/corpus/pipeline/budget_pipeline/build/data_io.py": {
+      "sha256": "b827a40fe5c979f2cf0d689766fedc355fddeb8c897460578d6aeb26364b9d68",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/corpus/pipeline/budget_pipeline/extract/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/corpus/pipeline/budget_pipeline/extract/indirect_tax_evidence.py": {
+      "sha256": "62650741265a8111f580cabd07fa25e71550e260559a870100afd26071984b28",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/corpus/pipeline/budget_pipeline/routes.py": {
+      "sha256": "9a3394ed319834cf97cc85afc6aadbb501957c76b579faafa3f83008a4455c3f",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/corpus/pipeline/budget_pipeline/validate/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/corpus/pipeline/budget_pipeline/validate/annual_oracles.py": {
+      "sha256": "6cce4ec2592eb084b35e57b2b8fe9641fafa5cd54d3256cbe2886b8cebac3fc9",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/corpus/pipeline/budget_pipeline/validate/base.py": {
+      "sha256": "8a4067e045e2b72eec24603f37b0d72ed37ee04b87f1713ebc6a4d3733791fe3",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/corpus/pipeline/budget_pipeline/validate/budget_2027.py": {
+      "sha256": "ed607b8498a9693c52c8398f4c70f7770b001aa7592c9bf079d7beca415453c2",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/corpus/pipeline/budget_pipeline/validate/budgets.py": {
+      "sha256": "afbabe24c96182801efc1df1c0b8d4dd6ad69ddbdcf615fe029e2901cf0c53ef",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/corpus/pipeline/budget_pipeline/validate/catalog.py": {
+      "sha256": "f656945429bec45296ec95519be2a187d14f4fabda5ff4a1ee91a9baa9dc53e6",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/corpus/pipeline/budget_pipeline/validate/checks.py": {
+      "sha256": "25d7d0e984c5214efb2786f0f72f50cd6666b5f4565802fbb998d1cd52cc0567",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/corpus/pipeline/budget_pipeline/validate/components.py": {
+      "sha256": "5bac6fde1850421a87310bd337c9849b936962f044d3dab22598e5005e3dc60e",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/corpus/pipeline/budget_pipeline/validate/datasets.py": {
+      "sha256": "02234d24a03c387690d03b714eb7d413d334726951bcfa0034bc0a6325778790",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/corpus/pipeline/budget_pipeline/validate/debt.py": {
+      "sha256": "6c2924d0b94dbdb85122c923c48f2248c162b94aad411bc997b6150da161dacc",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/corpus/pipeline/budget_pipeline/validate/execution.py": {
+      "sha256": "03b1686fd7f067a9f0e1cea7729b924d46461c72f4d4341b4b422638d40003c0",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/corpus/pipeline/budget_pipeline/validate/execution_contract.py": {
+      "sha256": "ffa32a7c6ee3a1ef661294049f77d8797a2e5dbc7fe4e160d7ebc5e7b5e70e5f",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/corpus/pipeline/budget_pipeline/validate/execution_reports.py": {
+      "sha256": "63c04bec1c3ada4a97962a2dcdb51709d60e4264a83e1d4865735b64f833948c",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/corpus/pipeline/budget_pipeline/validate/fiscal.py": {
+      "sha256": "b47769a9a99163adf1000c3fbd7c9892e3b7823809f17ec78a935563d643d5b5",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/corpus/pipeline/budget_pipeline/validate/foundations.py": {
+      "sha256": "c7b713c7c45798c528c0ba5e082b2127347a63ab6bed5bd50dd32ae7c59c452b",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/corpus/pipeline/budget_pipeline/validate/groups.py": {
+      "sha256": "6e6f57cc6981e9fb787d300cd179b1f4c32d75c54bc6a5f1c7ac7477b84e2b51",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/corpus/pipeline/budget_pipeline/validate/indirect_taxes.py": {
+      "sha256": "038fedc70e8ffd575654c4a886ff8c9d675d3477bdef5e9764ec04d8cb074cea",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/corpus/pipeline/budget_pipeline/validate/law.py": {
+      "sha256": "de4dbeb83fa6b429b9dc97179f06d18057ebb60191617a1178e58e996b2a1d38",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/corpus/pipeline/budget_pipeline/validate/local_finance.py": {
+      "sha256": "d03a74108cc213221800510dea2e3a3cbb8bf717403f4363f32d2291e6aa65a0",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/corpus/pipeline/budget_pipeline/validate/search_feed.py": {
+      "sha256": "b473784911c4a709720a2d57b7b4556eecd993bffb09fbc78c4b023bac69773a",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/generate.py": {
+      "sha256": "390f7e455bbdcc1de0fb964fde6e822ce5e8fc53fc0c95d70b43f9f05d2b253e",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/generate_unicode.py": {
+      "sha256": "3a23db095b2929b3902f27cd4dbfad8bb783335367461c2d532f92e80f2743b7",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/reference.py": {
+      "sha256": "ebd8be2bea2a9607802ba9d78a31011e5b43b6621d590971a5c4ffd0ebe14cc1",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave17c/routes/generate.py": {
+      "sha256": "c335b1730bfc8b90e91a50c788cf57a200e766ebb0fb0e471676db47acec4219",
+      "lastChangedCommit": "17eb1dbbe9f7e6068ccde6557d38af5907ef4909"
+    },
+    "wave17c/sources/generate.py": {
+      "sha256": "01a3032e05c8bb613d7aee58a6ec0dd92bfb8ccb2ad99b0aa0247b5bddcb2c10",
+      "lastChangedCommit": "ae143978187be9c815b7edc6013f864f45d05b60"
+    },
+    "wave17c/wrapper.py": {
+      "sha256": "f8815160d7b12a9cac416d9c318c84ebd804257ad4c20e22004eca0018f9d4a2",
+      "lastChangedCommit": "3ef428a2a619224c2bbee683d4721a4822f37d46"
+    },
+    "wave18/check_provenance.py": {
+      "sha256": "80351101274b48f4a403a1a9d0b19afdc8572fa4881f9e59c023b105607eb085",
+      "lastChangedCommit": "0d39213477636c1f6753f8ab7ffa0fa40ddbc28d"
+    },
+    "wave18/differential.py": {
+      "sha256": "26e216684482e3d7bd173c316e1cdbabb1571706c33cee5a511e96591292597e",
+      "lastChangedCommit": "729019a60d32885d91855bc4afb498a648877466"
+    },
+    "wave18/oracle.py": {
+      "sha256": "b11ce54730dca35a7ad7d65b64cb641e7fd1bb38e1c3c2f4d7fc3d9589e3eb32",
+      "lastChangedCommit": "0d39213477636c1f6753f8ab7ffa0fa40ddbc28d"
+    },
+    "wave18/pipeline/budget_pipeline/build/annual_periods.py": {
+      "sha256": "3a036c4d9e999897dc4737340da72772a27b8c1e40e3c5bff4f5b678d11a41cb",
+      "lastChangedCommit": "0d39213477636c1f6753f8ab7ffa0fa40ddbc28d"
+    },
+    "wave18/pipeline/budget_pipeline/build/data_io.py": {
+      "sha256": "b827a40fe5c979f2cf0d689766fedc355fddeb8c897460578d6aeb26364b9d68",
+      "lastChangedCommit": "0d39213477636c1f6753f8ab7ffa0fa40ddbc28d"
+    },
+    "wave18/pipeline/budget_pipeline/build/execution_law.py": {
+      "sha256": "3d4fd3da440a832dc3ba3aaa3cb6687e7e320a48784e411f0f1ee10493b68bf3",
+      "lastChangedCommit": "0d39213477636c1f6753f8ab7ffa0fa40ddbc28d"
+    },
+    "wave18/pipeline/budget_pipeline/validate/checks.py": {
+      "sha256": "25d7d0e984c5214efb2786f0f72f50cd6666b5f4565802fbb998d1cd52cc0567",
+      "lastChangedCommit": "0d39213477636c1f6753f8ab7ffa0fa40ddbc28d"
+    },
+    "wave18/pipeline/budget_pipeline/validate/execution_contract.py": {
+      "sha256": "ffa32a7c6ee3a1ef661294049f77d8797a2e5dbc7fe4e160d7ebc5e7b5e70e5f",
+      "lastChangedCommit": "0d39213477636c1f6753f8ab7ffa0fa40ddbc28d"
+    },
+    "wave18/pipeline/budget_pipeline/validate/execution_reports.py": {
+      "sha256": "63c04bec1c3ada4a97962a2dcdb51709d60e4264a83e1d4865735b64f833948c",
+      "lastChangedCommit": "0d39213477636c1f6753f8ab7ffa0fa40ddbc28d"
+    }
+  }
+}

@@ -1,3 +1,4 @@
+import { verifyHistoricalPythonPin } from '../io/fixture-history.js';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -68,8 +69,10 @@ describe('independent frozen Python 3.12 DEBT/MUNIC/SEBRA validation', () => {
     expect(sha(readFileSync(join(fixture, 'provenance.json')))).toBe(
       '7b536856d288b4da8f8d2a62951d803fa3f8e639fd17cb637406ca6583a5b251',
     );
-    for (const [file, hash] of Object.entries(provenance.pins))
-      expect(sha(readFileSync(join(fixture, file))), file).toBe(hash);
+    for (const [file, hash] of Object.entries(provenance.pins)) {
+      if (file.endsWith('.py')) verifyHistoricalPythonPin(`debt-local-validation/${file}`, hash);
+      else expect(sha(readFileSync(join(fixture, file))), file).toBe(hash);
+    }
     for (const pin of provenance.availableOriginals)
       expect(sha(readFileSync(join(repo, pin.path))), pin.path).toBe(pin.sha256);
     expect(debtLocalGroups.map((g) => g.name)).toEqual(['DEBT', 'MUNIC', 'SEBRA']);

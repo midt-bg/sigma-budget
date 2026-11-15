@@ -1105,7 +1105,7 @@ node scripts/restore-programme-test-inputs.mjs tmp/ci-inputs/registered-node-inp
 
 Python не е нужен за `pnpm test`. Диференциалните тестове сравняват със замразени Python резултати в `packages/ingest/test/expected/` и не стартират интерпретатор.
 
-Python командите остават действащи. След сглобяване на пакетите JSON наборите се сравняват по избран обхват:
+Python генераторите и donor копията под `packages/ingest/test/fixtures/` са премахнати. Данните и очакванията остават замразени байт по байт; [индексът на произхода](../packages/ingest/test/README-fixtures.md) посочва историческите модули, Git ревизии и SHA-256. Пътищата към Python във frozen corpora са исторически данни, а не изискване файловете да съществуват в текущия checkout. След сглобяване на пакетите JSON наборите се сравняват по избран обхват:
 
 ```sh
 pnpm exec budget-ts parity --oracle data/release --candidate tmp/candidate --scope outlook,revenue --policy tmp/policy.json --report tmp/parity.json
@@ -1113,7 +1113,7 @@ pnpm exec budget-ts parity --oracle data/release --candidate tmp/candidate --sco
 
 Началната политика за точно сравнение е `{"precision":[],"accepted":[]}`. Примерно правило за точност е `{"dataset":"outlook","pointer":"/gdp/*","decimals":1,"unit":"million EUR"}`; `*` съвпада с един сегмент от JSON Pointer. Правилата следват публикуваната точност. Бройките, идентификаторите, годините и целочислените парични единици остават точни. Прието различие задава `dataset`, `file`, `pointer`, `expected`, `actual` и непразно основание `rationale`; структурни разлики и невалидни числа не могат да се приемат. Изходните кодове са 0 (успех), 1 (неприето различие или невалидно извикване) и 2 (липсващи доказателства). Адаптерите за останалите формати предстоят; техните обхвати връщат `unverified`.
 
-`FixtureManifest` в `packages/test-support` съдържа `schema: 1`, пълна ревизия `baselineRevision`, дата `buildDate`, `inputs: [{path, sha256}]` и `datasets: [{id, eligibility, rationale}]`. Допустимите стойности за `eligibility` са `reproducible`, `frozen-only` и `unverified`. Resolver-ът проверява инвентара, ограничението на пътищата и контролните суми. Доказателствата се заснемат от Python; очакванията не се генерират от кандидата.
+`FixtureManifest` в `packages/test-support` съдържа `schema: 1`, пълна ревизия `baselineRevision`, дата `buildDate`, `inputs: [{path, sha256}]` и `datasets: [{id, eligibility, rationale}]`. Допустимите стойности за `eligibility` са `reproducible`, `frozen-only` и `unverified`. Resolver-ът проверява инвентара, ограничението на пътищата и контролните суми. Доказателствата са заснети исторически от Python; очакванията не се генерират от кандидата.
 
 ### Косвени данъци след 08.11.2026 г.
 

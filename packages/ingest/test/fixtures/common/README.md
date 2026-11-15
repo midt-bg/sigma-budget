@@ -1,12 +1,12 @@
 # Common-layer evidence
 
-The Python oracle was captured at revision `851e90f`, build date `2026-11-08`, with Python 3.12 and the locked pipeline requirements. `generate_oracle.py` regenerates the JSON expectations using the Python implementations. It does not call the TypeScript code.
+This directory contains frozen DATA fixtures. Python generators and donor copies have been removed; JSON, CSV, XML, hashes and oracle outputs are preserved byte for byte. TypeScript tests continue to compare against these expectations.
 
-`asbp-tables.json` contains only the two Annex 3 tables and `docx_check` extracted from `data/originals/asbp/asbp_tables.json` in `release-build-inputs-2026-11-08-indirect-tax-sources.tar.gz`. The archive, original table and fixture hashes are recorded in `provenance.json`. To regenerate, verify the archive hash, extract that one member under `tmp/ts-common-inputs`, and run:
+The historical module paths, SHA-256 values and Git revisions are recorded in the [fixture origin index](../../README-fixtures.md). Existing provenance inventories retain their historical Python entries; they are not a current checkout file list.
 
-```sh
-PYTHONPATH=pipeline tmp/venv-data/bin/python packages/ingest/test/fixtures/common/generate_oracle.py
-```
+The Python oracle was captured at revision `851e90f`, build date `2026-11-08`, with Python 3.12 and the locked pipeline requirements. `generate_oracle.py` generated the JSON expectations using the Python implementations. It does not call the TypeScript code.
+
+`asbp-tables.json` contains only the two Annex 3 tables and `docx_check` extracted from `data/originals/asbp/asbp_tables.json` in `release-build-inputs-2026-11-08-indirect-tax-sources.tar.gz`. The archive, original table and fixture hashes are recorded in `provenance.json`. The original capture verified the archive and member hashes.
 
 `inputs/` holds `data/sources.yaml`, `data/datasets.yaml` and `data/release/execution.json` as of `851e90f`; their hashes are in `provenance.json`. The test and the generator read these copies, so registry and release changes do not move the expectations. `annex.json` is the Python tree and arithmetic diagnostics; `execution-numbers.json` is the Python adapter applied to `inputs/execution.json`; `registries.json` is Python's parsed version of both registries in `inputs/`. `source-map/` is a small synthetic input tree used by `cli.registry_inputs`, including shared, missing, skipped and pending inputs. `source-definitions.json`, `metadata.json` and `format.json` capture Python's shared definitions and helpers. The published source layering and domain builders remain later migration jobs.
 

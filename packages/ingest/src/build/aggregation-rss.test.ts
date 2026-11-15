@@ -1,3 +1,4 @@
+import { verifyHistoricalPythonPin } from '../io/fixture-history.js';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -8,8 +9,8 @@ const fixture = resolve(import.meta.dirname, '../../test/fixtures/aggregation-rs
 const siteName = editorialSiteName(
   JSON.parse(readFileSync(resolve(fixture, '../aggregation/inputs/glossary.json'), 'utf8')),
 );
-// `generate_oracle.py --check` (Python 3.12) confirmed once that the frozen donor regenerates every
-// oracle byte for byte; these hashes pin exactly the donor, cases and oracles it confirmed.
+// The historical Python 3.12 check confirmed these frozen cases and oracle bytes.
+// Its donor hash is retained as a source-history fact; DATA hashes still authenticate live bytes.
 const donorCheck = JSON.parse(
   readFileSync(
     resolve(import.meta.dirname, '../../test/expected/aggregation-rss/donor-check.json'),
@@ -28,8 +29,8 @@ const cases = JSON.parse(readFileSync(join(fixture, 'cases.json'), 'utf8')) as R
 >;
 
 describe('RSS donor serializer', () => {
-  it('uses the donor, cases and oracles confirmed by the Python donor check', () => {
-    expect(sha256(join(fixture, 'donor/feed.py'))).toBe(donorCheck.donorSha256);
+  it('retains the historical donor pin and authenticates the confirmed cases and oracles', () => {
+    verifyHistoricalPythonPin('aggregation-rss/donor/feed.py', donorCheck.donorSha256);
     expect(sha256(join(fixture, 'cases.json'))).toBe(donorCheck.casesSha256);
     expect(donorCheck.oracles.map((o) => o.case).sort()).toEqual(Object.keys(cases).sort());
   });

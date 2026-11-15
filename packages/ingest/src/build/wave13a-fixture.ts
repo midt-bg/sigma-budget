@@ -1,3 +1,4 @@
+import { verifyHistoricalPythonPin } from '../io/fixture-history.js';
 import { createHash } from 'node:crypto';
 import { lstat, readFile, realpath } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
@@ -48,6 +49,11 @@ export async function loadWave13aFixture(base: string, buildDate: string): Promi
   const content = new Map<string, Buffer>();
   // Published snapshots are oracle targets and are never read by the builder.
   for (const name of required.filter((name) => !name.startsWith('wave13a/published/'))) {
+    if (name === 'wave13a/law-donor.py') {
+      // Keep the original inventory bytes; this removed source pin is historical.
+      verifyHistoricalPythonPin(name, hashes[name]);
+      continue;
+    }
     const data = await read(name);
     if (sha(data) !== hashes[name]) throw new Error(`Fixture checksum mismatch: ${name}`);
     content.set(name, data);
