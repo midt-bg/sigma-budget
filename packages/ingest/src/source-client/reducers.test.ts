@@ -16,7 +16,11 @@ import { SourceClient } from './client.js';
 import { sha256 } from './files.js';
 const fixtureRoot = resolve('test/fixtures/debt-local/inputs');
 const expectedRoot = resolve('test/expected/source-client-reducers');
-/** `JSON.stringify` with the default `json.dumps` separators (`, ` and `: `). */
+/**
+ * `JSON.stringify` with the default `json.dumps` separators (`, ` and `: `). It does not reproduce Python's float formatting
+ * (`12.0`, `1e-05`): the rows compared here have no integral floats and no exponent forms. If such a value appears, the hash
+ * below fails although the rows are equal, never the other way round.
+ */
 const pythonJson = (value: unknown) =>
   JSON.stringify(value).replace(
     /("(?:[^"\\]|\\.)*")|([:,])/g,

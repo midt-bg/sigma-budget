@@ -75,7 +75,7 @@ jobs:
         run: pnpm test -- --coverage
       - name: Node tests leave protected inputs unchanged
         if: always()
-        run: test -z "$(git status --porcelain -- data packages/ingest/test/fixtures tests/pipeline/fixtures apps/web/app/routes/__fixtures__)"
+        run: test -z "$(git status --porcelain -- data packages/ingest/test/fixtures packages/ingest/test/expected tests/pipeline/fixtures apps/web/app/routes/__fixtures__)"
       - name: Check every mandatory parity report
         if: always()
         run: node scripts/check-parity-reports.mjs

@@ -144,10 +144,18 @@ test('the Node suites run without a Python interpreter', () => {
     'yaml',
   );
   const job = parse(workflow).jobs.coverage;
-  assert.ok(!job.steps.some((step) => step.uses?.startsWith('actions/setup-python@')));
-  assert.ok(!job.steps.some((step) => /\bpython3?\b|\bpip\b/.test(step.run ?? '')));
-  assert.ok(!Object.keys(job.env).some((name) => name.startsWith('PYTHON')));
+  assert.ok(!job.steps.some((step) => /setup-(python|uv)@/.test(step.uses ?? '')));
+  assert.ok(!job.steps.some((step) => /\b(python[\d.]*|pip\d*|uv)\b/.test(step.run ?? '')));
+  for (const name of [job, ...job.steps].flatMap((part) => Object.keys(part.env ?? {})))
+    assert.ok(!name.startsWith('PYTHON'), `coverage still sets ${name}`);
   const turbo = JSON.parse(readFileSync('turbo.json', 'utf8'));
-  for (const name of [...turbo.globalEnv, ...turbo.globalPassThroughEnv])
+  for (const name of [
+    ...(turbo.globalEnv ?? []),
+    ...(turbo.globalPassThroughEnv ?? []),
+    ...Object.values(turbo.tasks ?? {}).flatMap((task) => [
+      ...(task.env ?? []),
+      ...(task.passThroughEnv ?? []),
+    ]),
+  ])
     assert.ok(!name.startsWith('PYTHON'), `Turbo still passes ${name}`);
 });
