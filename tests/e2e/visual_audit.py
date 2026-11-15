@@ -86,6 +86,13 @@ def main():
             assert page.locator('#b27-nakratko .kpi').count() == 6
             expect(page.locator('#b27-sravnenie-table')).to_be_visible()
             expect(page.locator('#b27-kapitalovi-fig')).to_be_visible()
+            # What other screens own is a short entry with a link that keeps the 2027 period, not a copy.
+            assert page.locator('#b27-prihodi, #b27-merki, #b27-obshtini, #b27-dalg, #s34-bill').count() == 0
+            more = page.locator('#b27-more a.link-card')
+            assert more.count() >= 8
+            expect(more.last).to_be_visible()
+            for path in ('/prihodi', '/merki', '/obshtini', '/dalg', '/prognoza'):
+                expect(page.locator(f'#b27-more a.link-card[href*="{path}?"][href*="per=2027.draft"]')).to_have_count(1)
             # Investment projects: three year totals, a chart by institution, the top ten (project + three years) and a searchable full list.
             assert page.locator('#s34-projects .kpi').count() == 3
             expect(page.locator('#s34-projects-by-institution-fig')).to_be_visible()
