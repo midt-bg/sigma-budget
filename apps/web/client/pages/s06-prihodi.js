@@ -668,11 +668,11 @@ export const lede = (ctx) => {
   const v = money(m.total, { d: 1 });
   const first =
     {
-      actual: `През ${yr(m.year)} приходите на държавата са ${v}.`,
-      prelim: `Според предварителния отчет приходите през ${yr(m.year)} са ${v}.`,
-      plan: `Държавата планира да събере ${v} приходи през ${yr(m.year)}`,
-      forecast: `Според прогнозата приходите през ${yr(m.year)} ще бъдат ${v}.`,
-    }[m.kind] ?? `Приходите през ${yr(m.year)} са ${v}.`;
+      actual: `През ${yr(m.year)} приходите по КФП са ${v}.`,
+      prelim: `Според предварителния отчет приходите по КФП през ${yr(m.year)} са ${v}.`,
+      plan: `Планираните приходи по КФП през ${yr(m.year)} са ${v}.`,
+      forecast: `Според прогнозата приходите по КФП през ${yr(m.year)} ще бъдат ${v}.`,
+    }[m.kind] ?? `Приходите по КФП през ${yr(m.year)} са ${v}.`;
   const [a, b] = m.ranked;
   if (!a || !ok(a.rawShare)) return first;
   const p = a.rawShare,

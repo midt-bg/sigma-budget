@@ -7,7 +7,8 @@ import { requestState } from '../../client/store.js';
 import { build, frameHtml, resolve } from '../../client/render.js';
 import { tableData } from '../../client/ui/table.js';
 import { num } from '../../client/format.js';
-import { comparison, cellOf, COMPARE } from '../../client/budget-2027-compare.js';
+import { chartSpec } from '../../client/ui/chart.js';
+import { comparison, cellOf, gdpOf, COMPARE } from '../../client/budget-2027-compare.js';
 import { MEASURES_2027, measureText } from '../../client/measures-2027.js';
 
 const read = (path: string) =>
@@ -185,4 +186,94 @@ it('opens the list of a shared measure by its tab', async () => {
   const { document } = await page('/merki?spisak=razhodni');
   const tab = document.querySelector('[role="tab"][data-key="razhodni"]')!;
   expect(tab.getAttribute('aria-selected')).toBe('true');
+});
+
+it('explains the GDP vintages, preliminary report and capital expenditure scope', async () => {
+  const data = Object.fromEntries(
+    ['outlook', 'revenue', 'expenditure'].map((n) => [n, release(n)]),
+  );
+  // The July report column and November Annex 3 keep their own GDP denominators.
+  expect(gdpOf(data, '2025.report')).toBe(116018.3);
+  expect(gdpOf(data, '2026.expected')).toBe(130458.5);
+  expect(gdpOf(data, '2027.draft')).toBe(141301.8);
+  for (const key of COMPARE) {
+    const cell = cellOf(data, 'exp.capex', key)!;
+    expect(cell.pctGdp).toBeCloseTo(Math.round((cell.value / gdpOf(data, key)!) * 1000) / 10, 1);
+  }
+  expect(cellOf(data, 'exp.capex', '2025.report')?.vintage).toBe('prelim');
+  const { document, scope } = await page('/byudzhet-2027');
+  const text = document.getElementById('b27-sravnenie')!.textContent!.replace(/\s+/g, ' ');
+  expect(text).toContain('за три години: предварителен отчет, очаквано изпълнение и законопроект');
+  expect(text).toContain(
+    'За дяловете от БВП за 2025 г. е използван БВП от юлската публикация на АСБП 2026–2028',
+  );
+  expect(text).toContain('за 2026 г. и 2027 г. — от ноемврийската публикация на АСБП 2027–2029');
+  expect(text).toContain('редът „Капиталови“ включва нетния прираст на държавния резерв');
+  expect(text).toContain(
+    'редът „Капиталови разходи“ е от Приложение 3, където прирастът на резерва е отделен ред',
+  );
+  expect(tableData(scope.maps.table.get('b27-sravnenie-table')).columns[1]).toContain(
+    'предв. отчет',
+  );
+  const series = chartSpec('b27-kapitalovi-fig').series;
+  expect(series[0].name).toBe('2024 · отчет');
+  expect(series[1].name).toBe('2025 · предварителен отчет');
+  expect(series[0].data).toEqual([
+    cellOf(data, 'exp.capex', '2024.report')!.value,
+    null,
+    null,
+    null,
+    null,
+    null,
+  ]);
+  expect(series[1].data).toEqual([
+    null,
+    cellOf(data, 'exp.capex', '2025.report')!.value,
+    null,
+    null,
+    null,
+    null,
+  ]);
+});
+
+it('uses the motives terms for the measures and explains the law grouping', async () => {
+  const { document } = await page('/merki?per=2027.draft&spisak=zakoni');
+  const text = (id: string, selector: string) =>
+    document.querySelector(`#m27-${id} ${selector}`)!.textContent;
+  expect(text('optimizaciya-10', '.s12-name')).toBe(
+    'Целогодишен размер на оптимизацията с 10% на разходите за персонал',
+  );
+  expect(text('telk', '.s12-text')).toBe(
+    'Подобряване на ефективността на механизмите за оценка и контрол при определяне на правото на достъп до лична помощ по Закона за личната помощ.',
+  );
+  expect(text('akciz-gaz', '.s12-name')).toBe(
+    'Ефект от нулевата ставка на акциза за втечнен нефтен газ (LPG) и природен газ',
+  );
+  expect(text('akciz-zemedelie', '.s12-name')).toBe(
+    'Ефект от еднократната допълнителна отстъпка от акциза върху газьола в земеделието',
+  );
+  expect(document.querySelector('article')!.textContent).not.toMatch(
+    /По-строга|по-строг контрол|Съкращението с|пропан-бутан|Краят на/,
+  );
+  const tab = document.querySelector('[role="tab"][data-key="zakoni"]')!;
+  expect(tab.textContent).toMatch(/^Мерки по закони \d+ закона$/);
+  expect(tab.getAttribute('aria-selected')).toBe('true');
+  const group = document.getElementById('s12-27-zakoni')!;
+  expect(group.querySelector('h2')!.textContent).toBe('Мерки по закони');
+  expect(group.textContent).toContain(
+    'Приходните и разходните мерки са групирани по законите, за които се отнасят предвидените в мотивите промени.',
+  );
+  expect(group.querySelectorAll('.m27-law')).toHaveLength(
+    Number(tab.querySelector('.tab-count')!.textContent!.split(' ')[0]),
+  );
+  // This is an index of the same cards, including the revised titles.
+  for (const link of group.querySelectorAll('a')) {
+    const anchor = new URL(link.getAttribute('href')!, 'https://budget.test').searchParams.get(
+      'to',
+    );
+    expect(link.textContent).toBe(document.querySelector(`#${anchor} .s12-name`)!.textContent);
+  }
+  const old = await page('/merki?per=2026.law');
+  expect(old.document.querySelector('article')!.textContent).toContain('Промени в други закони');
+  expect(old.document.querySelector('article')!.textContent).not.toContain('Мерки по закони');
 });

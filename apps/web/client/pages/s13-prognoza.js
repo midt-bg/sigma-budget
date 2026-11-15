@@ -867,7 +867,7 @@ export function render(ctx) {
       ${summaryBlock(ctx, f, d)}
       ${controls(ctx)}
       ${kpiBlock(ctx, f, d)}
-      ${chartBlock(f, rev, { id: 's13-b-rev-exp', title: 'Приходи и разходи', sub: 'Колко държавата планира да събере и колко да похарчи по години.' })}
+      ${chartBlock(f, rev, { id: 's13-b-rev-exp', title: 'Приходи и разходи', sub: 'Приходите и разходите по консолидираната фискална програма по години.' })}
       ${chartBlock(f, def, { id: 's13-b-deficit', title: def.title, sub: allDeficit(f) ? 'Колко повече се харчи, отколкото се събира, по години.' : 'Разликата между приходите и разходите по години.' })}
       ${chartBlock(f, int, { id: 's13-b-interest', title: 'Лихви по дълга', sub: 'Колко се плаща за лихви по дълга по години.' })}
       ${debtBlock(ctx, f, d)}

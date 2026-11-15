@@ -275,6 +275,14 @@ function sravnenie(ctx, m) {
     }
     Числата за ${yr(2025)} са ${periodWord(ctx.data, COMPARE[0])} от бюджетната прогноза, публикувана с
     бюджета за ${yr(2026)}
+  </p>
+  <p class="b27-note small">
+    За дяловете от БВП за ${yr(2025)} е използван БВП от юлската публикация на АСБП 2026–2028,
+    а за ${yr(2026)} и ${yr(2027)} — от ноемврийската публикация на АСБП 2027–2029.
+  </p>
+  <p class="b27-note small">
+    В разчетите към закона за ${yr(2026)} редът „Капиталови“ включва нетния прираст на държавния резерв.
+    В сравнението редът „Капиталови разходи“ е от Приложение 3, където прирастът на резерва е отделен ред.
   </p>`;
   return block({
     id: 'b27-sravnenie',
@@ -283,7 +291,7 @@ function sravnenie(ctx, m) {
     ...draftStatus,
     source: KFP_SOURCE,
     asOf: ctx.data.budget2027?.publication,
-    sub: 'Основните показатели на консолидираната фискална програма за три години: отчет, очаквано изпълнение и законопроект.',
+    sub: 'Основните показатели на консолидираната фискална програма за три години: предварителен отчет, очаквано изпълнение и законопроект.',
     share: { period: COMPARE.join(' / '), unit: 'млн. €' },
     body: html`<div class="stack">
       ${chart(spec)}
@@ -328,7 +336,8 @@ function kapitalovi(ctx, m) {
   const doc = ctx.data.budget2027;
   const series = CAPEX_YEARS.map((k) => ({ key: k, cell: cellOf(ctx.data, 'exp.capex', k) }));
   const kind = (k) => periodByKey(k).status;
-  const pick = (test) => series.map((s) => (test(kind(s.key)) ? (s.cell?.value ?? null) : null));
+  const pick = (test) =>
+    series.map((s) => (test(kind(s.key), s.key) ? (s.cell?.value ?? null) : null));
   const spec = {
     id: 'b27-kapitalovi-fig',
     type: 'bar',
@@ -346,7 +355,11 @@ function kapitalovi(ctx, m) {
     labels: 'top',
     height: 320,
     series: [
-      { name: 'Отчет', color: 2, data: pick((st) => st === 'report') },
+      ...CAPEX_YEARS.filter((k) => kind(k) === 'report').map((key) => ({
+        name: periodHead(ctx.data, key),
+        color: 2,
+        data: pick((_, k) => k === key),
+      })),
       { name: 'Очаквано за 2026 г.', color: 'other', data: pick((st) => st === 'expected') },
       { name: 'Законопроект за 2027 г.', color: DRAFT_COLOR, data: pick((st) => st === 'draft') },
       { name: 'Прогноза', color: 8, data: pick((st) => st === 'forecast') },

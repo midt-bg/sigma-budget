@@ -443,3 +443,25 @@ for (const per of [
     });
   }
 }
+
+it.each(['2024.report', '2027.draft'])('names the KFP revenue scope for %s', async (per) => {
+  const document = await annualDocument('/prihodi?per=' + per);
+  expect(document.querySelector('article')!.textContent).toMatch(/приходи(те)? по КФП/i);
+  expect(document.querySelector('article')!.textContent).not.toMatch(
+    /приходите на държавата|Държавата планира да събере/,
+  );
+});
+
+it('names the KFP scope in the forecast and short overview', async () => {
+  const forecast = await annualDocument('/prognoza?per=2027.draft');
+  expect(forecast.getElementById('s13-b-rev-exp')!.textContent).toContain(
+    'Приходите и разходите по консолидираната фискална програма по години.',
+  );
+  const overview = await annualDocument('/5-minuti?per=2027.draft');
+  expect(overview.getElementById('s04-scene1')!.textContent).toContain(
+    'планираните приходи по КФП',
+  );
+  expect(overview.getElementById('s04-scene1')!.textContent).toContain(
+    'разходите по КФП са по-големи от приходите',
+  );
+});
