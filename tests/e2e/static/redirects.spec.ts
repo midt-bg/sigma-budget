@@ -1,4 +1,5 @@
 import { test, expect } from '../fixtures.ts';
+test.use({ serviceWorkers: 'block' });
 const CASES: [string, string, string, Record<string, string>, string[]][] = [
   ['#/deystvie?tab=otkrij', 'S01', '/', {}, ['tab']],
   ['#/deystvie?tab=sravni', 'S01', '/', {}, ['tab']],
@@ -130,7 +131,10 @@ test('retired addresses preserve query context', async ({ context, siteURL }) =>
         }
         expect.soft(ready, `${old}: screen is not ${sid}`).toBe(true);
         const hash = await page.evaluate(() => location.hash);
-        const [gotPath, qs = ''] = hash.slice(1).split('?');
+        const address = hash.slice(1);
+        const separator = address.indexOf('?');
+        const gotPath = separator < 0 ? address : address.slice(0, separator);
+        const qs = separator < 0 ? '' : address.slice(separator + 1);
         const query = new URLSearchParams(qs);
         expect.soft(gotPath, old + ': final path').toBe(path);
         // parse_qs keeps the first nonempty value for each key.

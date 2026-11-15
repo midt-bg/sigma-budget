@@ -1,5 +1,6 @@
 import { createServer } from 'node:http';
 import { test, expect } from '../fixtures.ts';
+test.use({ serviceWorkers: 'block' });
 
 test('public cross-origin JSON, JSON 400, embed and ordinary framing policy', async ({
   browser,
@@ -29,9 +30,9 @@ test('public cross-origin JSON, JSON 400, embed and ordinary framing policy', as
       document.body.append(frame);
       return results;
     }, siteURL);
-    expect(results[0].status, JSON.stringify(results)).toBe(200);
-    expect(results[1].status, JSON.stringify(results)).toBe(400);
-    expect(results[1].json, 'JSON 400 error').toHaveProperty('error');
+    expect(results[0]!.status, JSON.stringify(results)).toBe(200);
+    expect(results[1]!.status, JSON.stringify(results)).toBe(400);
+    expect(results[1]!.json, 'JSON 400 error').toHaveProperty('error');
     await page.waitForFunction("document.querySelector('iframe') !== null");
     let frame = page.frame({ url: siteURL + '/embed/selftest' });
     for (let i = 0; i < 100; i++) {

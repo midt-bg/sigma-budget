@@ -1,4 +1,5 @@
 import { test, expect } from '../fixtures.ts';
+test.use({ serviceWorkers: 'block' });
 import { downloadBytes } from '../helpers.ts';
 // Parse first-response HTML without executing its scripts, as html.unescape/re.sub did.
 import type { Page } from '@playwright/test';

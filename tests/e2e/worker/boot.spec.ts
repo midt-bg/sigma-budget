@@ -1,5 +1,7 @@
 import { setTimeout as delay } from 'node:timers/promises';
 import { test, expect, gate, contextOptions } from '../fixtures.ts';
+import { within } from '../helpers.ts';
+test.use({ serviceWorkers: 'block' });
 
 for (const route of ['/', '/razhodi', '/api'])
   for (const phase of ['domcontentloaded', 'commit'] as const) {
@@ -58,7 +60,7 @@ for (const [route, screen] of [
         loaded = new Set<string>(),
         errors: string[] = [];
       page.on('request', (request) => {
-        for (const match of request.url().matchAll(/\/screen-(S\d+)-/g)) loaded.add(match[1]);
+        for (const match of request.url().matchAll(/\/screen-(S\d+)-/g)) loaded.add(match[1]!);
       });
       page.on('pageerror', (error) => errors.push(String(error)));
       page.on('console', (message) => {
@@ -239,4 +241,3 @@ for (const pattern of ['**/screen-S25-*.js', '**/text-*.js'])
       await context.close();
     }
   });
-import { within } from '../helpers.ts';

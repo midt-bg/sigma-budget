@@ -4,7 +4,7 @@ export const test = base.extend<{}, { siteURL: string }>({
   siteURL: [
     async ({}, use, workerInfo) => {
       if (workerInfo.project.name === 'static') {
-        const site = await startStaticServer(staticRoot());
+        const site = await startStaticServer(staticRoot(), 0, { fallback: false });
         try {
           await use(site.url);
         } finally {

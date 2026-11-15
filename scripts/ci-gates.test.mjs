@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, globSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 const workflow = readFileSync('.github/workflows/site.yml', 'utf8');
 test('one Node suite command and explicit deploy barrier', () => {
@@ -97,19 +97,6 @@ test('merged boot and route modules remain inside formatting and production cove
     assert.equal(info.inferredParser, 'json-stringify', file);
     assert.equal(info.ignored, false, file);
   }
-  // Browser specs are formatted and typechecked, but run in their own Playwright gate, outside production V8 coverage.
-  const boot = 'tests/e2e/worker/boot.spec.ts';
-  const info = await getFileInfo(boot, { ignorePath: '.prettierignore' });
-  assert.equal(info.inferredParser, 'typescript');
-  assert.equal(info.ignored, false);
-  assert.ok(existsSync(boot));
-  assert.match(
-    JSON.parse(readFileSync('package.json', 'utf8')).scripts.typecheck,
-    /tsc -p tests\/e2e\/tsconfig\.json/,
-  );
-  const tsconfig = JSON.parse(readFileSync('tests/e2e/tsconfig.json', 'utf8'));
-  assert.ok(tsconfig.include.some((glob) => matchesGlob('worker/boot.spec.ts', glob)));
-  assert.ok(!config.test.coverage.include.some((glob) => matchesGlob('../../' + boot, glob)));
 });
 
 test('every report reaches strict Turbo tasks and its upload uses the same env path', () => {
@@ -180,4 +167,80 @@ test('the Node suites run without a Python interpreter', () => {
     ]),
   ])
     assert.ok(!name.startsWith('PYTHON'), `Turbo still passes ${name}`);
+});
+
+test('every browser spec stays formatted, typechecked and strict in the independent e2e gate', async () => {
+  const { getFileInfo } = await import('prettier');
+  const { matchesGlob } = await import('node:path');
+  const { default: coverage } = await import('../apps/web/vitest.config.ts');
+  const { default: config } = await import('../tests/e2e/playwright.config.ts');
+  assert.equal(config.retries, 0);
+  assert.equal(config.forbidOnly, true);
+  assert.match(
+    JSON.parse(readFileSync('package.json', 'utf8')).scripts.typecheck,
+    /tsc -p tests\/e2e\/tsconfig\.json/,
+  );
+  const tsconfig = JSON.parse(readFileSync('tests/e2e/tsconfig.json', 'utf8'));
+  const specs = globSync('tests/e2e/**/*.spec.ts');
+  assert.ok(
+    specs.includes('tests/e2e/worker/boot.spec.ts'),
+    'the boot guard must survive the migration',
+  );
+  for (const file of specs) {
+    const info = await getFileInfo(file, { ignorePath: '.prettierignore' });
+    assert.equal(info.inferredParser, 'typescript', file);
+    assert.equal(info.ignored, false, file);
+    assert.ok(
+      tsconfig.include.some((glob) => matchesGlob(file.slice('tests/e2e/'.length), glob)),
+      file,
+    );
+    assert.ok(
+      !coverage.test.coverage.include.some((glob) => matchesGlob('../../' + file, glob)),
+      file,
+    );
+    assert.doesNotMatch(
+      readFileSync(file, 'utf8'),
+      /\.\s*(?:only|skip|fixme)\s*\(|\btest\s*\.\s*fail\s*\(/,
+      file + ': focused, skipped or expected-failing checks are forbidden',
+    );
+  }
+});
+
+test('failed e2e diagnostics are uploaded before any later test invocation can clean them', () => {
+  const { parse } = createRequire(new URL('../packages/ingest/package.json', import.meta.url))(
+    'yaml',
+  );
+  const steps = parse(workflow).jobs.check.steps;
+  const artifact = steps.find((step) => step.with?.name === 'e2e-failure-results');
+  assert.ok(artifact);
+  assert.equal(artifact.uses, 'actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9');
+  assert.equal(artifact.if, 'failure()');
+  assert.equal(artifact.with.path, 'tmp/e2e-results');
+  // Python can fail before Playwright produces any files.
+  assert.equal(artifact.with['if-no-files-found'], 'ignore');
+  for (const step of steps.filter((step) => step.run?.includes('pnpm test:e2e'))) {
+    assert.equal(
+      step.if,
+      undefined,
+      'test invocations must retain the default success() condition',
+    );
+    assert.ok(steps.indexOf(step) < steps.indexOf(artifact));
+  }
+});
+
+test('e2e project selectors use equals so file filters cannot become project names', () => {
+  for (const file of [
+    '.github/workflows/site.yml',
+    'scripts/ci-provenance-commands.json',
+    'README.md',
+    'docs/dev-guide.md',
+    'docs/release.md',
+    'docs/ci-test-gates.md',
+  ]) {
+    assert.doesNotMatch(
+      readFileSync(file, 'utf8'),
+      /pnpm\s+test:e2e\b[^\n]*--project\s+/,
+      file + ': use --project=worker or --project=static before file filters',
+    );
+  }
 });

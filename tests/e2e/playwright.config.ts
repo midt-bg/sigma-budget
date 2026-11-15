@@ -1,10 +1,15 @@
 import { defineConfig } from '@playwright/test';
+import { fileURLToPath } from 'node:url';
+process.env.PLAYWRIGHT_BROWSERS_PATH ??= fileURLToPath(
+  new URL('../../tmp/pw-browsers', import.meta.url),
+);
 export default defineConfig({
   testDir: '.',
   outputDir: '../../tmp/e2e-results',
   fullyParallel: false,
   workers: 1,
   retries: 0,
+  forbidOnly: true,
   timeout: 120_000,
   reporter: 'list',
   use: {

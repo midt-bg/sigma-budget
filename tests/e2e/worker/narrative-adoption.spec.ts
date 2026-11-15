@@ -3,6 +3,8 @@ import { join } from 'node:path';
 import { test, expect } from '../fixtures.ts';
 import { downloadBytes } from '../helpers.ts';
 import { ROOT } from '../../../apps/web/scripts/serve.ts';
+test.use({ serviceWorkers: 'allow' });
+
 const FIXTURES = join(ROOT, 'apps/web/app/routes/__fixtures__');
 const fixture = (name: string) => readFileSync(join(FIXTURES, name), 'utf8');
 const text = (els: Element[]) => els.map((e) => e.textContent!.replace(/\s+/g, ' ').trim());
@@ -33,7 +35,7 @@ for (const path of ['/novo', '/novo?vid=law', '/zakon', '/zakon?per=2026.draft']
     for (const [width, margin] of [
       [1280, 48],
       [400, 32],
-    ]) {
+    ] as const) {
       await page.setViewportSize({ width, height: 900 });
       const margins = await page
         .locator('.page-body > * + *')
@@ -50,7 +52,7 @@ for (const path of ['/novo', '/novo?vid=law', '/zakon', '/zakon?per=2026.draft']
   });
 test('feed and law interactions preserve fixtures, metadata and focus', async ({
   page,
-  context,
+  browser,
   siteURL,
 }) => {
   await page.goto(siteURL + '/novo');
@@ -119,7 +121,7 @@ test('feed and law interactions preserve fixtures, metadata and focus', async ({
   // The byte comparison below also proves delimiters, quoting, BOM and CRLF.
   // Parse semicolon CSV independently of the application export code.
   const rows = parseCsv(actualCsv.toString('utf8').replace(/^\uFEFF/, ''));
-  const releaseColumn = rows[0].indexOf('издание');
+  const releaseColumn = rows[0]!.indexOf('издание');
   expect(releaseColumn, 'CSV release column').toBeGreaterThanOrEqual(0);
   expect(rows.length, 'law CSV has data rows').toBeGreaterThan(1);
   expect(
@@ -132,57 +134,62 @@ test('feed and law interactions preserve fixtures, metadata and focus', async ({
   ).toBe(true);
   await page.keyboard.press('Escape');
   await page.locator('#s14-t-bjudzheti [data-key="law"]').click();
-  const expected = await context.newPage();
-  await expected.setContent(fixture('S14-sort.browser.html'));
-  const sorted = '#s14-t-bjudzheti tbody tr';
-  expect(
-    await page.locator(sorted).evaluateAll(text),
-    'sorted law rows equal independent main fixture',
-  ).toEqual(await expected.locator(sorted).evaluateAll(text));
-  expect(await page.evaluate('document.activeElement?.dataset.key'), 'sorting retains focus').toBe(
-    'law',
-  );
-  const beforeUnit = await page.locator('#view article.page').elementHandle();
-  await page.locator('#s14-unit-pct').check();
-  await page.waitForFunction((before) => {
-    const view = document.getElementById('view');
-    const article = view?.querySelector<HTMLElement>('article.page');
-    return (
-      !!article &&
-      article !== before &&
-      article.dataset.ready === '1' &&
-      view!.getAttribute('aria-busy') !== 'true' &&
-      article.querySelector('#s14-nakratko .kpi-unit')?.textContent === 'от БВП'
+  const expectedContext = await browser.newContext({ serviceWorkers: 'allow' });
+  try {
+    const expected = await expectedContext.newPage();
+    await expected.setContent(fixture('S14-sort.browser.html'));
+    const sorted = '#s14-t-bjudzheti tbody tr';
+    expect(
+      await page.locator(sorted).evaluateAll(text),
+      'sorted law rows equal independent main fixture',
+    ).toEqual(await expected.locator(sorted).evaluateAll(text));
+    expect(
+      await page.evaluate('document.activeElement?.dataset.key'),
+      'sorting retains focus',
+    ).toBe('law');
+    const beforeUnit = await page.locator('#view article.page').elementHandle();
+    await page.locator('#s14-unit-pct').check();
+    await page.waitForFunction((before) => {
+      const view = document.getElementById('view');
+      const article = view?.querySelector<HTMLElement>('article.page');
+      return (
+        !!article &&
+        article !== before &&
+        article.dataset.ready === '1' &&
+        view!.getAttribute('aria-busy') !== 'true' &&
+        article.querySelector('#s14-nakratko .kpi-unit')?.textContent === 'от БВП'
+      );
+    }, beforeUnit);
+    await page.evaluate(twoFrames);
+    await beforeUnit?.dispose();
+    await expected.setContent(fixture('S14-pct.browser.html'));
+    const kpis = '#s14-nakratko .kpi-value';
+    expect(
+      await page.locator(kpis).evaluateAll(text),
+      'GDP percentages equal independent main fixture',
+    ).toEqual(await expected.locator(kpis).evaluateAll(text));
+    expect(await page.evaluate('document.activeElement.id'), 'unit switch retains focus').toBe(
+      's14-unit-pct',
     );
-  }, beforeUnit);
-  await page.evaluate(twoFrames);
-  await beforeUnit?.dispose();
-  await expected.setContent(fixture('S14-pct.browser.html'));
-  const kpis = '#s14-nakratko .kpi-value';
-  expect(
-    await page.locator(kpis).evaluateAll(text),
-    'GDP percentages equal independent main fixture',
-  ).toEqual(await expected.locator(kpis).evaluateAll(text));
-  expect(await page.evaluate('document.activeElement.id'), 'unit switch retains focus').toBe(
-    's14-unit-pct',
-  );
-  await page.goto(siteURL + '/zakon?to=s14-t-chl1-redove');
-  await page.waitForSelector('article[data-ready="1"]');
-  expect(
-    await page.locator('#s14-t-chl1-redove').evaluate((el) => el.closest('details')!.open),
-    'legacy deep target opens disclosure',
-  ).toBe(true);
-  await page.locator('.nav-main[data-grp="1"]').click();
-  await page.locator('[role=dialog] a[href="/novo"]').click();
-  await page.waitForSelector('article[data-route="S16"][data-ready="1"]');
-  expect(
-    await page.locator('#view').getAttribute('data-react-owned'),
-    'navigation reaches React feed',
-  ).not.toBeNull();
-  await page.goBack();
-  await page.waitForSelector('article[data-route="S14"][data-ready="1"]');
-  expect(page.url(), 'Back stays owned by legacy navigation').toContain('/zakon');
-  await expected.close();
+    await page.goto(siteURL + '/zakon?to=s14-t-chl1-redove');
+    await page.waitForSelector('article[data-ready="1"]');
+    expect(
+      await page.locator('#s14-t-chl1-redove').evaluate((el) => el.closest('details')!.open),
+      'legacy deep target opens disclosure',
+    ).toBe(true);
+    await page.locator('.nav-main[data-grp="1"]').click();
+    await page.locator('[role=dialog] a[href="/novo"]').click();
+    await page.waitForSelector('article[data-route="S16"][data-ready="1"]');
+    expect(
+      await page.locator('#view').getAttribute('data-react-owned'),
+      'navigation reaches React feed',
+    ).not.toBeNull();
+    await page.goBack();
+    await page.waitForSelector('article[data-route="S14"][data-ready="1"]');
+    expect(page.url(), 'Back stays owned by legacy navigation').toContain('/zakon');
+  } finally {
+    await expectedContext.close();
+  }
 });
 /** RFC-style semicolon CSV: retain quoted newlines, double quotes and empty fields. */
 function parseCsv(input: string): string[][] {

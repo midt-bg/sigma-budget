@@ -1,5 +1,6 @@
 import { mkdtempSync, mkdirSync, readlinkSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
+import { request } from 'node:http';
 import { tmpdir } from 'node:os';
 import { afterEach, expect, test } from 'vitest';
 import { startStaticServer, staticRoot } from './serve.ts';
@@ -40,7 +41,7 @@ test('Python path rules, GET/HEAD, MIME, query, cache, missing files and compose
     put('asset.' + ext, ext);
   mkdirSync(join(dir, 'listing.json'));
   put('listing.json/item.txt', 'entry');
-  put('asset.json.gz', 'compressed fixture');
+  for (const ext of ['gz', 'bz2', 'xz', 'Z', 'br']) put('asset.json.' + ext, 'compressed fixture');
   put('asset.map', 'map');
   put('име.html', 'unicode');
   put('encoded.js', 'encoded');
@@ -64,7 +65,13 @@ test('Python path rules, GET/HEAD, MIME, query, cache, missing files and compose
       ['/%D0%B8%D0%BC%D0%B5', 'unicode', 'text/html; charset=utf-8'],
       ['/encoded%2Ejs', 'encoded', 'text/javascript'],
       ['/data/core.json', '{}', 'application/json'],
-      ['/asset.json.gz', 'compressed fixture', 'application/json'],
+      ...Object.entries({
+        gz: 'application/gzip',
+        bz2: 'application/x-bzip2',
+        xz: 'application/x-xz',
+        Z: 'application/octet-stream',
+        br: 'application/json',
+      }).map(([ext, type]) => ['/asset.json.' + ext, 'compressed fixture', type]),
       ['/asset.map', 'map', 'application/octet-stream'],
       ...Object.entries({
         js: 'text/javascript',
@@ -119,3 +126,106 @@ test('Python path rules, GET/HEAD, MIME, query, cache, missing files and compose
     await site.close();
   }
 });
+
+/** Send the literal request target, without fetch/URL normalizing encoded dot segments. */
+async function rawGet(url: string, path: string) {
+  return new Promise<{ status: number; body: string }>((resolve, reject) => {
+    const req = request(url, { path }, (response) => {
+      const chunks: Buffer[] = [];
+      response.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+      response.on('end', () =>
+        resolve({ status: response.statusCode!, body: Buffer.concat(chunks).toString('utf8') }),
+      );
+      response.on('error', reject);
+    });
+    req.on('error', reject);
+    req.end();
+  });
+}
+
+test('plain-handler mode has no shell or HTML rename and preserves directory/file semantics', async () => {
+  const dir = directory();
+  // No root index: plain mode must not try reading a shell during startup.
+  mkdirSync(join(dir, 'nested'));
+  writeFileSync(join(dir, 'nested/index.html'), 'nested');
+  mkdirSync(join(dir, 'htm'));
+  writeFileSync(join(dir, 'htm/index.htm'), 'htm');
+  mkdirSync(join(dir, 'listing'));
+  writeFileSync(join(dir, 'listing/a & b.txt'), 'entry');
+  writeFileSync(join(dir, 'screen.html'), 'screen');
+  const site = await startStaticServer(dir, 0, { fallback: false });
+  try {
+    for (const path of ['/missing', '/screen', '/embed/test.json', '/vedomstvo/0200/0200.01.00']) {
+      for (const method of ['GET', 'HEAD']) {
+        const response = await fetch(site.url + path, { method });
+        expect(response.status, path).toBe(404);
+        expect(response.headers.get('content-type'), path).toBe('text/html;charset=utf-8');
+        expect(response.headers.get('cache-control'), path).toBeNull();
+        if (method === 'HEAD') expect(await response.text(), path).toBe('');
+        else expect(await response.text(), path).toContain('Error code: 404');
+      }
+    }
+    const redirect = await fetch(site.url + '/nested?x=1', { redirect: 'manual' });
+    expect(redirect.status).toBe(301);
+    expect(redirect.headers.get('location')).toBe('/nested/?x=1');
+    for (const [path, body] of [
+      ['/screen.html', 'screen'],
+      ['/nested/', 'nested'],
+      ['/htm/', 'htm'],
+    ]) {
+      const response = await fetch(site.url + path);
+      expect(response.status).toBe(200);
+      expect(await response.text()).toBe(body);
+      expect(response.headers.get('content-type')).toBe('text/html');
+    }
+    const listing = await fetch(site.url + '/listing/');
+    expect(listing.status).toBe(200);
+    expect(await listing.text()).toContain('<a href="a%20%26%20b.txt">a &amp; b.txt</a>');
+    const head = await fetch(site.url + '/listing/', { method: 'HEAD' });
+    expect(head.status).toBe(200);
+    expect(await head.text()).toBe('');
+  } finally {
+    await site.close();
+  }
+});
+
+for (const fallback of [false, true])
+  test(`traversal, symlink boundary and NUL (fallback=${fallback})`, async () => {
+    const dir = directory(),
+      outside = directory();
+    writeFileSync(join(dir, 'index.html'), 'shell');
+    writeFileSync(join(outside, 'secret.txt'), 'outside');
+    writeFileSync(join(outside, 'secret'), 'outside without extension');
+    symlinkSync(join(outside, 'secret'), join(dir, 'escape'));
+    const site = await startStaticServer(dir, 0, { fallback });
+    try {
+      for (const path of [
+        '/..%2f../secret.txt',
+        '/%2e%2e/secret.txt',
+        '/..%2f' + basename(outside) + '/secret.txt',
+      ]) {
+        const response = await rawGet(site.url, path);
+        expect(response.status, path).toBe(404);
+        expect(response.body, path).not.toContain('outside');
+      }
+      for (const path of ['/..%2f..', '/%2e%2e']) {
+        const response = await rawGet(site.url, path);
+        expect(response.status, path).toBe(fallback ? 200 : 301);
+        if (fallback) expect(response.body, path).toBe('shell');
+        else expect((await rawGet(site.url, path + '/')).body, path).toBe('shell');
+      }
+      const escaped = await rawGet(site.url, '/escape');
+      expect(escaped.status).toBe(200);
+      // The fallback's resolver rejects external symlinks for path addresses;
+      // SimpleHTTPRequestHandler deliberately follows them as ordinary files.
+      expect(escaped.body).toBe(fallback ? 'shell' : 'outside without extension');
+      for (const path of ['/x%00', '/x%00.json']) {
+        const response = await rawGet(site.url, path);
+        expect(response.status, path).toBe(404);
+        expect(response.body).toContain('Error code: 404');
+      }
+      expect(await (await fetch(site.url + '/index.html')).text()).toBe('shell'); // process survives
+    } finally {
+      await site.close();
+    }
+  });

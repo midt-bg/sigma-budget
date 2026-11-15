@@ -1003,11 +1003,15 @@ PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.s
 Петте пренесени проверки се изпълняват чрез `pnpm test:e2e` от корена. След `pnpm build:release --env staging --noindex` стартирайте `pnpm exec wrangler dev -c apps/web/build/server/wrangler.json --ip 127.0.0.1 --port 8814`, а в друг терминал:
 
 ```bash
-PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project worker
-PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers pnpm test:e2e --project static
+PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker
+PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers pnpm test:e2e --project=static
 ```
 
 Име на спецификация (например `period-matrix.spec.ts`) може да се добави като филтър. `tests/e2e/playwright.config.ts` разделя двата targets без дублиране на проверки; `fixtures.ts` управлява статичния сървър и изисква изричен `E2E_WORKER_URL` за Worker. Всеки тест получава чист browser context, освен изрично споделените в самата проверка страници. Старите адреси се обхождат с отделни страници в един общ context, както в Python проверката. Общите route gates, ограничени event waits и CSV download helper са в `fixtures.ts` и `helpers.ts`. Няма автоматични retries; всеки отказ блокира CI, а trace и снимките са в `tmp/e2e-results`. При следващите преноси спецификациите се добавят в `worker/` или `static/` според оригиналния target. Не се използват production V8 thresholds за browser спецификациите.
+
+Всеки порт задава изрично service-worker режима на оригинала, включително за ръчно създадените contexts. `narrative-adoption.spec.ts` допуска service worker и използва отделен context за независимата HTML fixture страница. Останалите четири порта блокират service worker. При следващите преноси не се разчита сляпо на общото `'block'`: `metadata_adoption.py` и отделни contexts в `overlap.py` и `light_contrast.py` използват оригиналното `'allow'` по подразбиране. Статичният проект използва обикновен файлов сървър (`startStaticServer(directory, 0, { fallback: false })`), с 404 за липсващи адреси, без shell fallback и `.html` преименуване. Fallback се запазва за CLI разработката; включване в тест изисква посочена причина.
+
+`forbidOnly: true`, `retries: 0` и CI guard-ът за всяка `tests/e2e/**/*.spec.ts` предотвратяват селективно или пропуснато изпълнение. Конфигурацията запазва външен `PLAYWRIGHT_BROWSERS_PATH`, иначе използва `tmp/pw-browsers`. При неуспех в job `check` директорията с traces и screenshots се качва като `e2e-failure-results`; след отказ следващите обичайни тестови стъпки не се изпълняват и не могат да я изчистят.
 
 `node apps/web/scripts/serve.ts --port 8000` стартира статичния вариант самостоятелно; `--dir` избира друга директория. Поддържат се същите file/path/embed fallback правила, MIME, HEAD и 404 като Python сървъра. `apps/web/scripts/serve.test.ts` проверява този договор. Python `serve.py` и `static_assets.py` остават, докато `calc_check`, `share_check`, `accept`, `motion` и `overlap` още ги използват.
 

@@ -1,4 +1,4 @@
-/** Browser-only composition and path fallback, matching serve.py. No release data is copied. */
+/** Browser-only composition; plain Python file serving or the serve.py path fallback. No data is copied. */
 import { createServer } from 'node:http';
 import {
   existsSync,
@@ -69,6 +69,9 @@ const TYPES: Record<string, string> = {
   '.pdf': 'application/pdf',
   '.wasm': 'application/wasm',
   '.tar': 'application/x-tar',
+  '.gz': 'application/gzip',
+  '.bz2': 'application/x-bzip2',
+  '.xz': 'application/x-xz',
 };
 function isFile(path: string) {
   return statSync(path, { throwIfNoEntry: false })?.isFile() ?? false;
@@ -89,15 +92,18 @@ function contained(base: string, path: string) {
 export async function startStaticServer(
   directory: string,
   port = 0,
-  shell = readFileSync(join(directory, 'index.html')),
+  options: { fallback?: boolean; shell?: Buffer } = {},
 ) {
   const base = resolve(directory);
+  const fallback = options.fallback ?? true;
+  const shell = fallback ? (options.shell ?? readFileSync(join(base, 'index.html'))) : undefined;
+  const cacheHeaders = fallback ? { 'Cache-Control': 'no-cache' } : {};
   const server = createServer((req, res) => {
     const send = (body: Buffer | string, status = 200, type = 'text/html; charset=utf-8') => {
       res.writeHead(status, {
         'Content-Type': type,
         'Content-Length': Buffer.byteLength(body),
-        'Cache-Control': 'no-cache',
+        ...cacheHeaders,
       });
       res.end(req.method === 'HEAD' ? undefined : body);
     };
@@ -113,29 +119,35 @@ export async function startStaticServer(
     }
     const raw = (req.url ?? '/').split(/[?#]/)[0]!;
     const decoded = unquote(raw);
+    if (decoded.includes('\0')) {
+      error(404, 'File not found', 'Nothing matches the given URI');
+      return;
+    }
     const rel = posix.normalize(decoded).replace(/^\/+|\/+$/g, '') || 'index.html';
-    let file: string | undefined;
-    for (const candidate of [
-      join(base, rel),
-      join(base, rel + '.html'),
-      join(base, rel, 'index.html'),
-    ]) {
-      if (!contained(base, candidate)) break;
-      if (isFile(candidate)) {
-        file = candidate;
-        break;
+    if (fallback) {
+      let file: string | undefined;
+      for (const candidate of [
+        join(base, rel),
+        join(base, rel + '.html'),
+        join(base, rel, 'index.html'),
+      ]) {
+        if (!contained(base, candidate)) break;
+        if (isFile(candidate)) {
+          file = candidate;
+          break;
+        }
+      }
+      if (file && extname(file) === '.html' && basename(file) !== posix.basename(decoded)) {
+        send(readFileSync(file));
+        return;
+      }
+      if (!file && !(FILE_EXT.test(raw) && !raw.startsWith('/embed/'))) {
+        send(shell!);
+        return;
       }
     }
-    if (file && extname(file) === '.html' && basename(file) !== posix.basename(decoded)) {
-      send(readFileSync(file));
-      return;
-    }
-    if (!file && !(FILE_EXT.test(raw) && !raw.startsWith('/embed/'))) {
-      send(shell);
-      return;
-    }
     // SimpleHTTPRequestHandler's ordinary-file path translation (symlinks allowed).
-    const ordinary = join(
+    let ordinary = join(
       base,
       ...posix
         .normalize(decoded)
@@ -143,16 +155,44 @@ export async function startStaticServer(
         .filter((p) => p && p !== '.' && p !== '..'),
     );
     if (statSync(ordinary, { throwIfNoEntry: false })?.isDirectory()) {
-      // Only an extension-bearing path reaches this branch; after the ordinary
-      // directory redirect its trailing slash receives the shell in _route().
-      const suffix = (req.url ?? '').slice(raw.length);
-      res.writeHead(301, {
-        Location: raw + '/' + suffix,
-        'Content-Length': '0',
-        'Cache-Control': 'no-cache',
-      });
-      res.end();
-      return;
+      if (!raw.endsWith('/')) {
+        const suffix = (req.url ?? '').slice(raw.length);
+        res.writeHead(301, {
+          Location: raw + '/' + suffix,
+          'Content-Length': '0',
+          ...cacheHeaders,
+        });
+        res.end();
+        return;
+      }
+      const index = ['index.html', 'index.htm'].map((name) => join(ordinary, name)).find(isFile);
+      if (index) ordinary = index;
+      else {
+        const escape = (value: string) =>
+          value
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#x27;');
+        const display = escape(decoded);
+        const items = readdirSync(ordinary)
+          .sort((a, b) =>
+            a.toLowerCase() < b.toLowerCase() ? -1 : a.toLowerCase() > b.toLowerCase() ? 1 : 0,
+          )
+          .map((name) => {
+            const path = join(ordinary, name);
+            const dir = statSync(path, { throwIfNoEntry: false })?.isDirectory();
+            const link = name + (dir ? '/' : '');
+            const label = name + (lstatSync(path).isSymbolicLink() ? '@' : dir ? '/' : '');
+            return `<li><a href="${encodeURIComponent(link).replaceAll('%2F', '/').replaceAll("'", '%27')}">${escape(label)}</a></li>`;
+          })
+          .join('\n');
+        send(
+          `<!DOCTYPE HTML>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<title>Directory listing for ${display}</title>\n</head>\n<body>\n<h1>Directory listing for ${display}</h1>\n<hr>\n<ul>\n${items ? items + '\n' : ''}</ul>\n<hr>\n</body>\n</html>\n`,
+        );
+        return;
+      }
     }
     if (!isFile(ordinary)) {
       error(404, 'File not found', 'Nothing matches the given URI');
@@ -162,7 +202,7 @@ export async function startStaticServer(
     if (!req.headers['if-none-match'] && req.headers['if-modified-since']) {
       const since = Date.parse(req.headers['if-modified-since']);
       if (Number.isFinite(since) && Math.floor(stat.mtimeMs / 1000) <= Math.floor(since / 1000)) {
-        res.writeHead(304, { 'Cache-Control': 'no-cache' });
+        res.writeHead(304, cacheHeaders);
         res.end();
         return;
       }
@@ -171,8 +211,7 @@ export async function startStaticServer(
     send(
       readFileSync(ordinary),
       200,
-      TYPES[extname(ordinary.replace(/\.(?:gz|bz2|xz|br|Z)$/, '')).toLowerCase()] ??
-        'application/octet-stream',
+      TYPES[extname(ordinary.replace(/\.br$/, '')).toLowerCase()] ?? 'application/octet-stream',
     );
   });
   await new Promise<void>((done, reject) => {
