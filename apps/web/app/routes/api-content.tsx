@@ -316,18 +316,17 @@ function excerpt(meta: FileMeta) {
   return { text, cut };
 }
 
-/** Examples for the selected file format. */
+/** the code of the three examples; a set that is not JSON (the RSS feed) is read as text */
 function codes(set: CatalogueSet, origin?: string, dataBase = '/data/') {
   const part = isMulti(set) ? set.parts[0] : null;
   const file = part ? part.file : set.file;
   const path = file.startsWith('data/') ? dataBase + file.slice(5) : file;
   const url = C.fileUrl(path, origin ? origin + '/' : undefined);
   const name = C.dlName(set, part);
-  const kind = C.fileKind(set);
-  const json = kind === 'json';
+  const json = set.ext === 'json';
   const curl = ['# Свали файла', `curl -sSf -o ${name} "${url}"`];
   if (json) curl.push('', '# Покажи блока meta (нужен е jq)', `jq .meta ${name}`);
-  let py = json
+  const py = json
     ? [
         'import json',
         'from urllib.request import urlopen',
@@ -348,7 +347,7 @@ function codes(set: CatalogueSet, origin?: string, dataBase = '/data/') {
         'for item in root.iter("item"):',
         '    print(item.findtext("title"))',
       ];
-  let js = json
+  const js = json
     ? [
         `const res = await fetch("${url}");`,
         'if (!res.ok) throw new Error("HTTP " + res.status);',
@@ -364,24 +363,7 @@ function codes(set: CatalogueSet, origin?: string, dataBase = '/data/') {
         '',
         'for (const item of xml.querySelectorAll("item")) console.log(item.querySelector("title").textContent);',
       ];
-  if (kind === 'text') {
-    py = [
-      'from urllib.request import urlopen',
-      `with urlopen("${url}") as r:`,
-      '    print(r.read().decode("utf-8"))',
-    ];
-    js = [`const res = await fetch("${url}");`, 'console.log(await res.text());'];
-  }
-  return {
-    url,
-    name,
-    part,
-    kind,
-    json,
-    curl: curl.join('\n'),
-    py: py.join('\n'),
-    js: js.join('\n'),
-  };
+  return { url, name, part, json, curl: curl.join('\n'), py: py.join('\n'), js: js.join('\n') };
 }
 
 /** a block of code with its own copy button; the region is focusable so the keyboard can scroll a wide line */
@@ -608,9 +590,7 @@ function readBlock(ctx: MetadataContext, M: Catalogue, set: CatalogueSet) {
         ) : (
           <>
             <p>
-              {c.kind === 'rss'
-                ? 'Файлът е RSS 2.0: канал със събития, които четци на новини показват като списък.'
-                : 'Файлът се чете като текст.'}
+              {'Файлът е RSS 2.0: канал със събития, които четци на новини показват като списък.'}
             </p>
           </>
         )}
@@ -673,9 +653,7 @@ function readBlock(ctx: MetadataContext, M: Catalogue, set: CatalogueSet) {
         <p className="small muted">
           {c.json
             ? 'Всеки пример отпечатва името на набора и датата „Данни към“.'
-            : c.kind === 'rss'
-              ? 'Всеки пример отпечатва заглавията на събитията.'
-              : 'Всеки пример отпечатва съдържанието на файла.'}
+            : 'Всеки пример отпечатва заглавията на събитията.'}
           {
             ' Файловете са в UTF-8. Публичните /api/releases и /data адреси позволяват четене от други сайтове чрез GET и HEAD (CORS: *), без изпращане на cookies или други удостоверителни данни.'
           }

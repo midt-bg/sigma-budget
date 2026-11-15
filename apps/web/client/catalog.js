@@ -203,7 +203,8 @@ function normSet(d, i) {
     slug,
     file,
     stem: stemOf(file),
-    ext: extOf(file),
+    // a set of several files has no file of its own: its parts share one format
+    ext: extOf(file || parts[0]?.file),
     template: str(d.fileTemplate),
     title: str(d.title).trim() || slug,
     // Retire future-data sentences from the public description until the next release.
@@ -514,16 +515,4 @@ export function rich(text, M) {
     } else out += `<code>${esc(snake)}</code>`;
   }
   return raw(out + esc(s.slice(last)));
-}
-
-/** Format of the selected catalogue file, including a multipart example. */
-export function fileKind(set) {
-  const file = set.file || set.parts?.[0]?.file || '';
-  return /\.json$/i.test(file)
-    ? 'json'
-    : set.mediaType === 'application/rss+xml' ||
-        /\.rss$/i.test(file) ||
-        /(?:^|\/)feed\.xml$/i.test(file)
-      ? 'rss'
-      : 'text';
 }
