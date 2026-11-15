@@ -54,7 +54,9 @@ try {
     mkdirSync(dirname(file), { recursive: true });
     writeFileSync(file, content);
     const { status, output } = scan();
-    if (status !== 1) {
+    // gitleaks exits 1 for a finding and for a fatal error alike (a broken config, for one), so the
+    // exit code alone does not show that the sample was detected.
+    if (status !== 1 || !output.includes('leaks found')) {
       fail(`negative control did not fail with a finding (${name}, exit ${status})`, output);
       failed = true;
       break;

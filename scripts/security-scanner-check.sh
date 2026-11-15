@@ -12,9 +12,13 @@ fi
 kind=$1
 binary=$2
 root=$(cd "$(dirname "$0")/.." && pwd)
+target=
+log=
+trap 'rm -rf "$target" "$log"' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 target=$(mktemp -d "${TMPDIR:-/tmp}/security-control-XXXXXX")
 log=$(mktemp "${TMPDIR:-/tmp}/security-control-log-XXXXXX")
-trap 'rm -rf "$target" "$log"' EXIT
 export SEMGREP_ENABLE_VERSION_CHECK=0
 
 scan() {
