@@ -282,3 +282,38 @@ test('e2e project selectors use equals so file filters cannot become project nam
     );
   }
 });
+
+test('P10b ports preserve the ordered static gates including acceptance quick overlap', () => {
+  const { parse } = createRequire(new URL('../packages/ingest/package.json', import.meta.url))(
+    'yaml',
+  );
+  const runs = parse(workflow)
+    .jobs.check.steps.filter((step) => step.run)
+    .map((step) => step.run.trim());
+  const ordered = [
+    'redirects.spec.ts',
+    'calc.spec.ts',
+    'share.spec.ts',
+    'accept.spec.ts overlap.spec.ts',
+    'motion.spec.ts',
+  ].map((spec) => 'pnpm test:e2e --project=static ' + spec);
+  const start = runs.indexOf(ordered[0]);
+  assert.ok(start >= 0);
+  assert.deepEqual(runs.slice(start, start + ordered.length), ordered);
+  assert.doesNotMatch(
+    runs.join('\n'),
+    /python -m tests\.e2e\.(?:calc_check|share_check|accept|motion)\b/,
+  );
+  for (const spec of ['calc', 'share', 'accept', 'motion']) {
+    assert.match(
+      readFileSync(`tests/e2e/static/${spec}.spec.ts`, 'utf8'),
+      /test\.use\(\{\s*serviceWorkers: 'block'/,
+    );
+  }
+  const overlap = readFileSync('tests/e2e/static/overlap.spec.ts', 'utf8');
+  assert.match(overlap, /test\.use\(\{ serviceWorkers: 'allow' \}\)/);
+  assert.match(overlap, /serviceWorkers: 'block'/);
+  assert.match(readFileSync('tests/e2e/fixtures.ts', 'utf8'), /fallback: false/);
+  const oracle = readFileSync('tests/e2e/expected.ts', 'utf8');
+  assert.doesNotMatch(oracle, /from ['"][^'"]*(?:apps\/web|packages\/ingest)/);
+});

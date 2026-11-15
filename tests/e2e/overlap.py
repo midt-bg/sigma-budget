@@ -13,7 +13,7 @@
     print       with print media there is no sideways scroll and the heading is visible
   CLICKS (1280 and 390, every route): each visible button / tab / switch / summary / menu is pressed; no console error, no page error, Escape closes what opened, the hash is restored
   KEYS (1280 and 390): Tab walks the first 25 stops without a focus ring lost off-screen; Escape closes the header dropdown and the search panel; Back / Forward keep the route
-  --quick  widths 1440 / 1241 / 390, banner on, no clicks, no keys (about 2 minutes; accept.py runs it)
+  --quick  widths 1440 / 1241 / 390, banner on, no clicks, no keys (legacy CLI; CI uses static/overlap.spec.ts)
   --shots DIR  a screenshot of the viewport of every page state with a layout finding (DIR/<route>-<width>px-<state>.png)
 Exit 1 when anything is found; the findings are printed one per line.
 """
