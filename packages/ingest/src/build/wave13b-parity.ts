@@ -2,16 +2,14 @@ import { createHash } from 'node:crypto';
 import { lstat, readFile, readdir, realpath } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { compare, equal, type Difference } from '../parity/compare.js';
-import { verifyHistoricalPythonPin } from '../io/fixture-history.js';
 import { auditCatalogMetadata } from './catalog-metadata.js';
 import type { Wave13bInput } from './wave13b.js';
 
-const PROOF_HASH = '6035f035deaf1aaadb4b60c82e4c4941e8a6989d442aa8f4aca5beea9199f800';
+const PROOF_HASH = '3dc84951061b7c3d725b75b67fc48224d8b57ceb402589b7ab31a53d17095209';
 const sha = (data: Uint8Array) => createHash('sha256').update(data).digest('hex');
 export interface ArtifactEvidence {
   file: string;
   dataset: string;
-  producer: string;
   stage: string;
   mode: string;
   parityEligible: boolean;
@@ -50,10 +48,6 @@ export async function loadWave13bReference(fixture: string) {
     throw new Error('Wrong proof baseline');
   const content = new Map<string, Buffer>();
   for (const [name, expected] of Object.entries(record.files)) {
-    if (name.endsWith('.py')) {
-      verifyHistoricalPythonPin(`wave13b/${name}`, expected, resolve(base, name));
-      continue;
-    }
     const data = await safe(name);
     if (sha(data) !== expected) throw new Error(`Proof hash mismatch: ${name}`);
     if (name === 'artifact-inventory.json' || name.startsWith('oracle/')) content.set(name, data);

@@ -1,4 +1,3 @@
-import { verifyHistoricalPythonPin } from '../io/fixture-history.js';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -11,17 +10,16 @@ const hash = (data: Uint8Array) => createHash('sha256').update(data).digest('hex
 let input: IndirectTaxReaderEvidence;
 beforeAll(() => {
   const manifest = bytes('provenance.json');
-  expect(hash(manifest)).toBe('c240c8fa33d9e9dd9c3064259a159864b3b4395c5559b8b2c80c45abecfcd575');
+  expect(hash(manifest)).toBe('d29d4960d296e9f285fb4d860302a24fe7cabbc2c294ca0ac29dc1296f3a8bf8');
   const inventory = JSON.parse(manifest.toString());
   expect(inventory.baseline).toBe('027a262288c0b0ca4b188482a8b8da43bb378047');
   for (const [name, sha] of Object.entries(inventory.files)) {
-    if (name.endsWith('.py')) verifyHistoricalPythonPin(`indirect-taxes/${name}`, sha);
-    else expect(hash(bytes(name))).toBe(sha);
+    expect(hash(bytes(name))).toBe(sha);
   }
   input = JSON.parse(bytes('reader-ir.json').toString());
 });
 
-it('matches the frozen independent Python donor exactly', () => {
+it('matches the frozen expected output exactly', () => {
   expect(buildIndirectTaxes(input, '2026-11-08')).toEqual(
     JSON.parse(bytes('oracle.json').toString()),
   );

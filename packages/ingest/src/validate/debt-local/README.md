@@ -115,7 +115,7 @@ published files at `3424bc998c726d6d511d4284295c54c50c42d099` (build date
 from `b81203662a904c3dd6583d8277e92ae7f6e8fcd8` on `2026-11-10`.
 The candidate manifest SHA-256 is
 `f6e78e74fba37602840310934821f4a6d95872a0d19af2512ba4763fefe5ca0b`.
-The generator and donors are now recorded in the [fixture origin index](../../../test/README-fixtures.md); the data and all data pins remain frozen.
+The frozen inputs and expected outputs are described in the fixture README.
 
 The snapshots are test evidence, not newly acquired original sources. All donor,
 snapshot, oracle, generator and case hashes are in `provenance.json`.

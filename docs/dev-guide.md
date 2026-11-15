@@ -1120,7 +1120,7 @@ node scripts/restore-programme-test-inputs.mjs tmp/ci-inputs/registered-node-inp
 
 Python не е нужен за `pnpm test`. Диференциалните тестове сравняват със замразени Python резултати в `packages/ingest/test/expected/` и не стартират интерпретатор.
 
-Python генераторите и donor копията под `packages/ingest/test/fixtures/` са премахнати. Данните и очакванията остават замразени байт по байт; [индексът на произхода](../packages/ingest/test/README-fixtures.md) посочва историческите модули, Git ревизии и SHA-256. Пътищата към Python във frozen corpora са исторически данни, а не изискване файловете да съществуват в текущия checkout. След сглобяване на пакетите JSON наборите се сравняват по избран обхват:
+Python генераторите и donor копията под `packages/ingest/test/fixtures/` са премахнати. Данните и очакванията остават замразени байт по байт; README файловете до fixtures посочват кои тестове ги четат. Пътищата към Python във frozen corpora са исторически данни, а не изискване файловете да съществуват в текущия checkout. След сглобяване на пакетите JSON наборите се сравняват по избран обхват:
 
 ```sh
 pnpm exec budget-ts parity --oracle data/release --candidate tmp/candidate --scope outlook,revenue --policy tmp/policy.json --report tmp/parity.json
