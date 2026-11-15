@@ -20,7 +20,7 @@ test('one Node suite command and explicit deploy barrier', () => {
   for (const job of jobs) assert.ok(deps.includes(job), `missing gate ${job}`);
   assert.match(workflow, /if: \$\{\{ always\(\) \}\}[\s\S]*Every validation must succeed/);
 });
-test('all independent Python and provenance commands survive the consolidation', () => {
+test('all retained provenance and browser commands stay in CI', () => {
   const evidence = JSON.parse(readFileSync('scripts/ci-provenance-commands.json', 'utf8'));
   for (const [path, commands] of Object.entries(evidence)) {
     const raw = readFileSync(path, 'utf8')
@@ -51,6 +51,39 @@ test('all independent Python and provenance commands survive the consolidation',
       JSON.parse(readFileSync('package.json', 'utf8')).devDependencies['@playwright/test'],
       'the Python and the npm Playwright must share one Chromium build',
     );
+});
+
+test('committed release checks use Node after authenticating the input snapshot', () => {
+  const { parse } = createRequire(new URL('../packages/ingest/package.json', import.meta.url))(
+    'yaml',
+  );
+  const jobs = parse(workflow).jobs;
+  for (const name of ['build', 'node-import']) {
+    const job = jobs[name];
+    assert.ok(!job.steps.some((step) => /setup-(python|uv)@/.test(step.uses ?? '')));
+    assert.ok(!job.steps.some((step) => /\b(python[\d.]*|pip\d*|uv)\b/.test(step.run ?? '')));
+  }
+  const steps = jobs['node-import'].steps;
+  const compile = steps.findIndex(
+    (step) => step.run === 'pnpm --filter @sigma-budget/etl... build',
+  );
+  const restore = steps.findIndex((step) =>
+    step.run?.startsWith('node scripts/restore-node-input-cache.mjs '),
+  );
+  const validate = steps.findIndex(
+    (step) => step.run === './budget check-site --inputs "$RUNNER_TEMP/registered-node-inputs"',
+  );
+  assert.ok(compile >= 0 && restore > compile && validate > restore);
+  assert.equal(steps[validate].if, undefined);
+  assert.ok(!steps[validate]['continue-on-error']);
+  const provenance = jobs.build.steps.find(
+    (step) => step.run === 'node tests/release/budget_provenance_check.mjs',
+  );
+  assert.ok(provenance);
+  assert.equal(provenance.if, undefined);
+  assert.ok(!provenance['continue-on-error']);
+  // Browser e2e and the historical data image still need Python until their later ports.
+  assert.ok(jobs.check.steps.some((step) => step.uses?.startsWith('actions/setup-python@')));
 });
 
 test('the build job checks the registries with the TypeScript validator after building it', () => {

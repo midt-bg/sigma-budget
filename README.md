@@ -50,10 +50,10 @@ uv pip install --python tmp/venv-data/bin/python --require-hashes -r pipeline/re
 uv pip install --python tmp/venv-data/bin/python --no-deps -e pipeline
 
 pnpm typecheck
-pnpm --filter @sigma-budget/ingest build
+pnpm --filter @sigma-budget/etl... build
 node packages/ingest/dist/validate/cli.js --live --only REGISTRY
-./budget-python validate --site # историческата публикувана снимка е неизменна
-python -m budget_pipeline.validate.datasets
+./budget check-site --inputs /path/to/registered-node-inputs # нова директория с удостоверените входове
+node tests/release/budget_provenance_check.mjs
 node tests/release/compat_check.mjs
 pnpm --filter @sigma-budget/web test # и списъците на заявките на екраните (app/lib/query-lists.test.ts)
 PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers pnpm build:release --env staging --noindex
