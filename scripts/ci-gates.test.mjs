@@ -302,3 +302,18 @@ test('visual audit and contrast stay in the built Worker CI gate', () => {
   for (const name of ['visual_audit', 'light_contrast'])
     assert.equal(globSync('tests/e2e/' + name + '.py').length, 0);
 });
+
+test('visual and contrast checks evaluate typed functions instead of source strings', () => {
+  for (const file of [
+    'tests/e2e/contrast.ts',
+    'tests/e2e/audit-fixtures.ts',
+    'tests/e2e/worker/visual-audit.spec.ts',
+    'tests/e2e/worker/light-contrast.spec.ts',
+  ]) {
+    assert.doesNotMatch(
+      readFileSync(file, 'utf8'),
+      /\.evaluate(?:All)?(?:<[^>]+>)?\(\s*['"`]/,
+      file,
+    );
+  }
+});
