@@ -996,7 +996,7 @@ PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.s
 
 Двете части заедно проверяват примерните адреси при 1280 и 400 px в светла тема: няма грешки или изключения в конзолата (404 за липсващ файл `/data/…` е само предупреждение „предстоящ файл с данни“); няма `NaN`/`undefined`/`Infinity`/`null`/`[object Object]` в текста или SVG; няма хоризонтално превъртане на страницата (освен вътре в `.table-wrap`); точно един `h1`; `document.title` се е променил; фокусът е на `h1` след навигация; целта на „Следва“ съществува; `?demo=loading|empty|error|pending|offline` рисува правилния компонент за състояние; ключовете в `data-src` съществуват в `core.sources`; всяка повърхност `[data-mock]` има значка или щриховка; примерните блокове са означени в текста за споделяне/CSV/PNG.
 
-По-старите тагове пазят `check_mock_vN.py` и съответната историческа документация. В текущото дърво `screens.py` изпълнява tour, `?to=`, chrome, share, embed, glossary, tabs, PNG и views. `-v` отпечатва всяка Python находка с всичките ѝ клетки и адреси; `--strict` превръща предупрежденията в отказ. За един audit се използва TypeScript командата с `--grep` от горния пример.
+По-старите тагове пазят `check_mock_vN.py` и съответната историческа документация. В текущото дърво `screens.py` изпълнява tour, `?to=`, chrome, share, embed, glossary, tabs, PNG и views. `-v` отпечатва всяка Python находка с всичките ѝ клетки и адреси; `--strict` превръща предупрежденията в отказ. За един audit се използва TypeScript командата с `--grep` от горния пример. Проверка на данните: `./budget check-site --inputs /path/to/registered-node-inputs`.
 
 Пренесените проверки се изпълняват чрез `pnpm test:e2e` от корена. След `pnpm build:release --env staging --noindex` стартирайте `pnpm exec wrangler dev -c apps/web/build/server/wrangler.json --ip 127.0.0.1 --port 8814`, а в друг терминал:
 
@@ -1127,7 +1127,7 @@ node scripts/restore-programme-test-inputs.mjs tmp/ci-inputs/registered-node-inp
 
 Python не е нужен за `pnpm test`. Диференциалните тестове сравняват със замразени Python резултати в `packages/ingest/test/expected/` и не стартират интерпретатор.
 
-Python командите остават действащи. След сглобяване на пакетите JSON наборите се сравняват по избран обхват:
+Записаното издание се проверява с `./budget check-site --inputs /path/to/registered-node-inputs` (manifest, файлове и пълни текущи TypeScript правила). `validate --site` е отделна проверка чрез възпроизвеждане със записаните зависимости. След сглобяване на пакетите JSON наборите се сравняват по избран обхват:
 
 ```sh
 pnpm exec budget-ts parity --oracle data/release --candidate tmp/candidate --scope outlook,revenue --policy tmp/policy.json --report tmp/parity.json
