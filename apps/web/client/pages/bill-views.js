@@ -1,6 +1,6 @@
 // The existing block, table, chart and sharing components, fed only by the November publication.
 import { html } from '../html.js';
-import { num, money } from '../format.js';
+import { num, money, date } from '../format.js';
 import { block } from '../ui/block.js';
 import { dataTable, updateRows, tableData } from '../ui/table.js';
 import { chart } from '../ui/chart.js';
@@ -29,7 +29,7 @@ const source = ['budget2027'];
 export const gap = (title, text) => emptyState({ title, text });
 export const publication = (doc) =>
   html`<p>
-      МФ, 06.11.2026. Проектът за 2027 г. не е приет закон. Прогнозите са за 2028–2029 г. Сумите и
+      МФ, ${date(doc.publication)}. Проектът за 2027 г. не е приет закон. Прогнозите са за 2028–2029 г. Сумите и
       празните клетки следват съответната таблица.
     </p>
     <p>

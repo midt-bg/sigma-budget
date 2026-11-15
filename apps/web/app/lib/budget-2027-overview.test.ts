@@ -6,7 +6,9 @@ import { parse } from '../../client/data.js';
 import { requestState } from '../../client/store.js';
 import { build, frameHtml, resolve } from '../../client/render.js';
 import { tableData } from '../../client/ui/table.js';
-import { num } from '../../client/format.js';
+import { selectPeriod } from '../../client/periods.js';
+import { INDICATORS, CAPEX_YEARS } from '../../client/budget-2027-compare.js';
+import { num, date, plural } from '../../client/format.js';
 import { chartSpec } from '../../client/ui/chart.js';
 import { comparison, cellOf, gdpOf, COMPARE } from '../../client/budget-2027-compare.js';
 import { MEASURES_2027, measureText } from '../../client/measures-2027.js';
@@ -334,4 +336,119 @@ it('shares the beginner revenue and expenditure sentence with its KFP scope', as
   expect(text).toBe(
     'През 2027 г. по КФП са планирани приходи от 51,1 млрд. € и разходи от 56,0 млрд. €; разликата е дефицит от 4,9 млрд. €.',
   );
+});
+
+it('preserves every comparison cell from the release through the shared annual projection', () => {
+  const data = Object.fromEntries(
+    ['outlook', 'revenue', 'expenditure'].map((n) => [n, release(n)]),
+  );
+  for (const it of INDICATORS)
+    for (const key of CAPEX_YEARS) {
+      const dataset = data[it.file];
+      const rec = selectPeriod(dataset, key);
+      const cell = cellOf(data, it.id, key)!;
+      if (it.series) {
+        const source = rec.legacy ? dataset.kfp[it.series] : null;
+        expect(cell.value).toBe(rec.legacy ? source.mln[rec.column] : rec.series[it.series].value);
+        expect(cell.pctGdp).toBe(
+          rec.legacy ? source.pctGdp[rec.column] : rec.printedPctGdp[it.series].value,
+        );
+      } else {
+        const rows = dataset.economic?.rows || dataset.rows;
+        const ordinal = rows.findIndex((r: any) => r.id === it.legacy);
+        const source = rec.legacy
+          ? rows[ordinal]
+          : rec.rows.find(
+              (r: any) => r.id === `annex3_mln.r${ordinal + (it.file === 'revenue' ? 0 : 31)}`,
+            );
+        expect(cell.value).toBe(rec.legacy ? source.mln[rec.column] : source.cell.value);
+        expect(cell.pctGdp).toBe(
+          rec.legacy ? source.pctGdp[rec.column] : source.printedPctGdp.value,
+        );
+        if (!rec.legacy) expect(cell.provenance).toBe(source.cell.provenance);
+      }
+      if (rec.legacy) expect(cell.vintage).toBe(rec.vintage);
+    }
+});
+
+it.each([1, 2, 0])(
+  'derives dates, article range and plural counts for %s records',
+  async (count) => {
+    const budget2027 = release('budget2027');
+    const dbp2027 = release('dbp2027');
+    budget2027.publication = '2026-11-08';
+    dbp2027.doc.date = '2026-10-16';
+    dbp2027.meta.retrieved = '2026-10-18';
+    const council = dbp2027.edp.steps.find(
+      (s: any) => s.src === 'ec-edp-bg' && s.title.startsWith('Съветът'),
+    );
+    council.d = '2026-07-11';
+    const deadline = dbp2027.edp.steps.find((s: any) => s.src === 'plan' && s.p === 6);
+    deadline.d = '2026-10-17';
+    const article1 = budget2027.budgets.bill[1];
+    budget2027.budgets.bill = Object.fromEntries(
+      Object.entries(budget2027.budgets.bill)
+        .filter(([a]) => Number(a) >= 2)
+        .slice(0, count)
+        .map(([, b], i) => [60 + i, b]),
+    );
+    budget2027.budgets.bill[1] = article1;
+    budget2027.municipal.art52 = budget2027.municipal.art52.slice(0, count);
+    budget2027.projects = budget2027.projects.slice(0, count);
+    for (const t of ['II_7', 'II_8'])
+      budget2027.forecast[t] = budget2027.forecast[t]
+        .filter((r: any) => r.label !== 'Общо:')
+        .slice(0, count)
+        .concat(budget2027.forecast[t].filter((r: any) => r.label === 'Общо:'));
+    const overrides = { budget2027, dbp2027 };
+    const overview = await page('/byudzhet-2027', overrides);
+    expect(overview.vm.lede).toContain(date(budget2027.publication));
+    expect(String(overview.vm.context)).toContain(date(budget2027.publication));
+    const text = overview.document.querySelector('article')!.textContent!;
+    expect(text).toContain(`МФ, ${date(budget2027.publication)}.`);
+    expect(text).toContain(`От ${date(dbp2027.doc.date)}, по ЕСС 2010.`);
+    if (count) expect(text).toContain(plural(count, 'бюджет', 'бюджета'));
+    expect(text).toContain(count ? plural(count, 'община', 'общини') : 'Всички общини');
+    expect(text).toContain(plural(count, 'проект', 'проекта'));
+    expect(text).toContain(
+      `(чл. ${Object.keys(budget2027.budgets.bill)
+        .filter((a) => Number(a) >= 2)
+        .join('–')})`,
+    );
+    const measures = await page('/merki?per=2027.draft', overrides);
+    expect(measures.document.getElementById('s12-27-stage')!.textContent).toContain(
+      date(budget2027.publication),
+    );
+    for (const t of ['II_7', 'II_8'])
+      expect(measures.document.getElementById(`s12-${t}`)!.textContent).toContain(
+        plural(count, 'мярка', 'мерки'),
+      );
+    const plan = await page('/byudzhet-2027?dokument=plan', overrides);
+    expect(plan.vm.title).toContain(date(dbp2027.doc.date));
+    expect(plan.document.getElementById('s34-ne-potvardeno')!.textContent).toContain(
+      date(dbp2027.meta.retrieved),
+    );
+    expect(plan.document.getElementById('s34-sp1')!.textContent).toContain(date(council.d));
+    expect(plan.document.getElementById('s34-ne-potvardeno')!.textContent).toContain(
+      date(deadline.d),
+    );
+    expect(plan.document.getElementById('s34-ne-potvardeno')!.textContent).toContain(
+      date(council.d),
+    );
+    expect(plan.html).toContain('запазват стимулите за икономии на енергия');
+    expect(plan.html).toContain('Да предприеме мерки за справяне със сивата икономика');
+    expect(plan.html).toContain('Да засили събирането на данъци');
+    expect(plan.document.getElementById('s34-lipsva')!.textContent).toContain(
+      date(dbp2027.doc.date),
+    );
+  },
+);
+
+it('names the unclassified function in its lede and explains the law data gap per function', async () => {
+  const name = release('expenditure').functions.items.find((r: any) => r.id === 'drugi').name;
+  const draft = await page('/razhodi/drugi?per=2027.draft');
+  expect(draft.vm.lede).toContain(name.toLowerCase());
+  const law = await page('/razhodi/drugi?per=2026.law');
+  expect(law.vm.lede).toContain(name);
+  expect(law.vm.lede).toContain('няма разбивка');
 });

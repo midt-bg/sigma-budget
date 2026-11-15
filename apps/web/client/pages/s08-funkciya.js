@@ -466,7 +466,7 @@ function ledeOf(ctx, M) {
     return `За ${yr(ctx.period?.year)} няма разбивка по функции в избрания запис. ${what}`.trim();
   const v = money(M.val, { d: 1 }),
     y = yr(M.year),
-    what1 = lower(M.short);
+    what1 = lower(M.id === 'drugi' ? M.name : M.short);
   const pg = ok(M.pgSel) ? `, или ${pct(M.pgSel, 1)} от БВП` : '';
   const first =
     {
@@ -497,6 +497,7 @@ export function render(ctx) {
       title:
         ctx.data.expenditure.functions.items.find((item) => item.id === ctx.params.fn)?.name ||
         'Функция',
+      lede: `За функция „${ctx.data.expenditure.functions.items.find((item) => item.id === ctx.params.fn)?.name || 'Функция'}“ няма разбивка в избрания запис за ${yr(ctx.period.year)}`,
       body: annualGap(ctx, ctx.annualRaw.expenditure, ['functions']),
     };
   const M = modelOf(ctx, true);
