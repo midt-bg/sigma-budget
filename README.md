@@ -53,7 +53,7 @@ pnpm typecheck
 python -m budget_pipeline.validate.registry check
 ./budget-python validate --site # историческата публикувана снимка е неизменна
 python -m budget_pipeline.validate.datasets
-tmp/venv/bin/python -m tests.release.compat_check
+node tests/release/compat_check.mjs
 pnpm --filter @sigma-budget/web test # и списъците на заявките на екраните (app/lib/query-lists.test.ts)
 PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers pnpm build:release --env staging --noindex
 # В отделен терминал стартирайте Worker-а:
@@ -78,7 +78,7 @@ node apps/web/scripts/serve.ts --port 8000
 
 При пренос настройката за service worker се задава изрично според всеки оригинален context. `narrative-adoption.spec.ts` използва `serviceWorkers: 'allow'`, останалите четири спецификации - `'block'`. `metadata_adoption.py` и някои contexts в `overlap.py` и `light_contrast.py` също допускат service worker; общата настройка не трябва да подменя тези случаи. Статичният fixture използва `startStaticServer(directory, 0, { fallback: false })`, както обикновения Python файлов сървър: липсващ адрес връща 404 и няма `.html` преименуване. CLI сървърът запазва path fallback; отделен тест може да го включи само с обяснена причина. Конфигурацията задава по подразбиране `tmp/pw-browsers`, без да заменя вече зададен `PLAYWRIGHT_BROWSERS_PATH`.
 
-Останалите браузърни проверки са `calc_check.py`, `share_check.py`, `accept.py` и `motion.py` в `tests/e2e/`. Те използват временния статичен сайт. `overlap.py` проверява припокриванията. Очакваните числа се четат от текущите данни чрез `expect.py`. Интеграционните проверки `tests/release/release_check.py` и `restore_drill.py` изискват Node, OpenSSL и локален Worker.
+Останалите браузърни проверки са `calc_check.py`, `share_check.py`, `accept.py` и `motion.py` в `tests/e2e/`. Те използват временния статичен сайт. `overlap.py` проверява припокриванията. Очакваните числа се четат от текущите данни чрез `expect.py`. Интеграционните проверки `node tests/release/release_check.mjs` и `node tests/release/restore_drill.mjs` изискват Node, pnpm и инсталираните зависимости; Worker-ът се пуска от самите проверки.
 
 ## Данни и издания
 
