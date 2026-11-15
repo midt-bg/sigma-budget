@@ -6,7 +6,7 @@ import {
   type ComputeResult,
   type IndirectResult,
 } from '../calc-probes.ts';
-import { salaryModel, maxima } from '../expected.ts';
+import { salaryModel, maxima, pythonRound } from '../expected.ts';
 test.use({ serviceWorkers: 'block', reducedMotion: 'reduce' });
 
 test('salary engine and indirect tax cases', async ({ context, page, siteURL }) => {
@@ -68,9 +68,7 @@ test('salary engine and indirect tax cases', async ({ context, page, siteURL }) 
     if (o.kind !== 'ok') continue;
     const m = salaryModel(c.gross, c.rules, c.tzpb);
     for (const k of ['emp', 'tax', 'er', 'net', 'yEmp', 'yTax', 'yEr'] as const)
-      expect
-        .soft(Math.abs(Number(o[k].toFixed(2)) - m[k]), `${tag}: ${k}`)
-        .toBeLessThanOrEqual(0.005);
+      expect.soft(Math.abs(pythonRound(o[k]) - m[k]), `${tag}: ${k}`).toBeLessThanOrEqual(0.005);
     expect
       .soft(Math.abs(o.net + o.emp + o.tax - Number(c.gross)), tag + ': gross sum')
       .toBeLessThan(0.005);
@@ -147,7 +145,7 @@ test('salary engine and indirect tax cases', async ({ context, page, siteURL }) 
   ] as const)
     expect
       .soft(
-        Math.abs(y[2]![annual] - Number((y[0]![monthly] * 7 + y[1]![monthly] * 5).toFixed(2))),
+        Math.abs(y[2]![annual] - pythonRound(y[0]![monthly] * 7 + y[1]![monthly] * 5)),
         annual + ': 7+5',
       )
       .toBeLessThan(0.005);

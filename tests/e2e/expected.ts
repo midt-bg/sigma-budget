@@ -9,8 +9,32 @@ type Execution = {
 export const execution: Execution = JSON.parse(
   readFileSync(new URL('../../data/release/execution.json', import.meta.url), 'utf8'),
 );
+// Python %.nf / round use ties-to-even on the exact binary float, unlike JS toFixed.
+// Decode that float so multiplication cannot manufacture or erase a halfway case.
+function fixed(value: number, decimals: number): string {
+  if (!Number.isFinite(value)) throw new Error('Expected a finite release number');
+  const view = new DataView(new ArrayBuffer(8));
+  view.setFloat64(0, Math.abs(value));
+  const bits = view.getBigUint64(0);
+  const exponent = Number((bits >> 52n) & 0x7ffn);
+  const fraction = bits & ((1n << 52n) - 1n);
+  const significand = exponent === 0 ? fraction : (1n << 52n) | fraction;
+  const power = (exponent === 0 ? -1022 : exponent - 1023) - 52;
+  let numerator = significand * 10n ** BigInt(decimals);
+  if (power > 0) numerator <<= BigInt(power);
+  const denominator = power < 0 ? 1n << BigInt(-power) : 1n;
+  let units = numerator / denominator;
+  const remainder = numerator % denominator;
+  if (remainder * 2n > denominator || (remainder * 2n === denominator && units % 2n !== 0n))
+    units++;
+  const digits = String(units).padStart(decimals + 1, '0');
+  return decimals ? digits.slice(0, -decimals) + '.' + digits.slice(-decimals) : digits;
+}
+export function pythonRound(value: number, decimals = 2) {
+  return Number((value < 0 || Object.is(value, -0) ? '-' : '') + fixed(value, decimals));
+}
 export function num(v: number, d = 2, sign = false) {
-  const s = Math.abs(v).toFixed(d).replace('.', ',');
+  const s = fixed(v, d).replace('.', ',');
   return (v < 0 && Number(s.replace(',', '.')) !== 0 ? '−' : sign ? '+' : '') + s;
 }
 export function plan() {
@@ -27,7 +51,9 @@ export function plan() {
     cur: cur.map((v) => num(v, 1) + '%'),
     prev: prev.map((v) => num(v, 1) + '%'),
     bars: bars.map((v) => num(v, 1) + '%'),
-    widths: bars.map((v) => Number(v.toFixed(1)) + '%'),
+    widths: bars.map(
+      (v) => (v < 0 || Object.is(v, -0) ? '-' : '') + fixed(v, 1).replace(/\.0$/, '') + '%',
+    ),
   };
 }
 export function cum(year: number, scope: string, row: string, month: number) {

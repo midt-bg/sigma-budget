@@ -317,3 +317,19 @@ test('P10b ports preserve the ordered static gates including acceptance quick ov
   const oracle = readFileSync('tests/e2e/expected.ts', 'utf8');
   assert.doesNotMatch(oracle, /from ['"][^'"]*(?:apps\/web|packages\/ingest)/);
 });
+
+test('P10b expected figures retain Python ties-to-even independently of browser formatting', async () => {
+  const { num, pythonRound } = await import('../tests/e2e/expected.ts');
+  // Fixed Python results, including exact halves and non-half binary representations.
+  for (const [value, digits, text, rounded] of [
+    [2.25, 1, '2,2', 2.2],
+    [2.35, 1, '2,4', 2.4],
+    [0.125, 2, '0,12', 0.12],
+    [-0.125, 2, '−0,12', -0.12],
+    [2.675, 2, '2,67', 2.67],
+    [1.005, 2, '1,00', 1],
+  ]) {
+    assert.equal(num(value, digits), text);
+    assert.equal(pythonRound(value, digits), rounded);
+  }
+});

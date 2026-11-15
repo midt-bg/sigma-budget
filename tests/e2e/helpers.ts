@@ -20,7 +20,7 @@ export async function downloadBytes(download: Download): Promise<Buffer> {
   return readFile(path);
 }
 
-/** Python Page.evaluate invokes function strings; JS Page.evaluate returns the function itself.
+/** Python Page.evaluate invokes function strings; JS Page.evaluate treats strings as expressions.
  * Keep the original probes intact and reproduce Python's expression-or-function semantics.
  */
 export async function evaluateProbe<T = unknown, A = undefined>(
