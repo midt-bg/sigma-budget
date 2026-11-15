@@ -152,10 +152,11 @@ function codes(set) {
   const part = isMulti(set) ? set.parts[0] : null;
   const url = C.fileUrl(part ? part.file : set.file);
   const name = C.dlName(set, part);
-  const json = set.ext === 'json';
+  const kind = C.fileKind(set);
+  const json = kind === 'json';
   const curl = ['# Свали файла', `curl -sSf -o ${name} "${url}"`];
   if (json) curl.push('', '# Покажи блока meta (нужен е jq)', `jq .meta ${name}`);
-  const py = json
+  let py = json
     ? [
         'import json',
         'from urllib.request import urlopen',
@@ -176,7 +177,7 @@ function codes(set) {
         'for item in root.iter("item"):',
         '    print(item.findtext("title"))',
       ];
-  const js = json
+  let js = json
     ? [
         `const res = await fetch("${url}");`,
         'if (!res.ok) throw new Error("HTTP " + res.status);',
@@ -192,7 +193,24 @@ function codes(set) {
         '',
         'for (const item of xml.querySelectorAll("item")) console.log(item.querySelector("title").textContent);',
       ];
-  return { url, name, part, json, curl: curl.join('\n'), py: py.join('\n'), js: js.join('\n') };
+  if (kind === 'text') {
+    py = [
+      'from urllib.request import urlopen',
+      `with urlopen("${url}") as r:`,
+      '    print(r.read().decode("utf-8"))',
+    ];
+    js = [`const res = await fetch("${url}");`, 'console.log(await res.text());'];
+  }
+  return {
+    url,
+    name,
+    part,
+    kind,
+    json,
+    curl: curl.join('\n'),
+    py: py.join('\n'),
+    js: js.join('\n'),
+  };
 }
 
 /** a block of code with its own copy button; the region is focusable so the keyboard can scroll a wide line */
@@ -284,7 +302,7 @@ async function readBlock(ctx, M, set) {
           { cls: 's25-facts' },
         ),
       })}`
-        : html`<p>Файлът е RSS 2.0: канал със събития, които четци на новини показват като списък.</p>`
+        : html`<p>${c.kind === 'rss' ? 'Файлът е RSS 2.0: канал със събития, които четци на новини показват като списък.' : 'Файлът се чете като текст.'}</p>`
     }
     ${
       set.schema.length
@@ -317,7 +335,7 @@ async function readBlock(ctx, M, set) {
       ${snippet('s25-c-py', 'Python 3', c.py)}
       ${snippet('s25-c-js', c.json ? 'JavaScript (браузър или Node.js 18+)' : 'JavaScript (браузър)', c.js)}
     </div>
-    <p class="small muted">${c.json ? 'Всеки пример отпечатва името на набора и датата „Данни към“.' : 'Всеки пример отпечатва заглавията на събитията.'} Файловете са в UTF-8. Публичните /api/releases и /data адреси позволяват четене от други сайтове чрез GET и HEAD (CORS: *), без изпращане на cookies или други удостоверителни данни.</p>`,
+    <p class="small muted">${c.json ? 'Всеки пример отпечатва името на набора и датата „Данни към“.' : c.kind === 'rss' ? 'Всеки пример отпечатва заглавията на събитията.' : 'Всеки пример отпечатва съдържанието на файла.'} Файловете са в UTF-8. Публичните /api/releases и /data адреси позволяват четене от други сайтове чрез GET и HEAD (CORS: *), без изпращане на cookies или други удостоверителни данни.</p>`,
     { scan: true },
   );
 }

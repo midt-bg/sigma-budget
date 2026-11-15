@@ -114,11 +114,44 @@ for (const c of manifest.cases) {
     // Keep the historical capture intact. S35's intentional copy and input-kind column
     // now follow the current legacy renderer; its links and controls still match the capture.
     const clarified = c.screen === 'S35' && !c.query.demo;
-    const expected = clarified
+    let expected = clarified
       ? String(frameHtml(await build(byId.S35, {}, c.query)))
       : c.screen === 'S25'
         ? finalApiCopy(frozen)
         : finalPendingCopy(frozen);
+    if (c.file === 'S25-parts.html') {
+      const old = parseHTML(expected).document;
+      const corrected = parseHTML(
+        String(frameHtml(await build(byId.S25, {}, c.query))).replace(
+          /href="data\//g,
+          'href="/data/',
+        ),
+      ).document;
+      const section = (doc: typeof old) => doc.querySelector('#s25-read')!.closest('section')!;
+      const oldParagraph = [...section(old).querySelectorAll('p')].find((p) =>
+        p.textContent?.includes('Файлът е RSS 2.0'),
+      )!;
+      const details = corrected.querySelector('#s25-d-meta')!;
+      oldParagraph.replaceWith(
+        details.previousElementSibling!.cloneNode(true),
+        details.cloneNode(true),
+      );
+      for (const selector of [
+        '#s25-c-curl',
+        '#s25-c-py',
+        '#s25-c-js',
+        '#s25-c-js-l',
+        '#s25-c-js-l + button .sr-only',
+      ]) {
+        const replacement = corrected.querySelector(selector);
+        const original = old.querySelector(selector);
+        if (replacement && original) original.replaceWith(replacement.cloneNode(true));
+      }
+      const lastNote = (doc: typeof old) =>
+        [...section(doc).querySelectorAll('p.small.muted')].at(-1)!;
+      lastNote(old).replaceWith(lastNote(corrected).cloneNode(true));
+      expected = old.toString();
+    }
     const a = semantics(actual),
       b = semantics(expected);
     expect({ ...a, text: undefined }).toEqual({ ...b, text: undefined });
