@@ -43,7 +43,8 @@ function glob(pattern: string, path: string): boolean {
 const CODE_PATH =
   /^(?:packages|apps)\/(?:[A-Za-z0-9_][A-Za-z0-9_.-]*\/)*[A-Za-z0-9_][A-Za-z0-9_.-]*\.(?:ts|mts|mjs|js)$/;
 const HISTORY_PATH = /^(?:[A-Za-z0-9_][A-Za-z0-9_.-]*\/)*[A-Za-z0-9_][A-Za-z0-9_.-]*$/;
-const REPOSITORY = /^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
+/** The history the commits of historical producers are looked up in: a commit of another repository cannot be checked here. */
+const REPOSITORY = 'https://github.com/midt-bg/sigma-budget';
 const COMMIT = /^[0-9a-f]{40}$/;
 /** A producer, parser or layer is a TypeScript (or JavaScript) module of this repository: an exact
  * repository-relative path under packages/ or apps/, never a command, a test, built output or a path
@@ -87,7 +88,7 @@ export function historicalProducer(entry: unknown): HistoricalProducer | null {
       `a historical producer has exactly repository, commit and path: ${JSON.stringify(entry)}`,
     );
   const { repository, commit, path } = value;
-  if (typeof repository !== 'string' || !REPOSITORY.test(repository))
+  if (repository !== REPOSITORY)
     throw new Error(`unsafe historical producer repository: ${String(repository)}`);
   if (typeof commit !== 'string' || !COMMIT.test(commit))
     throw new Error(`a historical producer names a full commit: ${String(commit)}`);
@@ -179,7 +180,8 @@ export function validateRegistry(root: string, options: RegistryOptions = {}): R
     sources = sreg.sources as any[],
     inter = (sreg.intermediates || []) as any[],
     ds = dreg.datasets as any[];
-  let tracked: string[];
+  let tracked: string[],
+    listed = true;
   try {
     tracked =
       options.trackedPaths ??
@@ -188,18 +190,23 @@ export function validateRegistry(root: string, options: RegistryOptions = {}): R
         .filter(Boolean);
   } catch {
     tracked = [];
+    listed = false;
     r.errors.push('git ls-files failed: the absolute-path check needs a git checkout');
   }
   const trackedSet = new Set(tracked);
   const currentModule = (entry: string): boolean => {
     const path = script(entry);
     if (!file(root, path)) return false;
-    r.ok(trackedSet.has(path), `registry module is not tracked: ${path}`);
+    // without the list of tracked files the one error above says why; not one more per module
+    if (listed) r.ok(trackedSet.has(path), `registry module is not tracked: ${path}`);
     return true;
   };
   const notes: string[] = [];
   let history: 'full' | 'skipped' | 'failed' | undefined;
-  const verified = new Map<string, boolean>();
+  // the branch every historical commit must be part of: a commit that exists only as a loose object or on a branch that is later
+  // squashed away is not history. Without the remote branch (a clone of another layout, a test repository) the checked-out history counts.
+  let mainline = 'HEAD';
+  const verified = new Map<string, string>();
   const git = (args: string[]) =>
     execFileSync('git', ['--no-replace-objects', ...args], {
       cwd: root,
@@ -218,6 +225,12 @@ export function validateRegistry(root: string, options: RegistryOptions = {}): R
           const shallow = git(['rev-parse', '--is-shallow-repository']);
           if (shallow !== 'true' && shallow !== 'false') throw new Error('unknown Git history');
           history = shallow === 'true' ? 'skipped' : 'full';
+          try {
+            git(['rev-parse', '--verify', '--quiet', 'refs/remotes/origin/main^{commit}']);
+            mainline = 'refs/remotes/origin/main';
+          } catch {
+            mainline = 'HEAD';
+          }
           if (history === 'skipped')
             notes.push('Historical producer commit/path verification skipped: shallow checkout');
         } catch {
@@ -229,14 +242,20 @@ export function validateRegistry(root: string, options: RegistryOptions = {}): R
     if (history !== 'full') return;
     const ref = `${past.commit}:${past.path}`;
     if (!verified.has(ref)) {
+      let problem = `historical producer commit/path does not exist: ${ref}`;
       try {
         git(['cat-file', '-e', `${past.commit}^{commit}`]);
-        verified.set(ref, git(['cat-file', '-t', ref]) === 'blob');
+        if (git(['cat-file', '-t', ref]) === 'blob') {
+          problem = `historical producer commit is not in the history of ${mainline}: ${past.commit}`;
+          git(['merge-base', '--is-ancestor', past.commit, mainline]);
+          problem = '';
+        }
       } catch {
-        verified.set(ref, false);
+        // the problem named before the failing step stands
       }
+      verified.set(ref, problem);
     }
-    r.ok(verified.get(ref), `historical producer commit/path does not exist: ${ref}`);
+    r.ok(!verified.get(ref), verified.get(ref) ?? '');
   };
   const ids = sources.map((s) => s.id),
     ipaths = inter.map((i) => i.path),

@@ -655,9 +655,14 @@ jobs:
       - name: Check the registries against the full history (every historical producer exists at its commit)
         # the build job checks the registries on a shallow checkout, where the commits of the historical producers cannot be looked up
         run: |
-          node packages/ingest/dist/validate/cli.js --live --only REGISTRY > "$RUNNER_TEMP/registry.json"
+          status=0
+          node packages/ingest/dist/validate/cli.js --live --only REGISTRY > "$RUNNER_TEMP/registry.json" || status=$?
           cat "$RUNNER_TEMP/registry.json"
-          ! grep -q 'verification skipped' "$RUNNER_TEMP/registry.json"
+          if grep -q 'verification skipped' "$RUNNER_TEMP/registry.json"; then
+            echo '::error::the historical producers were not checked against the Git history'
+            exit 1
+          fi
+          exit "$status"
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: registered-node-input-archive

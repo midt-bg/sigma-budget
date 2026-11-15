@@ -131,11 +131,13 @@ it('checks real file hashes, producer paths, ownership and tracked code', () => 
 });
 it('names current TypeScript producers by path and retired ones by repository and commit', () => {
   const root = mkdtempSync(join(tmpdir(), 'sigma-registry-producers-'));
+  // the developer's own Git configuration (signing, hooks) stays out of the temporary repository
   const git = (args: string[]) =>
-    execFileSync('git', args, {
+    execFileSync('git', ['-c', 'commit.gpgsign=false', '-c', 'core.hooksPath=/dev/null', ...args], {
       cwd: root,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
+      env: { ...process.env, GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1' },
     }).trim();
   let commit: string;
   const past = (extra: Record<string, unknown> = {}) => ({
@@ -196,6 +198,20 @@ it('names current TypeScript producers by path and retired ones by repository an
         ]);
       }
     }
+    // a commit that holds the file but is on no branch (a loose object, a branch squashed away) is not history
+    const loose = git([
+      '-c',
+      'user.name=Test',
+      '-c',
+      'user.email=test@example.invalid',
+      'commit-tree',
+      commit + '^{tree}',
+      '-m',
+      'not on a branch',
+    ]);
+    expect(edit((s) => (s.intermediates[0].producer = past({ commit: loose }))).errors).toEqual([
+      `historical producer commit is not in the history of HEAD: ${loose}`,
+    ]);
     expect(
       edit((s) => (s.sources[0].parser = 'apps/example/src/producer.ts, apps/example/src/gone.ts'))
         .errors,
@@ -239,6 +255,7 @@ it('names current TypeScript producers by path and retired ones by repository an
       ['docs/schema.md', 'TypeScript module path'],
       [past({ commit: commit.slice(0, 8) }), 'full commit'],
       [past({ repository: 'http://github.com/midt-bg/sigma-budget' }), 'repository'],
+      [past({ repository: 'https://github.com/example/unrelated' }), 'repository'],
       [past({ path: '../outside.py' }), 'unsafe historical producer path'],
       [past({ path: '/abs/outside.py' }), 'unsafe historical producer path'],
       [past({ note: 'extra' }), 'exactly repository, commit and path'],

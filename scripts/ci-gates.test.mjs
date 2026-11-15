@@ -63,6 +63,30 @@ test('the build job checks the registries with the TypeScript validator after bu
   assert.doesNotMatch(workflow, /budget_pipeline\.validate\.registry/);
 });
 
+test('node-import checks the registries with the full history, so the historical producers are looked up', () => {
+  const { parse } = createRequire(new URL('../packages/ingest/package.json', import.meta.url))(
+    'yaml',
+  );
+  const job = parse(workflow).jobs['node-import'];
+  const checkout = job.steps.find((step) => step.uses?.startsWith('actions/checkout@'));
+  assert.equal(checkout.with['fetch-depth'], 0);
+  const built = job.steps.findIndex(
+    (step) => step.run === 'pnpm --filter @sigma-budget/etl... build',
+  );
+  const check = job.steps.findIndex((step) =>
+    step.run?.includes('node packages/ingest/dist/validate/cli.js --live --only REGISTRY'),
+  );
+  assert.ok(built >= 0 && check > built);
+  const run = job.steps[check].run;
+  // a skipped lookup fails the step, and so does a failing validator
+  assert.match(
+    run,
+    /if grep -q 'verification skipped' "\$RUNNER_TEMP\/registry\.json"; then\n(?:.*\n)*?\s*exit 1\n\s*fi/,
+  );
+  assert.match(run, /\|\| status=\$\?\n/);
+  assert.match(run, /\nexit "\$status"\n?$/);
+});
+
 test('security covers other PR targets without duplicating main PR checks', () => {
   const { parse } = createRequire(new URL('../packages/ingest/package.json', import.meta.url))(
     'yaml',
