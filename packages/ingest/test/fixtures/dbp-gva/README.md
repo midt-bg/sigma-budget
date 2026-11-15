@@ -1,10 +1,10 @@
 # DBP and GVA evidence
 
-This directory contains frozen DATA fixtures. Python generators and donor copies have been removed; JSON, CSV, XML, hashes and oracle outputs are preserved byte for byte. TypeScript tests continue to compare against these expectations.
+This directory contains frozen DATA fixtures. Python generators and donor copies have been removed; the retained data, checksums and oracle outputs are preserved byte for byte. TypeScript tests continue to compare against these expectations.
 
 The historical module paths, SHA-256 values and Git revisions are recorded in the [fixture origin index](../../README-fixtures.md). Existing provenance inventories retain their historical Python entries; they are not a current checkout file list.
 
-The CLI retains the original `provenance.json` inventory checksum. Python entries now validate historical hashes and commits; every DATA entry still requires its actual bytes and exact checksum. Both publication comparisons and the independent synthetic GVA lane remain unchanged.
+The CLI retains the original `provenance.json` inventory checksum. Python entries must be absent (`lstat` returns `ENOENT`); their SHA-256 values must match the history, while Git revisions are checked only for the 40-hex form; every DATA entry still requires its actual bytes and exact checksum. Both publication comparisons and the independent synthetic GVA lane remain unchanged.
 
 Baseline: `05d6f6eeca9991468f3c94c3c9c26e87d5b0fae0`. `donor/` historically contained unchanged copies of both Python builders. The DBP figures and PDF are frozen from the 2026-11-08 period-selector input archive (SHA-256 in `provenance.json`); editorial inputs are extracted from the donor's own authored literals, including EXTRA and the derived-deficit formula. The donor output is byte-identical to the independently copied baseline publication; the TypeScript candidate matches its JSON values exactly and uses the shared compact JSON serializer. This is the 15 October 2026 Draft Budgetary Plan, ESA S13; it is not the later budget bill or forecast.
 

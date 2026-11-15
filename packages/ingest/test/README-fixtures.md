@@ -68,11 +68,10 @@ The modules below produced or checked the frozen captures. Their last source rev
 | wave18                | `wave18/check_provenance.py`                       | `0d39213477636c1f6753f8ab7ffa0fa40ddbc28d` |
 | wave18                | `wave18/differential.py`                           | `729019a60d32885d91855bc4afb498a648877466` |
 | wave18                | `wave18/oracle.py`                                 | `0d39213477636c1f6753f8ab7ffa0fa40ddbc28d` |
-
-| catalog | `catalog/synthetic_primary.py` | `4f322ddd9fbd4da25b552eaaa39e903a8eb97d4d` |
-| validate15b | `validate15b/audit_pdf.py` | `f18eb33977af0a4278e23d2e1e080b1f53fe32ff` |
-| validate15b | `validate15b/source_methods.py` | `5c9794c45d3fc6db7cc484ec41247cee2e65a622` |
-| validate15b | `validate15b/source_order.py` | `5cc735fd557c4818d8799e397d89fb0b1ba28051` |
+| catalog               | `catalog/synthetic_primary.py`                     | `4f322ddd9fbd4da25b552eaaa39e903a8eb97d4d` |
+| validate15b           | `validate15b/audit_pdf.py`                         | `f18eb33977af0a4278e23d2e1e080b1f53fe32ff` |
+| validate15b           | `validate15b/source_methods.py`                    | `5c9794c45d3fc6db7cc484ec41247cee2e65a622` |
+| validate15b           | `validate15b/source_order.py`                      | `5cc735fd557c4818d8799e397d89fb0b1ba28051` |
 
 Frozen inventories, including `wave13a/inputs-sha256.json`, `catalog/provenance.json`, `validate14/tracked-paths.json` and `validate14/code-path-capture.json`, remain unchanged. A Python path inside one of those historical corpora remains data. The catalog loader still reads only its declared data inputs and owner streams; it does not infer a new file set by walking the directory. The Wave13a manifest hash still authenticates the same inventory bytes.
 

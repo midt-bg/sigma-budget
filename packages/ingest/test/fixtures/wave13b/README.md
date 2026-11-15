@@ -1,10 +1,10 @@
 # Wave 13b: build graph and publication layers
 
-This directory contains frozen DATA fixtures. Python generators and donor copies have been removed; JSON, CSV, XML, hashes and oracle outputs are preserved byte for byte. TypeScript tests continue to compare against these expectations.
+This directory contains frozen DATA fixtures. Python generators and donor copies have been removed; the retained data, checksums and oracle outputs are preserved byte for byte. TypeScript tests continue to compare against these expectations.
 
 The historical module paths, SHA-256 values and Git revisions are recorded in the [fixture origin index](../../README-fixtures.md). Existing provenance inventories retain their historical Python entries; they are not a current checkout file list.
 
-`proof.json` and its TypeScript `PROOF_HASH` remain unchanged. The reference loader validates Python entries as historical hash/commit records; every DATA entry still requires its actual bytes and exact checksum. The complete 70-artifact oracle inventory remains mandatory.
+`proof.json` and its TypeScript `PROOF_HASH` remain unchanged. The reference loader requires Python entries to be absent (`lstat` returns `ENOENT`), matches their SHA-256 values against the history, and checks Git revisions only for the 40-hex form; every DATA entry still requires its actual bytes and exact checksum. The complete 70-artifact oracle inventory remains mandatory.
 
 The baseline is `027a262288c0b0ca4b188482a8b8da43bb378047` and the build date is 2026-11-08. `artifact-inventory.json` maps the 70 registry files to their Python producers, graph stages, inputs, evidence modes and eligibility. The 42 ministry details are listed individually. The reference contains 66 eligible candidate files, three frozen-only files (`execution.json`, `execution-provenance.json`, and `releases/current.json`), and the unverified, hash-pinned `gva-sectors.json`. Guide and glossary restoration is checked from frozen editorial snapshots; their original texts are unavailable. No M06/M07 files are restored.
 

@@ -1,10 +1,10 @@
 # Debt, municipalities, boundaries and SEBRA evidence
 
-This directory contains frozen DATA fixtures. Python generators and donor copies have been removed; JSON, CSV, XML, hashes and oracle outputs are preserved byte for byte. TypeScript tests continue to compare against these expectations.
+This directory contains frozen DATA fixtures. Python generators and donor copies have been removed; the retained data, checksums and oracle outputs are preserved byte for byte. TypeScript tests continue to compare against these expectations.
 
 The historical module paths, SHA-256 values and Git revisions are recorded in the [fixture origin index](../../README-fixtures.md). Existing provenance inventories retain their historical Python entries; they are not a current checkout file list.
 
-The loader retains the original `provenance.json` checksum. Python entries in `inputSha256` now validate historical hashes and commits; every DATA entry still requires its actual bytes and exact checksum, including the policy and registry.
+The loader retains the original `provenance.json` checksum. Python entries in `inputSha256` must be absent (`lstat` returns `ENOENT`); their SHA-256 values must match the history, while Git revisions are checked only for the 40-hex form; every DATA entry still requires its actual bytes and exact checksum, including the policy and registry.
 
 The oracle was captured with an independent Python 3.12 copy of the three builders and their imported helpers from commit `05d6f6eeca9991468f3c94c3c9c26e87d5b0fae0`. `generate_oracle.py` read only adjacent inputs, ran the frozen Python builders and raw BNB XML, SEBRA HTML and XLSX readers, checked the reader captures, and byte-checked the donor and projected outputs. It verified every input, donor module, stage source, published snapshot, policy and registry through `provenance.json`. The archive was `release-build-inputs-2026-11-08-period-selector-complete.tar.gz`, SHA-256 `9430d8acfe5bd178a1675041aaae22295c89f2768474ebd27af347b465ace5e3`. The four published snapshots are copied from the named baseline commit, independently of the builders.
 

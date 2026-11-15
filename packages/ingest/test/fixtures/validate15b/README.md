@@ -1,6 +1,6 @@
 # BUDGET2027 validation evidence
 
-This directory contains frozen DATA fixtures. Python generators and donor copies have been removed; JSON, CSV, XML, hashes and oracle outputs are preserved byte for byte. TypeScript tests continue to compare against these expectations.
+This directory contains frozen DATA fixtures. Python generators and donor copies have been removed; the retained data, checksums and oracle outputs are preserved byte for byte. TypeScript tests continue to compare against these expectations.
 
 The historical module paths, SHA-256 values and Git revisions are recorded in the [fixture origin index](../../README-fixtures.md). Existing provenance inventories retain their historical Python entries; they are not a current checkout file list.
 
@@ -44,3 +44,5 @@ It leaves all previous captures unchanged. The historical module is recorded in 
 EU-contribution fallback. Empty lists, empty mappings, null, false, zero and empty
 text all select the donor's zero fallback. Direct and compiled tests preserve
 all 20,986 checks, with original numeric source tokens retained in the inputs.
+
+`fixture-history.test.ts` authenticates `pdf-audit.json`, `source-order-provenance.json`, `source-methods-provenance.json` and `optional-values-provenance.json` with fixed hashes. It verifies their JSON dependencies from actual bytes and their deleted generators, including `sourceOrderSha256`, against the pinned history; no PDF is re-extracted.
