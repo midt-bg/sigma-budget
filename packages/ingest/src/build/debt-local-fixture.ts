@@ -3,6 +3,7 @@ import { lstat, readFile, realpath } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { loadAnnex } from './annex.js';
 import { parseJsonStat } from '../io/data.js';
+import { verifyHistoricalPythonPin } from '../io/fixture-history.js';
 import { buildDebt, type DebtInput } from './debt.js';
 import { buildMunicipalities, type MunicipalityInput } from './municipalities.js';
 import { buildSebra, type SebraEvidence } from './sebra.js';
@@ -43,6 +44,10 @@ export async function loadDebtLocalFixture(path: string, buildDate: string) {
       throw new Error(`TS07 policy or registry hash mismatch: ${name}`);
   }
   for (const [name, hash] of Object.entries(manifest.inputSha256)) {
+    if (name.endsWith('.py')) {
+      verifyHistoricalPythonPin(`debt-local/${name}`, hash);
+      continue;
+    }
     const bytes = await readFile(await checked(name));
     if (createHash('sha256').update(bytes).digest('hex') !== hash)
       throw new Error(`TS07 input hash mismatch: ${name}`);

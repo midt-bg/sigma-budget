@@ -3,6 +3,7 @@ export * from './parity/compare.js';
 export * from './parity/policy.js';
 export * from './parity/cli.js';
 export * from './io/data.js';
+export { verifyHistoricalPythonPin } from './io/fixture-history.js';
 export * from './io/registry.js';
 export * from './common/metadata.js';
 export * from './build/context.js';

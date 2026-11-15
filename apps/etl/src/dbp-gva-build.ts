@@ -11,6 +11,7 @@ import {
   parseGvaStat,
   jsonStringify,
   readPinned,
+  verifyHistoricalPythonPin,
   type PlanInput,
   type PlanEditorial,
   type GvaEditorial,
@@ -76,6 +77,10 @@ export async function dbpGvaBuildCli(args: string[]): Promise<number> {
   for (const [name, hash] of Object.entries(inventory.files)) {
     if (name.startsWith('/') || name.split('/').some((x) => x === '..' || x === '.'))
       throw new Error('Invalid inventory path');
+    if (name.endsWith('.py')) {
+      verifyHistoricalPythonPin(`dbp-gva/${name}`, hash);
+      continue;
+    }
     const file = join(fixture, name);
     const st = await lstat(file);
     if (!st.isFile() || st.isSymbolicLink() || st.nlink !== 1 || (await realpath(file)) !== file)
