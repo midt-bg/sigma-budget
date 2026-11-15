@@ -996,7 +996,7 @@ PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.s
 
 Какво проверява за всеки маршрут × размер × тема: няма грешки или изключения в конзолата (404 за липсващ файл `/data/…` е само предупреждение „предстоящ файл с данни“); няма `NaN`/`undefined`/`Infinity`/`null`/`[object Object]` в текста или SVG; няма хоризонтално превъртане на страницата (освен вътре в `.table-wrap`); точно един `h1`; `document.title` се е променил; фокусът е на `h1` след навигация; целта на „Следва“ съществува; `?demo=loading|empty|error|pending|offline` рисува правилния компонент за състояние; ключовете в `data-src` съществуват в `core.sources`; всяка повърхност `[data-mock]` има значка или щриховка; примерните блокове са означени в текста за споделяне/CSV/PNG.
 
-> **Версии.** Командите в този раздел са писани за `check_mock.py` (версия v1, таг `mock-v1`). За последното дърво на `apps/web/` (v6) ползвайте `tests/e2e/screens.py` със същите опции и `pipeline/budget_pipeline/validate/datasets.py`; на по-старите тагове — съответния `check_mock_vN.py`.
+> **Версии.** Командите в този раздел са писани за `check_mock.py` (версия v1, таг `mock-v1`). За последното дърво на `apps/web/` (v6) ползвайте `tests/e2e/screens.py` със същите опции и `./budget check-site --inputs /path/to/registered-node-inputs`; на по-старите тагове — съответния `check_mock_vN.py`.
 
 `check_mock.py` има още семейства проверки (period, user, prefs, tour, `?to=`, chrome, share, embed, glossary, tabs, theme); документацията в началото на файла ги изброява заедно с всяка опция. `-v` отпечатва всяка находка с всичките ѝ клетки и адреси. Предупрежденията никога не карат пускането да пропадне; `--only base --route S06` е най-бързият цикъл за един екран. За да видиш страницата, добави `--shots` (по един PNG за всяко зареждане, имената се преизползват).
 
@@ -1120,7 +1120,7 @@ node scripts/restore-programme-test-inputs.mjs tmp/ci-inputs/registered-node-inp
 
 Python не е нужен за `pnpm test`. Диференциалните тестове сравняват със замразени Python резултати в `packages/ingest/test/expected/` и не стартират интерпретатор.
 
-Python генераторите и donor копията под `packages/ingest/test/fixtures/` са премахнати. Данните и очакванията остават замразени байт по байт; README файловете до fixtures посочват кои тестове ги четат. Пътищата към Python във frozen corpora са исторически данни, а не изискване файловете да съществуват в текущия checkout. След сглобяване на пакетите JSON наборите се сравняват по избран обхват:
+Записаното издание се проверява с `./budget check-site --inputs /path/to/registered-node-inputs` (manifest, файлове и пълни текущи TypeScript правила). `validate --site` е отделна проверка чрез възпроизвеждане със записаните зависимости. След сглобяване на пакетите JSON наборите се сравняват по избран обхват:
 
 ```sh
 pnpm exec budget-ts parity --oracle data/release --candidate tmp/candidate --scope outlook,revenue --policy tmp/policy.json --report tmp/parity.json
@@ -1128,7 +1128,7 @@ pnpm exec budget-ts parity --oracle data/release --candidate tmp/candidate --sco
 
 Началната политика за точно сравнение е `{"precision":[],"accepted":[]}`. Примерно правило за точност е `{"dataset":"outlook","pointer":"/gdp/*","decimals":1,"unit":"million EUR"}`; `*` съвпада с един сегмент от JSON Pointer. Правилата следват публикуваната точност. Бройките, идентификаторите, годините и целочислените парични единици остават точни. Прието различие задава `dataset`, `file`, `pointer`, `expected`, `actual` и непразно основание `rationale`; структурни разлики и невалидни числа не могат да се приемат. Изходните кодове са 0 (успех), 1 (неприето различие или невалидно извикване) и 2 (липсващи доказателства). Адаптерите за останалите формати предстоят; техните обхвати връщат `unverified`.
 
-`FixtureManifest` в `packages/test-support` съдържа `schema: 1`, пълна ревизия `baselineRevision`, дата `buildDate`, `inputs: [{path, sha256}]` и `datasets: [{id, eligibility, rationale}]`. Допустимите стойности за `eligibility` са `reproducible`, `frozen-only` и `unverified`. Resolver-ът проверява инвентара, ограничението на пътищата и контролните суми. Доказателствата са заснети исторически от Python; очакванията не се генерират от кандидата.
+`FixtureManifest` в `packages/test-support` съдържа `schema: 1`, пълна ревизия `baselineRevision`, дата `buildDate`, `inputs: [{path, sha256}]` и `datasets: [{id, eligibility, rationale}]`. Допустимите стойности за `eligibility` са `reproducible`, `frozen-only` и `unverified`. Resolver-ът проверява инвентара, ограничението на пътищата и контролните суми. Доказателствата се заснемат от Python; очакванията не се генерират от кандидата.
 
 ### Косвени данъци след 08.11.2026 г.
 
