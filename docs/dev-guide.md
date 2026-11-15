@@ -1009,7 +1009,24 @@ PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers pnpm test:e2e --project=static
 
 Име на спецификация (например `period-matrix.spec.ts`) може да се добави като филтър. `tests/e2e/playwright.config.ts` разделя двата targets без дублиране на проверки; `fixtures.ts` управлява статичния сървър и изисква изричен `E2E_WORKER_URL` за Worker. Всеки тест получава чист browser context, освен изрично споделените в самата проверка страници. Старите адреси се обхождат с отделни страници в един общ context, както в Python проверката. Общите route gates, ограничени event waits и CSV download helper са в `fixtures.ts` и `helpers.ts`. Няма автоматични retries; всеки отказ блокира CI, а trace и снимките са в `tmp/e2e-results`. При следващите преноси спецификациите се добавят в `worker/` или `static/` според оригиналния target. Не се използват production V8 thresholds за browser спецификациите.
 
-Всеки порт задава изрично service-worker режима на оригинала, включително за ръчно създадените contexts. `narrative-adoption.spec.ts` допуска service worker и използва отделен context за независимата HTML fixture страница. Останалите четири порта блокират service worker. При следващите преноси не се разчита сляпо на общото `'block'`: `metadata_adoption.py` и отделни contexts в `overlap.py` и `light_contrast.py` използват оригиналното `'allow'` по подразбиране. Статичният проект използва обикновен файлов сървър (`startStaticServer(directory, 0, { fallback: false })`), с 404 за липсващи адреси, без shell fallback и `.html` преименуване. Fallback се запазва за CLI разработката; включване в тест изисква посочена причина.
+Всеки порт задава изрично service-worker режима на оригинала, включително за ръчно създадените contexts. `narrative-adoption.spec.ts` допуска service worker и използва отделен context за независимата HTML fixture страница. Първоначалните други четири порта блокират service worker. При следващите преноси не се разчита сляпо на общото `'block'`: `metadata_adoption.py` и отделни contexts в `overlap.py` и контрастната fixture използват оригиналното `'allow'` по подразбиране. Статичният проект използва обикновен файлов сървър (`startStaticServer(directory, 0, { fallback: false })`), с 404 за липсващи адреси, без shell fallback и `.html` преименуване. Fallback се запазва за CLI разработката; включване в тест изисква посочена причина.
+
+Визуалният одит и контрастът се изпълняват последователно в job `check` срещу
+сглобения Worker (Chromium), непосредствено след screens:
+
+```bash
+E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker visual-audit.spec.ts
+E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker light-contrast.spec.ts
+```
+
+`visual-audit.spec.ts` допуска service worker във всички contexts, включително
+при старите запазени теми и изключен JavaScript. `light-contrast.spec.ts` допуска
+service worker само за независимата threshold fixture; обходът на всички
+non-bare маршрути при 1280×900 и 400×800 го блокира. Няма touch/mobile флагове.
+Праговете остават 4.5:1 за малък текст и placeholders, 3:1 за голям текст и
+граници на полета. Всички нарушения са откази. Резултатите са в
+`tmp/visual-contrast/results.json`. `contrast-probes.ts` пази независимите
+браузърни програми, включително deep pass и settle (30 s RAF wait + 150 ms).
 
 `forbidOnly: true`, `retries: 0` и CI guard-ът за всяка `tests/e2e/**/*.spec.ts` предотвратяват селективно или пропуснато изпълнение. Конфигурацията запазва външен `PLAYWRIGHT_BROWSERS_PATH`, иначе използва `tmp/pw-browsers`. При неуспех в job `check` директорията с traces и screenshots се качва като `e2e-failure-results`; след отказ следващите обичайни тестови стъпки не се изпълняват и не могат да я изчистят.
 

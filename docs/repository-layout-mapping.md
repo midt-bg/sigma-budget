@@ -232,3 +232,5 @@
 | `cli.py` (операции)             | запазени в `cli.py` до преноса към TypeScript                                      |
 
 Всички действащи Python производители и команди в регистрите вече са `python -m budget_pipeline.<слой>.<модул>`.
+
+Визуалният одит е в `tests/e2e/worker/visual-audit.spec.ts`, а контрастът на светлата тема - в `tests/e2e/worker/light-contrast.spec.ts`. Независимите браузърни програми са в `tests/e2e/contrast-probes.ts`; Python deep pass остава в screens до преноса на неговите останали callers.

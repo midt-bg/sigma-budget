@@ -75,9 +75,26 @@ PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers pnpm test:e2e --project=static
 node apps/web/scripts/serve.ts --port 8000
 ```
 
-Проектът `worker` включва `boot.spec.ts`, `security-headers.spec.ts`, `narrative-adoption.spec.ts` и `period-matrix.spec.ts`. Проектът `static` изпълнява `redirects.spec.ts` върху автоматично сглобените symlinks в `tmp/static-site`. Данните се четат от `data/release`, JavaScript - от `apps/web/build/client/js`; необходим е предварителен build. `serve.py` и `static_assets.py` остават за все още непренесените Python проверки.
+Проектът `worker` включва `boot.spec.ts`, `security-headers.spec.ts`, `narrative-adoption.spec.ts` и `period-matrix.spec.ts`, както и `visual-audit.spec.ts` и `light-contrast.spec.ts`. Проектът `static` изпълнява `redirects.spec.ts` върху автоматично сглобените symlinks в `tmp/static-site`. Данните се четат от `data/release`, JavaScript - от `apps/web/build/client/js`; необходим е предварителен build. `serve.py` и `static_assets.py` остават за все още непренесените Python проверки.
 
-При пренос настройката за service worker се задава изрично според всеки оригинален context. `narrative-adoption.spec.ts` използва `serviceWorkers: 'allow'`, останалите четири спецификации - `'block'`. `metadata_adoption.py` и някои contexts в `overlap.py` и `light_contrast.py` също допускат service worker; общата настройка не трябва да подменя тези случаи. Статичният fixture използва `startStaticServer(directory, 0, { fallback: false })`, както обикновения Python файлов сървър: липсващ адрес връща 404 и няма `.html` преименуване. CLI сървърът запазва path fallback; отделен тест може да го включи само с обяснена причина. Конфигурацията задава по подразбиране `tmp/pw-browsers`, без да заменя вече зададен `PLAYWRIGHT_BROWSERS_PATH`.
+При пренос настройката за service worker се задава изрично според всеки оригинален context. `narrative-adoption.spec.ts` използва `serviceWorkers: 'allow'`, първоначалните други четири спецификации - `'block'`. `metadata_adoption.py` и някои contexts в `overlap.py` и контрастната fixture също допускат service worker; общата настройка не трябва да подменя тези случаи. Статичният fixture използва `startStaticServer(directory, 0, { fallback: false })`, както обикновения Python файлов сървър: липсващ адрес връща 404 и няма `.html` преименуване. CLI сървърът запазва path fallback; отделен тест може да го включи само с обяснена причина. Конфигурацията задава по подразбиране `tmp/pw-browsers`, без да заменя вече зададен `PLAYWRIGHT_BROWSERS_PATH`.
+
+Визуалният одит и контрастът се изпълняват последователно в job `check` срещу
+сглобения Worker (Chromium), непосредствено след screens:
+
+```bash
+E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker visual-audit.spec.ts
+E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker light-contrast.spec.ts
+```
+
+`visual-audit.spec.ts` допуска service worker във всички contexts, включително
+при старите запазени теми и изключен JavaScript. `light-contrast.spec.ts` допуска
+service worker само за независимата threshold fixture; обходът на всички
+non-bare маршрути при 1280×900 и 400×800 го блокира. Няма touch/mobile флагове.
+Праговете остават 4.5:1 за малък текст и placeholders, 3:1 за голям текст и
+граници на полета. Всички нарушения са откази. Резултатите са в
+`tmp/visual-contrast/results.json`. `contrast-probes.ts` пази независимите
+браузърни програми, включително deep pass и settle (30 s RAF wait + 150 ms).
 
 Останалите браузърни проверки са `calc_check.py`, `share_check.py`, `accept.py` и `motion.py` в `tests/e2e/`. Те използват временния статичен сайт. `overlap.py` проверява припокриванията. Очакваните числа се четат от текущите данни чрез `expect.py`. Интеграционните проверки `node tests/release/release_check.mjs` и `node tests/release/restore_drill.mjs` изискват Node, pnpm и инсталираните зависимости; Worker-ът се пуска от самите проверки.
 
