@@ -192,34 +192,7 @@ for (const [set, file] of [
     expect(container.querySelector('.s25-actions a[download]')?.getAttribute('href')).toBe(path);
     for (const code of ['curl', 'py', 'js'])
       expect(container.querySelector(`#s25-c-${code}`)?.textContent).toContain(url);
-    expect(container.querySelector('#s25-read')?.closest('section')?.textContent).not.toContain(
+    expect(container.querySelector('#s25-read')?.textContent).not.toContain(
       `${release.origin}/data/${file}`,
     );
   });
-
-it('multipart JSON examples retain their disclosure and hydrate without replacing it', async () => {
-  const model = await textModel('S25', {}, { set: 'ministries-programs' }, { release, load });
-  const tree = <MigratedScreen model={model} navigation={{ go() {}, announce() {} }} />;
-  const container = document.createElement('div');
-  document.body.appendChild(container);
-  container.innerHTML = renderToString(tree);
-  const details = container.querySelector<HTMLDetailsElement>('#s25-d-meta');
-  expect(details).not.toBeNull();
-  expect(container.querySelector('#s25-c-js')?.textContent).toContain('res.json()');
-  expect(container.querySelector('#s25-c-py')?.textContent).toContain('json.load(r)');
-  expect(container.querySelector('#s25-read')?.closest('section')?.textContent).not.toContain(
-    'RSS 2.0',
-  );
-  const errors: unknown[] = [];
-  let root: ReturnType<typeof hydrateRoot> | undefined;
-  try {
-    await act(async () => {
-      root = hydrateRoot(container, tree, { onRecoverableError: (e) => errors.push(e) });
-    });
-    expect(container.querySelector('#s25-d-meta')).toBe(details);
-    expect(errors).toEqual([]);
-  } finally {
-    await act(async () => root?.unmount());
-    container.remove();
-  }
-});

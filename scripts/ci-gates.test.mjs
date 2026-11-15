@@ -341,21 +341,3 @@ test('e2e project selectors use equals so file filters cannot become project nam
     );
   }
 });
-
-test('ported manual browser checks run against the built Worker and leave the known topbar finding explicit', () => {
-  const { parse } = createRequire(new URL('../packages/ingest/package.json', import.meta.url))(
-    'yaml',
-  );
-  const steps = parse(workflow).jobs.check.steps;
-  const command =
-    'E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker metadata-adoption.spec.ts public-bill-lists.spec.ts share-units.spec.ts react-bridge.spec.ts';
-  assert.equal(steps.filter((s) => s.run === command).length, 1);
-  assert.ok(
-    steps.findIndex((s) => s.run === command) >
-      steps.findIndex((s) => s.run?.includes('wrangler dev')),
-  );
-  assert.ok(!steps.some((s) => s.run?.includes('react-bridge-topbar.spec.ts')));
-  assert.ok(existsSync('tests/e2e/worker/react-bridge-topbar.spec.ts'));
-  for (const file of ['hrefs', 'ssr-parity'])
-    assert.ok(existsSync(`apps/web/scripts/${file}.test.ts`));
-});

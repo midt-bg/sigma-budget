@@ -1,17 +1,11 @@
-/** Draw og.png (1200×630) and icon-192/512.png with the pinned Chromium.
- * node apps/web/scripts/make-images.ts [--out /tmp/images]
- * Install Charter or XCharter on the host; system font stacks come from tokens.css.
- * The vendored sigma-mark.svg is the unchanged СИГМА mark. Other favicons are copied, not drawn.
- */
+/** Draw the social card and app icons.
+ * Output bytes depend on the Chromium build and installed fonts. */
 import { chromium, type Page } from '@playwright/test';
 import { readFileSync, mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 const PUBLIC = fileURLToPath(new URL('../public/', import.meta.url));
-process.env.PLAYWRIGHT_BROWSERS_PATH ??= fileURLToPath(
-  new URL('../../../tmp/pw-browsers', import.meta.url),
-);
 const PAPER = '#FDFAF4',
   INK = '#15110C',
   CRIMSON = '#AC1B18',
@@ -70,7 +64,6 @@ async function usedFonts(page: Page, selector: string) {
 }
 export async function makeImages(out = PUBLIC) {
   mkdirSync(out, { recursive: true });
-  // Preserve the original's headless host workaround and device scale (1).
   const browser = await chromium.launch({
     args: ['--disable-gpu', '--disable-software-rasterizer'],
   });

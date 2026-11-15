@@ -323,7 +323,7 @@ function codes(set: CatalogueSet, origin?: string, dataBase = '/data/') {
   const path = file.startsWith('data/') ? dataBase + file.slice(5) : file;
   const url = C.fileUrl(path, origin ? origin + '/' : undefined);
   const name = C.dlName(set, part);
-  const json = part ? /\.json$/i.test(part.file) : set.ext === 'json';
+  const json = set.ext === 'json';
   const curl = ['# Свали файла', `curl -sSf -o ${name} "${url}"`];
   if (json) curl.push('', '# Покажи блока meta (нужен е jq)', `jq .meta ${name}`);
   const py = json

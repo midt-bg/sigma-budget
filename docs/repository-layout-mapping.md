@@ -87,7 +87,7 @@
 | `tools/mock/guide_v6.py`             | `pipeline/budget_pipeline/build/guide.py`                 |
 | `tools/mock/gva_sectors_v5.py`       | `pipeline/budget_pipeline/build/gva_sectors.py`           |
 | `tools/mock/hrefs_v5.py`             | `reference/mock/hrefs_v5.py`                              |
-| `tools/mock/hrefs_v6.py`             | `apps/web/scripts/hrefs.ts` (ръчно) + `hrefs.test.ts`     |
+| `tools/mock/hrefs_v6.py`             | `apps/web/scripts/hrefs.test.ts`                          |
 | `tools/mock/budget_law_parser.py`    | `pipeline/budget_pipeline/extract/budget_law_parser.py`   |
 | `tools/mock/mock_content.py`         | `pipeline/budget_pipeline/build/example_text.py`          |
 | `tools/mock/mock_labels.py`          | `pipeline/budget_pipeline/build/measure_labels.py`        |
@@ -150,7 +150,6 @@
 | `tools/site/make_images.py`          | `apps/web/scripts/make-images.ts`                         |
 | `tools/site/query_check.py`          | `apps/web/scripts/query_check.py`                         |
 | `tools/site/serve.py`                | `apps/web/scripts/serve.py`                               |
-| `tools/site/ssr_parity.py`           | `apps/web/scripts/ssr-parity.ts` + `ssr-parity.test.ts`   |
 
 Кешът от `tools/mock/cache/` и входовете от `tmp/research/` се намират съответно в `data/cache/` и `data/cache/research/`. Те са извън git. При този checkout няма локални файлове в старите кешове за преместване.
 
@@ -233,4 +232,4 @@
 
 Всички действащи Python производители и команди в регистрите вече са `python -m budget_pipeline.<слой>.<модул>`.
 
-P10g пренася `tests/e2e/{metadata_adoption,public_bill_lists,share_units}.py` в `tests/e2e/worker/{metadata-adoption,public-bill-lists,share-units}.spec.ts`. `apps/web/scripts/react_bridge_check.py` е разделен на `worker/react-bridge.spec.ts` (CI) и `worker/react-bridge-topbar.spec.ts` (ръчна известна находка); общият код е `tests/e2e/chrome-adoption.ts`. Mockbar случаят е отпаднал след премахването на контролите в `8bad49c0`. `test_ssr_parity.py` е включен в `apps/web/scripts/ssr-parity.test.ts`. Генераторът на изображения остава ръчен; href lexer и SSR parser/CLI договорите се изпълняват в web Vitest suite. Подробности: [CI проверки](ci-test-gates.md).
+Проверките на списъците, CSV, споделените мерни единици и навигацията са в `tests/e2e/worker/public-bill-lists.spec.ts`, `share-units.spec.ts` и `react-bridge.spec.ts`. Job `check` ги изпълнява с `E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker public-bill-lists.spec.ts share-units.spec.ts react-bridge.spec.ts`. `apps/web/scripts/hrefs.test.ts` проверява адресите в хранилището чрез web Vitest suite. `node apps/web/scripts/make-images.ts` генерира social card и app icons; байтовете зависят от Chromium и шрифтовете.

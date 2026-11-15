@@ -1000,16 +1000,14 @@ PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.s
 
 `check_mock.py` има още семейства проверки (period, user, prefs, tour, `?to=`, chrome, share, embed, glossary, tabs, theme); документацията в началото на файла ги изброява заедно с всяка опция. `-v` отпечатва всяка находка с всичките ѝ клетки и адреси. Предупрежденията никога не карат пускането да пропадне; `--only base --route S06` е най-бързият цикъл за един екран. За да видиш страницата, добави `--shots` (по един PNG за всяко зареждане, имената се преизползват).
 
-Пренесените проверки се изпълняват чрез `pnpm test:e2e` от корена. След `pnpm build:release --env staging --noindex` стартирайте `pnpm exec wrangler dev -c apps/web/build/server/wrangler.json --ip 127.0.0.1 --port 8814`, а в друг терминал:
+Петте пренесени проверки се изпълняват чрез `pnpm test:e2e` от корена. След `pnpm build:release --env staging --noindex` стартирайте `pnpm exec wrangler dev -c apps/web/build/server/wrangler.json --ip 127.0.0.1 --port 8814`, а в друг терминал:
 
 ```bash
 PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker
 PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers pnpm test:e2e --project=static
 ```
 
-Име на спецификация (например `period-matrix.spec.ts`) може да се добави като филтър. `tests/e2e/playwright.config.ts` разделя двата targets без дублиране на проверки; `fixtures.ts` управлява статичния сървър и изисква изричен `E2E_WORKER_URL` за Worker. Всеки тест получава чист browser context, освен изрично споделените в самата проверка страници. Старите адреси се обхождат с отделни страници в един общ context, както в Python проверката. Общите route gates, ограничени event waits и CSV download helper са в `fixtures.ts` и `helpers.ts`. Няма автоматични retries; всеки отказ блокира CI, а trace и снимките са в `tmp/e2e-results`. При следващите преноси спецификациите се добавят в `worker/` или `static/` според оригиналния target. Не се използват production V8 thresholds за browser спецификациите.
-
-Всеки порт задава изрично service-worker режима на оригинала, включително за ръчно създадените contexts. `narrative-adoption.spec.ts` допуска service worker и използва отделен context за независимата HTML fixture страница. Останалите четири порта блокират service worker. При следващите преноси не се разчита сляпо на общото `'block'`: `metadata-adoption.spec.ts` и отделни contexts в `overlap.py` и `light_contrast.py` използват оригиналното `'allow'` по подразбиране. Статичният проект използва обикновен файлов сървър (`startStaticServer(directory, 0, { fallback: false })`), с 404 за липсващи адреси, без shell fallback и `.html` преименуване. Fallback се запазва за CLI разработката; включване в тест изисква посочена причина.
+Име на спецификация (например `period-matrix.spec.ts`) може да се добави като филтър. `tests/e2e/playwright.config.ts` разделя двата targets без дублиране на проверки; `fixtures.ts` управлява статичния сървър и изисква изричен `E2E_WORKER_URL` за Worker. Всеки тест получава чист browser context, освен изрично споделените в самата проверка страници. Старите адреси се обхождат с отделни страници в един общ context. Общите route gates, ограничени event waits и CSV download helper са в `fixtures.ts` и `helpers.ts`. Няма автоматични retries; всеки отказ блокира CI, а trace и снимките са в `tmp/e2e-results`. При следващите преноси спецификациите се добавят в `worker/` или `static/` според target-а. Не се използват production V8 thresholds за browser спецификациите.
 
 `forbidOnly: true`, `retries: 0` и CI guard-ът за всяка `tests/e2e/**/*.spec.ts` предотвратяват селективно или пропуснато изпълнение. Конфигурацията запазва външен `PLAYWRIGHT_BROWSERS_PATH`, иначе използва `tmp/pw-browsers`. При неуспех в job `check` директорията с traces и screenshots се качва като `e2e-failure-results`; след отказ следващите обичайни тестови стъпки не се изпълняват и не могат да я изчистят.
 
@@ -1136,20 +1134,4 @@ S12 чете проверените откъси направо от `measures`;
 
 S18 запазва отделни състояния за невалиден вход, липсващ вход и дата без проверени ставки. Грешката остава до полето с `aria-invalid`. Референтните цени се показват с десетична запетая и подходяща точност; до първата редакция сметката използва стойността от източника. След редакция използва въведената цена.
 
-## Останали site инструменти в TypeScript (P10g)
-
-`metadata-adoption.spec.ts`, `public-bill-lists.spec.ts`, `share-units.spec.ts` и `react-bridge.spec.ts` са в `tests/e2e/worker/`. CI job `check` ги изпълнява с:
-
-```bash
-E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker metadata-adoption.spec.ts public-bill-lists.spec.ts share-units.spec.ts react-bridge.spec.ts
-```
-
-Запазени са четирите metadata адреса и отделният избор на набор, 1280/390 × 900 px при списъците и мерните единици, touch само при мобилните списъци, SSR без JavaScript, reduced motion и изричните service-worker режими. Metadata допуска service worker; no-JS сравнението на списъците също го допуска. Bridge запазва 100 ms след refresh, четирите anchors и 1280 × 720 при навигацията. Mockbar бутоните са премахнати в `8bad49c0`; тяхната проверка е отпаднала. `react-bridge-topbar.spec.ts` се пуска ръчно със същата команда и този единствен файлов филтър; запазва целия оригинален инвариант и отчита премахването на SSR preload линка от React. Пълното `pnpm test:e2e` включва и този известен отказ.
-
-На натоварени headless машини липсващи animation frames могат да блокират readiness, clicks и screenshots. Локалното измерване при преноса използва временно `launchOptions.args: ['--disable-gpu', '--disable-software-rasterizer']`, без промяна в споделената конфигурация или waits. CI изпълнява обичайната конфигурация.
-
-`apps/web/scripts/hrefs.ts` пази Python regex-а (включително цели query параметри, Unicode отрицателния lookbehind, отрязването на крайни точки и само full-line `//` коментари). Обхожда действителните source/release директории: старият `Path.rglob` не следваше symlink директориите и връщаше празен успех. Ръчната команда отчита трите съществуващи примерни адреса в block/inline коментари; няма allowlist. Лексикалното правило се проверява с `scripts/hrefs.test.ts` във web Vitest suite.
-
-`node apps/web/scripts/ssr-parity.ts --dist dist --url http://127.0.0.1:8814 [--limit 50] [--show 5]` запазва сравнението на title, metadata, canonical path, JSON-LD types, article headings/text/links. `--baseline-url` сравнява всички runtime route samples по status и bytes; `--host` задава общ Host. Изходи: 0 равенство, 1 разлика, 2 недостъпен сървър или празен dist. `ssr-parity.test.ts` запазва void-element регресията и проверява останалите полета и CLI. Използва се наличният `linkedom`, без нов parser пакет.
-
-`node apps/web/scripts/make-images.ts [--out tmp/images]` генерира същите три PNG със същия HTML/CSS, CDP font checks и Chromium. Изисква Charter/XCharter; другите favicons остават копирани assets. Сравнението Python/Node/tracked PNG е с толеранс 0, байт по байт. Подробните находки са в [CI проверките](ci-test-gates.md).
+Проверките на списъците, CSV, споделените мерни единици и навигацията са в `tests/e2e/worker/public-bill-lists.spec.ts`, `share-units.spec.ts` и `react-bridge.spec.ts`. Job `check` ги изпълнява с `E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker public-bill-lists.spec.ts share-units.spec.ts react-bridge.spec.ts`. `apps/web/scripts/hrefs.test.ts` проверява адресите в хранилището чрез web Vitest suite. `node apps/web/scripts/make-images.ts` генерира social card и app icons; байтовете зависят от Chromium и шрифтовете.

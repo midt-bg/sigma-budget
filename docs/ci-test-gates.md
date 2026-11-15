@@ -55,26 +55,4 @@ Parity report пътищата се дефинират само в `coverage.env
 
 Playwright Test конфигурацията е локална за `tests/e2e/`, с проекти `worker` (boot, narrative adoption, security headers, period matrix) и `static` (redirects). Job `check` изпълнява тези проверки срещу същия downloaded build и loopback Worker на порт 8814; останалите Python команди са запазени. Локално се използват `PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e` и вече стартиран Worker. Само `--project=static` не изисква Worker. `apps/web/scripts/serve.ts` е browser test/development инфраструктура с отделен Vitest договорен тест, извън production V8 обхвата; production release postprocessing остава покрит чрез `release-artifact.ts`. Python `serve.py` и `static_assets.py` остават за непренесените проверки.
 
-## P10g: site проверки, които досега са били ръчни
-
-Job `check`, стъпка `Metadata adoption, current-bill lists, shared units and React bridge`, изпълнява:
-
-```bash
-E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker metadata-adoption.spec.ts public-bill-lists.spec.ts share-units.spec.ts react-bridge.spec.ts
-```
-
-Това са 12 теста: четирите metadata адреса, единичен catalogue query и фокус, два пълни list journeys, два unit journeys, footer/tabbar adoption и bridge navigation/anchors/404. Контекстите, размерите и waits следват Python инструментите; не са добавени retries или очаквани откази. `ssr-parity.test.ts`, `hrefs.test.ts` и multipart JSON hydration регресията са част от web Vitest suite, която CI изпълнява в `coverage` чрез `pnpm test -- --coverage`.
-
-На основата `46a0a518` са установени следните находки:
-
-- `metadata_adoption.py` не изисква `details` във всеки адрес, но проверката на multipart набора разкрива реален дефект: `codes()` гледа празния `set.ext`, вместо разширението на избрания `parts[0].file`. JSON файлът е описван като RSS и е показван XML пример. Поправени са React и legacy renderer-ът; нов тест изисква JSON disclosure, JSON примери и hydration без замяна. Frozen `S25-parts.html` не е променян; само коригираният раздел се сравнява с независимия legacy renderer, а останалата семантика остава под frozen oracle.
-- `react_bridge_check.py`: mockbar/button проверката е неприложима след `8bad49c0` (`bannerHtml()` връща `null`). Footer/tabbar и навигацията продължават да проверяват реални инварианти и вече блокират CI. Topbar case остава цял в `react-bridge-topbar.spec.ts`, извън CI командата: React премахва SSR `<link rel="preload" as="image" href="/sigma-logo.svg">` при refresh; фокусът и останалите елементи се запазват. Нужно е отделно решение дали resource hint lifecycle трябва да влиза в инварианта за идентични chrome nodes. Пълният Worker проект включва ръчния случай и отчита отказа.
-- `hrefs.py`: composed symlink root е давал 0 адреса. Обхождането на действителните директории с неизмененото правило намира 894 адреса и 3 DEAD: `#/path?x=1&y=2` в `client/format.js`, `#/x?y` в `client/loc.js` и `client/render.js`, `#/x` в `client/loc.js`, `client/main.js`, `client/router.js`. Това са примери в block/inline коментари, които Python правилото не премахва. Пълната проверка е ръчна (`node apps/web/scripts/hrefs.ts`), с exit 1; не е добавена allowlist или по-слаб regex.
-
-`ssr-parity.ts` запазва ръчните HTML и two-Worker режими; Vitest проверява всички сравнявани полета, void elements, exit codes и byte/status parity. `make-images.ts` е ръчен генератор. Не са добавени зависимости: използват се наличните Playwright и linkedom. На същата машина, с Chromium 1248 и XCharter, Python, Node и tracked PNG са байтово идентични (толеранс 0):
-
-| Файл           | SHA-256 (и трите източника)                                        |
-| -------------- | ------------------------------------------------------------------ |
-| `icon-192.png` | `d1245ba0fb7d68cc7292f2e9e987727892c7cac5e275e83f1c2f39cf821d751e` |
-| `icon-512.png` | `c04282993118c45e916a0dd09c15363ad3e38cdf0d97955ec568066bb334c85a` |
-| `og.png`       | `c307537356d307e46d60184ac0c8ddf71bf6cc6f04fd8dda937a15e9c535796a` |
+Проверките на списъците, CSV, споделените мерни единици и навигацията са в `tests/e2e/worker/public-bill-lists.spec.ts`, `share-units.spec.ts` и `react-bridge.spec.ts`. Job `check` ги изпълнява с `E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker public-bill-lists.spec.ts share-units.spec.ts react-bridge.spec.ts`. `apps/web/scripts/hrefs.test.ts` проверява адресите в хранилището чрез web Vitest suite. `node apps/web/scripts/make-images.ts` генерира social card и app icons; байтовете зависят от Chromium и шрифтовете.

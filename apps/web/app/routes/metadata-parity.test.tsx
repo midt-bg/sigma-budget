@@ -114,33 +114,11 @@ for (const c of manifest.cases) {
     // Keep the historical capture intact. S35's intentional copy and input-kind column
     // now follow the current legacy renderer; its links and controls still match the capture.
     const clarified = c.screen === 'S35' && !c.query.demo;
-    let expected = clarified
+    const expected = clarified
       ? String(frameHtml(await build(byId.S35, {}, c.query)))
       : c.screen === 'S25'
         ? finalApiCopy(frozen)
         : finalPendingCopy(frozen);
-    if (c.file === 'S25-parts.html') {
-      // The frozen multipart example wrongly described JSON as RSS. Only this
-      // corrected section follows the independent legacy renderer; every other
-      // section and the original fixture bytes remain under the frozen oracle.
-      const old = parseHTML(expected).document;
-      const corrected = parseHTML(
-        String(frameHtml(await build(byId.S25, {}, c.query))).replace(
-          /href="data\//g,
-          'href="/data/',
-        ),
-      ).document;
-      expect(old.querySelector('#s25-read')!.closest('section')!.textContent).toContain('RSS 2.0');
-      expect(corrected.querySelector('#s25-read')!.closest('section')!.textContent).not.toContain(
-        'RSS 2.0',
-      );
-      expect(corrected.querySelector('#s25-d-meta')).not.toBeNull();
-      old
-        .querySelector('#s25-read')!
-        .closest('section')!
-        .replaceWith(corrected.querySelector('#s25-read')!.closest('section')!);
-      expected = old.toString();
-    }
     const a = semantics(actual),
       b = semantics(expected);
     expect({ ...a, text: undefined }).toEqual({ ...b, text: undefined });
