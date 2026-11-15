@@ -9,6 +9,18 @@ type Execution = {
 export const execution: Execution = JSON.parse(
   readFileSync(new URL('../../data/release/execution.json', import.meta.url), 'utf8'),
 );
+// Python float(None) / arithmetic with None fails; Number(null) must never become an expected zero.
+export function releaseNumber(value: unknown): number {
+  if (
+    (typeof value !== 'number' && typeof value !== 'string') ||
+    (typeof value === 'string' &&
+      !/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(value.trim()))
+  )
+    throw new Error('Missing or invalid release number');
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) throw new Error('Non-finite release number');
+  return parsed;
+}
 // Python %.nf / round use ties-to-even on the exact binary float, unlike JS toFixed.
 // Decode that float so multiplication cannot manufacture or erase a halfway case.
 function fixed(value: number, decimals: number): string {
@@ -40,13 +52,14 @@ export function num(v: number, d = 2, sign = false) {
 export function plan() {
   const { month, kfp } = execution.latest;
   const rows = ['rev', 'exp.total', 'exp.capex'];
-  const cur = rows.map((r) => (Number(kfp[r]!.cum) / Number(kfp[r]!.plan)) * 100);
+  const cur = rows.map((r) => (releaseNumber(kfp[r]!.cum) / releaseNumber(kfp[r]!.plan)) * 100);
   const prev = rows.map((r) => execution.pace['2025']![r]![month - 1]!);
   const bars = cur.flatMap((v, i) => [v, prev[i]!]);
   return {
     month,
     sums: rows.map(
-      (r) => `${num(Number(kfp[r]!.cum) / 1000)} от ${num(Number(kfp[r]!.plan) / 1000)}`,
+      (r) =>
+        `${num(releaseNumber(kfp[r]!.cum) / 1000)} от ${num(releaseNumber(kfp[r]!.plan) / 1000)}`,
     ),
     cur: cur.map((v) => num(v, 1) + '%'),
     prev: prev.map((v) => num(v, 1) + '%'),
@@ -57,7 +70,7 @@ export function plan() {
   };
 }
 export function cum(year: number, scope: string, row: string, month: number) {
-  return Number(execution.data[String(year)]![scope]![row]![month - 1]!);
+  return releaseNumber(execution.data[String(year)]![scope]![row]![month - 1]!);
 }
 export function val(year: number, scope: string, row: string, month: number, mode: string) {
   return (

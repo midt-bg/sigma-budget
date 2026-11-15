@@ -319,7 +319,11 @@ test('P10b ports preserve the ordered static gates including acceptance quick ov
 });
 
 test('P10b expected figures retain Python ties-to-even independently of browser formatting', async () => {
-  const { num, pythonRound } = await import('../tests/e2e/expected.ts');
+  const { num, pythonRound, releaseNumber } = await import('../tests/e2e/expected.ts');
+  for (const missing of [null, undefined, '', ' ', '0x10', false, NaN, Infinity])
+    assert.throws(() => releaseNumber(missing));
+  assert.equal(releaseNumber('0.000'), 0);
+  assert.equal(releaseNumber('-3.075'), -3.075);
   // Fixed Python results, including exact halves and non-half binary representations.
   for (const [value, digits, text, rounded] of [
     [2.25, 1, '2,2', 2.2],
