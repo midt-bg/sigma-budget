@@ -30,6 +30,10 @@ export const styles = ['s34-byudzhet-2027'];
 const ok = (v) => typeof v === 'number' && Number.isFinite(v);
 const councilDate = (d) =>
   d.edp.steps.find((s) => s.src === 'ec-edp-bg' && s.title.startsWith('Съветът'))?.d;
+const councilDecision = (d) =>
+  d.edp.steps
+    .find((s) => s.src === 'ec-edp-bg' && s.title.startsWith('Съветът'))
+    ?.text.match(/Решение \(ЕС\) (\d+\/\d+)/)?.[1] || '—';
 const actionDeadline = (d) => d.edp.steps.find((s) => s.src === 'plan' && s.p === 6)?.d;
 const yr = (y) => `${y}${NBSP}г.`;
 /** a number of the measures tables: whole numbers without decimals, the rest with one */
@@ -195,7 +199,7 @@ function ppdBlock(ctx, f) {
   const warn = callout({
     kind: 'warn',
     title: 'България е в процедура при прекомерен дефицит.',
-    body: html`<p>Според проекта на плана Съветът на ЕС я е открил на ${date(councilDate(f.d))}${NBSP}г. с Решение (ЕС) 2026/1758. Причината е дефицитът: по прогнозата на Комисията той е ${A('n26.EC_FORECAST')} от БВП през ${yr(2026)}, а според плана ще остане над ${pct(v('rule.REF_DEFICIT'), 0)} и през ${yr(2027)}</p>`,
+    body: html`<p>Според проекта на плана Съветът на ЕС я е открил на ${date(councilDate(f.d))}${NBSP}г. с Решение (ЕС) ${councilDecision(f.d)}. Причината е дефицитът: по прогнозата на Комисията той е ${A('n26.EC_FORECAST')} от БВП през ${yr(2026)}, а според плана ще остане над ${pct(v('rule.REF_DEFICIT'), 0)} и през ${yr(2027)}</p>`,
   });
 
   return block({
@@ -255,7 +259,7 @@ function ppdBlock(ctx, f) {
         meta: 'за процедурата',
         body: html`<ul class="s34-list">
           <li>Точният срок в препоръката на Съвета за „ефективни действия“. Текстът на препоръката не се отвори за проверка (EUR-Lex). Датата ${date(actionDeadline(f.d))} е по плана.</li>
-          <li>Номерът на решението (2026/1758) и прогнозата на Комисията от ${A('n26.EC_FORECAST')}: те са само в плана. Датата на решението (${date(councilDate(f.d))}) е и на страницата на Комисията.</li>
+          <li>Номерът на решението (${councilDecision(f.d)}) и прогнозата на Комисията от ${A('n26.EC_FORECAST')}: те са само в плана. Датата на решението (${date(councilDate(f.d))}) е и на страницата на Комисията.</li>
           <li>Дали Комисията вече е започнала оценката. На нейната страница към ${date(f.d.meta.retrieved)}${NBSP}г. за България има само самият проект, без становище.</li>
         </ul>`,
       })}

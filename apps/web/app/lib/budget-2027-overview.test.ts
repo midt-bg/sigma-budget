@@ -383,6 +383,7 @@ it.each([1, 2, 0])(
       (s: any) => s.src === 'ec-edp-bg' && s.title.startsWith('Съветът'),
     );
     council.d = '2026-07-11';
+    council.text = council.text.replace(/Решение \(ЕС\) \d+\/\d+/, 'Решение (ЕС) 2026/9999');
     const deadline = dbp2027.edp.steps.find((s: any) => s.src === 'plan' && s.p === 6);
     deadline.d = '2026-10-17';
     const article1 = budget2027.budgets.bill[1];
@@ -425,6 +426,9 @@ it.each([1, 2, 0])(
       );
     const plan = await page('/byudzhet-2027?dokument=plan', overrides);
     expect(plan.vm.title).toContain(date(dbp2027.doc.date));
+    expect(plan.document.getElementById('s34-ne-potvardeno')!.textContent).toContain(
+      council.text.match(/Решение \(ЕС\) (\d+\/\d+)/)[1],
+    );
     expect(plan.document.getElementById('s34-ne-potvardeno')!.textContent).toContain(
       date(dbp2027.meta.retrieved),
     );
