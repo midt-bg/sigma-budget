@@ -105,6 +105,25 @@ describe('standalone release operator integration contract', () => {
     }
     expect(seen).toEqual([expected, expected]);
   });
+  it('lets an explicit --receipts replace the default directory', async () => {
+    const receipts = join(directory, 'receipts');
+    const seen: string[] = [];
+    const deps = {
+      credentialEnvironment: {},
+      stdout: () => {},
+      client: (options: ConstructorParameters<typeof ReleaseClient>[0]): ReleaseClient => {
+        seen.push(options.receiptDirectory);
+        throw new ReleaseError(6, 'stop before any request');
+      },
+    };
+    expect(
+      await releaseOperatorCli(
+        ['status', '--environment', 'test', '--url', 'http://127.0.0.1:1', '--receipts', receipts],
+        deps,
+      ),
+    ).toBe(6);
+    expect(seen).toEqual([receipts]);
+  });
   it('requires explicit mutation consent and environment, rejects credential flags without reflecting values', async () => {
     const lines: string[] = [];
     const deps = { credentialEnvironment: {}, stdout: (text: string) => lines.push(text) };
