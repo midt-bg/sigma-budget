@@ -59,8 +59,9 @@ pnpm --filter @sigma-budget/web test # и списъците на заявкит
 PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers pnpm build:release --env staging --noindex
 # В отделен терминал стартирайте Worker-а:
 pnpm exec wrangler dev -c apps/web/build/server/wrangler.json --ip 127.0.0.1 --port 8814
-# Пълната проверка върви срещу него:
+# Двете части на проверката вървят срещу него:
 PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.screens --url http://127.0.0.1:8814/
+PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker screens-base.spec.ts screens-demo.spec.ts screens-variants.spec.ts screens-selftest.spec.ts
 ```
 
 Регресията за ранния мобилен tap се проверява с `E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker boot.spec.ts` срещу сглобения Worker. Файловете на артефакта (`sitemap.xml`, `robots.txt`, `llms.txt`, `_headers`, маркираният service worker) се проверяват от `apps/web/scripts/release-artifact.test.ts` в `pnpm test`; release командата проверява и действителния артефакт преди успех.
@@ -75,9 +76,9 @@ PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers pnpm test:e2e --project=static
 node apps/web/scripts/serve.ts --port 8000
 ```
 
-Проектът `worker` включва `boot.spec.ts`, `security-headers.spec.ts`, `narrative-adoption.spec.ts` и `period-matrix.spec.ts`. Проектът `static` изпълнява `redirects.spec.ts` върху автоматично сглобените symlinks в `tmp/static-site`. Данните се четат от `data/release`, JavaScript - от `apps/web/build/client/js`; необходим е предварителен build. `serve.py` и `static_assets.py` остават за все още непренесените Python проверки.
+Проектът `worker` включва `boot.spec.ts`, `security-headers.spec.ts`, `narrative-adoption.spec.ts` и `period-matrix.spec.ts`, както и четирите `screens-*.spec.ts` (audit на всички примерни адреси и двете ширини, demo състояния, периоди/потребителски типове/настройки и self-test на проверяващия). Проектът `static` изпълнява `redirects.spec.ts` върху автоматично сглобените symlinks в `tmp/static-site`. Данните се четат от `data/release`, JavaScript - от `apps/web/build/client/js`; необходим е предварителен build. `serve.py` и `static_assets.py` остават за все още непренесените Python проверки.
 
-При пренос настройката за service worker се задава изрично според всеки оригинален context. `narrative-adoption.spec.ts` използва `serviceWorkers: 'allow'`, останалите четири спецификации - `'block'`. `metadata_adoption.py` и някои contexts в `overlap.py` и `light_contrast.py` също допускат service worker; общата настройка не трябва да подменя тези случаи. Статичният fixture използва `startStaticServer(directory, 0, { fallback: false })`, както обикновения Python файлов сървър: липсващ адрес връща 404 и няма `.html` преименуване. CLI сървърът запазва path fallback; отделен тест може да го включи само с обяснена причина. Конфигурацията задава по подразбиране `tmp/pw-browsers`, без да заменя вече зададен `PLAYWRIGHT_BROWSERS_PATH`.
+При пренос настройката за service worker се задава изрично според всеки оригинален context. `narrative-adoption.spec.ts` използва `serviceWorkers: 'allow'`, останалите спецификации - `'block'`. `metadata_adoption.py` и някои contexts в `overlap.py` и `light_contrast.py` също допускат service worker; общата настройка не трябва да подменя тези случаи. Статичният fixture използва `startStaticServer(directory, 0, { fallback: false })`, както обикновения Python файлов сървър: липсващ адрес връща 404 и няма `.html` преименуване. CLI сървърът запазва path fallback; отделен тест може да го включи само с обяснена причина. Конфигурацията задава по подразбиране `tmp/pw-browsers`, без да заменя вече зададен `PLAYWRIGHT_BROWSERS_PATH`.
 
 Останалите браузърни проверки са `calc_check.py`, `share_check.py`, `accept.py` и `motion.py` в `tests/e2e/`. Те използват временния статичен сайт. `overlap.py` проверява припокриванията. Очакваните числа се четат от текущите данни чрез `expect.py`. Интеграционните проверки `node tests/release/release_check.mjs` и `node tests/release/restore_drill.mjs` изискват Node, pnpm и инсталираните зависимости; Worker-ът се пуска от самите проверки.
 
