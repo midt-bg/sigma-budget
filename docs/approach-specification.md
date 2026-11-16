@@ -28,7 +28,7 @@
 
 ### 2.1. Какво се запазва
 
-Запазваме активните екрани на прототипа `apps/web/`, включително БВП и проектобюджета за 2027 от v6. Актуалният списък е в `apps/web/client/routes.js`, не в по-старите документи. Историческите версии са достъпни в Git историята.
+Запазваме активните екрани в `apps/web/`, включително БВП и проектобюджета за 2027 от v6. Актуалният списък е в `apps/web/client/routes.js`, не в по-старите документи. Историческите версии са достъпни в Git историята.
 
 - **Начало и ориентация:** основни показатели, пътеводител, речник.
 - **Приходи и разходи:** по пера, функции, институции, политики и програми, с отделна колона за всяка сравнявана година.
@@ -233,11 +233,11 @@ Worker-ът избира текущото издание веднъж за ст�
 ./budget refetch --manifest <адрес на манифеста> --out /outside/new/refetch
 
 # оператор; средата се посочва изрично, няма среда по подразбиране
-./budget publish --release /outside/new/candidate --originals /outside/new/acquisition --environment staging
-./budget rollback --release-id <предишно издание> --environment staging
+./budget publish --release /outside/new/candidate --originals /outside/new/acquisition --environment staging --dry-run
+./budget rollback --release-id <предишно издание> --environment staging --dry-run
 ```
 
-`publish` проверява, качва, активира и прочита обратно. Не създава инфраструктура и не качва код.
+С `--dry-run` командите показват плана без промяна. `--yes` вместо `--dry-run` изпълнява действието в посочената среда. `publish` проверява, качва, активира и прочита обратно. Не създава инфраструктура и не качва код.
 
 ### 8.2. Достъп на оператора
 
@@ -341,7 +341,7 @@ CLI дава четим отчет и JSON. Различава успех, ра�
 
 ## 13. Референции
 
-- Прототипът: [README](../README.md), [план](plan.md), [договори за данни](data-spec.md), [примерни набори](example-datasets.md), [източници](data-sources.md), [екрани](dev-guide.md).
+- СИГМА Бюджет: [README](../README.md), [план](plan.md), [договори за данни](data-spec.md), [примерни набори](example-datasets.md), [източници](data-sources.md), [екрани](dev-guide.md).
 - Оригиналната СИГМА: [архитектура](https://github.com/midt-bg/sigma/blob/main/docs/architecture.md), [SSR и сигурност](https://github.com/midt-bg/sigma/blob/main/docs/adr/0001-rendering-and-security.md).
 - Cloudflare: [React Router на Workers](https://developers.cloudflare.com/workers/framework-guides/web-apps/react-router/), [Static Assets](https://developers.cloudflare.com/workers/static-assets/), [R2 Workers API](https://developers.cloudflare.com/r2/api/workers/workers-api-reference/), [D1 database API](https://developers.cloudflare.com/d1/worker-api/d1-database/), [D1 read consistency](https://developers.cloudflare.com/d1/best-practices/read-replication/), [Access JWT validation](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/validating-json/).
 

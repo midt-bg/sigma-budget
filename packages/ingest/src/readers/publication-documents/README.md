@@ -107,5 +107,5 @@ node apps/etl/publication-documents/prepare.mjs \
 ```
 
 No server, port, live source acquisition, credential access or deployment is
-involved. Parent integration owns the unified preparation graph, exports,
-production selection, final CI/readiness and remote merge.
+involved. The production loader composes these adapters into the preparation
+graph; CI checks production selection and readiness.

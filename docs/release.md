@@ -281,4 +281,30 @@ attachment, no-transform и пълната CSP на SSR документа.
 
 Задължителният job `node-inputs` сваля одобрения архив от непубликувано издание в хранилището. Само този job има `contents: write` за достъп до draft asset; не изпълнява код от проекта. Проверява фиксираните размер и SHA-256 преди предаването към останалите jobs. `scripts/restore-node-input-cache.mjs` проверява архива, всеки регистриран вход и идентичността на snapshot спрямо `scripts/registered-node-inputs.json`. Липсващ архив, променени байтове или несъответстващ регистър спират проверката.
 
-За подмяна първо се подготвя нова удостоверена снимка с `node scripts/prepare-node-input-cache.mjs /path/to/acquired-inputs /outside/new/ci-inputs` след `pnpm --filter @sigma-budget/ingest... build`. От нея се подготвя архив за преглед и се обновяват заедно `scripts/registered-node-inputs.json` и фиксираните asset ID, размер и SHA-256 в `.github/workflows/site.yml`. Архивът остава непубликувано CI хранилище; не се придобиват живи източници и няма резервен път към fixtures.
+За подмяна първо се подготвя нова удостоверена снимка от придобитите входове. `prepare-node-input-cache.mjs` експортира `HEAD`, затова се изпълнява върху commit с точно целевите регистри и pins:
+
+```sh
+pnpm --filter @sigma-budget/ingest... build
+node scripts/prepare-node-input-cache.mjs /path/to/acquired-inputs /outside/new/ci-inputs
+```
+
+Резултатът `authenticated-inputs.json` в новата директория съдържа `snapshot`, `inputs` и `registries`. В `scripts/registered-node-inputs.json` се пренасят `snapshot.sha256` като `snapshot` и броят на елементите в `inputs` като `inputs`; това не е броят файлове от произволен архивен опис. Скриптът копира удостоверените входове под `data/originals/` и `data/cache/`.
+
+Преди пакетиране се проверява, че подготвеното дърво съдържа и четирите програмни PDF-а `data/originals/program_budgets/{0100,1800,2300,7400}_*.pdf` с точните имена и SHA-256 от `packages/dataset-schema/src/programme-references.json`. Те са необходими и на `scripts/restore-programme-test-inputs.mjs`: скриптът проверява архива и всеки избран член и възстановява само тези четири оригинала за тестовете, без презаписване на различни байтове.
+
+Архивира се директорията `data/` от подготвеното дърво, така че тя да е на корена на архива:
+
+```sh
+tar -czf /outside/new/registered-node-inputs.tar.gz -C /outside/new/ci-inputs data
+sha256sum /outside/new/registered-node-inputs.tar.gz
+```
+
+Размерът на архива трябва да е най-много 256 MiB. След преглед архивът се качва като asset на непубликуваното draft release в `midt-bg/sigma-budget`; качването дава новия `assetId`. В descriptor-а се записват този ID, точният размер в байтове и SHA-256 на архива. Същите три стойности се обновяват в job `node-inputs` на `.github/workflows/site.yml`. Архивът остава непубликувано CI хранилище; не се придобиват живи източници и няма резервен път към fixtures.
+
+В окончателния клон descriptor-ът и променените регистри/pins се внасят заедно в един commit: restore също експортира `HEAD` и сверява входния брой и snapshot спрямо неговите регистри. Проверява се с нова външна директория:
+
+```sh
+node scripts/restore-node-input-cache.mjs /outside/new/registered-node-inputs.tar.gz /outside/new/restored-inputs
+```
+
+Когато са променени само метаданни в `data/sources.yaml` или `data/datasets.yaml`, без промяна на входните байтове и инвентара, не се качва нов архив. Отново се изпълнява подготовката върху commit с целевите регистри; след потвърждение за същия брой входове в descriptor-а се обновява само `snapshot` от новия `snapshot.sha256`. `assetId`, `bytes`, `sha256` и `inputs`, както и трите фиксирани стойности в workflow, остават същите. Restore изчислява snapshot наново от входовете и регистрите на `HEAD`, а не чете стария `authenticated-inputs.json` от архива. Новият descriptor и регистрите отново се внасят заедно в един commit и се проверяват със съществуващия одобрен архив.

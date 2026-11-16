@@ -2,8 +2,7 @@
 
 Import from `validate/debt-local/index.js`. `debtLocalGroups` exports three
 `Group<Context>` registrations, using the existing shared `Context`, `Check` and
-runner. The aggregate registration and production command belong to the parent
-integration. No scoped CLI or independent Context implementation is introduced.
+runner. Production validation composes the aggregate registration and reader bindings. No scoped CLI or independent Context implementation is introduced.
 
 The rules inspect the shared Context without invoking the corresponding builders.
 
@@ -63,7 +62,7 @@ The base rules inspect published data; the source groups read originals.
 Each binding receives `Context` and must parse actual original bytes,
 independently of the corresponding production builder. Expected registry pins
 are supplied separately in `binding.pins`. Paths resolve under `context.root`
-through `safePath`, so the parent should construct a staged root containing
+through `safePath`, using a staged root containing
 source inputs and a separately selected candidate data directory. Every pin is
 hashed before the reader runs, source identities are checked for the group,
 and each assertion must reference a pinned original. Readers return expected
@@ -82,6 +81,6 @@ Unbound readers, missing scopes, empty/mismatched pins, captured/unavailable
 evidence, missing assertion targets and reader crashes fail explicitly. A
 binding's assertions and scope coverage are a trusted adapter contract, not a
 way for this module to prove that an arbitrary callback actually parsed every
-required source cell. Parent integration must accept each adapter against its
-actual documents before treating these groups as complete original evidence.
+required source cell. Each adapter must be verified against its actual documents before these groups
+can establish complete original evidence.
 Production bindings are composed by `packages/ingest/src/production/validation.ts`.

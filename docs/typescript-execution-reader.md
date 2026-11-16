@@ -114,3 +114,11 @@ file's directory. Every `sha256` must be a reviewed lowercase 64-digit digest:
 The example abbreviates the report list; the supplied publication needs all
 33 real monthly files. Forecast and bill may refer to the same pinned archive.
 These fields accept real snapshot paths, not an expected-output JSON file.
+
+The workbook-reader acceptance command runs separately against actual originals after `pnpm --filter @sigma-budget/ingest... build`:
+
+```sh
+node packages/ingest/test/readers/workbook-acceptance.mjs --originals ROOT --out NEW_REPORT.json
+```
+
+`ROOT` is the restored inputs' `data/originals/` directory. `NEW_REPORT.json` must be a new file with an existing parent directory. The command checks EC `Sheet1`, `Excise duties` and `VAT`, SEBRA `Sheet1`, source SHA-256 and unchanged original bytes. A missing original fails the command; it is not skipped.

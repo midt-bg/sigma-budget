@@ -1,6 +1,6 @@
 # Offline document and saved API readers
 
-These are Node-only production readers for registered, pinned files. They do not acquire sources, change pins, calculate the registry's transitive input closure. The package exports two independent entry points:
+These are Node-only production readers for registered, pinned files. They do not acquire sources, change pins, or calculate the registry's transitive input closure. The package exports two independent entry points:
 
 ```ts
 import {
