@@ -134,16 +134,20 @@ export function ledeText(M) {
   const L = d.latest && d.latest.zdd;
   if (kind === 'actual') {
     const next = L && Y === L.year && L.next && ok(L.next.mln) ? L.next : null;
-    return `Държавният дълг към края на ${yr(Y)} е ${withShare(M.mln, M.pg)}.${next ? ` По проекта на бюджета за ${yr(next.year)} ще стане ${withShare(next.mln, next.pctGdp)}.` : ''}`;
+    return `Държавният дълг към края на ${yr(Y)} е ${withShare(M.mln, M.pg)}.${next ? ` По разчетите към закона за бюджета за ${yr(next.year)} е ${withShare(next.mln, next.pctGdp)}.` : ''}`;
   }
   const base =
     L && ok(L.mln)
       ? `Държавният дълг към края на ${yr(L.year)} е ${withShare(L.mln, L.pctGdp)}. `
       : '';
   const what =
-    kind === 'plan'
-      ? `По проекта на бюджета за ${yr(Y)} ще стане`
-      : `Прогнозата на Министерството на финансите за края на ${yr(Y)} е`;
+    M.ctx.period?.status === 'law'
+      ? `По разчетите към приетия закон за бюджета за ${yr(Y)} държавният дълг в края на годината е`
+      : M.ctx.period?.status === 'expected'
+        ? `Очакваният от Министерството на финансите държавен дълг към края на ${yr(Y)} е`
+        : kind === 'plan'
+          ? `По проекта на бюджета за ${yr(Y)} ще стане`
+          : `Прогнозата на Министерството на финансите за края на ${yr(Y)} е`;
   return `${base}${what} ${withShare(M.mln, M.pg)}.`;
 }
 

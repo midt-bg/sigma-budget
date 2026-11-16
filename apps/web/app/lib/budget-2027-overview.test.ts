@@ -5,6 +5,8 @@ import { provideScope } from '../../client/env.js';
 import { parse } from '../../client/data.js';
 import { requestState } from '../../client/store.js';
 import { build, frameHtml, resolve } from '../../client/render.js';
+import { csvFor } from '../../client/share.js';
+import { parseCsv } from '../../../../tests/e2e/helpers.ts';
 import { tableData } from '../../client/ui/table.js';
 import { selectPeriod } from '../../client/periods.js';
 import { INDICATORS, CAPEX_YEARS } from '../../client/budget-2027-compare.js';
@@ -463,4 +465,90 @@ it('finds the Council decision number in the current release step', async () => 
   expect(plan.document.getElementById('s34-ne-potvardeno')!.textContent).toContain(
     `Номерът на решението (${number})`,
   );
+});
+
+it('exports the comparison chart in percent rather than the block’s money unit', async () => {
+  const { scope } = await page('/byudzhet-2027');
+  const spec = scope.maps.share.get('b27-sravnenie');
+  const chart = [...scope.maps.chart.values()].find(
+    (c) => c.unit === '%' && c.id.startsWith('b27-'),
+  );
+  const table = scope.maps.attached.get(chart.id).table;
+  const [header, ...rows] = parseCsv(csvFor({ ...spec, table }).slice(1));
+  expect(rows.length).toBeGreaterThan(0);
+  for (const row of rows) {
+    expect(row[header!.indexOf('единица')]).toBe('%');
+    expect(row[header!.indexOf('период')]).toBe(spec.period);
+  }
+});
+
+it('exports expenditure functions with the selected period and the units of the values', async () => {
+  const { scope } = await page('/razhodi?per=2027.draft');
+  const spec = scope.maps.share.get('s07-fn');
+  const table = scope.maps.attached.get('s07-map-funkcii-list').table;
+  const [header, ...rows] = parseCsv(csvFor({ ...spec, table }).slice(1));
+  expect(rows.length).toBeGreaterThan(0);
+  for (const row of rows) {
+    expect(row[header!.indexOf('единица')]).toBe('');
+    expect(row[header!.indexOf('период')]).toBe('2027.draft');
+  }
+});
+
+it('shows the selected year’s published measures totals and keeps missing effects blank', async () => {
+  for (const [period, amount] of [
+    ['2027.draft', '+1 926,9'],
+    ['2028.forecast', '−0,1'],
+    ['2029.forecast', '+660,1'],
+  ]) {
+    const { document, scope } = await page(`/merki?per=${period}`);
+    const sums = document.querySelectorAll('#s12-27-sums .kpi');
+    const text = sums[0]!.textContent!.replace(/[\u00a0\u202f]/g, ' ');
+    expect(text).toContain(`Приходни мерки през ${period!.slice(0, 4)} г.`);
+    expect(text).toContain(amount);
+    if (period !== '2027.draft') {
+      expect(sums[1]!.textContent).toContain('—');
+      expect(sums[2]!.textContent).toContain('—');
+      expect(scope.maps.share.get('s12-27-sums').text).not.toContain('разходни');
+      expect(scope.maps.share.get('s12-27-sums').text).not.toContain('— млн. €');
+    }
+  }
+});
+
+it('describes debt with the status of each selected budget period', async () => {
+  for (const [period, words] of [
+    ['2026.law', 'По разчетите към приетия закон'],
+    ['2027.draft', 'По проекта за бюджет 2027'],
+    ['2028.forecast', 'По прогнозата на МФ за 2028'],
+    ['2029.forecast', 'По прогнозата на МФ за 2029'],
+  ]) {
+    const { vm } = await page(`/dalg?per=${period}`);
+    expect(vm.lede).toContain(words);
+  }
+  const expected = await page('/dalg?per=2026.expected');
+  expect(expected.html).toContain('Няма данни за 2026 · Очаквано на този екран');
+  const { scope } = await page('/dalg');
+  const spec = scope.maps.share.get('debt-issues-snapshot');
+  const table = scope.maps.attached.get('debt-issues-outstanding').table;
+  const [header, ...rows] = parseCsv(csvFor({ ...spec, table }).slice(1));
+  expect(rows.length).toBeGreaterThan(0);
+  for (const row of rows) expect(row[header!.indexOf('единица')]).toBe('');
+});
+
+it('keeps the 2015 COFOG export independent of the selected draft period', async () => {
+  const { scope } = await page('/razhodi?per=2027.draft');
+  const spec = scope.maps.share.get('s07-hist');
+  const table = scope.maps.attached.get('s07-yr-cofog').table;
+  const [header, ...rows] = parseCsv(csvFor({ ...spec, table }).slice(1));
+  const row = rows.find((r) => r[0] === '2015');
+  expect(row).toBeDefined();
+  expect(row![header!.indexOf('период')]).not.toBe('2027.draft');
+});
+
+it('exports overview expenditure in the block’s explicit million-euro unit', async () => {
+  const { scope } = await page('/byudzhet-2027');
+  const spec = scope.maps.share.get('b27-razhodi');
+  const table = scope.maps.attached.get(spec.chart).table;
+  const [header, ...rows] = parseCsv(csvFor({ ...spec, table }).slice(1));
+  expect(rows.length).toBeGreaterThan(0);
+  for (const row of rows) expect(row[header!.indexOf('единица')]).toBe('млн. €');
 });

@@ -656,7 +656,7 @@ export function debtView(ctx) {
         );
   const maastricht = ctx.query.obhvat === 'maastricht';
   return {
-    lede: `Прогноза на МФ от ${date(doc.publication)}: държавен дълг по ЗДД за 2027–2029 и отделно предложените граници на законопроекта за 2027 г.`,
+    lede: `${ctx.period.status === 'draft' ? 'По проекта за бюджет' : 'По прогнозата на МФ за'} ${ctx.period.year} г. държавният дълг по ЗДД в края на годината е ${money(cellValue(d?.total))}. Разчетите са от ${date(doc.publication)}. Предложените законови граници са само за 2027 г.`,
     body: html`${field({
       id: 's17-scope',
       label: 'Обхват на дълга',
@@ -691,7 +691,7 @@ export function debtView(ctx) {
               {
                 status: 'forecast',
                 statusLabel: 'Прогноза на МФ',
-                share: { period: ctx.period.key, unit: 'По редове' },
+                share: { period: ctx.period.key },
               },
             )}${base(ctx, 's17-b-zdd', 'Държавен дълг 2027–2029', chart(spec), {
               status: 'forecast',

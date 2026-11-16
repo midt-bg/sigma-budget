@@ -949,7 +949,7 @@ function fnBlock(ctx, fm) {
     sub: hist
       ? 'За тази година разбивка по функции има само от Евростат, по друга методика от тази на бюджета.'
       : 'Деветте функции на бюджета. Натисни правоъгълник, за да видиш подробности.',
-    share: { embed: 's07-fn' },
+    share: { embed: 's07-fn', period: ctx.query.izgled === 'godini' ? undefined : ctx.period.key },
     body: views(ctx, 'funkcii', 'Изглед на разходите по функции', [
       { key: 'grafika', label: 'Разпределение', body: () => fnMap(ctx, fm, 'funkcii') },
       { key: 'tablica', label: 'Таблица', body: () => fnTable(ctx, fm, 'funkcii') },
@@ -990,7 +990,7 @@ const vidBlock = (ctx, fm) =>
     source: ctx.data.expenditure.meta.source,
     asOf: fm.asOf,
     sub: 'Същите разходи, разрязани по вид: заплати, помощи, лихви и т.н., а не по функция. Включена е вноската в бюджета на ЕС.',
-    share: { embed: 's07-vid' },
+    share: { embed: 's07-vid', period: ctx.query.izgled === 'godini' ? undefined : ctx.period.key },
     body: views(ctx, 'vid', 'Изглед на разходите по вид', [
       { key: 'grafika', label: 'Разпределение', body: () => fnMap(ctx, fm, 'vid', vidPane) },
       { key: 'tablica', label: 'Таблица', body: () => fnTable(ctx, fm, 'vid') },

@@ -290,7 +290,7 @@ function sravnenie(ctx, m) {
     source: KFP_SOURCE,
     asOf: ctx.data.budget2027?.publication,
     sub: `Основните показатели на консолидираната фискална програма за три години: ${periodWord(ctx.data, COMPARE[0])}, очаквано изпълнение и законопроект.`,
-    share: { period: COMPARE.join(' / '), unit: 'млн. €' },
+    share: { period: COMPARE.join(' / '), unit: '%' },
     body: html`<div class="stack">
       ${chart(spec)}
       <h3 class="b27-sub">В милиони евро</h3>
