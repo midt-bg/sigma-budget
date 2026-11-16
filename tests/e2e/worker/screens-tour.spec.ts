@@ -49,11 +49,14 @@ for (const display of displays)
       await page.keyboard.press('/');
       const search = page.getByRole('combobox', { name: 'Търси в сайта', exact: true });
       await search.fill('ДДС');
-      await expect(page.getByRole('option').first()).toBeVisible();
-      await page
-        .getByRole('dialog', { name: 'Търсене в сайта', exact: true })
-        .getByRole('link', { name: 'Всички резултати', exact: true })
-        .click();
+      const palette = page.getByRole('dialog', { name: 'Търсене в сайта', exact: true });
+      await expect(
+        palette
+          .getByRole('listbox', { name: 'Резултати', exact: true })
+          .getByRole('option')
+          .first(),
+      ).toBeVisible();
+      await palette.getByRole('link', { name: 'Всички резултати', exact: true }).click();
       await verify('S28');
       async function verify(id: string, name?: string) {
         await expect(page.locator('article.page[data-ready="1"]')).toHaveAttribute(

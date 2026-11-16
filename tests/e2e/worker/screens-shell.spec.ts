@@ -90,7 +90,8 @@ test.describe('phone', () => {
     await navigation.getByRole('link', { name: 'Приходи', exact: true }).click();
     await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
     await page.getByRole('button', { name: /^Година и статус на данните:/ }).click();
-    await page.getByRole('radio', { name: /2026.*Закон/i }).check();
+    // Selecting a period navigates and removes this input; the address and label confirm the choice.
+    await page.getByRole('radio', { name: /2026.*Закон/i }).click();
     await expect(page).toHaveURL(/[?&]per=2026.law/);
     await expect(page.getByRole('button', { name: /^Година и статус на данните:/ })).toContainText(
       '2026',
