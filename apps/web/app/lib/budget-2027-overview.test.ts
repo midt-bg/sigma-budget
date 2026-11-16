@@ -525,7 +525,9 @@ it('describes debt with the status of each selected budget period', async () => 
     expect(vm.lede).toContain(words);
   }
   const expected = await page('/dalg?per=2026.expected');
-  expect(expected.html).toContain('Няма данни за 2026 · Очаквано на този екран');
+  expect(expected.html).toContain('Няма съпоставими данни за дълга за този период');
+  expect(expected.html).toContain('Лихви за годината');
+  expect(expected.html).toContain('1,06');
   const { scope } = await page('/dalg');
   const spec = scope.maps.share.get('debt-issues-snapshot');
   const table = scope.maps.attached.get('debt-issues-outstanding').table;
