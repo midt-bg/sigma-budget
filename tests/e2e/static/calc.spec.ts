@@ -220,12 +220,12 @@ for (const width of [1280, 390])
       expect(salaryLink).not.toMatch(/2345|2%20345|gross/);
       expect(salaryLink.slice(salaryLink.indexOf('#') + 1)).not.toContain('?');
       const previousResult = await result.textContent();
-      await page.locator('label[for="s18-rules-until"]').click();
+      await page.locator('#s18-rules-until').check();
       await expect(result).not.toHaveText(previousResult!);
-      await page.locator('label[for="s18-rules-year"]').click();
+      await page.locator('#s18-rules-year').check();
       await expect(result).toContainText('средно на месец');
       await expect(result).toContainText('За цялата 2026');
-      await page.locator('label[for="s18-rules-from"]').click();
+      await page.locator('#s18-rules-from').check();
       await gross.fill('abc');
       await expect(result).not.toContainText(/\d,\d\d\s*€/);
       await expect(page.locator('#s18-gross-err')).toBeVisible();
