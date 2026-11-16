@@ -45,8 +45,27 @@ jobs:
             fi
           fi
           echo "environment=$target" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        if: steps.pick.outputs.environment == 'production'
+        with:
+          fetch-depth: 0
+      - name: Require a version tag on main for production
+        if: steps.pick.outputs.environment == 'production'
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Production requires a tag matching vX.Y.Z (numeric major, minor and patch)."
+            exit 1
+          fi
+          git fetch origin main
+          if ! git merge-base --is-ancestor HEAD origin/main; then
+            echo "::error::The tagged commit must be an ancestor of origin/main."
+            exit 1
+          fi
 
   security:
+    needs: [target]
     uses: ./.github/workflows/security.yml
 
   coverage:
@@ -203,6 +222,7 @@ jobs:
           if-no-files-found: ignore
 
   release:
+    needs: [target]
     # the release registry and the operator API (stage C) on the Worker with local D1 and R2, driven through the TypeScript operator
     # (./budget): acceptance scenarios 3, 4, 5, 6 and 9, rollback, the public API and the deploy's compatibility check, with synthetic
     # releases (tests/release/release_check.mjs; docs/release.md); the restore drill of scenario 10 (tests/release/restore_drill.mjs;
@@ -253,9 +273,14 @@ jobs:
             echo "::error::Production requires a tag matching vX.Y.Z (numeric major, minor and patch)."
             exit 1
           fi
-          git fetch origin main
+          git fetch origin main --tags
           if ! git merge-base --is-ancestor HEAD origin/main; then
             echo "::error::The tagged commit must be an ancestor of origin/main."
+            exit 1
+          fi
+          highest=$(git tag -l 'v*' --sort=-v:refname | sed -n '1p')
+          if [ "$TAG" != "$highest" ]; then
+            echo "::error::Production requires the highest v* version tag ($highest). Use wrangler rollback for intentional rollbacks."
             exit 1
           fi
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
@@ -316,6 +341,7 @@ jobs:
         run: node scripts/check-deployment.mjs --origin "$ORIGIN"
 
   node-inputs:
+    needs: [target]
     # Draft assets need push access. This job runs no checkout or project code;
     # the token is exposed only to the fixed download, then all bytes are pinned.
     runs-on: ubuntu-latest
