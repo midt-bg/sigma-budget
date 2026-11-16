@@ -571,7 +571,7 @@ it('SSR keeps the debt comparison table inside a closed disclosure', async () =>
       dataBase: '/data/',
       origin: url.origin,
       sigmaUrl: '',
-      feedbackEmail: '',
+      turnstileSiteKey: '',
     });
     if (!('doc' in result)) throw Error('Expected SSR document');
     const { document } = parseHTML(result.doc.view);
