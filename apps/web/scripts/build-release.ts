@@ -300,7 +300,7 @@ function fail(message: string): never {
   process.exit(1);
 }
 
-/** the built Worker under wrangler dev (the screens come from the packaged release) */
+/** the built Worker under wrangler dev, with an empty registry (the screens come from the data built from git) */
 async function startWorker(
   built: string,
   origin: string,

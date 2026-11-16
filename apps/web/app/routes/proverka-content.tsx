@@ -1,6 +1,12 @@
 import type { ReactNode } from 'react';
-import type { MetadataContext, Manifest, Validation } from '../lib/screens/metadata-types';
+import type {
+  MetadataContext,
+  Manifest,
+  JournalEntry,
+  Validation,
+} from '../lib/screens/metadata-types';
 import { num, date, href } from '../lib/legacy';
+import { NBSP } from '../../client/format.js';
 import { facts } from '../components/Cards';
 import { disclosure } from '../components/Disclosure';
 import type { Column } from '../components/MetadataTable';
@@ -21,11 +27,15 @@ const ext = (url: string, label: ReactNode) => (
     <span className="sr-only"> (в нов раздел)</span>
   </a>
 );
-export const needs = ['releases/current', 'release/manifest', 'release/validation?'];
+export const needs = [
+  'releases/current',
+  'release/manifest',
+  'release/validation?',
+  'release/journal?',
+];
 export const styles = ['s35-proverka'];
 
 const REPO = 'https://github.com/midt-bg/sigma-budget';
-const DATA_REPO = 'https://github.com/midt-bg/sigma-budget-data';
 const HEX64 = /^[0-9a-f]{64}$/;
 const short = (sha: unknown) => String(sha || '').slice(0, 12);
 const code = (t: ReactNode) => (
@@ -42,6 +52,7 @@ const sha = (s: string | undefined) => (
   </>
 );
 const fileName = (p: string) => String(p).split('/').pop();
+const KIND: Record<string, string> = { publish: 'публикуване', rollback: 'връщане' };
 // the status of a set as data/datasets.yaml gives it (real, mock, pending); one the site does not know is shown as it is, not as „Предстои“
 const statusCell = (v: string) =>
   UI_STATUS[v as keyof typeof UI_STATUS] ? statusPill(v) : code(v || '—');
@@ -58,7 +69,16 @@ const block = (id: string, title: string, body: ReactNode) => (
   </>
 );
 
-function releaseBlock(rid: string, m: Manifest) {
+function releaseBlock(
+  rid: string,
+  m: Manifest,
+  journal: JournalEntry[] | null,
+  journalFailed: boolean,
+  newer = '',
+) {
+  const mine = (journal || []).filter((e) => e.release_id === rid);
+  const first = mine.length ? mine[mine.length - 1] : null;
+  const last = mine.length ? mine[0] : null;
   return block(
     's35-release',
     'Изданието на тази страница',
@@ -78,7 +98,18 @@ function releaseBlock(rid: string, m: Manifest) {
         },
         {
           k: 'Публикувано',
-          v: 'заедно със сайта',
+          v: first
+            ? `${date(first.at.slice(0, 10))}, ревизия ${first.revision}`
+            : journalFailed
+              ? 'журналът на регистъра не се зареди'
+              : 'заедно със сайта (без регистър)',
+        },
+        {
+          k: 'Текущо от',
+          v:
+            last && last !== first
+              ? `${date(last.at.slice(0, 10))} (${KIND[last.kind] || last.kind}), ревизия ${last.revision}`
+              : null,
         },
         {
           k: 'Манифест',
@@ -90,6 +121,10 @@ function releaseBlock(rid: string, m: Manifest) {
           ),
         },
       ])}
+
+      <p className="s35-newer" data-s35-newer="" hidden={!newer}>
+        {newer}
+      </p>
 
       <p>
         {
@@ -244,7 +279,7 @@ function filesBlock(rid: string, m: Manifest) {
     <>
       <p>
         {
-          'Изходните файлове се свалят от текущото издание. Сайтът пази байтовете им непроменени, а SHA-256 показва дали копието ти е същото. Входните файлове са описани с име и хеш; не се свалят от този сайт.'
+          'Всеки файл се сваля от самото издание. Сайтът пази байтовете му непроменени, а SHA-256 до него показва дали копието ти е същото.'
         }
       </p>
 
@@ -256,9 +291,7 @@ function filesBlock(rid: string, m: Manifest) {
             <p>
               {'Източниковите и запазените междинни файлове са описани с начина на получаване в '}
               <a href={'/data/releases/' + rid + '/manifest.json'}>{'манифеста'}</a>
-              {'. Инструкциите за получаването на входовете са в '}
-              {ext(DATA_REPO, 'хранилището с данните')}
-              {'.'}
+              {'. HTML и XML файловете се свалят, а не се отварят като страница на сайта.'}
             </p>
 
             <p>
@@ -273,11 +306,7 @@ function filesBlock(rid: string, m: Manifest) {
               caption: 'Входните файлове на изданието',
               dense: true,
               columns: [
-                {
-                  key: 'path',
-                  label: 'Файл',
-                  fmt: (v) => <span title={String(v)}>{fileName(String(v))}</span>,
-                },
+                cols('Файл')[0],
                 { key: 'kind', label: 'Тип', fmt: inputKind },
                 ...cols('Файл').slice(1),
               ],
@@ -408,7 +437,7 @@ function checksBlock(v: Validation | undefined) {
 
       <p>
         {
-          'Изданието може да се пресъздаде от входните му файлове, включително запазените междинни данни, и всеки изходен файл да се сравни байт по байт. Нужни са кодът и локално копие на входните файлове:'
+          'Изданието може да се пресъздаде от входните му файлове, включително запазените междинни данни, и всеки изходен файл да се сравни байт по байт. Нужни са кодът и Docker:'
         }
       </p>
 
@@ -418,13 +447,12 @@ function checksBlock(v: Validation | undefined) {
           {REPO}
           {'.git && cd sigma-budget\n./budget reproduce --current '}
           {origin}
-          {' --originals /път/до/входовете'}
         </code>
       </pre>
 
       <p>
         {
-          'Командата чете манифеста на текущото издание, проверява локалните входни файлове и сравнява пресъздадените изходи с публикуваните байтове. Изходът е '
+          'Командата чете манифеста на текущото издание, сваля входните му файлове оттук и сглобява commit-а му в закования образ. Изходът е '
         }
         <code lang="en">{'reproduced byte for byte'}</code>
         {' или списък с разликите. Подробности: '}
@@ -462,23 +490,86 @@ function provenanceBlock() {
         </li>
 
         <li>
-          {'Текущото издание: '}
-          <a href="/api/releases/current">{'JSON указател'}</a>
-          {'.'}
+          {'Публичният API на изданията: '}
+          <a href="/api/releases/current">{'текущото издание'}</a>
+          {' и '}
+          <a href="/api/releases">{'журналът'}</a>
+          {' (JSON).'}
         </li>
       </ul>
     </>,
   );
 }
 
-function historyBlock() {
+function historyBlock(rid: string, journal: JournalEntry[] | null, journalFailed: boolean) {
+  // a registry whose journal could not be read now is not an environment without one (the screen is then not kept in the edge cache)
+  if (!journal && journalFailed)
+    return block(
+      's35-history',
+      'История на изданията',
+      <>
+        <p>
+          {'Журналът на публикуванията не може да се зареди в момента. Опитайте отново след малко.'}
+        </p>
+      </>,
+    );
+  if (!journal)
+    return block(
+      's35-history',
+      'История на изданията',
+      <>
+        <p>
+          {
+            'Тази среда няма регистър: изданието е публикувано заедно със сайта, затова няма журнал на публикуванията.'
+          }
+        </p>
+      </>,
+    );
+  const rows = journal.map((e) => ({
+    revision: e.revision,
+    release: e.release_id,
+    kind: KIND[e.kind] || e.kind,
+    at: e.at,
+    by: [e.role === 'operator' ? 'оператор' : e.role, e.by].filter(Boolean).join(' '),
+  }));
   return block(
     's35-history',
     'История на изданията',
-    <p>
-      Изданията се публикуват с кода. Манифестите и историята са в{' '}
-      {ext(`${DATA_REPO}/tree/main/data/release/releases`, 'хранилището с данните')}.
-    </p>,
+    <>
+      <p>
+        {
+          'Всяко публикуване и всяко връщане е нова ревизия. Издание, което е било текущо, остава публично на адреса си. Операторът е с псевдоним, без имейл.'
+        }
+      </p>
+
+      {dataTable({
+        id: 's35-journal',
+        caption: 'Журналът на публикуванията',
+        captionVisible: true,
+        dense: true,
+        columns: [
+          { key: 'revision', label: 'Ревизия', align: 'end', fmt: (v) => String(v) },
+          {
+            key: 'release',
+            label: 'Издание',
+            fmt: (v) => (
+              <>
+                <a href={'/data/releases/' + v + '/manifest.json'}>{code(short(v))}</a>
+                {v === rid ? ' (тази страница)' : ''}
+              </>
+            ),
+          },
+          { key: 'kind', label: 'Събитие' },
+          {
+            key: 'at',
+            label: 'Кога',
+            fmt: (v) => `${date(String(v).slice(0, 10))}${NBSP}${String(v).slice(11, 16)}`,
+          },
+          { key: 'by', label: 'Кой' },
+        ],
+        rows,
+      })}
+    </>,
   );
 }
 
@@ -487,6 +578,8 @@ export function render(ctx: MetadataContext) {
   const rid = rel && HEX64.test(rel.release_id || '') ? rel.release_id : '';
   const m = ctx.data['release/manifest'];
   if (!rid || !m) throw new Error('Missing release manifest');
+  const journal = ctx.data['release/journal']?.items || null;
+  const journalFailed = (ctx.failed || []).includes('release/journal');
   const ins = (m.inputs || []).length,
     outs = (m.outputs || []).length;
   return {
@@ -494,14 +587,16 @@ export function render(ctx: MetadataContext) {
     answer: `Данните са от издание ${short(rid)}: ${num(ins)} входни файла и ${num(outs)} файла с данни, сглобени от commit ${short(m.processing?.code?.commit)} и проверими байт по байт.`,
     body: (
       <>
-        {releaseBlock(rid, m)}
+        {releaseBlock(rid, m, journal, journalFailed, ctx.newer)}
         {coverageBlock(m)}
         {filesBlock(rid, m)}
         {codeBlock(m)}
         {checksBlock(ctx.data['release/validation'])}
         {provenanceBlock()}
-        {historyBlock()}
+        {historyBlock(rid, journal, journalFailed)}
       </>
     ),
   };
 }
+
+/** after load: is there a newer release than the one on the screen? (the page itself never switches in the middle of a visit) */

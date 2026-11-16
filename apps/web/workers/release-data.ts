@@ -8,7 +8,7 @@ export const candidateReleaseId = (): string | null =>
 export interface ReleaseData {
   /** the release the screen is drawn from */
   releaseId: string;
-  /** where the browser loads the packaged data files */
+  /** where the browser loads more files of the same release: /data/releases/<id>/data/ or, from the static assets, /data/ */
   dataBase: string;
   /** a data file, parsed as the pages read it (apps/web/client/data.js parse) */
   load(name: string): Promise<unknown>;
@@ -27,6 +27,7 @@ function fromAssets(
     releaseId,
     dataBase: '/data/',
     async load(name) {
+      if (name === 'release/journal') throw new PendingError(name); // optional journal is not part of the packaged release
       const own = { 'release/manifest': 'manifest.json', 'release/validation': 'validation.json' }[
         name
       ];

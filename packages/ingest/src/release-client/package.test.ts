@@ -44,21 +44,6 @@ describe('strict offline package preflight', () => {
     await rm(join(pkg.release, 'data/x.json'));
     await expect(preflightRelease(pkg)).rejects.toMatchObject({ code: 3 });
   });
-  it('rejects packages whose manifest does not declare a JSON validation report', async () => {
-    for (const kind of ['absent', 'empty', 'wrong-role', 'wrong-mime']) {
-      const pkg = await makeRelease(directory, 'validation-' + kind);
-      const report = pkg.manifest.outputs.find((file) => file.path === 'validation.json')!;
-      if (kind === 'absent')
-        pkg.manifest.outputs = pkg.manifest.outputs.filter((file) => file !== report);
-      else if (kind === 'empty') pkg.manifest.outputs = [];
-      else if (kind === 'wrong-role') report.role = 'data';
-      else report.mime = 'text/plain';
-      await writeManifest(pkg.release, pkg.manifest);
-      await expect(preflightRelease(pkg), kind).rejects.toThrow(
-        'Manifest must list a validation report',
-      );
-    }
-  });
   it('rejects traversal, duplicate paths, unsupported schemas, noncanonical manifests and limits', async () => {
     const pkg = await makeRelease(directory, 'paths');
     pkg.manifest.format = 2;

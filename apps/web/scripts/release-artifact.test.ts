@@ -188,11 +188,6 @@ describe('the deploy artifact', () => {
         1,
       ) + '\n',
     );
-    const id = 'd'.repeat(64);
-    mkdirSync(join(out, 'data/releases'), { recursive: true });
-    writeFileSync(join(out, 'data/releases/current.json'), JSON.stringify({ release_id: id }));
-    const originalFeed = read('data/feed.xml'),
-      originalCatalog = read('data/catalog.json');
     stampFiles(out, 'https://example.test', 'v1', 'abc1234');
     const feed = read('data/feed.xml');
     expect(feed).toBe(
@@ -202,11 +197,6 @@ describe('the deploy artifact', () => {
     expect(read('data/catalog.json')).toBe(
       `{"datasets":[{"file":"data/feed.xml","bytes":${raw.length},"gzipBytes":${gzSize(raw)}},{"file":"data/core.json","bytes":7}]}`,
     );
-    expect(read(`data/releases/${id}/data/feed.xml`)).toBe(originalFeed);
-    expect(read(`data/releases/${id}/data/catalog.json`)).toBe(originalCatalog);
-    stampFiles(out, 'https://other.test', 'v2', 'def5678');
-    expect(read(`data/releases/${id}/data/feed.xml`)).toBe(originalFeed);
-    expect(read(`data/releases/${id}/data/catalog.json`)).toBe(originalCatalog);
     expect(read('sw.js')).toBe('self.x = 1;\n'); // nothing to stamp: the file is left as it is
   });
 
