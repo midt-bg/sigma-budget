@@ -1,0 +1,20 @@
+// Editorial copy for the live site. The pinned release and downloadable files retain their original text.
+export const catalogueDescription =
+  'Набори за сваляне с източник, период, формат и дата на данните. Методика, ограничения и указания за цитиране на числата.';
+
+export const datasetDescriptions = {
+  'feed-rss':
+    'Събитията от „Новото в данните“ като RSS 2.0: месечни отчети, законодателен път, гласувания, ставки и Евростат, с дата и връзка към екрана в сайта.',
+  measures2027:
+    'Приходните и разходните мерки от таблици II-7 и II-8 на АСБП 2027–2029: кратко описание, дословен откъс от мотивите и страница в документа.',
+  schema:
+    'Описание по JSON Schema на всеки публикуван JSON файл: полета, типове и задължителни ключове, за автоматична проверка и четене с код.',
+};
+
+// Only meta/OG/Twitter copy; definitions and JSON-LD remain sourced from glossary.json.
+export const termMetaDescriptions = {
+  'balansiran-byudzhet':
+    'Бюджет, при който приходите и разходите са равни. Бюджетното салдо е нула: няма нито дефицит, нито излишък.',
+  'byudzheten-transfer':
+    'Прехвърляне на средства от един бюджет към друг. В консолидираната фискална програма трансферите между бюджетите се изключват, за да не се броят два пъти.',
+};

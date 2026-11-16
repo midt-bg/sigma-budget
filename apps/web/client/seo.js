@@ -1,3 +1,4 @@
+import { termMetaDescriptions } from './production/launch-texts.js';
 import { resolvePeriod, DEFAULT_PERIOD } from './periods.js';
 // The <head> of a screen for search engines, social cards and answer engines (SEO/GEO/AEO). The router calls apply() after every paint;
 // the server writes the same head into the first response (apps/web/app/root.tsx, head()), so one place decides what a crawler reads.
@@ -226,11 +227,15 @@ export function head(vm, docTitle) {
   const question = plain(vm.question) || (!vm.docTitle && /\?\s*$/.test(heading) ? heading : ''); // /prihodi/dds answers about ДДС, not the heading's question
   const answer = plain(vm.answer) || (question && /\d/.test(lede) ? lede : '');
   const desc = clip(answer || lede || vm.route.desc || SITE);
+  const metaDesc =
+    vm.route.id === 'S03' && vm.view === 'ready'
+      ? clip(termMetaDescriptions[vm.params?.term] || desc)
+      : desc;
   const noindex =
     vm.route.id === 'S30' || vm.route.bare || !!vm.demo || vm.view === 'error' || HASH;
   const m = (attr, key, content) => ({ tag: 'meta', attrs: { [attr]: key, content } });
   const tags = [
-    m('name', 'description', desc),
+    m('name', 'description', metaDesc),
     m(
       'name',
       'robots',
@@ -241,7 +246,7 @@ export function head(vm, docTitle) {
     m('property', 'og:site_name', SITE),
     m('property', 'og:locale', 'bg_BG'),
     m('property', 'og:title', title),
-    m('property', 'og:description', desc),
+    m('property', 'og:description', metaDesc),
     m('property', 'og:url', url),
     m('property', 'og:image', o + '/og.png'),
     m('property', 'og:image:width', '1200'),
@@ -249,7 +254,7 @@ export function head(vm, docTitle) {
     m('property', 'og:image:alt', `${SITE}: ${title}`),
     m('name', 'twitter:card', 'summary_large_image'),
     m('name', 'twitter:title', docTitle || title),
-    m('name', 'twitter:description', desc),
+    m('name', 'twitter:description', metaDesc),
   ];
   const ld = noindex
     ? '{}'
