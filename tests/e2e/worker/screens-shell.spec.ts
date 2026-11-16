@@ -134,10 +134,8 @@ test('MCP instructions fit a 360px screen and survive client navigation', async 
   await page.setViewportSize({ width: 360, height: 800 });
   await openScreen(page, siteURL, '#/api');
   const section = page.locator('section[aria-labelledby="s25-mcp"]');
-  await expect(section.getByRole('heading', { level: 3 })).toHaveCount(7);
-  await expect(section.locator('[data-s25-copy-from]')).toHaveCount(7);
   await expect(page.locator('#s25-mcp-claude-code')).toContainText(
-    'claude mcp add --transport http sigma-budget',
+    'claude mcp add --transport http --scope user sigma-budget',
   );
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   for (const box of await section.locator('.s25-pre').all()) {

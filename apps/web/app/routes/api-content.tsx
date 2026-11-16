@@ -763,7 +763,7 @@ function mcpBlock(origin: string) {
         <div className="s25-mcp-tool" key={item.id}>
           <h3 className="s25-h3">{item.title}</h3>
           <p>{item.note}</p>
-          {snippet(`s25-mcp-${item.id}`, item.title, item.code)}
+          {snippet(`s25-mcp-${item.id}`, item.label, item.code)}
           <p className="small">
             <a href={item.docs} target="_blank" rel="noopener">
               Официални инструкции за {item.title}
@@ -800,7 +800,7 @@ export function render(ctx: MetadataContext) {
         }),
       );
   return {
-    lede: 'Всички публикувани данни са достъпни като файлове, които можеш да свалиш и да прочетеш с код. Тук са адресите, полетата и примерите за използване.',
+    lede: 'Свали публикуваните данни и ги прочети с код или свържи AI асистент чрез MCP. Тук са адресите, полетата и примерите за използване.',
     body: (
       <>
         <nav className="s25-toc" aria-label="На тази страница">

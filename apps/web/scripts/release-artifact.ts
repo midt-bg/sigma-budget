@@ -1,3 +1,4 @@
+import { mcpInstall } from '../client/mcp-install.ts';
 import { checkReceipt } from './candidate-data.ts';
 // The parts of the release build (build-release.ts) that need no browser: the address rules of the crawl, the checks of one screen, the
 // files written into build/client after the crawl (sitemap.xml, robots.txt, llms.txt, llms-full.txt, _headers), the stamping of the copied
@@ -359,11 +360,33 @@ export function writeExtras(
   }
   L.push(
     '',
+    '## MCP: свързване',
+    '',
+    `Адрес: ${origin}/mcp. Транспорт: Streamable HTTP. Без удостоверяване, регистрация или API ключ. Име: sigma-budget.`,
+    'Достъп само за четене. При отговор посочвай източника, периода, мерната единица и датата на данните.',
+    '',
+    ...mcpInstall(origin).flatMap((item) => [
+      `### ${item.title}`,
+      '',
+      item.note,
+      '',
+      '```',
+      item.code,
+      '```',
+      '',
+      `- [Официални инструкции](${item.docs})`,
+      '',
+    ]),
+  );
+  L.push(
+    '',
     '## Данни',
     '',
     `- [Каталог на наборите (JSON)](${origin}/data/catalog.json): всички файлове с данни, с източник, период, обхват и статус`,
     `- [Отворени данни и MCP](${url('/api')}): как се четат файловете с код`,
     `- [Какво ново (RSS)](${origin}/data/feed.xml): последните отчети, решения и данни`,
+    '',
+    `- [Текущо издание (API)](${origin}/api/releases/current): версия на публикуваните данни`,
     '',
     '## Optional',
     '',

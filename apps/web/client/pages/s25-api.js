@@ -371,7 +371,7 @@ function mcpBlock() {
     ${mcpInstall(siteUrl()).map(
       (item) => html`<div class="s25-mcp-tool">
       <h3 class="s25-h3">${item.title}</h3><p>${item.note}</p>
-      ${snippet(`s25-mcp-${item.id}`, item.title, item.code)}
+      ${snippet(`s25-mcp-${item.id}`, item.label, item.code)}
       <p class="small"><a href="${item.docs}" target="_blank" rel="noopener">Официални инструкции за ${item.title}<span class="sr-only"> (друг сайт, в нов раздел)</span></a></p>
     </div>`,
     )}`,
@@ -402,7 +402,7 @@ export async function render(ctx) {
         }),
       );
   return {
-    lede: 'Всички публикувани данни са достъпни като файлове, които можеш да свалиш и да прочетеш с код. Тук са адресите, полетата и примерите за използване.',
+    lede: 'Свали публикуваните данни и ги прочети с код или свържи AI асистент чрез MCP. Тук са адресите, полетата и примерите за използване.',
     body: html`<nav class="s25-toc" aria-label="На тази страница">${chips({ items: toc.map(([id, label]) => ({ label, href: at(id, chosen) })) })}</nav>
       ${mcpBlock()}${stateBlock(M, withFiles, waiting)}${filesBlock(M, waiting)}${read}${licenceBlock()}${versionsBlock(ctx, M)}`,
   };

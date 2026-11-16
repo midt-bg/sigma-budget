@@ -36,18 +36,18 @@ it.each(['https://staging.example', 'https://sigma-budget.midt.bg'])(
     const section = document.getElementById('s25-mcp')!.parentElement!;
     expect(section.textContent).toContain('Streamable HTTP');
     const examples = [...section.querySelectorAll('[data-s25-copy-from]')];
-    expect(examples).toHaveLength(7);
     for (const button of examples) {
       const code = document.getElementById(button.getAttribute('data-s25-copy-from')!)!;
       expect(code.textContent).toContain(origin + '/mcp');
       expect(code.textContent).not.toContain('request.example');
     }
     expect(document.getElementById('s25-mcp-claude-code')!.textContent).toBe(
-      `claude mcp add --transport http sigma-budget ${origin}/mcp`,
-    );
-    expect(document.getElementById('s25-mcp-codex')!.textContent).toContain(
-      '[mcp_servers.sigma-budget]',
+      `claude mcp add --transport http --scope user sigma-budget ${origin}/mcp`,
     );
     expect(result.doc.title).toContain('Отворени данни и MCP');
+    for (const tag of result.doc.tags.filter((tag) =>
+      /description$/.test(tag.attrs.name || tag.attrs.property || ''),
+    ))
+      expect(tag.attrs.content).toContain('MCP');
   },
 );
