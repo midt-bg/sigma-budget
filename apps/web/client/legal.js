@@ -7,7 +7,7 @@
 // workers/api/vrazka.ts stores text/context/optional contact in private R2; vrazka-window.ts expires keyed IP hashes
 // at the hourly boundary. workers/release-rate-limit.ts handles the separate minute-long request limit.
 // wrangler.jsonc disables invocation logs; workers/mcp/handler.ts does not log conversation arguments.
-// Team access, including automated tools, and manual deletion are described in docs/signali.md.
+// Team access, possible external AI processing, and manual deletion are described in docs/signali.md.
 // Keep this copy aligned with those implementations; Turnstile processes the IP during verification.
 import { html } from './html.js';
 import { href } from './routes.js';
@@ -55,7 +55,7 @@ export const PAGES = {
           p: [
             'Формулярът ',
             { route: ['S27'], text: '„Обратна връзка“' },
-            ' изпраща текста, контекста (например екран, число, източник или термин) и имейла, само ако го дадете. Сигналите се пазят в частно хранилище в ЕС до ръчното им изтриване. Четат се от екипа на СИГМА Бюджет в МИДТ, включително с автоматизирани инструменти. Не включвайте лични данни в текста.',
+            ' изпраща текста, контекста (например екран, число, източник или термин) и имейла, само ако го дадете. Сигналите се пазят в частно хранилище в ЕС до ръчното им изтриване. Сигналите се четат от екипа на СИГМА Бюджет в МИДТ и може да се обработват и с външна услуга с изкуствен интелект. Не включвайте лични данни в текста.',
           ],
         },
       ],

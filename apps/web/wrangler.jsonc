@@ -51,7 +51,7 @@
     "ENVIRONMENT": "production",
     "SITE_ORIGIN": "https://sigma-budget.midt.bg",
     "SIGMA_URL": "https://sigma.midt.bg/",
-    "TURNSTILE_SITE_KEY": "",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAGEEA_Evr2vZ-L6L",
     "NOINDEX": "",
     "OPENAI_APPS_CHALLENGE": ""
   },
@@ -91,7 +91,7 @@
         "ENVIRONMENT": "staging",
         "SITE_ORIGIN": "https://sigma-budget-staging.cf-midt.workers.dev",
         "SIGMA_URL": "https://sigma.midt.bg/",
-        "TURNSTILE_SITE_KEY": "",
+        "TURNSTILE_SITE_KEY": "0x4AAAAAAGEECezaExSQiHmj",
         "NOINDEX": "1",
         "OPENAI_APPS_CHALLENGE": ""
       }
