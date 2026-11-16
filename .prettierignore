@@ -16,8 +16,6 @@ packages/ingest/src/production/historical/**
 # Frozen donors, oracles and byte-comparison fixtures (never reformat).
 **/fixtures/**
 **/__fixtures__/**
-# Historical design/source references are replay evidence.
-reference/**
 # The release operator reads the frozen environments byte for byte.
 apps/etl/environments.json
 # Vendored assets retain upstream bytes.

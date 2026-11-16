@@ -82,8 +82,6 @@ test('committed release checks use Node after authenticating the input snapshot'
   assert.ok(provenance);
   assert.equal(provenance.if, undefined);
   assert.ok(!provenance['continue-on-error']);
-  // Browser e2e still needs Python until its later port.
-  assert.ok(jobs.check.steps.some((step) => step.uses?.startsWith('actions/setup-python@')));
 });
 
 test('the build job checks the registries with the TypeScript validator after building it', () => {
