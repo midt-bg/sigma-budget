@@ -1,5 +1,5 @@
 import { siteUrl } from '../../client/seo.js';
-import { mcpInstall } from '../../client/mcp-install';
+import { mcpInstall } from '../../client/mcp-install.js';
 import type { ReactNode } from 'react';
 import type {
   Catalogue,
