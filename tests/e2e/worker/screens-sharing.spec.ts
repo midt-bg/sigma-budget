@@ -8,6 +8,23 @@ for (const entry of sharingCases)
     test.use({ display: entry.display, permissions: ['clipboard-read', 'clipboard-write'] });
     test('copy, reopen target, CSV and PNG', async ({ page, browser, browserEvents, siteURL }) => {
       await openScreen(page, siteURL, entry.samples[0]!);
+      const debtFigures =
+        entry.id === 'S17'
+          ? await page
+              .locator('#s17-b-kpi .kpi')
+              .evaluateAll((tiles) =>
+                tiles.map((tile) => [
+                  tile.querySelector('.kpi-label')!.textContent!.trim(),
+                  tile.querySelector('.kpi-num')!.textContent!.trim(),
+                  tile.querySelector('.kpi-unit')?.textContent?.trim() || '',
+                  tile
+                    .querySelector('.kpi-sub')!
+                    .textContent!.split(' · ')[0]!
+                    .split('Данни към')[0]!
+                    .trim(),
+                ]),
+              )
+          : null;
       const opener = page
         .getByRole('button', { name: /^Сподели/ })
         .filter({ visible: true })
@@ -50,6 +67,14 @@ for (const entry of sharingCases)
         expect(text).not.toMatch(/undefined|NaN/);
         const [header, ...rows] = parseCsv(text);
         expect(rows.length).toBeGreaterThan(0);
+        if (debtFigures) {
+          expect(rows).toHaveLength(3);
+          const columns = ['Показател', 'Стойност', 'Мерна единица', 'Година или дата'];
+          const normalize = (text: string) => text.replace(/\s+/g, ' ').trim();
+          expect(
+            rows.map((row) => columns.map((column) => normalize(row[header!.indexOf(column)]!))),
+          ).toEqual(debtFigures.map((row) => row.map(normalize)));
+        }
         const source = header!.indexOf('източник');
         expect(source).toBeGreaterThanOrEqual(0);
         for (const row of rows) {

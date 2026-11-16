@@ -56,7 +56,30 @@ export function debtKeyFigures(ctx, { mln, pg, scope, source, asOf, debtReason }
     asOf: [asOf, interestDate].filter(Boolean).sort().pop(),
     status: ['report', 'law'].includes(period.status) ? 'real' : 'forecast',
     statusLabel: period.label,
-    share: { period: period.key, text },
+    share: {
+      period: period.key,
+      text,
+      table: {
+        columns: [
+          'Показател',
+          'Стойност',
+          'Мерна единица',
+          'Година или дата',
+          'Данни към',
+          'Обхват на показателя',
+          'Бележка',
+        ],
+        rows: values.map((value, i) => [
+          labels[i],
+          value ?? DASH,
+          units[i],
+          years[i],
+          dates[i] ? date(dates[i]) : '',
+          i === 2 ? 'КФП' : scope === 'zdd' ? 'Държавен дълг' : 'Дълг по Маастрихт',
+          value == null ? reasons[i] : i === 2 && prelim ? 'Предварителни данни' : '',
+        ]),
+      },
+    },
     body: kpiGrid(
       [tile(0, 'dyal-ot-bvp'), tile(1, 'darzhaven-dalg', mln), tile(2, 'lihva', interest)],
       { label: `Дълг и лихви · ${period.label}`, cls: 's17-key-figures' },
