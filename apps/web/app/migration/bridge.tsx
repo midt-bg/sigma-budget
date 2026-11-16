@@ -136,7 +136,7 @@ export async function loadModel(
       dataBase: meta('data-base') || '/data/',
       origin: meta('site-origin'),
       sigmaUrl: meta('sigma-url'),
-      feedbackEmail: meta('feedback-email'),
+      turnstileSiteKey: meta('turnstile-site-key'),
     },
     get: <T,>(name: string) => data.get(name) as T | undefined,
     load: (name) => data.load(name, { signal }),

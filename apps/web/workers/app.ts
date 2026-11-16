@@ -1,3 +1,5 @@
+import { vrazka } from './api/vrazka';
+export { VrazkaLimiter } from './vrazka-limit';
 import { screenCacheKey } from '../app/lib/cache';
 // The site renders screens and serves the release packaged with the build. Besides the screens and the data files the Worker answers
 //   /.well-known/openai-apps-challenge  the token of OpenAI's domain check (OPENAI_APPS_CHALLENGE), else 404
@@ -23,7 +25,7 @@ declare module 'react-router' {
       dataBase: string;
       origin: string;
       sigmaUrl: string;
-      feedbackEmail: string;
+      turnstileSiteKey: string;
     };
   }
 }
@@ -34,7 +36,7 @@ interface Scope {
   releaseId: string;
   dataBase: string;
   sigmaUrl: string;
-  feedbackEmail: string;
+  turnstileSiteKey: string;
   state: Record<string, unknown>;
   data: Map<string, unknown>;
   load: ReleaseData['load'];
@@ -238,6 +240,7 @@ async function currentOutput(
 
 async function dispatch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const url = new URL(request.url);
+  if (url.pathname === '/api/vrazka') return vrazka(request, env);
   if (url.pathname.startsWith('/admin/')) return new Response('Not found', { status: 404 });
   if (url.pathname === '/mcp' || url.pathname === '/mcp/') return mcp(request, env, url); // the address as people paste it, with or without the slash
   if (request.method !== 'GET' && request.method !== 'HEAD') {
@@ -276,7 +279,7 @@ async function dispatch(request: Request, env: Env, ctx: ExecutionContext): Prom
     dataBase: data.dataBase,
     origin,
     sigmaUrl,
-    feedbackEmail: env.FEEDBACK_EMAIL || '',
+    turnstileSiteKey: env.TURNSTILE_SITE_KEY || '',
   };
   // the address the screen is drawn from: the query its screen reads, nothing else; null for a path that is not a screen (it is never kept)
   const search = screenSearch(url.pathname, url.search);
@@ -289,7 +292,7 @@ async function dispatch(request: Request, env: Env, ctx: ExecutionContext): Prom
     releaseId: data.releaseId,
     dataBase: data.dataBase,
     sigmaUrl,
-    feedbackEmail: release.feedbackEmail,
+    turnstileSiteKey: release.turnstileSiteKey,
     state: requestState(screenUrl.searchParams.get('per')),
     data: new Map(),
     load: data.load,

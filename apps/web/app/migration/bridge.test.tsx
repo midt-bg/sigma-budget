@@ -17,7 +17,7 @@ const model: TextScreenModel = {
   query: {},
   core: {},
   glossary: {},
-  release: { id: '', dataBase: '/data/', origin: '', sigmaUrl: '', feedbackEmail: '' },
+  release: { id: '', dataBase: '/data/', origin: '', sigmaUrl: '', turnstileSiteKey: '' },
 };
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 afterEach(() => {

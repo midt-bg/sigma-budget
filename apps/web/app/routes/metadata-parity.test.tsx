@@ -25,7 +25,7 @@ const release = {
   dataBase: '/data/',
   origin: manifest.origin,
   sigmaUrl: '',
-  feedbackEmail: '',
+  turnstileSiteKey: '',
 };
 const load = async <T,>(name: string): Promise<T> => {
   if (!(name in docs)) throw new Error(name);
