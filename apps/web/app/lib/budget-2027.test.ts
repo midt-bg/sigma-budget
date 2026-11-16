@@ -274,6 +274,12 @@ it('summarizes the investment programme without provenance noise', async () => {
   );
   expect(byInstitution).toHaveLength(9);
   expect(byInstitution[8]?.textContent).toMatch(/^Други \d+ ведомства/);
+  // The rows add up to the 2027 total of the programme.
+  const listed = scope.maps.attached.get('s34-projects-by-institution').table();
+  expect(listed.rows.reduce((sum: number, r: any) => sum + r[1], 0)).toBeCloseTo(
+    doc.projectAnnualSums['2027.draft'].value / 1000,
+    6,
+  );
   const links = [...byInstitution].flatMap(
     (row) => row.querySelector('a')?.getAttribute('href') ?? [],
   );
@@ -301,7 +307,10 @@ it('summarizes the investment programme without provenance noise', async () => {
   for (const href of links) {
     const q = String(new URL(href, 'https://budget.test').searchParams.get('q'));
     const expected = doc.projects
-      .filter((r: any) => r.institution === q || r.institution.endsWith(`/${q}`))
+      // the label and the search name the executor: the part after „/“, with the opening quote set right
+      .filter(
+        (r: any) => r.institution.slice(r.institution.indexOf('/') + 1).replace(/^“/, '„') === q,
+      )
       .map((r: any) => r.id);
     const followed = await page(href);
     const found = tableData(followed.scope.maps.table.get('s34-project-details')).rows.map(

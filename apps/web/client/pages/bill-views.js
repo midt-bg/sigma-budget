@@ -708,13 +708,8 @@ const printedSum = (cells) => {
 };
 const toMln = (v) => (v == null ? null : v / 1000);
 // "Министерство на транспорта и съобщенията/Национална компания „…“" → the company that carries out the project
-const shortInstitution = (name) =>
-  (name.includes('/') ? name.slice(name.indexOf('/') + 1) : name)
-    .replace(/^Национална компания /, 'НК ')
-    .replace(/^Държавно предприятие /, 'ДП ')
-    .replace(/^Министерство на /, 'М-во на ')
-    .replace(/^“/, '„')
-    .trim();
+const executor = (name) =>
+  (name.includes('/') ? name.slice(name.indexOf('/') + 1) : name).replace(/^“/, '„').trim();
 const projectCells = (r) => FRAMEWORK.map((_, i) => r.cells[i]);
 const projectColumns = (unit, d) => [
   {
@@ -757,19 +752,16 @@ export function projectsBlocks(ctx, doc) {
     .map(([name, cells]) => ({ name, value: printedSum(cells) }))
     .filter((x) => x.value != null)
     .sort((a, b) => b.value - a.value);
-  // The same list as „Капиталови разходи по ведомства“ on this page; a name opens the full list filtered to its projects.
+  // The same list as „Капиталови разходи по ведомства“ on this page; a name opens the full list searched for it.
   const SHOWN = 8;
   const rest = ranked.slice(SHOWN);
   const others = printedSum(rest.map((x) => ({ value: x.value })));
   const items = [
-    ...ranked.slice(0, SHOWN).map((x) => {
-      const executor = x.name.includes('/') ? x.name.slice(x.name.indexOf('/') + 1) : x.name;
-      return {
-        label: shortInstitution(x.name),
-        value: toMln(x.value),
-        href: ctx.href('S34', {}, { q: executor, to: 's34-all-projects' }),
-      };
-    }),
+    ...ranked.slice(0, SHOWN).map((x) => ({
+      label: executor(x.name),
+      value: toMln(x.value),
+      href: ctx.href('S34', {}, { q: executor(x.name), to: 's34-all-projects' }),
+    })),
     ...(others == null
       ? []
       : [{ label: `Други ${num(rest.length)} ведомства`, value: toMln(others) }]),
