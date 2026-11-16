@@ -194,7 +194,7 @@ jobs:
       - name: Sharing and export
         run: pnpm test:e2e --project=static share.spec.ts
       - name: Acceptance figures
-        run: pnpm test:e2e --project=static accept.spec.ts overlap.spec.ts
+        run: pnpm test:e2e --project=static accept.spec.ts overlap.spec.ts dalg-key-figures.spec.ts
       - name: Motion
         run: pnpm test:e2e --project=static motion.spec.ts
       # A failed test step prevents subsequent default-success test steps from

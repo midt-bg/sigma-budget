@@ -14,7 +14,6 @@ const HISTORICAL_DEBT_TARGETS = [
   's17-b-fin-table',
   's17-b-guar',
   's17-b-interest',
-  's17-b-kpi',
   's17-b-limits',
   's17-b-maastricht',
   's17-b-maturities',
