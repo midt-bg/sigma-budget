@@ -1,10 +1,7 @@
 {
   ".github/workflows/site.yml": [
-    "python -m pip install --require-hashes -r tests/requirements-dev.lock -r pipeline/requirements.lock",
-    "python -m pip install --no-deps -e pipeline",
     "pnpm exec playwright install --with-deps chromium",
-    "python -m pip install --require-hashes -r tests/requirements-dev.lock -r pipeline/requirements.lock",
-    "python -m pip install --no-deps -e pipeline",
+    "python -m pip install --require-hashes -r tests/requirements-dev.lock",
     "pnpm exec playwright install --with-deps chromium",
     "python -m tests.e2e.screens --url http://127.0.0.1:8814/",
     "python -m tests.e2e.visual_audit --url http://127.0.0.1:8814/",
@@ -14,7 +11,6 @@
     "node tests/release/compat_check.mjs --env-url \"$STAGING_ORIGIN\"",
     "pnpm exec playwright install --with-deps chromium",
     "node tests/release/budget_provenance_check.mjs",
-    "./budget check-site --inputs \"$RUNNER_TEMP/registered-node-inputs\"",
-    "python -m unittest discover -s tests/pipeline -t ."
+    "./budget check-site --inputs \"$RUNNER_TEMP/registered-node-inputs\""
   ]
 }
