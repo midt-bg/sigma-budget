@@ -515,4 +515,5 @@ export function frameHtml(vm) {
     ${vm.next || ''}
   </article>`;
 }
-export const docTitle = (vm) => `${vm.docTitle || vm.title} · ${SITE}`;
+export const docTitle = (vm) =>
+  vm.route.id === 'S01' ? `${SITE} · ${vm.title}` : `${vm.docTitle || vm.title} · ${SITE}`;
