@@ -3,7 +3,7 @@
 //   чл. 1 (the main numbers changed) → отделните бюджети → 46-те бюджета → Документи → Следващият бюджет. No new content; the blocks are the same.
 // Data, only through `needs`:
 //   law          D10+D11 REAL  the bill (01.07.2026) read line by line against the adopted law (ДВ бр. 69 от 31.07.2026 г.): art. 1, the changes by article,
-//                              the 46 budgets, the legislative timeline, the counts and the document links of the 69 proposals (their content is pending: P07)
+//                              the 46 budgets, the legislative timeline, the counts and the document links of the 69 proposals
 //   ministries?  D08+D09 REAL  optional: the budgets whose programme budget differs from the law, and those whose programmes are still pending (P03)
 //   core                       the planned GDP (for „% от БВП“ in the headline numbers)
 // One screen, no sub-routes: both versions (bill and law) are always shown side by side, so the period switch changes nothing here.

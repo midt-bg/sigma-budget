@@ -59,18 +59,6 @@ async function setOf(ctx: Ctx, slug: string): Promise<CatalogSet> {
   return set;
 }
 
-/** the pending parts of a set (P02…), with what is missing and where it is expected */
-async function pendingOf(ctx: Ctx, ids: unknown) {
-  if (!Array.isArray(ids) || !ids.length) return undefined;
-  const c = await core(ctx);
-  return ids
-    .filter((id): id is string => typeof id === 'string')
-    .map((id) => {
-      const p = c.pending[id];
-      return p ? { id, title: p.title, reason: p.reason, expected: p.expected } : { id };
-    });
-}
-
 const pendingNote =
   'Тези данни не са в текущото издание: числа няма, а не са нули. Причината и къде се очакват са в `reason` и `expected`.';
 
@@ -136,7 +124,6 @@ async function fetchTool(ctx: Ctx, args: Args) {
         ]
           .filter(Boolean)
           .join(' '),
-        set.status === 'pending' ? `${pendingNote} Очаква се: ${set.expected || '—'}.` : '',
         ...format.read,
       ]
         .filter(Boolean)
@@ -238,8 +225,6 @@ async function listDatasets(ctx: Ctx, args: Args) {
           ...(s.unit ? { unit: s.unit } : {}),
           ...(s.bytes ? { bytes: s.bytes } : {}),
           ...(s.parts?.length ? { parts: s.parts.length } : {}),
-          ...(s.status === 'pending' ? { reason: s.description, expected: s.expected } : {}),
-          ...(s.pending?.length ? { pending: await pendingOf(ctx, s.pending) } : {}),
           page_url: screenUrl(ctx, 'S24', { set: s.slug }),
           ...(name ? { file_url: fileUrl(ctx, name) } : {}),
         };
@@ -264,8 +249,6 @@ async function describeDataset(ctx: Ctx, args: Args) {
     sources: sources(c, set.source),
     page_url: screenUrl(ctx, 'S24', { set: set.slug }),
   };
-  if (set.status === 'pending')
-    return { ...base, note: pendingNote, reason: set.description, expected: set.expected };
   const format = FORMATS[set.slug] || GENERIC;
   const name = fileName(set);
   let parts: { code: string; name?: string }[] | undefined;
@@ -292,7 +275,6 @@ async function describeDataset(ctx: Ctx, args: Args) {
     how_to_read: format.read,
     examples: format.examples,
     ...(parts ? { parts } : {}),
-    ...(set.pending?.length ? { pending: await pendingOf(ctx, set.pending) } : {}),
     traps: related(cat.traps),
     methodology: related(cat.methodology),
   };
@@ -310,15 +292,6 @@ async function getData(ctx: Ctx, args: Args) {
     slug: set.slug,
     page_url: screenUrl(ctx, 'S24', { set: set.slug }),
   };
-  if (set.status === 'pending')
-    return {
-      ...head,
-      status: 'pending',
-      value: null,
-      note: pendingNote,
-      reason: set.description,
-      expected: set.expected,
-    };
   let name: string | null;
   if (set.parts?.length) {
     if (!part)
@@ -581,9 +554,9 @@ export const TOOLS = [
     name: 'list_datasets',
     title: 'Наборите от данни',
     description:
-      'Наборите в текущото издание: заглавие, статус, период, към коя дата са, мерна единица и размер. Набор със статус pending още няма данни; при него са причината и къде се очакват.',
+      'Наборите в текущото издание: заглавие, статус, период, към коя дата са, мерна единица и размер.',
     inputSchema: object({
-      group: str('По избор: само една група (budget, execution, local, text, service, pending).'),
+      group: str('По избор: само една група (budget, execution, local, text, service).'),
     }),
     outputSchema: anything({ release_id: { type: 'string' }, datasets: { type: 'array' } }, [
       'release_id',

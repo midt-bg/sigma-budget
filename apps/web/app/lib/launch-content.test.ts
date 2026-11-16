@@ -6,6 +6,7 @@ import { parse } from '../../client/data.js';
 import { requestState } from '../../client/store.js';
 import { build, frameHtml, resolve } from '../../client/render.js';
 import * as catalogue from '../../client/catalog.js';
+import { availableCatalog } from '../../client/available-catalog.js';
 import * as feed from '../../client/pages/s16-novo.js';
 import * as reactFeed from '../routes/novo-content';
 
@@ -44,18 +45,14 @@ async function documentAt(address: string) {
   }));
   return parseHTML(String(frameHtml(await build(route.route, route.params, route.query)))).document;
 }
-it('excludes pending sets from lookup, counts, filters and related links without changing the release', async () => {
-  const original = await load('catalog');
-  const before = JSON.stringify(original);
-  const model = catalogue.model(original, undefined);
-  expect(model.counts.pending).toBe(0);
-  expect(model.counts.datasets).toBe(
-    original.datasets.filter((s: any) => s.status !== 'pending').length,
-  );
-  for (let i = 1; i <= 7; i++) expect(model.find(`p0${i}`)).toBeNull();
-  for (const item of [...model.traps, ...model.methods])
-    expect(item.related.every((s: any) => s.status !== 'pending')).toBe(true);
-  expect(JSON.stringify(original)).toBe(before);
+it('shows only available datasets in the catalogue', async () => {
+  const doc = await documentAt('/danni');
+  const catalogue = doc.querySelector('#s24-sets')!;
+  expect(catalogue.textContent?.toUpperCase()).not.toContain('НЯМА ДАННИ');
+  expect(catalogue.textContent).not.toMatch(/P02|P04|P07/i);
+  expect(
+    catalogue.querySelector('[data-slug="p02"],[data-slug="p04"],[data-slug="p07"]'),
+  ).toBeNull();
 });
 for (const path of ['/danni', '/izpalnenie', '/izpalnenie/byudzheti', '/5-minuti', '/']) {
   it(`${path} has no future-data notices or pending catalogue links`, async () => {
@@ -135,4 +132,10 @@ it('keeps the debt forecast page and appends the dated bulletin snapshot without
   expect(text).toContain('XS2890436087');
   expect(text).toContain('не е превалутирана');
   expect(document.querySelector('#debt-issues-outstanding')).not.toBeNull();
+});
+
+it.each([undefined, 'unknown'])('excludes datasets with an unverified status (%s)', (status) => {
+  const input = { datasets: [{ id: 'test-set', slug: 'test-set', title: 'Тестов набор', status }] };
+  expect(catalogue.model(input).sets).toEqual([]);
+  expect(availableCatalog(input).datasets).toEqual([]);
 });

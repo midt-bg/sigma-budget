@@ -16,7 +16,7 @@ import { callout, facts, ext, reportLink } from '../ui/cards.js';
 import { chips } from '../ui/chips.js';
 import { disclosure } from '../ui/disclosure.js';
 import { field, selectInput } from '../ui/forms.js';
-import { pendingState, emptyState } from '../ui/states.js';
+import { emptyState } from '../ui/states.js';
 import { STATUS, statusPill } from '../ui/status.js';
 import { srcShort } from '../ui/source.js';
 import * as share from '../share.js';
@@ -45,7 +45,6 @@ const ADJ = {
   partial: ['частичен', 'частични'],
   forecast: ['прогнозен', 'прогнозни'],
   mock: ['примерен', 'примерни'],
-  pending: ['предстоящ', 'предстоящи'],
 };
 const bgList = (a) =>
   a.length < 2 ? a.join('') : `${a.slice(0, -1).join(', ')} и ${a[a.length - 1]}`;
@@ -59,8 +58,6 @@ const breakdown = (M) =>
 const countText = (L) => `Показани: ${num(L.n, 0)} от ${plural(L.total, 'набор', 'набора')}`;
 
 const pubOf = (s) => s.publisher.replace(/;\s*/g, ', ');
-const publishers = (set, M) =>
-  uniq(set.source.map((k) => pubOf(M.src(k))).filter(Boolean)).join(', ');
 const isMulti = (set) => !set.file && set.parts.length > 0;
 const fmtOf = (set) => set.format || set.ext.toUpperCase();
 const fileInfo = (set) =>
@@ -87,8 +84,6 @@ const HISTORICAL_SETS = new Set([
   'geo-obshtini',
 ]);
 const screenHref = (set, key) => periodHref(HISTORICAL_SETS.has(set.slug) ? '2026.law' : null, key);
-const screenLinks = (set) =>
-  joinList(set.screenRoutes.map((r) => html`<a href="${screenHref(set, r.key)}">${r.title}</a>`));
 
 /** a section: the h2 carries the id (the target of ?to= and of the share block), so a jump lands on a heading */
 function block(id, title, build, o = {}) {
@@ -146,12 +141,6 @@ function srcCell(set, M, keys) {
 }
 
 function rowMeta(set, M) {
-  if (set.status === 'pending') {
-    return [
-      { k: 'Откъде ще дойдат', v: set.expected || publishers(set, M) },
-      { k: 'Засяга', v: set.screenRoutes.length ? screenLinks(set) : '' },
-    ];
-  }
   const real = set.source;
   return [
     set.mock
@@ -172,7 +161,6 @@ function rowMeta(set, M) {
 }
 
 function rowGet(set) {
-  if (set.status === 'pending') return '';
   if (set.file) {
     return html`<a class="btn btn-sm s24-get" href="${set.file}" download="${C.dlName(set)}">${icon('download', { size: 16 })}<span>Свали ${fmtOf(set)}</span><span class="sr-only"> – ${set.title}</span></a>`;
   }
@@ -459,11 +447,10 @@ const srcBlock = (keys, M) =>
   })}</ul>`;
 
 function passportRows(set, M) {
-  const pend = set.status === 'pending';
   const real = set.source;
   const screens = set.screenRoutes.length
     ? {
-        k: pend ? 'Засяга' : 'Къде се ползва',
+        k: 'Къде се ползва',
         v:
           set.screenRoutes.length > 8
             ? disclosure({
@@ -489,7 +476,7 @@ function passportRows(set, M) {
   return [
     {
       k: 'Статус',
-      v: html`<span class="s24-st">${statusPill(set.status)}<span>${(STATUS[set.status] || STATUS.pending).text}</span></span>`,
+      v: html`<span class="s24-st">${statusPill(set.status)}<span>${(STATUS[set.status] || STATUS.real).text}</span></span>`,
     },
     set.mock
       ? {
@@ -499,21 +486,14 @@ function passportRows(set, M) {
       : null,
     real.length
       ? {
-          k: pend
-            ? 'Откъде ще дойдат'
-            : set.mock
-              ? 'Свързан с официални данни от'
-              : real.length > 1
-                ? 'Източници'
-                : 'Източник',
+          k: set.mock ? 'Свързан с официални данни от' : real.length > 1 ? 'Източници' : 'Източник',
           v: srcBlock(real, M),
         }
       : null,
-    pend && set.expected ? { k: 'Къде да ги видиш', v: set.expected } : null,
     { k: 'Период', v: C.periodLabel(set.period) },
     { k: set.mock ? 'Създадени на' : 'Данни към', v: set.asOf ? date(set.asOf) : '' },
     { k: 'Мерна единица', v: set.unit },
-    pend ? null : { k: 'Формат', v: fileInfo(set) },
+    { k: 'Формат', v: fileInfo(set) },
     set.file
       ? { k: 'Файл', v: html`<code>${set.file}</code>` }
       : set.template
@@ -568,61 +548,39 @@ function notesBlock(set, M, meta) {
     parts.push(
       html`<p>${C.rich(meta.sourceNote.trim().replace(' Сценарият „Пенсионер“ и данъкът при самоосигуряване и договор за управление предстоят.', ''), M)}</p>`,
     );
-  const waiting = uniq([
-    ...set.pending,
-    ...(Array.isArray(meta?.pending) ? meta.pending.filter((x) => typeof x === 'string') : []),
-  ])
-    .map((id) => M.find(id))
-    .filter(Boolean);
-  if (waiting.length) {
-    parts.push(
-      html`<p>Какво още липсва за този набор:</p><ul class="s24-wait">${uniq(waiting).map((w) => html`<li><a href="${href('danni', { set: w.slug })}">${w.title}</a></li>`)}</ul>`,
-    );
-  }
   return parts.length ? html`${parts}` : null;
 }
 
 async function detailView(ctx, M, set) {
   const { meta } = await C.loadMeta(set, { signal: ctx.signal });
   const names = isMulti(set) ? await ministryNames(ctx) : new Map();
-  const pend = set.status === 'pending';
   const grp = groupOf(M, set);
   const notice =
     meta && typeof (meta.notice || meta.why) === 'string'
       ? String(meta.notice || meta.why).trim()
       : '';
-  const citeText =
-    pend || set.mock
-      ? ''
-      : C.citation(set, M, {
-          url: pageUrl(href('danni', { set: set.slug })),
-          version: ctx.core?.build?.dataVersion,
-        });
+  const citeText = set.mock
+    ? ''
+    : C.citation(set, M, {
+        url: pageUrl(href('danni', { set: set.slug })),
+        version: ctx.core?.build?.dataVersion,
+      });
   const traps = C.relatedTo(M.traps, set),
     methods = C.relatedTo(M.methods, set),
     files = C.filesOf(M, set);
   const notes = notesBlock(set, M, meta);
 
-  if (!pend) {
-    share.register('s24-d-card', {
-      title: set.title,
-      text: set.desc || set.title,
-      source: set.source,
-      asOf: set.asOf || undefined,
-      status: set.status,
-      mock: set.mock,
-    });
-  }
+  share.register('s24-d-card', {
+    title: set.title,
+    text: set.desc || set.title,
+    source: set.source,
+    asOf: set.asOf || undefined,
+    status: set.status,
+    mock: set.mock,
+  });
 
   const sections = [];
-  if (pend) {
-    sections.push(
-      pendingState({
-        title: set.title,
-        text: `Данните съществуват при ${publishers(set, M) || 'издателя'}, но още не са извлечени. Не показваме число, докато няма официални данни.`,
-      }),
-    );
-  } else if (set.mock) {
+  if (set.mock) {
     sections.push(
       callout({
         kind: 'warn',
@@ -638,12 +596,12 @@ async function detailView(ctx, M, set) {
       () => facts(passportRows(set, M), { cls: 's24-facts' }),
       {
         scan: true,
-        tools: pend ? '' : share.shareButton('s24-d-card'),
+        tools: share.shareButton('s24-d-card'),
         foot: reportLink({ block: 's24-d-card', val: set.slug }),
       },
     ),
   );
-  if (!pend) sections.push(block('s24-d-get', 'Свали и ползвай', () => getBlock(set, M, names)));
+  sections.push(block('s24-d-get', 'Свали и ползвай', () => getBlock(set, M, names)));
   if (citeText) {
     sections.push(
       block(
@@ -715,14 +673,10 @@ export async function render(ctx) {
 
 /* JSON-LD (js/seo.js): the list is a DataCatalog of the sets, a set's page is a Dataset with its files, period and official sources, so that
    dataset search engines (Google Dataset Search) and answer engines find the files. Left out: sample (mock) sets, whose values are not
-   official (spec 9.3: demo data is not indexed as official numbers), pending sets, which have no file, and the service files of the site
+   official (spec 9.3: demo data is not indexed as official numbers), and the service files of the site
    (core, search index, news feed, the catalog itself), which are not data about the budget. */
 const indexable = (s) =>
-  s.status !== 'mock' &&
-  !s.mock &&
-  s.status !== 'pending' &&
-  s.group !== 'service' &&
-  (s.file || s.parts.length);
+  s.status !== 'mock' && !s.mock && s.group !== 'service' && (s.file || s.parts.length);
 const setUrl = (s) => siteUrl(`/danni/${encodeURIComponent(s.slug)}`);
 const isoPeriod = (p) => {
   const m = String(p || '').match(/\b(?:19|20)\d{2}(?:-\d{2})?\b/g);
@@ -817,7 +771,6 @@ export function next(ctx) {
     text: 'Върни се към списъка и филтрите.',
     href: href('danni', {}, { to: 's24-sets' }),
   };
-  if (set.status === 'pending') return [all, 'S25', 'S01'];
   return [
     {
       kicker: 'Справка',

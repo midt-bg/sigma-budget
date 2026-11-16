@@ -90,8 +90,7 @@ describe('search and fetch', () => {
       file_url: ORIGIN + '/data/execution.json',
     });
     expect(set.text).toMatch(/\/data\/<година>/);
-    const pending = (await run('fetch', { id: 'dataset:p02' })).out;
-    expect(pending.text).toMatch(/не са в текущото издание/);
+    await fails('fetch', { id: 'dataset:p02' }, /Наборите са/);
     const trap = (await run('fetch', { id: 'trap:eur-bgn' })).out;
     expect(trap.url).toBe(ORIGIN + '/danni?to=s24-t-eur-bgn');
     expect((await run('fetch', { id: 'method:statuses' })).out.url).toBe(
@@ -134,7 +133,7 @@ describe('search and fetch', () => {
 });
 
 describe('the catalog', () => {
-  it('lists the sets, with what is pending and why', async () => {
+  it('lists the available sets', async () => {
     const all = (await run('list_datasets')).out;
     const execution = all.datasets.find((s: Out) => s.slug === 'execution');
     expect(execution).toMatchObject({
@@ -143,11 +142,6 @@ describe('the catalog', () => {
       file_url: ORIGIN + '/data/execution.json',
       page_url: ORIGIN + '/danni/execution',
     });
-    expect(execution.pending.map((p: Out) => p.id)).toEqual(expect.arrayContaining(['P02']));
-    const pending = (await run('list_datasets', { group: 'pending' })).out.datasets;
-    expect(pending.length).toBeGreaterThan(0);
-    for (const s of pending)
-      expect(s).toMatchObject({ status: 'pending', reason: expect.any(String) });
     await fails('list_datasets', { group: 'nyama' }, /Групите са/);
   });
   it('describes a set: keys, how to read it, sources, traps', async () => {
@@ -163,9 +157,6 @@ describe('the catalog', () => {
     });
     const generic = (await run('describe_dataset', { slug: 'core' })).out;
     expect(generic.how_to_read[0]).toMatch(/`get_data` без `path`/);
-    const pending = (await run('describe_dataset', { slug: 'p02' })).out;
-    expect(pending).toMatchObject({ status: 'pending', note: expect.stringMatching(/не са нули/) });
-    expect(pending.meta).toBeUndefined();
     await fails('describe_dataset', { slug: 'nyama' }, /Наборите са/);
   });
   it('describes the parts without the names when ministries.json is not in the release', async () => {
@@ -234,12 +225,6 @@ describe('get_data', () => {
     await fails('get_data', { slug: 'execution', part: '0100' }, /няма части/);
   });
   it('says pending, never zero', async () => {
-    const { out } = await run('get_data', { slug: 'p02' });
-    expect(out).toMatchObject({
-      status: 'pending',
-      value: null,
-      note: expect.stringMatching(/не са нули/),
-    });
     const missing = diskRelease({
       releaseId: 'no-debt',
       async load(name) {

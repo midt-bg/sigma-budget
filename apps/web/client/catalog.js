@@ -4,7 +4,7 @@
 //   model(cat, sources?)      -> M    the normalised catalogue, cached per catalogue object (and per `core.sources`, which feeds the search text):
 //                                      {meta, counts, sets, bySlug, groups, screens, sourceKeys, traps, methods, files, find(key), src(key)}
 //                                      set: {i, id, slug, file, stem, ext, template, title, desc, group, status, mock, source[], period, asOf, unit, format,
-//                                            mediaType, bytes, gz, screens[], screenRoutes[], eager, contains[], pending[], expected, schema[], parts[], hay}
+//                                            mediaType, bytes, gz, screens[], screenRoutes[], eager, contains[], schema[], parts[], hay}
 //   find(key)                 a set by slug, then by id, then by an id it contains (the first one wins; D09 is two sets) · src(key) a source of core.sources
 //   stemOf(file)              'data/geo/obshtini.json' -> 'geo/obshtini' (the stem data.load() takes); null for anything that is not a JSON data file
 //   fileUrl(file, base?)      absolute address of a file of the site (base defaults to the page's base URL)
@@ -19,7 +19,7 @@
 //                             only a small JSON file (< 120 KB) through data.load, never passes `demo`; state: 'ok' | 'skip' | 'pending' | 'error'; an abort is rethrown
 //   periodLabel(p) · sizeLabel(bytes) · paras(text) · idPart(s) · cleanQ(text) · kindLabel(kind) · accessLabel(access, hasUrl)
 //   yearSpan(p) · periodYears(M) · coversYear(set, y)   the years a period reaches ([2024, 2028]), the years any set covers (newest first), and whether a set covers a year (FB4: the „Период“ filter of ПРОВЕРИ)
-//   rich(text, M)             text from the catalogue -> SafeHtml: escaped, with `code`, „slug“ (a set of the catalogue) and P01..P07 (a pending set) as links or <code>
+//   rich(text, M)             text from the catalogue -> SafeHtml: escaped, with `code`, „slug“ (a set of the catalogue) as links or <code>
 import { datasetDescriptions } from './production/launch-texts.js';
 import { ROOT } from './loc.js';
 import { ROUTES, byId, href as routeHref, DATASET_SCREENS as datasetScreens } from './routes.js';
@@ -30,7 +30,7 @@ import { norm, lat } from './searchlib.js';
 import { STATUS } from './ui/status.js';
 import { srcShort } from './ui/source.js';
 
-export const STATUSES = ['real', 'partial', 'forecast', 'mock', 'pending'];
+export const STATUSES = ['real', 'partial', 'forecast', 'mock'];
 const OTHER = { id: 'other', label: 'Други набори' };
 
 const arr = (v) => (Array.isArray(v) ? v : []);
@@ -188,7 +188,7 @@ function normSchema(s) {
 function normSet(d, i) {
   const slug = str(d.slug).trim().toLowerCase() || str(d.id).trim().toLowerCase();
   const file = safeFile(d.file);
-  const status = STATUSES.includes(d.status) ? d.status : 'pending';
+  const status = d.status;
   const parts = arr(d.parts)
     .map((p) => ({
       code: str(p?.code),
@@ -230,8 +230,6 @@ function normSet(d, i) {
     screenRoutes: screensOf(screens),
     eager: d.eager === true,
     contains: strs(d.contains),
-    pending: strs(d.pending),
-    expected: str(d.expected).trim(),
     schema: normSchema(d.schema),
     parts,
     hay: '',
@@ -251,7 +249,7 @@ export function model(cat, sources) {
 function build(c, srcs) {
   const seen = new Set();
   const sets = arr(c.datasets)
-    .filter((d) => d && typeof d === 'object' && d.status !== 'pending')
+    .filter((d) => d && typeof d === 'object' && STATUSES.includes(d.status))
     .map(normSet)
     .filter((s) => s.slug && !seen.has(s.slug) && seen.add(s.slug));
   const bySlug = new Map(sets.map((s) => [s.slug, s]));
@@ -329,7 +327,6 @@ function build(c, srcs) {
       periodLabel(s.period),
       groupLabel[s.group],
       STATUS[s.status]?.label,
-      s.expected,
       ...s.source.flatMap((k) => [k, src(k).title, src(k).publisher]),
       ...s.screenRoutes.map((r) => r.title),
     ]
@@ -392,7 +389,6 @@ function build(c, srcs) {
     partial: count('partial'),
     forecast: count('forecast'),
     mock: count('mock'),
-    pending: count('pending'),
     primaryFiles: files.length,
   };
   const meta = c.meta && typeof c.meta === 'object' ? c.meta : {};
@@ -461,7 +457,7 @@ export function citation(set, M, o = {}) {
     set.mock ? 'ПРИМЕРНИ ДАННИ: стойностите са измислени, не ги цитирай.' : '',
     `СИГМА Бюджет, набор „${set.title}“${set.file ? ` (${dlName(set)})` : ''}.`,
     from,
-    `Статус: ${(STATUS[set.status]?.label || STATUS.pending.label).toLowerCase()}.`,
+    `Статус: ${(STATUS[set.status]?.label || STATUS.real.label).toLowerCase()}.`,
     set.asOf ? (set.mock ? `Създадени на ${date(set.asOf)}.` : `Данни към ${date(set.asOf)}.`) : '',
     o.version ? `Версия на данните: ${o.version}.` : '',
     set.unit ? `Мерна единица: ${set.unit}.` : '',
@@ -490,10 +486,9 @@ export async function loadMeta(set, { signal } = {}) {
 
 /* ---------------------------------------------------------------- texts of the catalogue as markup */
 // The descriptions and notes are plain text from the data builder. A few tokens in them read better as markup: `code`, „slug“ (a set of the catalogue),
-// P01..P07 (a pending set) and Eurostat table codes (snake_case, or tps00001). Everything else is escaped.
-const TOKEN =
-  /`([^`]+)`|„([A-Za-z][A-Za-z0-9_-]*)“|\b(P0[1-7])\b|\b([a-z][a-z0-9]*(?:_[a-z0-9]+)+|tps\d{5})\b/g;
-/** text -> SafeHtml. A set named in quotes („outlook“) or by its P0n id becomes a link to #/danni/<slug>; a quoted word that is no set, and a table code, becomes <code> */
+// Eurostat table codes (snake_case, or tps00001). Everything else is escaped.
+const TOKEN = /`([^`]+)`|„([A-Za-z][A-Za-z0-9_-]*)“|\b([a-z][a-z0-9]*(?:_[a-z0-9]+)+|tps\d{5})\b/g;
+/** text -> SafeHtml. A set named in quotes („outlook“) becomes a link to #/danni/<slug>; a quoted word that is no set, and a table code, becomes <code> */
 export function rich(text, M) {
   const s = str(text);
   const re = new RegExp(TOKEN.source, 'g');
@@ -505,14 +500,11 @@ export function rich(text, M) {
   while ((m = re.exec(s))) {
     out += esc(s.slice(last, m.index));
     last = m.index + m[0].length;
-    const [, tick, quoted, pid, snake] = m;
+    const [, tick, quoted, snake] = m;
     if (tick != null) out += `<code>${esc(tick)}</code>`;
     else if (quoted != null) {
       const set = M?.bySlug?.get(quoted.toLowerCase());
       out += set ? link(set.slug, `<code>${esc(quoted)}</code>`) : `<code>${esc(quoted)}</code>`;
-    } else if (pid != null) {
-      const set = M?.bySlug?.get(pid.toLowerCase());
-      out += set ? link(set.slug, esc(pid), `${pid}: ${set.title}`) : esc(pid);
     } else out += `<code>${esc(snake)}</code>`;
   }
   return raw(out + esc(s.slice(last)));

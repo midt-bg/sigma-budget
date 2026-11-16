@@ -1,3 +1,4 @@
+import { availableCatalog } from '../../client/available-catalog.js';
 // The release the MCP tools read (apps/web/workers/mcp/handler.ts): the files of the current release, exactly as the screens get them
 // (apps/web/workers/release-data.ts: the release packaged with the build), parsed once per isolate and release, and the
 // addresses a tool answer links to, so the model can cite the page and the file of every number.
@@ -29,7 +30,10 @@ export function load<T = unknown>(ctx: Ctx, name: string): Promise<T> {
     parsed.set(key, cached);
     return cached as Promise<T>;
   }
-  const p = ctx.data.load(name).then((v) => (v as { canonical?: unknown } | null)?.canonical ?? v);
+  const p = ctx.data.load(name).then((v) => {
+    const file = (v as { canonical?: unknown } | null)?.canonical ?? v;
+    return name === 'catalog' ? availableCatalog(file) : file;
+  });
   parsed.set(key, p);
   while (parsed.size > LIMIT) parsed.delete(parsed.keys().next().value as string);
   p.catch(() => {
@@ -135,7 +139,6 @@ export function metaOf(file: unknown) {
   const pick = ['id', 'title', 'status', 'source', 'sourceNote', 'asOf', 'retrieved', 'unit'];
   const out: Record<string, unknown> = {};
   for (const k of pick) if (m[k] !== undefined) out[k] = m[k];
-  if (Array.isArray(m.pending) && m.pending.length) out.pending = m.pending;
   if (m.mock) out.mock = true;
   return out;
 }

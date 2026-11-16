@@ -1,7 +1,8 @@
+import { availableCatalog } from './client/available-catalog.js';
+import { preservePublishedOutputs } from './scripts/release-artifact.ts';
+import { cpSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { staticResponseHeaders } from './app/lib/security.ts';
-import { writeFileSync } from 'node:fs';
 import { build as bundle, type Plugin as EsbuildPlugin } from 'esbuild';
-import { cpSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { reactRouter } from '@react-router/dev/vite';
 import { cloudflare } from '@cloudflare/vite-plugin';
@@ -60,6 +61,12 @@ function siteFiles(candidate: Candidate | null): Plugin {
       });
       if (candidate) copyCandidate(candidate, resolve(options.dir, 'data'));
       else cpSync(resolve('../../data/release'), resolve(options.dir, 'data'), { recursive: true });
+      preservePublishedOutputs(options.dir);
+      const catalogPath = resolve(options.dir, 'data/catalog.json');
+      writeFileSync(
+        catalogPath,
+        JSON.stringify(availableCatalog(JSON.parse(readFileSync(catalogPath, 'utf8')))),
+      );
       await bundle({
         entryPoints: ['client/mcp-install.ts'],
         outfile: resolve(options.dir, 'js/mcp-install.js'),
