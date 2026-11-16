@@ -22,7 +22,7 @@ it('uses the public product name in the document and metadata without a working-
     dataBase: '/data/',
     origin: url.origin,
     sigmaUrl: '',
-    feedbackEmail: '',
+    turnstileSiteKey: '',
   });
   if ('redirect' in result) throw Error(result.redirect);
   expect(result.doc.title).toContain('СИГМА Бюджет');

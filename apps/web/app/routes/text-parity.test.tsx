@@ -68,7 +68,7 @@ describe('frozen main 26f82ea, same release', () => {
         glossary,
         params: { path: 'nyama-takava-stranitsa' },
         query: {},
-        release: { id: '', dataBase: '/data/', origin: '', sigmaUrl: '', feedbackEmail: '' },
+        release: { id: '', dataBase: '/data/', origin: '', sigmaUrl: '', turnstileSiteKey: '' },
       };
       const html = renderToStaticMarkup(
         <MigratedScreen model={model} navigation={{ go() {}, announce() {} }} />,
@@ -100,7 +100,7 @@ for (const [screen, path, status] of [['S30', '/nyama-takava-stranitsa', 404]] a
       dataBase: '/data/',
       origin: url.origin,
       sigmaUrl: '',
-      feedbackEmail: '',
+      turnstileSiteKey: '',
     });
     if ('redirect' in result) throw new Error(result.redirect);
     const { document } = parseHTML(fixture(screen));
@@ -129,7 +129,7 @@ for (const screen of ['S30'] as const)
         glossary,
         params: { path: 'nyama-takava-stranitsa' },
         query: { demo: view },
-        release: { id: '', dataBase: '/data/', origin: '', sigmaUrl: '', feedbackEmail: '' },
+        release: { id: '', dataBase: '/data/', origin: '', sigmaUrl: '', turnstileSiteKey: '' },
       };
       expect(
         semantics(

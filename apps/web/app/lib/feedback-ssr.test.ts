@@ -12,13 +12,13 @@ const load = async (name: string) =>
     readFileSync(new URL(`../../../../data/release/${name}.json`, import.meta.url), 'utf8'),
   );
 afterEach(() => provideScope(() => null));
-async function documentAt(address: string, feedbackEmail?: string) {
+async function documentAt(address: string, turnstileSiteKey?: string) {
   const url = new URL(address, 'https://budget.test');
   const route = resolve(address);
   const scope = {
     url,
     origin: url.origin,
-    ...(feedbackEmail === undefined ? {} : { feedbackEmail }),
+    ...(turnstileSiteKey === undefined ? {} : { turnstileSiteKey }),
     state: requestState(route.query.per),
     data: new Map(),
     load,
@@ -27,24 +27,17 @@ async function documentAt(address: string, feedbackEmail?: string) {
   return parseHTML(String(frameHtml(await build(route.route, route.params, route.query)))).document;
 }
 
-// The server draws the forms with the request's FEEDBACK_EMAIL: the first HTML must not say that no address is set.
-it('/vrazka drawn on the server uses the configured feedback address', async () => {
-  const doc = await documentAt('/vrazka', 'feedback@example.invalid');
-  const article = doc.querySelector('article')!;
-  expect(article.querySelector('a[href="mailto:feedback@example.invalid"]')).not.toBeNull();
-  expect(article.querySelector('button[type="submit"]')?.textContent?.trim()).toBe('Изпрати');
-  expect(article.textContent).not.toContain('Запази в този браузър');
-});
-it('/vrazka without a configured address keeps the message in the browser and says so', async () => {
-  const doc = await documentAt('/vrazka', '');
-  const article = doc.querySelector('article')!;
-  expect(article.querySelector('a[href^="mailto:"]')).toBeNull();
-  expect(article.querySelector('button[type="submit"]')?.textContent?.trim()).toBe(
-    'Запази в този браузър',
-  );
-});
-it('the glossary question form drawn on the server uses the configured feedback address', async () => {
-  const doc = await documentAt('/rechnik/kfp', 'feedback@example.invalid');
-  const article = doc.querySelector('article')!;
-  expect(article.querySelector('a[href="mailto:feedback@example.invalid"]')).not.toBeNull();
+it.each(['/vrazka', '/rechnik/kfp'])(
+  '%s explains an unavailable sender without a site key',
+  async (path) => {
+    const doc = await documentAt(path, '');
+    expect(doc.querySelector('[data-feedback-status]')?.textContent).toContain(
+      'Изпращането временно не е достъпно',
+    );
+  },
+);
+it('preserves block value context for submission', async () => {
+  const doc = await documentAt('/vrazka?val=123%20EUR', 'test-site-key');
+  expect(doc.querySelector('input[name="val"]')?.getAttribute('value')).toBe('123 EUR');
+  expect(doc.querySelector('[data-feedback-status]')?.textContent).toBe('');
 });

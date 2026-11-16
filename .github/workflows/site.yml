@@ -173,7 +173,7 @@ jobs:
           path: apps/web/build
       - name: Screens, accessibility and layout (against the built Worker)
         run: |
-          pnpm exec wrangler dev -c apps/web/build/server/wrangler.json --ip 127.0.0.1 --port 8814 --persist-to "$RUNNER_TEMP/state" > "$RUNNER_TEMP/wrangler.log" 2>&1 &
+          pnpm exec wrangler dev -c apps/web/build/server/wrangler.json --ip 127.0.0.1 --port 8814 --persist-to "$RUNNER_TEMP/state" --var TURNSTILE_SITE_KEY:1x00000000000000000000AA --var TURNSTILE_SECRET_KEY:1x0000000000000000000000000000000AA --var VRAZKA_IP_KEY:local-ci-feedback-key > "$RUNNER_TEMP/wrangler.log" 2>&1 &
           for i in $(seq 1 60); do curl -sf -o /dev/null http://127.0.0.1:8814/robots.txt && break; sleep 1; done
           E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker visual-audit.spec.ts
           E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker light-contrast.spec.ts
@@ -182,7 +182,7 @@ jobs:
       - name: Screen navigation, sharing, shell, glossary, tabs and views
         run: E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker screens-tour.spec.ts screens-sharing.spec.ts screens-shell.spec.ts screens-glossary.spec.ts screens-tabs.spec.ts screens-views.spec.ts
       - name: Early boot, server DOM adoption and cross-origin security (Playwright Test)
-        run: E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker boot.spec.ts narrative-adoption.spec.ts security-headers.spec.ts
+        run: E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker boot.spec.ts narrative-adoption.spec.ts security-headers.spec.ts vrazka.spec.ts
       - name: Annual periods, aliases, SSR notices and stored preferences
         run: E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker period-matrix.spec.ts
       - name: Current-bill lists, shared units and navigation

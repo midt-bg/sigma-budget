@@ -36,7 +36,7 @@ export interface ScreenDoc {
     dataBase: string;
     origin: string;
     sigmaUrl: string;
-    feedbackEmail: string;
+    turnstileSiteKey: string;
   };
   banner: string;
   topbar: string;

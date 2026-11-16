@@ -11,6 +11,7 @@ vi.mock('./release-data', () => ({
     file: async () => null,
   }),
 }));
+vi.mock('./vrazka-limit', () => ({ VrazkaLimiter: class {} }));
 import app from './app';
 
 const ctx = { waitUntil: () => {} } as unknown as ExecutionContext;
