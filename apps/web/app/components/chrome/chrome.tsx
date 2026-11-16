@@ -89,7 +89,7 @@ export const codeLink = (cls: string) =>
   outLink(
     cls,
     CODE.href,
-    <>
+    <span>
       <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
         <path
           fill="currentColor"
@@ -98,7 +98,7 @@ export const codeLink = (cls: string) =>
         />
       </svg>
       {CODE.label}
-    </>,
+    </span>,
   );
 const rootId = (r: WebRoute): string => (r.parent ? rootId(byId[r.parent]) : r.id);
 export const rootOf = (r: WebRoute) => byId[rootId(r)];

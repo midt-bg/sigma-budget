@@ -1077,8 +1077,9 @@ dialog.sheet.sheet-drawer .sheet-title {
   text-decoration: none;
 }
 .code-link svg {
-  display: block;
-  flex: none;
+  display: inline-block;
+  vertical-align: -0.125em;
+  margin-right: 6px;
   width: 14px;
   height: 14px;
 }
