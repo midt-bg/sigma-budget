@@ -228,7 +228,8 @@ export async function prepare(route, params, query, o = {}) {
 }
 
 /* ------------------------------------------------------------------ view model */
-export const periodsFor = (route, mod) => mod?.periods ?? route.periods;
+export const periodsFor = (route, mod, ctx) =>
+  (ctx && mod?.entityPeriods?.(ctx)) || mod?.periods || route.periods;
 function supportsPeriod(route, mod, period) {
   const p = periodsFor(route, mod);
   return p === 'all' || p === 'none' || !Array.isArray(p) || p.includes(period);

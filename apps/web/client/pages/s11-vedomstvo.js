@@ -1,4 +1,4 @@
-import { isFramework } from '../budget-2027.js';
+import { institutions, isFramework } from '../budget-2027.js';
 import { institutionView, mountBillSearch, billListHref } from './bill-views.js';
 // S11 · Ведомство · #/vedomstvo/<код>[/<програма>] · next S15, S10 · period 2026.law only
 // Data, only through `needs`:
@@ -23,9 +23,9 @@ import { unitSwitch, bindUnitSwitch } from '../ui/unit-switch.js';
 // the four budgets whose programmes are still pending (P03) have no file: used only to spare a direct load a 404 before the index is cached
 const NO_FILE = [];
 export const needs = (ctx) => {
-  if (isFramework(ctx)) return ['core', 'budget2027?'];
+  if (isFramework(ctx)) return ['core', 'budget2027?', 'ministries'];
   const code = String(ctx?.params?.code ?? '');
-  const list = ['core', 'ministries'];
+  const list = ['core', 'ministries', 'budget2027?'];
   if (/^\d{4}$/.test(code)) {
     const known = data.get('ministries')?.items?.find?.((m) => m && String(m.id) === code);
     if (known ? known.programs?.status === 'real' : !NO_FILE.includes(code))
@@ -35,6 +35,15 @@ export const needs = (ctx) => {
 };
 export const styles = ['s11-vedomstvo'];
 export const periods = ['2026.law', '2027.draft', '2028.forecast', '2029.forecast'];
+
+export function entityPeriods(ctx) {
+  const code = String(ctx.params.code);
+  const historical = ctx.data.ministries?.items?.some((m) => String(m.id) === code);
+  const current =
+    !ctx.params.program &&
+    (code === 'art1' || institutions(ctx.data.budget2027).some((m) => m.code === code));
+  return [historical && '2026.law', current && '2027.draft'].filter(Boolean);
+}
 
 const ok = (v) => typeof v === 'number' && Number.isFinite(v);
 const LONG = 80;
@@ -369,7 +378,10 @@ function lawBlock(M) {
 
 function sourceNotes(M) {
   return M.file?.notes?.length
-    ? html`<aside class="callout"><h3>Бележки към оригиналния документ</h3>${M.file.notes.map((note) => html`<p>${note}</p>`)}</aside>`
+    ? callout({
+        title: 'Бележки към оригиналния документ',
+        body: html`${M.file.notes.map((note) => html`<p>${note}</p>`)}`,
+      })
     : '';
 }
 

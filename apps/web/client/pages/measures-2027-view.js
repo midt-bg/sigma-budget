@@ -337,7 +337,7 @@ export function measuresView(ctx) {
   const doc = ctx.data.budget2027;
   if (ctx.params.id)
     return {
-      body: html`${gap('Мярката е от бюджета за 2026 г.', 'Мерките от АСБП 2027–2029 са в общия списък.')}<p><a href="${ctx.href('S12', {}, { per: '2027.draft' })}">Мерки в проекта за 2027</a></p>`,
+      body: html`${gap('Мярката е от бюджета за 2026 г.', 'Мерките от АСБП 2027–2029 са в общия списък.')}<p><a href="${ctx.href('S12', { id: ctx.params.id }, { per: '2026.law' })}">Виж мярката в бюджета за 2026</a></p><p><a href="${ctx.href('S12', {}, { per: '2027.draft' })}">Мерки в проекта за 2027</a></p>`,
       next: [
         { href: ctx.href('S12', {}, { per: '2027.draft' }), title: 'Мерки в проекта за 2027' },
       ],
