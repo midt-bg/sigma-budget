@@ -34,6 +34,31 @@ function files(root: string, prefix = ''): string[] {
   });
 }
 
+/** Receipt bindings are part of the transport format, independent of producer rules. */
+export function checkReceipt(releaseId: string, manifest: any, receipt: any, validation: Buffer) {
+  const canonical = (value: any): any =>
+    Array.isArray(value)
+      ? value.map(canonical)
+      : value && typeof value === 'object'
+        ? Object.fromEntries(
+            Object.keys(value)
+              .sort()
+              .map((k) => [k, canonical(value[k])]),
+          )
+        : value;
+  if (receipt.release_id !== releaseId)
+    throw new Error('receipt release_id differs from manifest SHA-256');
+  if (receipt.commit !== undefined && receipt.commit !== manifest.processing?.code?.commit)
+    throw new Error('receipt commit differs from manifest');
+  if (receipt.validation_sha256 !== undefined && receipt.validation_sha256 !== hash(validation))
+    throw new Error('receipt validation SHA-256 differs');
+  if (
+    receipt.outputs_sha256 !== undefined &&
+    receipt.outputs_sha256 !== hash(Buffer.from(JSON.stringify(canonical(manifest.outputs)) + '\n'))
+  )
+    throw new Error('receipt outputs SHA-256 differs');
+}
+
 /** Verify all packaged bytes, including the successful production validation
  * report. This verifies a candidate receipt; numerical validation runs in the
  * recorded producer's build/validate, not a second implementation in Vite. */
@@ -72,6 +97,7 @@ export function readCandidate(directory: string): Candidate {
     for (const path of files(join(root, 'data')))
       if (!listed.has(`data/${path}`)) fail(`unlisted candidate data: data/${path}`);
     const validationBytes = readFileSync(join(root, 'validation.json'));
+    checkReceipt(releaseId, doc, receipt, validationBytes);
     const validation = JSON.parse(validationBytes.toString('utf8'));
     if (
       validation.passed !== true ||

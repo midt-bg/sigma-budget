@@ -16,7 +16,14 @@ it('every guide and glossary link reaches a site route or screen', () => {
         if (screen.href) expect(destination(screen.href).id, screen.href).toBe(screen.id);
       }
       for (const [key, child] of Object.entries(value)) {
-        if (key === 'href' && typeof child === 'string' && child.startsWith('/')) links.push(child);
+        if (
+          key === 'href' &&
+          typeof child === 'string' &&
+          !/^(?:[a-z][\w+.-]*:|\/\/|#(?!\/))/i.test(child)
+        )
+          links.push(
+            child.startsWith('#/') ? child : new URL(child, 'https://budget.test/').pathname,
+          );
         visit(child);
       }
     }

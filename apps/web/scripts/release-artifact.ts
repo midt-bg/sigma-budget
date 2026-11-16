@@ -1,3 +1,4 @@
+import { checkReceipt } from './candidate-data.ts';
 // The parts of the release build (build-release.ts) that need no browser: the address rules of the crawl, the checks of one screen, the
 // files written into build/client after the crawl (sitemap.xml, robots.txt, llms.txt, llms-full.txt, _headers), the stamping of the copied
 // files and the final check of the deploy artifact. The text rules follow the former Python build byte for byte (code points, line breaks,
@@ -500,7 +501,14 @@ export function checkPublishedOutputs(
   const pointer = JSON.parse(readText(join(release, 'releases/current.json')));
   if (pointer.format !== 1) throw new Error('Unsupported release pointer format');
   const receipt = JSON.parse(readText(join(archive, 'receipt.json')));
-  if (receipt.release_id !== id) throw new Error('Receipt differs from release_id');
+  checkReceipt(
+    id,
+    manifest,
+    receipt,
+    receipt.validation_sha256 === undefined
+      ? Buffer.alloc(0)
+      : readFileSync(join(archive, 'validation.json')),
+  );
   if (!Array.isArray(manifest.outputs) || !manifest.outputs.length)
     throw new Error(`release ${id}: the manifest lists no outputs`);
   const listed = new Set<string>();
