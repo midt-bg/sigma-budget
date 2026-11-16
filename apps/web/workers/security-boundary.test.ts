@@ -185,3 +185,72 @@ it('serves current manifest outputs from packaged bytes with HEAD and conditiona
   ])
     expect((await visit(unknown)).status).toBe(404);
 });
+
+it('takes POST only on /mcp, with the finalized headers of a non-public-data route', async () => {
+  const env = {
+    ENVIRONMENT: 'local',
+    ASSETS: { fetch: async () => new Response('asset') },
+  } as unknown as Env;
+  const body = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} });
+  const res = await app.fetch(
+    new Request('https://budget.example/mcp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    }),
+    env,
+    {} as ExecutionContext,
+  );
+  expect(res.status).toBe(200);
+  expect(res.headers.get('Mcp-Session-Id')).toMatch(/^[0-9a-f]{32}$/);
+  expect(res.headers.get('X-Robots-Tag')).toBe('noindex');
+  expect(res.headers.get('Cache-Control')).toBe('no-store');
+  expect(res.headers.has('Content-Security-Policy')).toBe(true);
+  expect(res.headers.has('Access-Control-Allow-Origin')).toBe(false);
+  const slash = await app.fetch(
+    new Request('https://budget.example/mcp/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    }),
+    env,
+    {} as ExecutionContext,
+  );
+  expect(slash.status, 'POST /mcp/').toBe(200);
+  for (const [path, method, status, allow] of [
+    ['/mcp', 'GET', 405, 'POST'],
+    ['/mcp', 'PUT', 405, 'POST'],
+    ['/mcp/', 'GET', 405, 'POST'],
+    ['/mcpx', 'POST', 405, 'GET, HEAD'],
+    ['/data/core.json', 'POST', 405, 'GET, HEAD'],
+  ] as const) {
+    const r = await app.fetch(
+      new Request('https://budget.example' + path, { method }),
+      env,
+      {} as ExecutionContext,
+    );
+    expect(r.status, `${method} ${path}`).toBe(status);
+    expect(r.headers.get('Allow'), `${method} ${path}`).toBe(allow);
+  }
+});
+
+it("serves OpenAI's domain-check token as plain text, and 404 without one", async () => {
+  const path = 'https://budget.example/.well-known/openai-apps-challenge';
+  const base = { ENVIRONMENT: 'local', ASSETS: { fetch: async () => new Response('asset') } };
+  const set = await app.fetch(
+    new Request(path),
+    { ...base, OPENAI_APPS_CHALLENGE: ' token-123 \n' } as unknown as Env,
+    {} as ExecutionContext,
+  );
+  expect(set.status).toBe(200);
+  expect(set.headers.get('Content-Type')).toBe('text/plain; charset=utf-8');
+  expect(await set.text()).toBe('token-123');
+  const unset = await app.fetch(new Request(path), base as unknown as Env, {} as ExecutionContext);
+  expect(unset.status).toBe(404);
+  const post = await app.fetch(
+    new Request(path, { method: 'POST' }),
+    { ...base, OPENAI_APPS_CHALLENGE: 'token-123' } as unknown as Env,
+    {} as ExecutionContext,
+  );
+  expect(post.status).toBe(405);
+});

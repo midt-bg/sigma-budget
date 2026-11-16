@@ -68,7 +68,7 @@ PR не публикува, а push към `main` публикува staging.
 
 ## 6. Наблюдение
 
-`observability` е включено в `apps/web/wrangler.jsonc`: заявките и грешките на Worker-а се виждат в Cloudflare. Публичният `/api/releases/current` показва включеното издание. `budget refetch --manifest` сравнява оригиналите с официалните адреси.
+`observability` е включено в `apps/web/wrangler.jsonc` без логове на заявките (`invocation_logs: false`): те биха пазили заглавките на всяка заявка, с IP адреса на посетителя, до 7 дни, а политиката за поверителност казва, че сайтът не пази IP адреси. В Cloudflare се виждат грешките и редовете, които Worker-ът записва сам, без лични данни. Публичният `/api/releases/current` показва включеното издание. `budget refetch --manifest` сравнява оригиналите с официалните адреси.
 
 ## Подписи
 

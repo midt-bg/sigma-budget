@@ -2,6 +2,8 @@
 interface Env {
   ASSETS: Fetcher;
   RELEASE_RATE_LIMITER?: RateLimit;
+  /** the ceiling of MCP calls per address (apps/web/workers/release-rate-limit.ts rateLimitMcp) */
+  MCP_RATE_LIMITER?: RateLimit;
   ENVIRONMENT: string;
   /** the public address of the site (canonical links, the sitemap); empty: the address of the request */
   SITE_ORIGIN?: string;
@@ -9,6 +11,8 @@ interface Env {
   SIGMA_URL?: string;
   /** the address the feedback form writes to (apps/web/client/feedback.js); empty: the form keeps the message in the browser and says so */
   FEEDBACK_EMAIL?: string;
+  /** the token of OpenAI's domain check, served at /.well-known/openai-apps-challenge (docs/openai-plugin.md); empty: 404 */
+  OPENAI_APPS_CHALLENGE?: string;
   /** "1" keeps the environment out of search engines (staging) */
   NOINDEX?: string;
 }

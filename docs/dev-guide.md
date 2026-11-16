@@ -4,7 +4,7 @@
 
 Новият код е TypeScript. Workspace-ът е описан в [README](../README.md); общите правила са в [AGENTS.md](../AGENTS.md). Сайтът чете закрепеното издание от `data/release/`; обработката е в [хранилището за данни](https://github.com/midt-bg/sigma-budget-data/blob/main/README.md).
 
-Маршрутите са в `apps/web/app/routes.ts`. Мигрираните екрани S25, S35, S14 и S16 имат отделни route модули, а S30 използва `not-found.tsx`. Модулите използват loader, headers и компоненти; моделите и React представянето се свързват чрез `apps/web/app/migration/registry.tsx`. За нова работа следвай съществуващите модули и тестовете им. Останалите маршрути използват общия `screen.tsx` и стария renderer.
+Маршрутите са в `apps/web/app/routes.ts`. Мигрираните екрани S25, S35, S14, S16, S36 и S37 имат отделни route модули, а S30 използва `not-found.tsx`. Модулите използват loader, headers и компоненти; моделите и React представянето се свързват чрез `apps/web/app/migration/registry.tsx`. За нова работа следвай съществуващите модули и тестовете им. Останалите маршрути използват общия `screen.tsx` и стария renderer.
 
 ## Поддръжка на старите екрани
 
@@ -907,6 +907,8 @@ export const styles = ['s06-prihodi'];       // зарежда css/pages/s06-pri
 | S25 | `api`           | `#/api`                               | `pages/s25-api.js`                       | Отворени данни и API     | ref            | none                  | S01           | `#/api`                                                     |
 | S35 | `proverka`      | `#/proverka`                          | `pages/s35-proverka.js`                  | Проверка на данните      | ref            | none                  | S24,S25       | `#/proverka`                                                |
 | S27 | `vrazka`        | `#/vrazka`                            | `pages/s27-vrazka.js`                    | Обратна връзка           | ref            | none                  | S01           | `#/vrazka`                                                  |
+| S36 | `poveritelnost` | `#/poveritelnost`                     | `pages/s36-poveritelnost.js`             | Поверителност            | ref            | none                  | S01           | `#/poveritelnost`                                           |
+| S37 | `usloviya`      | `#/usloviya`                          | `pages/s37-usloviya.js`                  | Условия за ползване      | ref            | none                  | S01           | `#/usloviya`                                                |
 | S28 | `tarsene`       | `#/tarsene`                           | `pages/s28-tarsene.js`                   | Търсене                  | util           | none                  | S02,S01       | `#/tarsene` `#/tarsene?q=%D0%94%D0%94%D0%A1`                |
 | S29 | `embed`         | `#/embed/:chart`                      | `pages/s29-embed.js`                     | Вграден изглед           | util           | none                  |               | `#/embed/selftest` `#/embed/neznajna.grafika`               |
 | S30 | `ne-e-namereno` | `#(404)`                              | `pages/s30-404.js`                       | Няма такава страница     | util           | none                  |               |                                                             |
@@ -938,6 +940,26 @@ html`<a href="${ctx.href('funkciya', { fn:'obrazovanie' })}">Образован�
 - **Главата на страницата** (`js/seo.js`: `head()` дава таговете, `paint()` ги пише в браузъра, сървърът в документа). Описание, каноничен адрес (`SITE_ORIGIN` + пътя, без заявката), `robots` (`noindex` за 404, вграждането и `?demo=`), Open Graph и Twitter карти (`/og.png`), JSON-LD: `WebSite` с търсене, `Organization`, `WebPage` или `FAQPage` с `BreadcrumbList`.
 - **Куки на екрана за SEO** (по избор, до `title`/`lede`). `question` е въпросът, на който отговаря екранът, ако заглавието му не е въпрос. `answer(ctx)` е краткият отговор с числа, който **вече е на екрана** (например изречението „Накратко“). Без `answer` отговорът е въведението, ако заглавието или `question` е въпрос и в него има число. `docTitle(ctx)` е заглавието на документа, когато едно h1 обслужва няколко адреса (`/prihodi/dds` → „ДДС: приходи през 2026 г.“, двете общини Бяла). `schema(ctx)` връща собствени възли за JSON-LD: S24 дава `Dataset` за всеки реален набор и `DataCatalog` за списъка, S03 дава `DefinedTerm` за термин и `DefinedTermSet` за речника. Помощниците `siteUrl()` и `orgRef()` от `js/seo.js` дават производствените адреси. Всяко от тях може да дойде и като поле на обекта от `render()`.
 - **Производственият адрес** е `SITE_ORIGIN` в `apps/web/wrangler.jsonc` (`https://sigma-budget.midt.bg`); празен означава адреса на заявката (staging). `pnpm build:release --origin …` го дава на проверката, на `sitemap.xml` и на `llms.txt`.
+
+### MCP сървърът (`POST /mcp`)
+
+AI асистентите (Claude, ChatGPT) четат данните през `/mcp` (спецификацията, раздел 9.2). Кодът е в `apps/web/workers/mcp/`, без външна зависимост:
+
+| Файл         | Какво прави                                                                                                                                  |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `handler.ts` | HTTP правилата, JSON-RPC, договарянето на версията, сесията за лимита (`rateLimitMcp` в `release-rate-limit.ts`) и `instructions` за модела. |
+| `tools.ts`   | Описанията на инструментите (схеми, анотации само за четене) и самите инструменти.                                                           |
+| `data.ts`    | Файловете на текущото издание през `releaseData()`, разпарсени веднъж на издание, и адресите, към които водят отговорите.                    |
+| `slice.ts`   | JSON Pointer, страници и таванът от 32 KB на отговор.                                                                                        |
+| `formats.ts` | Как се чете всеки набор и примерни пътища; `formats.test.ts` проверява всеки пример в публикуваните файлове.                                 |
+| `search.ts`  | Индексът на търсенето на сайта (`client/searchlib.js`) плюс капаните и методиката на каталога.                                               |
+
+- **Нов инструмент**: добави описание в `TOOLS` (име до 64 знака, `title`, `inputSchema`, `outputSchema`, анотациите `ANNOTATIONS`) и функция в `HANDLERS`. Грешка в аргументите е `ArgError` с обяснение на български: моделът я чете и вика пак. Инструментът никога не пише.
+- **Нов набор**: ако форматът му не е очевиден от ключовете, добави бележка в `FORMATS` с пътища, които съществуват.
+- **Логовете** имат само името на инструмента, изхода, времето и размера. Аргументите не се логват, защото носят текст от потребителя.
+- **Локална проверка**: `pnpm build`, после `pnpm dev -- --port 8814` и
+  `curl -s -X POST http://127.0.0.1:8814/mcp -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'`.
+  `explain_number` чете файловете за произход на включеното издание и сверява оригинала с манифеста му (`release/manifest`): `verified: true`, когато изданието го изброява със същия SHA-256; `source` дава официалния адрес, защото сайтът не обслужва оригиналите.
 
 ---
 
