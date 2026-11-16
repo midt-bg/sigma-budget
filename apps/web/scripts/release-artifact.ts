@@ -474,10 +474,18 @@ export function preservePublishedOutputs(out: string): void {
 /** Check the finished bytes at the same archive-first locations used by the Worker. */
 export function checkPublishedOutputs(out: string): void {
   const { release_id: id } = JSON.parse(readText(join(out, 'data/releases/current.json')));
+  // The Worker serves no output for an id it does not accept or for a manifest without outputs.
+  if (typeof id !== 'string' || !/^[a-f0-9]{64}$/.test(id))
+    throw new Error(`release pointer: invalid release_id ${JSON.stringify(id)}`);
   const archive = join(out, 'data/releases', id);
-  const manifest = JSON.parse(readText(join(archive, 'manifest.json'))) as {
-    outputs: { path: string; sha256: string }[];
+  const bytes = readFileSync(join(archive, 'manifest.json'));
+  if (createHash('sha256').update(bytes).digest('hex') !== id)
+    throw new Error(`release ${id}: manifest.json differs from its release_id`);
+  const manifest = JSON.parse(bytes.toString('utf8')) as {
+    outputs?: { path: string; sha256: string }[];
   };
+  if (!Array.isArray(manifest.outputs) || !manifest.outputs.length)
+    throw new Error(`release ${id}: the manifest lists no outputs`);
   for (const output of manifest.outputs) {
     const archived = join(archive, output.path);
     const file = existsSync(archived) ? archived : join(out, output.path);

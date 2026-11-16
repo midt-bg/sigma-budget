@@ -154,10 +154,17 @@ function currentOutputs(assets: Fetcher, url: URL): Promise<CurrentOutputs | nul
         id: current.release_id,
         hashes: new Map(data.outputs.map((f) => [f.path, f.sha256])),
       };
-    })().catch((error) => {
-      outputMaps.delete(assets);
-      throw error;
-    });
+    })().then(
+      (outputs) => {
+        // keep only a loaded map: a failed read is tried again on the next request
+        if (!outputs) outputMaps.delete(assets);
+        return outputs;
+      },
+      (error) => {
+        outputMaps.delete(assets);
+        throw error;
+      },
+    );
     outputMaps.set(assets, pending);
   }
   return pending;

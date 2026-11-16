@@ -54,22 +54,19 @@ const routes = [{ id: 'S01', pattern: '/', nav: true }];
 
 describe('the deploy artifact', () => {
   it('rejects missing or changed output bytes and preserves omitted outputs in the archive', () => {
-    const id = 'd'.repeat(64);
-    const archive = join(out, 'data/releases', id);
-    mkdirSync(archive, { recursive: true });
+    const sha = (bytes: Buffer | string) => createHash('sha256').update(bytes).digest('hex');
     const sebra = Buffer.from('{"rows":[]}\n');
     const core = Buffer.from('{"value":42}\n');
-    const output = (path: string, bytes: Buffer) => ({
-      path,
-      sha256: createHash('sha256').update(bytes).digest('hex'),
+    const output = (path: string, bytes: Buffer) => ({ path, sha256: sha(bytes) });
+    const manifest = JSON.stringify({
+      outputs: [output('data/sebra.json', sebra), output('data/core.json', core)],
     });
+    // the release id is the SHA-256 of its manifest
+    const id = sha(manifest);
+    const archive = join(out, 'data/releases', id);
+    mkdirSync(archive, { recursive: true });
     writeFileSync(join(out, 'data/releases/current.json'), JSON.stringify({ release_id: id }));
-    writeFileSync(
-      join(archive, 'manifest.json'),
-      JSON.stringify({
-        outputs: [output('data/sebra.json', sebra), output('data/core.json', core)],
-      }),
-    );
+    writeFileSync(join(archive, 'manifest.json'), manifest);
     writeFileSync(join(out, 'data/sebra.json'), sebra);
     writeFileSync(join(out, 'data/core.json'), core);
     preservePublishedOutputs(out);
@@ -83,6 +80,20 @@ describe('the deploy artifact', () => {
     writeFileSync(join(out, 'data/core.json'), core);
     writeFileSync(join(archive, 'data/sebra.json'), 'changed archive');
     expect(() => checkPublishedOutputs(out)).toThrow('sha256 mismatch: data/sebra.json');
+    // a release the Worker could not serve does not pass: no outputs, or a pointer it would not accept
+    const empty = JSON.stringify({ outputs: [] });
+    mkdirSync(join(out, 'data/releases', sha(empty)), { recursive: true });
+    writeFileSync(join(out, 'data/releases', sha(empty), 'manifest.json'), empty);
+    writeFileSync(
+      join(out, 'data/releases/current.json'),
+      JSON.stringify({ release_id: sha(empty) }),
+    );
+    expect(() => checkPublishedOutputs(out)).toThrow('lists no outputs');
+    writeFileSync(
+      join(out, 'data/releases/current.json'),
+      JSON.stringify({ release_id: 'notahexid' }),
+    );
+    expect(() => checkPublishedOutputs(out)).toThrow('invalid release_id');
   });
 
   it('production and noindex', () => {
