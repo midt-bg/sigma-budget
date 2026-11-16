@@ -28,7 +28,6 @@ test.describe('light contrast route coverage', () => {
             body: JSON.stringify(result, null, 2),
             contentType: 'application/json',
           });
-          test.skip(result.texts + result.fields === 0, 'no chart labels or fields on this screen');
           expect(result.textViolations, 'chart labels: 4.5 small text, 3 large text').toEqual([]);
           expect(result.placeholderViolations, 'placeholders: 4.5').toEqual([]);
           expect(result.boundaryViolations, 'field boundaries: 3').toEqual([]);
