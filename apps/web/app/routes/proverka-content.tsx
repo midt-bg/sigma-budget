@@ -43,7 +43,7 @@ const sha = (s: string | undefined) => (
   </>
 );
 const fileName = (p: string) => String(p).split('/').pop();
-// the status of a set as data/datasets.yaml gives it (real, mock, pending); one the site does not know is shown as it is, not as „Предстои“
+// the status of a set as data/datasets.yaml gives it (real, mock); one the site does not know is shown as it is, not as „Предстои“
 const statusCell = (v: string) =>
   UI_STATUS[v as keyof typeof UI_STATUS] ? statusPill(v) : code(v || '—');
 
@@ -102,18 +102,13 @@ function releaseBlock(rid: string, m: Manifest) {
 }
 
 function coverageBlock(m: Manifest) {
-  const sets = m.coverage?.datasets || [];
+  const sets = (m.coverage?.datasets || []).filter((d) => d.status !== 'pending');
   const rows = sets.map((d) => ({
     name: d.dataset,
     status: d.status,
     period: d.period,
     unit: d.unit,
-    rebuilt:
-      d.status === 'pending' && !d.files?.length
-        ? '—'
-        : d.rebuiltByThisRelease
-          ? 'да'
-          : 'не, запазен от предходното издание',
+    rebuilt: d.rebuiltByThisRelease ? 'да' : 'не, запазен от предходното издание',
     reason: d.reason || '',
   }));
   const limited = sets.filter((d) => (d.limitations || []).length);

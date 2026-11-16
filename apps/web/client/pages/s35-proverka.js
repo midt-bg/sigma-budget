@@ -22,7 +22,7 @@ const short = (sha) => String(sha || '').slice(0, 12);
 const code = (t) => html`<code>${t}</code>`;
 const sha = (s) => html`<code class="s35-sha" title="${s}">${short(s)}…</code>`;
 const fileName = (p) => String(p).split('/').pop();
-// the status of a set as data/datasets.yaml gives it (real, mock, pending); one the site does not know is shown as it is, not as „Предстои“
+// the status of a set as data/datasets.yaml gives it (real, mock); one the site does not know is shown as it is, not as „Предстои“
 const statusCell = (v) => (UI_STATUS[v] ? statusPill(v) : code(v || '—'));
 
 /** a section: the h2 carries the id (the target of ?to=), so a jump lands on a heading */
@@ -54,18 +54,13 @@ function releaseBlock(rid, m) {
 }
 
 function coverageBlock(m) {
-  const sets = m.coverage?.datasets || [];
+  const sets = (m.coverage?.datasets || []).filter((d) => d.status !== 'pending');
   const rows = sets.map((d) => ({
     name: d.dataset,
     status: d.status,
     period: d.period,
     unit: d.unit,
-    rebuilt:
-      d.status === 'pending' && !d.files?.length
-        ? '—'
-        : d.rebuiltByThisRelease
-          ? 'да'
-          : 'не, запазен от предходното издание',
+    rebuilt: d.rebuiltByThisRelease ? 'да' : 'не, запазен от предходното издание',
     reason: d.reason || '',
   }));
   const limited = sets.filter((d) => (d.limitations || []).length);

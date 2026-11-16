@@ -84,9 +84,8 @@ it('distinguishes preserved intermediates from source inputs without overstating
       'Пресглобен в това издание',
     );
     expect(doc.querySelector('#s35-sets tbody td:last-child')!.textContent).toBe('да');
-    const pendingRow = doc.querySelectorAll('#s35-sets tbody tr')[1]!;
-    expect(pendingRow.lastElementChild!.textContent).toBe('—');
-    expect(pendingRow.textContent).toContain('Отчетът не е публикуван от източника.');
+    expect(doc.querySelectorAll('#s35-sets tbody tr')).toHaveLength(1);
+    expect(text).not.toContain('p04');
     expect(doc.querySelector('a[href="/api/releases"]')).toBeNull();
     expect(
       doc.querySelector(
