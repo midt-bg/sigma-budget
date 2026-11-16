@@ -7,7 +7,7 @@ import { byId } from '../lib/legacy';
 import type { TextScreenModel } from '../lib/screen-state';
 
 const EMAIL = 'team@example.org';
-const model = (screen: 'S36' | 'S37', feedbackEmail = EMAIL) =>
+const model = (screen: 'S36' | 'S37', turnstileSiteKey = EMAIL) =>
   ({
     screen,
     view: 'ready',
@@ -20,7 +20,7 @@ const model = (screen: 'S36' | 'S37', feedbackEmail = EMAIL) =>
       dataBase: '/data/',
       origin: 'https://budget.example',
       sigmaUrl: '',
-      feedbackEmail,
+      turnstileSiteKey,
     },
   }) as TextScreenModel;
 const react = (screen: 'S36' | 'S37', email?: string) =>
@@ -47,14 +47,7 @@ describe.each(['S36', 'S37'] as const)('%s', (screen) => {
     expect(shape(react(screen))).toEqual(shape(legacy(screen)));
     expect(shape(react(screen)).headings.map(([id]) => id)).toEqual(PAGES[screen].map((s) => s.id));
   });
-  it("links the team's address, else the feedback screen", () => {
-    const mail = shape(react(screen)).links.find(([text]) => text === EMAIL);
-    expect(mail).toEqual([EMAIL, `mailto:${EMAIL}`]);
-    const without = shape(react(screen, '')).links.find(
-      ([text]) => text === 'страницата „Обратна връзка“',
-    );
-    expect(without?.[1]).toBe('/vrazka');
-    expect(shape(react(screen, '')).links.some(([text]) => text === EMAIL)).toBe(false);
-    expect(shape(legacy(screen, '')).links).toEqual(shape(react(screen, '')).links);
+  it('links the feedback screen for questions', () => {
+    expect(shape(react(screen)).links).toContainEqual(['страницата „Обратна връзка“', '/vrazka']);
   });
 });

@@ -1,14 +1,7 @@
-// S27 · Обратна връзка · #/vrazka · next S01 · periods none
-// Three forms in tabs: „Намерих грешка“ (context from the link that brought the visitor: ?from= ?val= ?src= ?block=), „Още не разбирам“, „Предложи идея“.
-// The site has no server for messages: the submit button (feedback.send()) keeps the message in this browser (feedback.js, localStorage) and, when <meta name="feedback-email"> names
-// the team's address, opens a ready e-mail to it (mailto:) that the visitor sends from their own mail app. An unsent draft stays in sessionStorage until the tab closes
-// (so a re-render or a detour through the glossary does not eat the text). ?demo=error is drawn by the shell like on every screen.
 import { html } from '../html.js';
-import { icon } from '../icons.js';
-import { plural } from '../format.js';
 import { ROUTES, GROUPS, byKey, byId, match } from '../routes.js';
 import { safe } from '../store.js';
-import { callout, facts } from '../ui/cards.js';
+import { facts } from '../ui/cards.js';
 import { tabs } from '../ui/tabs.js';
 import { srcShort } from '../ui/source.js';
 import * as feedback from '../feedback.js';
@@ -91,7 +84,6 @@ function screenKey(raw) {
   while (r && !r.nav && r.parent) r = byId[r.parent];
   return r && r.nav ? r.key : '';
 }
-const screenTitle = (key) => byKey[key]?.title || '';
 
 function readContext(ctx) {
   const q = ctx.query || {};
@@ -168,20 +160,8 @@ function form(key, ctx, ctxInfo, draft) {
   const body = [];
   body.push(textField(key, spec, d.text || ''));
   if (key === 'greshka') {
-    const val = ctxInfo.val || d.val || '';
-    body.push(html`<div class="s27-pair">
-      ${fld({ id: 's27-greshka-from', label: 'За кой екран?', optional: true, hint: ctxInfo.from ? 'Попълнихме го от мястото, откъдето дойде.' : 'Така по-лесно ще намерим мястото.', control: (hid) => screenSelect('s27-greshka-from', fromVal, hid) })}
-      ${fld({
-        id: 's27-greshka-val',
-        label: 'Кое число или кой текст?',
-        optional: true,
-        hint: ctxInfo.val
-          ? 'Попълнихме го от мястото, откъдето дойде.'
-          : 'Например числото, както го виждаш на екрана.',
-        control: (hid) =>
-          html`<input class="input" id="s27-greshka-val" name="val" type="text" maxlength="120" value="${val}" aria-describedby="${hid} s27-greshka-val-err">`,
-      })}
-    </div>`);
+    body.push(html`${fld({ id: 's27-greshka-from', label: 'За кой екран?', optional: true, hint: ctxInfo.from ? 'Попълнихме го от мястото, откъдето дойде.' : 'Така по-лесно ще намерим мястото.', control: (hid) => screenSelect('s27-greshka-from', fromVal, hid) })}
+      <input type="hidden" name="val" value="${ctxInfo.val}">`);
     if (ctxInfo.src)
       body.push(
         facts([{ k: 'Източник на числото', v: srcShort(ctxInfo.src) }], { cls: 's27-src' }),
@@ -217,90 +197,26 @@ function form(key, ctx, ctxInfo, draft) {
         optional: true,
         hint: 'Само ако искаш да ти отговорим.',
         control: (hid) =>
-          html`<input class="input" id="s27-ideya-contact" name="contact" type="email" inputmode="email" autocomplete="email" maxlength="120" value="${d.contact || ''}" aria-describedby="${hid} s27-ideya-contact-err">`,
+          html`<input class="input" id="s27-ideya-contact" name="contact" type="email" inputmode="email" autocomplete="email" maxlength="254" value="${d.contact || ''}" aria-describedby="${hid} s27-ideya-contact-err">`,
       })}
     </div>`);
   }
   return html`<p class="s27-intro">${spec.intro}</p>
     <form class="s27-form" data-s27-form="${key}" novalidate>
       ${body}
+      ${feedback.controls()}
       <div class="cluster"><button type="submit" class="btn btn-primary">${feedback.send()}</button></div>
     </form>
     <div class="s27-ok" data-s27-ok="${key}" hidden>
-      <span class="s27-ok-ic" aria-hidden="true">${icon('checkCircle', { size: 24 })}</span>
-      <div class="s27-ok-main">
-        <h3 class="s27-ok-h" tabindex="-1">${feedback.sent()}</h3>
-        <p class="s27-ok-note">${feedback.to() ? html`Имейлът до ${feedback.to()} е готов: отвори го и го изпрати от пощата си. Копие остава долу, в „Записано в този браузър“.` : 'Съобщението е запазено само в този браузър и не е изпратено. Виж го долу, в „Записано в този браузър“.'}</p>
-        <p class="s27-warn" data-s27-warn hidden>${icon('alert', { size: 16 })}<span>Браузърът не позволява да се пази запис. Съобщението остава само докато не презаредиш страницата.</span></p>
-        <div class="cluster">${feedback.to() ? html`<a class="btn btn-primary" data-s27-mail href="mailto:${feedback.to()}">${icon('message', { size: 16 })}<span>Отвори имейла</span></a>` : ''}<button type="button" class="btn" data-s27-again="${key}">${feedback.to() ? 'Изпрати още едно' : 'Напиши още едно'}</button></div>
-      </div>
+      <h3 class="s27-ok-h" tabindex="-1"></h3>
+      <button type="button" class="btn" data-s27-again="${key}">Изпрати още едно</button>
     </div>`;
 }
-
-const pad = (n) => String(n).padStart(2, '0');
-function stamp(iso) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return { text: '', iso: '' };
-  return {
-    text: `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()}, ${pad(d.getHours())}:${pad(d.getMinutes())} ч.`,
-    iso: d.toISOString(),
-  };
-}
-
-function savedItem(r) {
-  const t = stamp(r.at);
-  const meta = [
-    r.from && `Екран: ${screenTitle(r.from) || r.from}`,
-    r.val && `Число: ${r.val}`,
-    r.src && `Източник: ${srcShort(r.src)}`,
-    r.block && `Блок: ${r.block}`,
-    r.topic && `Част от сайта: ${topicLabel(r.topic) || r.topic}`,
-    r.contact && `Имейл: ${r.contact}`,
-  ].filter(Boolean);
-  return html`<li class="s27-saved-item">
-    <p class="s27-saved-head"><span class="s27-pill">${feedback.TYPES[r.type]}</span>${t.text ? html` <time datetime="${t.iso}">${t.text}</time>` : ''}</p>
-    <p class="s27-saved-text">${r.text}</p>
-    ${meta.length ? html`<p class="s27-saved-meta">${meta.join(' · ')}</p>` : ''}
-  </li>`;
-}
-const savedBody = (items) =>
-  items.length
-    ? html`<ol class="s27-saved-list">${items.map(savedItem)}</ol>`
-    : html`<p class="s27-saved-empty">Тук ще видиш съобщенията, които ${feedback.to() ? 'изпратиш' : 'запазиш'} от тази страница.</p>`;
-const savedCount = (n) =>
-  n ? `Записани: ${plural(n, 'съобщение', 'съобщения')}.` : 'Още нищо не е записано.';
-
-function saved(items) {
-  return html`<section class="s27-saved" aria-labelledby="s27-saved-h">
-    <h2 id="s27-saved-h" tabindex="-1">Записано в този браузър</h2>
-    <p class="s27-saved-note">Нищо не напуска устройството ти. Съобщенията стоят в паметта на този браузър и можеш да ги изчистиш, когато поискаш.</p>
-    <div class="s27-saved-bar">
-      <p class="s27-saved-count" id="s27-saved-count">${savedCount(items.length)}</p>
-      <button type="button" class="btn btn-sm" data-s27-clear${items.length ? '' : html` hidden`}>Изчисти всичко</button>
-    </div>
-    <div id="s27-saved-body">${savedBody(items)}</div>
-  </section>`;
-}
-
-/* ------------------------------------------------------------------ screen */
 
 export function render(ctx) {
   const info = readContext(ctx);
   const draft = readDraft();
   return html`
-    ${
-      feedback.to()
-        ? callout({
-            kind: 'info',
-            title: 'Как стига до нас',
-            body: html`<p>Формулярът подготвя имейл до <a href="mailto:${feedback.to()}">${feedback.to()}</a> и го изпращаш от своята поща. Копие остава в този браузър. Не пиши лични данни в текста.</p>`,
-          })
-        : callout({
-            kind: 'info',
-            title: 'Запазване в браузъра',
-            body: html`<p>Няма зададен адрес за получаване на съобщения. Написаното се запазва само в този браузър и не се изпраща.</p>`,
-          })
-    }
     <section class="s27-main" aria-labelledby="s27-main-h">
       <h2 id="s27-main-h">Какво искаш да ни кажеш?</h2>
       ${tabs({
@@ -311,13 +227,13 @@ export function render(ctx) {
         tabs: KEYS.map((k) => ({ key: k, label: FORMS[k].tab, body: form(k, ctx, info, draft) })),
       })}
     </section>
-    ${saved(feedback.list())}`;
+`;
 }
 
 /* ------------------------------------------------------------------ behaviour */
 
 export function mount(root, ctx) {
-  const off = [];
+  const off = [feedback.mountForms(root)];
   const on = (el, ev, fn, opt) => {
     el.addEventListener(ev, fn, opt);
     off.push(() => el.removeEventListener(ev, fn, opt));
@@ -363,15 +279,7 @@ export function mount(root, ctx) {
     else control.removeAttribute('aria-invalid');
   }
 
-  function refreshSaved() {
-    const items = feedback.list();
-    root.querySelector('#s27-saved-body').innerHTML = String(savedBody(items));
-    root.querySelector('#s27-saved-count').textContent = savedCount(items.length);
-    root.querySelector('[data-s27-clear]').hidden = !items.length;
-    return items.length;
-  }
-
-  on(root, 'submit', (e) => {
+  on(root, 'submit', async (e) => {
     const f = e.target.closest('form[data-s27-form]');
     if (!f) return;
     e.preventDefault();
@@ -402,15 +310,16 @@ export function mount(root, ctx) {
         .focus();
       return;
     }
-    const rec = feedback.add({
+    const id = await feedback.submit(f, {
       type: spec.type,
-      text,
-      route: 'S27',
-      from: v.from,
-      topic: v.topic,
+      text: v.text,
+      route: byKey[v.from]?.id || 'S27',
+      value: v.val || topicLabel(v.topic),
       contact: v.contact.trim(),
-      ...(key === 'greshka' ? { val: v.val, src: info.src, block: info.block } : {}),
+      source: info.src,
+      block: info.block,
     });
+    if (!id) return;
     dropDraft(f);
     f.reset();
     f.querySelector('[data-s27-count]').textContent = `0 / ${feedback.MAX_TEXT}`;
@@ -421,14 +330,11 @@ export function mount(root, ctx) {
     }
     if (key === 'neyasno' && f.elements.from) f.elements.from.value = info.from;
     const ok = root.querySelector(`[data-s27-ok="${key}"]`);
-    const mail = ok.querySelector('[data-s27-mail]');
-    if (mail) mail.href = feedback.mailto(rec);
-    ok.querySelector('[data-s27-warn]').hidden = rec.persisted;
+    ok.querySelector('.s27-ok-h').textContent = feedback.sent(id);
     f.hidden = true;
     ok.hidden = false;
     ok.querySelector('.s27-ok-h').focus();
-    const n = refreshSaved();
-    ctx.announce(`Записано в този браузър. Общо: ${plural(n, 'съобщение', 'съобщения')}.`);
+    ctx.announce(feedback.sent(id));
   });
 
   on(root, 'input', (e) => {
@@ -463,12 +369,6 @@ export function mount(root, ctx) {
       f.hidden = false;
       f.elements.text.focus();
       return;
-    }
-    if (e.target.closest('[data-s27-clear]')) {
-      feedback.clear();
-      refreshSaved();
-      root.querySelector('#s27-saved-h').focus();
-      ctx.announce('Изчистено. В този браузър няма записани съобщения.');
     }
   });
 

@@ -189,7 +189,7 @@ for (const per of ['2026.draft', '2027.forecast', '2028.forecast', 'unknown']) {
         dataBase: '/data/',
         origin: url.origin,
         sigmaUrl: '',
-        feedbackEmail: '',
+        turnstileSiteKey: '',
       });
       expect('redirect' in result).toBe(false);
       if ('doc' in result) {

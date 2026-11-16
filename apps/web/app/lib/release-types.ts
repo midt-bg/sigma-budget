@@ -3,7 +3,7 @@ export interface ReleaseIdentity {
   dataBase: string;
   origin: string;
   sigmaUrl: string;
-  feedbackEmail: string;
+  turnstileSiteKey: string;
 }
 export interface ReleaseReader {
   get?<T = unknown>(name: string): T | undefined;

@@ -1,106 +1,106 @@
-// Feedback box. The forms of S03 („Още не разбирам“) and S27 (three forms) keep what a visitor sent in this browser, through `safe`
-// (localStorage, key bns.feedback.v1; in memory until reload when storage is blocked), and prepare an e-mail to the team: mailto(rec).
-// The site has no server that receives messages: the visitor sends the e-mail from their own mail app, to <meta name="feedback-email">.
-// Without that address the forms only keep the message here and say so (to() is '').
-//   add({type, text, ...context})  -> the stored record (always returns one; `persisted` says whether it reached localStorage)
-//   list()                         -> records, newest first
-//   clear()                        -> forget them all
-//   mailto(rec)                    -> 'mailto:…' with the message and its context, or '' without an address
-//   send()                         -> the label of the submit button: without an address nothing is sent, so it says where the message goes
-//   sent()                         -> the one success sentence (PLAN S27)
-//   to()                           -> the team's address (the server's FEEDBACK_EMAIL or <meta name="feedback-email">), or ''
-//   TYPES                          -> {error, unclear, idea} -> visible form names
-import { safe } from './store.js';
+// Shared form transport. Drafts stay in the form; receipts are never stored in the browser.
+import { html } from './html.js';
 import { serverScope } from './env.js';
-
-export const KEY = 'bns.feedback.v1';
-/** the team's address: the server request's FEEDBACK_EMAIL when drawn on the server, else <meta name="feedback-email">; '' without one */
-export const to = () =>
-  String(
-    serverScope()?.feedbackEmail ??
-      (typeof document === 'undefined'
-        ? ''
-        : document.querySelector('meta[name="feedback-email"]')?.content) ??
-      '',
-  ).trim();
-export const send = () => (to() ? 'Изпрати' : 'Запази в този браузър');
-export const sent = () =>
-  to() ? 'Благодарим. Остава да изпратиш имейла.' : 'Благодарим. Записахме го в този браузър.';
-export const TYPES = { error: 'Намерих грешка', unclear: 'Още не разбирам', idea: 'Предложи идея' };
 export const MAX_TEXT = 1000;
-
-const CAP = 30; // newest records kept
-const FIELDS = ['route', 'term', 'from', 'block', 'val', 'src', 'topic', 'contact'];
-let mem = [];
-
-const clean = (v, n = 300) =>
-  typeof v === 'string' ? v.replace(/\s+/g, ' ').trim().slice(0, n) : '';
-
-function read() {
-  try {
-    const a = JSON.parse(safe.get('localStorage', KEY) || '[]');
-    return Array.isArray(a)
-      ? a.filter((r) => r && typeof r === 'object' && typeof r.text === 'string' && TYPES[r.type])
-      : [];
-  } catch {
-    return [];
+export const TYPES = { error: 'Намерих грешка', unclear: 'Още не разбирам', idea: 'Предложи идея' };
+export const siteKey = () =>
+  serverScope()?.turnstileSiteKey ??
+  (typeof document === 'undefined'
+    ? ''
+    : document.querySelector('meta[name="turnstile-site-key"]')?.content || '');
+export const send = () => 'Изпрати';
+export const sent = (id) => `Благодарим. Номер на сигнала: ${id}`;
+export const controls = () =>
+  html`<div data-feedback-widget></div><div hidden><label>Уебсайт<input name="website" tabindex="-1" autocomplete="off"></label></div><p data-feedback-status role="status">${siteKey() ? '' : 'Изпращането временно не е достъпно. Опитай след малко.'}</p>`;
+let loading;
+const formWidgets = new WeakMap();
+function loadWidget() {
+  if (globalThis.turnstile) return Promise.resolve(globalThis.turnstile);
+  if (!loading)
+    loading = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+      script.onload = () => globalThis.turnstile.ready(() => resolve(globalThis.turnstile));
+      script.onerror = () => {
+        loading = null;
+        script.remove();
+        reject(new Error('widget unavailable'));
+      };
+      document.head.append(script);
+    });
+  return loading;
+}
+export function mountForms(root) {
+  let disposed = false;
+  const widgets = [];
+  for (const container of root.querySelectorAll('[data-feedback-widget]')) {
+    const form = container.closest('form');
+    const button = form.querySelector('[type="submit"]');
+    button.disabled = true;
+    if (!siteKey()) continue;
+    loadWidget()
+      .then((api) => {
+        if (disposed) return;
+        const id = api.render(container, {
+          sitekey: siteKey(),
+          theme: 'light',
+          callback: () => {
+            button.disabled = false;
+          },
+          'expired-callback': () => {
+            button.disabled = true;
+          },
+          'error-callback': () => {
+            button.disabled = true;
+            form.querySelector('[data-feedback-status]').textContent =
+              'Проверката не успя. Опитай след малко.';
+          },
+        });
+        widgets.push(id);
+        formWidgets.set(form, id);
+      })
+      .catch(() => {
+        if (!disposed)
+          form.querySelector('[data-feedback-status]').textContent =
+            'Изпращането временно не е достъпно. Опитай след малко.';
+      });
   }
-}
-
-export function list() {
-  const stored = read();
-  const ids = new Set(stored.map((r) => r.id));
-  return [...stored, ...mem.filter((r) => !ids.has(r.id))].sort((a, b) =>
-    String(b.at).localeCompare(String(a.at)),
-  );
-}
-
-export function add(entry = {}) {
-  const rec = {
-    id: `f${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
-    type: TYPES[entry.type] ? entry.type : 'unclear',
-    text: String(entry.text ?? '')
-      .replace(/\r\n?/g, '\n')
-      .trim()
-      .slice(0, MAX_TEXT),
-    at: new Date().toISOString(),
+  return () => {
+    disposed = true;
+    for (const id of widgets) globalThis.turnstile?.remove(id);
   };
-  for (const f of FIELDS) {
-    const v = clean(entry[f]);
-    if (v) rec[f] = v;
+}
+export async function submit(form, report) {
+  const button = form.querySelector('[type="submit"]');
+  const status = form.querySelector('[data-feedback-status]');
+  if (!siteKey() || button.disabled) return null;
+  button.disabled = true;
+  status.textContent = 'Изпраща се…';
+  try {
+    const response = await fetch('/api/vrazka', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...report,
+        url: location.pathname + location.search,
+        website: form.elements.website.value,
+        token: form.elements['cf-turnstile-response']?.value || '',
+      }),
+    });
+    if (!response.ok) {
+      status.textContent =
+        response.status === 400 || response.status === 403
+          ? 'Провери написаното и проверката за сигурност и опитай отново.'
+          : 'Сигналът не е изпратен. Опитай след малко.';
+      return null;
+    }
+    const { id } = await response.json();
+    status.textContent = '';
+    return id;
+  } catch {
+    status.textContent = 'Сигналът не е изпратен. Опитай след малко.';
+    return null;
+  } finally {
+    globalThis.turnstile?.reset(formWidgets.get(form));
   }
-  const next = [rec, ...read()].slice(0, CAP);
-  const persisted = safe.set('localStorage', KEY, JSON.stringify(next));
-  if (!persisted) mem = [rec, ...mem].slice(0, CAP);
-  return { ...rec, persisted };
-}
-
-export function clear() {
-  safe.del('localStorage', KEY);
-  mem = [];
-}
-
-const LABEL = {
-  from: 'Екран',
-  val: 'Число или текст',
-  src: 'Източник',
-  block: 'Блок',
-  topic: 'Част от сайта',
-  term: 'Термин',
-  contact: 'Имейл за отговор',
-};
-/** the e-mail the visitor sends from their own mail app: subject „[СИГМА Бюджет] <form>“, the text, then the context lines and the page */
-export function mailto(rec) {
-  const TO = to();
-  if (!TO || !rec) return '';
-  const lines = [
-    rec.text,
-    '',
-    ...Object.keys(LABEL)
-      .filter((k) => rec[k])
-      .map((k) => `${LABEL[k]}: ${rec[k]}`),
-    `Страница: ${location.href}`,
-  ];
-  const q = `subject=${encodeURIComponent(`[СИГМА Бюджет] ${TYPES[rec.type] || 'Съобщение'}`)}&body=${encodeURIComponent(lines.join('\n'))}`;
-  return `mailto:${encodeURIComponent(TO).replace(/%40/g, '@')}?${q}`;
 }
