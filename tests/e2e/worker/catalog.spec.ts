@@ -14,3 +14,9 @@ for (const [path, selector] of [
     ).toHaveCount(0);
   });
 }
+
+test('Maastricht debt keeps missing-value badges', async ({ page, siteURL }) => {
+  await page.goto(siteURL + '/dalg?obhvat=maastricht');
+  const missing = page.locator('article .st[data-st="pending"]');
+  await expect(missing.first()).toHaveText('Няма данни');
+});

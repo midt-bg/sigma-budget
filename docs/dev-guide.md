@@ -306,7 +306,7 @@ mockHidden(text?)                                 // компактното „�
 
 ```js
 import { statusPill, statusLabel, openLegend, STATUS } from '../ui/status.js';
-statusPill('real') · statusPill('forecast') · statusPill('mock') · statusPill('partial')
+statusPill('real') · statusPill('forecast') · statusPill('mock') · statusPill('partial') · statusPill('pending')
 statusPill('real', { label: 'Към 31.07.2026' })
 statusLabel('mock')        // 'Примерни данни'
 ```

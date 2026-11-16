@@ -132,6 +132,11 @@ a.ext svg {
   color: var(--st-mock);
   background: var(--st-mock-soft);
 }
+.st[data-st='pending'] {
+  color: var(--st-pending);
+  background: var(--st-pending-soft);
+  border-style: dashed;
+}
 .legend-list {
   list-style: none;
   margin: 0;

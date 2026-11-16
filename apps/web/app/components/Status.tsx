@@ -1,4 +1,4 @@
-// Data status (plan 2.2 / DATA_SPEC §1): real | partial | mock | forecast.
+// Data status (plan 2.2 / DATA_SPEC §1): real | partial | pending | mock | forecast.
 // A status is never colour alone: every pill carries an icon and words; mock is also hatched (▨).
 //   statusPill('mock')  ·  statusPill('real', {label:'Към 31.07.2026'})  ·  openLegend()
 
@@ -25,14 +25,18 @@ export const STATUS = {
     icon: 'hatch',
     text: 'Измислени стойности, които показват как ще изглежда екранът. Не са истински и не бива да се цитират. Белязани са със щриховка ▨.',
   },
+  pending: {
+    label: 'Няма данни',
+    icon: 'dashed',
+    text: 'Не показваме число без налични официални данни за този показател.',
+  },
 };
 export type DataStatus = keyof typeof STATUS;
-export const statusLabel = (s: string) => STATUS[s as DataStatus]?.label || 'Няма данни';
+export const statusLabel = (s: string) => (STATUS[s as DataStatus] || STATUS.pending).label;
 
 /** statusPill('real') -> <span class="st" data-st="real">✓ Официални данни</span> */
 export function statusPill(status: string, o: { label?: string } = {}) {
-  if (!(status in STATUS)) return null;
-  const key = status as DataStatus;
+  const key: DataStatus = status in STATUS ? (status as DataStatus) : 'pending';
   const s = STATUS[key];
   return (
     <>
