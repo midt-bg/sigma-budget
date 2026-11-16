@@ -153,9 +153,7 @@ test('feed and law interactions preserve fixtures, metadata and focus', async ({
       await page.locator(kpis).evaluateAll(text),
       'GDP percentages equal independent main fixture',
     ).toEqual(await expected.locator(kpis).evaluateAll(text));
-    expect(await page.evaluate('document.activeElement.id'), 'unit switch retains focus').toBe(
-      's14-unit-pct',
-    );
+    await expect(page.locator('#s14-unit-pct'), 'unit switch retains focus').toBeFocused();
     await page.goto(siteURL + '/zakon?to=s14-t-chl1-redove');
     await page.waitForSelector('article[data-ready="1"]');
     expect(
