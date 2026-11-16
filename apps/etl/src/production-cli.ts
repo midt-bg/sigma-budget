@@ -12,8 +12,6 @@ import {
 import { existsSync } from 'node:fs';
 import { resolve, join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
 import {
   buildRelease,
   reproduceRelease,
