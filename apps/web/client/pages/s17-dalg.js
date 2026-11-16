@@ -1273,7 +1273,7 @@ function newDebtBlock(M) {
   });
 }
 
-/* ---- „Не бъркай с…“: the deficit, the new debt and the debt are three different numbers */
+/* ---- Distinguishing the concepts: the deficit, the new debt and the debt are three different numbers */
 function confuseBlock(M) {
   const z = M.z,
     o = M.ctx.data.outlook,
@@ -1327,8 +1327,8 @@ function confuseBlock(M) {
   return block({
     id: 's17-b-confuse',
     level: 2,
-    title: 'Не бъркай дефицит, нов дълг и дълг',
-    sub: 'Три различни числа за една и съща година. Не се събират и не се изваждат.',
+    title: 'Дефицит, нов дълг и дълг: три различни числа',
+    sub: 'Отнасят се до една и съща година, но не се събират и не се изваждат.',
     scope: ZDD,
     source: ['asbp'],
     asOf: z.asOf,

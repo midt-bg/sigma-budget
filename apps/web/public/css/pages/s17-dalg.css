@@ -207,7 +207,7 @@
   margin-top: var(--sp-3);
 }
 
-/* the three plain definitions under the „Не бъркай“ tiles: hairline rows under an ink rule */
+/* the three plain definitions under the debt distinction tiles: hairline rows under an ink rule */
 .page[data-route='S17'] .s17-defs {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

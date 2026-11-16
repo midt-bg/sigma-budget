@@ -132,3 +132,19 @@ test('debt scope comparison starts closed and reveals the existing table', async
     await comparison.locator('summary').click();
   }
 });
+
+test('debt heading and glossary labels distinguish concepts without a command', async ({
+  page,
+  siteURL,
+}) => {
+  await enableHashRoutes(page);
+  await page.goto(`${siteURL}/index.html#/dalg?per=2026.law`);
+  await expect(page.locator('#s17-b-confuse h2')).toHaveText(
+    'Дефицит, нов дълг и дълг: три различни числа',
+  );
+  await page.goto(`${siteURL}/index.html#/rechnik/byudzheten-defitsit`);
+  await expect(page.locator('.s03-conf-note strong').first()).toHaveText('Да не се бърка с:');
+  await expect(
+    page.getByRole('group', { name: 'Да не се бърка с:', exact: true }).first(),
+  ).toBeVisible();
+});
