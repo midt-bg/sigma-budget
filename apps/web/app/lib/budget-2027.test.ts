@@ -268,7 +268,15 @@ it('summarizes the investment programme without provenance noise', async () => {
   // Cell provenance stays in the CSV and the sources note, not in the project tables.
   for (const id of ['s34-projects-table', 's34-project-details'])
     expect(document.querySelector(`#${id}`)?.textContent).not.toMatch(/provenance|Произход/);
-  expect(document.querySelector('#s34-projects #s34-projects-by-institution-fig')).not.toBeNull();
+  // Where the 2027 money goes: the largest institutions, the rest in one row; a name opens the list filtered to its projects.
+  const byInstitution = document.querySelectorAll(
+    '#s34-projects #s34-projects-by-institution .rank-row',
+  );
+  expect(byInstitution).toHaveLength(9);
+  expect(byInstitution[8]?.textContent).toMatch(/^Други \d+ ведомства/);
+  const links = [...byInstitution].flatMap(
+    (row) => row.querySelector('a')?.getAttribute('href') ?? [],
+  );
   const top = tableData(scope.maps.table.get('s34-projects-table'));
   expect(top.rows).toHaveLength(10);
   const all = tableData(scope.maps.table.get('s34-project-details'));
@@ -288,6 +296,21 @@ it('summarizes the investment programme without provenance noise', async () => {
     r.slice(3, 6).reduce((a: number, v: any) => a + (v === '' ? 0 : v), 0),
   );
   expect(totals).toEqual([...totals].sort((a: number, b: number) => b - a));
+  // Each named institution opens the full list searched for it: all of its projects, not the whole list.
+  expect(links).toHaveLength(8);
+  for (const href of links) {
+    const q = String(new URL(href, 'https://budget.test').searchParams.get('q'));
+    const expected = doc.projects
+      .filter((r: any) => r.institution === q || r.institution.endsWith(`/${q}`))
+      .map((r: any) => r.id);
+    const followed = await page(href);
+    const found = tableData(followed.scope.maps.table.get('s34-project-details')).rows.map(
+      (r: any) => r[2],
+    );
+    expect(expected.length).toBeGreaterThan(0);
+    expect(found).toEqual(expect.arrayContaining(expected));
+    expect(found.length).toBeLessThan(doc.projects.length / 2);
+  }
 });
 it('filters the investment projects by the search query', async () => {
   const { scope, html } = await page('/byudzhet-2027?q=самолет');
