@@ -1,5 +1,6 @@
 import { test as base, expect } from '../fixtures.ts';
 import { initializeScreen, screenReady, revealScreen, type Finding } from './browser.ts';
+import { match } from '../../../apps/web/client/routes.js';
 import type { Page } from '@playwright/test';
 export { expect };
 export const test = base.extend<{
@@ -72,7 +73,9 @@ export const test = base.extend<{
 });
 export async function openScreen(page: Page, siteURL: string, address: string) {
   await page.goto(new URL('/' + address, siteURL).href);
-  await expect(page.locator('article.page')).toHaveAttribute('data-ready', '1');
+  const path = address.replace(/^#/, '').split('?')[0]!;
+  const route = match(path.split('/').filter(Boolean))?.route.id || 'S30';
+  await expect(page.locator('article.page[data-ready="1"]')).toHaveAttribute('data-route', route);
   await page.waitForFunction(screenReady, undefined, { timeout: 15000, polling: 100 });
 }
 export async function deepPass(page: Page) {
