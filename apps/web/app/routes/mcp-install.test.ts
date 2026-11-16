@@ -13,7 +13,7 @@ afterEach(() => provideScope(() => null));
 it.each(['https://staging.example', 'https://sigma-budget.midt.bg'])(
   'shows copyable MCP instructions at the configured origin %s',
   async (origin) => {
-    const release = { id: 'test', dataBase: '/data/', origin, sigmaUrl: '', feedbackEmail: '' };
+    const release = { id: 'test', dataBase: '/data/', origin, sigmaUrl: '', turnstileSiteKey: '' };
     const load = async <T>(name: string) => docs[name] as T;
     provideScope(() => ({
       url: new URL('https://request.example/api'),
