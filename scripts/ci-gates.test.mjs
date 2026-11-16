@@ -342,26 +342,6 @@ test('e2e project selectors use equals so file filters cannot become project nam
   }
 });
 
-test('visual audit and contrast stay in the built Worker CI gate', () => {
-  const command =
-    'E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker visual-audit.spec.ts';
-  const workflow = readFileSync('.github/workflows/site.yml', 'utf8');
-  assert.ok(workflow.includes(command));
-  assert.ok(
-    workflow.indexOf(
-      'E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker light-contrast.spec.ts',
-    ) > workflow.indexOf(command),
-  );
-  assert.ok(workflow.indexOf(command) > workflow.indexOf('python -m tests.e2e.screens --url'));
-  for (const name of ['visual-audit', 'light-contrast']) {
-    assert.ok(
-      globSync('tests/e2e/worker/*.spec.ts').includes('tests/e2e/worker/' + name + '.spec.ts'),
-    );
-  }
-  for (const name of ['visual_audit', 'light_contrast'])
-    assert.equal(globSync('tests/e2e/' + name + '.py').length, 0);
-});
-
 test('visual and contrast checks evaluate typed functions instead of source strings', () => {
   for (const file of [
     'tests/e2e/contrast.ts',

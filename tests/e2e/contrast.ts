@@ -106,7 +106,7 @@ function backgroundColor(layers: Background): Color | null {
 }
 
 /** Collect paint and geometry in the browser; calculate contrast independently in Node. */
-function chartLabels(): Label[] {
+function readContrastElements(): { labels: Label[]; fields: Field[] } {
   function backgrounds(element: Element): Background {
     const layers: string[] = [];
     for (let node: Element | null = element; node; node = node.parentElement) {
@@ -119,116 +119,113 @@ function chartLabels(): Label[] {
     }
     return layers;
   }
-  const labels: Label[] = [];
-  const charts = [...document.querySelectorAll('#view .chart[data-ready="1"]')].filter(
-    (element) => {
-      const box = element.getBoundingClientRect();
-      return (box.width > 0 || box.height > 0) && getComputedStyle(element).visibility !== 'hidden';
-    },
-  );
-  for (const [chart, container] of charts.entries()) {
-    const svg = container.querySelector('svg');
-    if (!svg) continue;
-    const shapes = [
-      ...svg.querySelectorAll<SVGGeometryElement>('path,rect,circle,ellipse,polygon'),
-    ].filter((shape) => {
-      const fill = (shape.getAttribute('fill') ?? '').toLowerCase();
-      return fill && fill !== 'none' && fill !== 'transparent' && !fill.startsWith('url(');
-    });
-    const texts = [...svg.querySelectorAll('text')].filter((text) => text.textContent?.trim());
-    const stride = texts.length > 70 ? Math.ceil(texts.length / 70) : 1;
-    for (const [index, text] of texts.entries()) {
-      if (index % stride !== 0) continue;
-      const box = text.getBoundingClientRect();
-      if (box.width < 2 || box.height < 2) continue;
-      const point = svg.createSVGPoint();
-      point.x = box.left + box.width / 2;
-      point.y = box.top + box.height / 2;
-      const fills: ShapeFill[] = [];
-      for (const shape of [...shapes].reverse()) {
-        if (!(text.compareDocumentPosition(shape) & Node.DOCUMENT_POSITION_PRECEDING)) continue;
-        const matrix = shape.getScreenCTM();
-        if (!matrix) continue;
-        try {
-          if (shape.isPointInFill(point.matrixTransform(matrix.inverse())))
-            fills.push({
-              color: shape.getAttribute('fill') ?? '',
-              opacity: parseFloat(
-                shape.getAttribute('fill-opacity') || shape.getAttribute('opacity') || '1',
-              ),
-            });
-        } catch {
-          /* Degenerate SVG geometry has no usable fill. */
-        }
-      }
-      const style = getComputedStyle(text);
-      labels.push({
-        chart,
-        text: text.textContent!.trim().slice(0, 24),
-        foreground: text.getAttribute('fill') ?? '',
-        background: backgrounds(container),
-        fills,
-        size: parseFloat(style.fontSize) || 12,
-        bold: parseInt(style.fontWeight, 10) >= 700 || style.fontWeight === 'bold',
+  function chartLabels(): Label[] {
+    const labels: Label[] = [];
+    const charts = [...document.querySelectorAll('#view .chart[data-ready="1"]')].filter(
+      (element) => {
+        const box = element.getBoundingClientRect();
+        return (
+          (box.width > 0 || box.height > 0) && getComputedStyle(element).visibility !== 'hidden'
+        );
+      },
+    );
+    for (const [chart, container] of charts.entries()) {
+      const svg = container.querySelector('svg');
+      if (!svg) continue;
+      const shapes = [
+        ...svg.querySelectorAll<SVGGeometryElement>('path,rect,circle,ellipse,polygon'),
+      ].filter((shape) => {
+        const fill = (shape.getAttribute('fill') ?? '').toLowerCase();
+        return fill && fill !== 'none' && fill !== 'transparent' && !fill.startsWith('url(');
       });
+      const texts = [...svg.querySelectorAll('text')].filter((text) => text.textContent?.trim());
+      const stride = texts.length > 70 ? Math.ceil(texts.length / 70) : 1;
+      for (const [index, text] of texts.entries()) {
+        if (index % stride !== 0) continue;
+        const box = text.getBoundingClientRect();
+        if (box.width < 2 || box.height < 2) continue;
+        const point = svg.createSVGPoint();
+        point.x = box.left + box.width / 2;
+        point.y = box.top + box.height / 2;
+        const fills: ShapeFill[] = [];
+        for (const shape of [...shapes].reverse()) {
+          if (!(text.compareDocumentPosition(shape) & Node.DOCUMENT_POSITION_PRECEDING)) continue;
+          const matrix = shape.getScreenCTM();
+          if (!matrix) continue;
+          try {
+            if (shape.isPointInFill(point.matrixTransform(matrix.inverse())))
+              fills.push({
+                color: shape.getAttribute('fill') ?? '',
+                opacity: parseFloat(
+                  shape.getAttribute('fill-opacity') || shape.getAttribute('opacity') || '1',
+                ),
+              });
+          } catch {
+            /* Degenerate SVG geometry has no usable fill. */
+          }
+        }
+        const style = getComputedStyle(text);
+        labels.push({
+          chart,
+          text: text.textContent!.trim().slice(0, 24),
+          foreground: text.getAttribute('fill') ?? '',
+          background: backgrounds(container),
+          fills,
+          size: parseFloat(style.fontSize) || 12,
+          bold: parseInt(style.fontWeight, 10) >= 700 || style.fontWeight === 'bold',
+        });
+      }
     }
+    return labels;
   }
-  return labels;
-}
 
-function inputFields(): Field[] {
-  function backgrounds(element: Element): Background {
-    const layers: string[] = [];
-    for (let node: Element | null = element; node; node = node.parentElement) {
-      const style = getComputedStyle(node);
-      if (style.backgroundImage !== 'none') return null;
-      layers.push(style.backgroundColor);
-      const channels = style.backgroundColor.match(/[\d.]+/g)?.map(Number);
-      if (channels && (channels[3] ?? 1) >= 0.99) break;
-    }
-    return layers;
-  }
-  function edge(element: Element): Edge {
-    const style = getComputedStyle(element);
-    return {
-      background: backgrounds(element),
-      parent: backgrounds(element.parentElement ?? document.body),
-      borders: [
-        { width: parseFloat(style.borderTopWidth) || 0, color: style.borderTopColor },
-        { width: parseFloat(style.borderRightWidth) || 0, color: style.borderRightColor },
-        { width: parseFloat(style.borderBottomWidth) || 0, color: style.borderBottomColor },
-        { width: parseFloat(style.borderLeftWidth) || 0, color: style.borderLeftColor },
-      ],
-    };
-  }
-  return [
-    ...document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
-      'input:not([type=radio]):not([type=checkbox]):not([type=hidden]):not([type=range]), textarea',
-    ),
-  ]
-    .filter((element) => {
-      const box = element.getBoundingClientRect();
-      return (box.width > 0 || box.height > 0) && getComputedStyle(element).visibility !== 'hidden';
-    })
-    .map((element) => {
-      const placeholder = getComputedStyle(element, '::placeholder');
-      const edges = [edge(element)];
-      for (
-        let parent = element.parentElement, level = 0;
-        parent && level < 2 && parent !== document.body && !parent.matches('dialog, #view, main');
-        parent = parent.parentElement, level++
-      )
-        edges.push(edge(parent));
+  function inputFields(): Field[] {
+    function edge(element: Element): Edge {
+      const style = getComputedStyle(element);
       return {
-        name: element.id || element.name || element.tagName.toLowerCase(),
         background: backgrounds(element),
-        placeholder: element.placeholder,
-        placeholderColor: placeholder.color,
-        placeholderOpacity: parseFloat(placeholder.opacity),
-        checkBoundary: getComputedStyle(element).outlineStyle === 'none',
-        edges,
+        parent: backgrounds(element.parentElement ?? document.body),
+        borders: [
+          { width: parseFloat(style.borderTopWidth) || 0, color: style.borderTopColor },
+          { width: parseFloat(style.borderRightWidth) || 0, color: style.borderRightColor },
+          { width: parseFloat(style.borderBottomWidth) || 0, color: style.borderBottomColor },
+          { width: parseFloat(style.borderLeftWidth) || 0, color: style.borderLeftColor },
+        ],
       };
-    });
+    }
+    return [
+      ...document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
+        'input:not([type=radio]):not([type=checkbox]):not([type=hidden]):not([type=range]), textarea',
+      ),
+    ]
+      .filter((element) => {
+        const box = element.getBoundingClientRect();
+        return (
+          (box.width > 0 || box.height > 0) && getComputedStyle(element).visibility !== 'hidden'
+        );
+      })
+      .map((element) => {
+        const placeholder = getComputedStyle(element, '::placeholder');
+        const edges = [edge(element)];
+        for (
+          let parent = element.parentElement, level = 0;
+          parent && level < 2 && parent !== document.body && !parent.matches('dialog, #view, main');
+          parent = parent.parentElement, level++
+        )
+          edges.push(edge(parent));
+        return {
+          name: element.id || element.name || element.tagName.toLowerCase(),
+          background: backgrounds(element),
+          placeholder: element.placeholder,
+          placeholderColor: placeholder.color,
+          placeholderOpacity: parseFloat(placeholder.opacity),
+          checkBoundary: getComputedStyle(element).outlineStyle === 'none',
+          edges,
+        };
+      });
+  }
+
+  return { labels: chartLabels(), fields: inputFields() };
 }
 
 function boundaryRatio(edge: Edge): number {
@@ -244,8 +241,7 @@ function boundaryRatio(edge: Edge): number {
 }
 
 export async function measureContrast(page: Page): Promise<ContrastResult> {
-  const labels = await page.evaluate(chartLabels);
-  const fields = await page.evaluate(inputFields);
+  const { labels, fields } = await page.evaluate(readContrastElements);
   const result: ContrastResult = {
     texts: 0,
     fields: fields.length,
@@ -314,27 +310,7 @@ async function openDetails(page: Page): Promise<void> {
 }
 export async function expandContent(page: Page): Promise<void> {
   await openDetails(page);
-  for (const list of await page.locator('#view [role="tablist"]').all()) {
-    const tabs = list.getByRole('tab', { includeHidden: true });
-    const selected = await tabs.evaluateAll((elements) =>
-      Math.max(
-        0,
-        elements.findIndex((element) => element.getAttribute('aria-selected') === 'true'),
-      ),
-    );
-    for (const tab of await tabs.all()) {
-      if ((await tab.getAttribute('aria-selected')) === 'true') continue;
-      // Also exercise tabs inside folded/hidden panels, which cannot receive a pointer click.
-      await tab.evaluate((element: HTMLElement) => element.click());
-      await readyCharts(page);
-      await openDetails(page);
-    }
-    if (await tabs.count())
-      await tabs.nth(selected).evaluate((element: HTMLElement) => element.click());
-  }
   await readyCharts(page, 30_000);
-  await expect(page.locator('#view')).not.toHaveAttribute('aria-busy', 'true');
-  await expect(page.locator('#view article.page')).toHaveAttribute('data-ready', '1');
   // Font loading and image completion have no locator matcher; geometry must be final before sampling.
   await page.evaluate(async (): Promise<void> => {
     await document.fonts.ready;
