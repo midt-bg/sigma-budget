@@ -344,6 +344,7 @@ describe('the crawl', () => {
     ['/api', '/api'],
     ['/embed/dalg.s17-eu', null],
     ['//other.example/razhodi', '/razhodi'],
+    ['/merki/kr1', '/merki/kr1?per=2026.law'],
   ])('normPath(%j) = %j', (href, want) => expect(normPath(href)).toBe(want));
 
   it('starts from the home page and every sample address', () => {

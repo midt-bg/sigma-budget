@@ -389,7 +389,7 @@ export async function build(route, params, query, o = {}) {
   if (o.stale?.()) throw aborted();
 
   if (!supportsPeriod(route, mod, ctx.period.key)) {
-    const sup = periodsFor(route, mod)
+    const sup = periodsFor(route, mod, ctx)
       .map((k) => store.periodByKey(k))
       .filter(Boolean);
     return frame(

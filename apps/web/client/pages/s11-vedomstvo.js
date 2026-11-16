@@ -1,4 +1,4 @@
-import { institutions, isFramework } from '../budget-2027.js';
+import { ARTICLE_BY_CODE, isFramework } from '../budget-2027.js';
 import { institutionView, mountBillSearch, billListHref } from './bill-views.js';
 // S11 · Ведомство · #/vedomstvo/<код>[/<програма>] · next S15, S10 · period 2026.law only
 // Data, only through `needs`:
@@ -23,9 +23,9 @@ import { unitSwitch, bindUnitSwitch } from '../ui/unit-switch.js';
 // the four budgets whose programmes are still pending (P03) have no file: used only to spare a direct load a 404 before the index is cached
 const NO_FILE = [];
 export const needs = (ctx) => {
-  if (isFramework(ctx)) return ['core', 'budget2027?', 'ministries'];
+  if (isFramework(ctx)) return ['core', 'budget2027?', 'ministries?'];
   const code = String(ctx?.params?.code ?? '');
-  const list = ['core', 'ministries', 'budget2027?'];
+  const list = ['core', 'ministries'];
   if (/^\d{4}$/.test(code)) {
     const known = data.get('ministries')?.items?.find?.((m) => m && String(m.id) === code);
     if (known ? known.programs?.status === 'real' : !NO_FILE.includes(code))
@@ -40,8 +40,7 @@ export function entityPeriods(ctx) {
   const code = String(ctx.params.code);
   const historical = ctx.data.ministries?.items?.some((m) => String(m.id) === code);
   const current =
-    !ctx.params.program &&
-    (code === 'art1' || institutions(ctx.data.budget2027).some((m) => m.code === code));
+    !ctx.params.program && (code in ARTICLE_BY_CODE || code === 'art32' || code === 'art1');
   return [historical && '2026.law', current && '2027.draft'].filter(Boolean);
 }
 

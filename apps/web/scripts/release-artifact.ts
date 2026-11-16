@@ -169,7 +169,8 @@ export function readText(path: string): string {
 
 // --- addresses ----------------------------------------------------------------------------------------------------------------------
 
-/** '/razhodi/obrazovanie?per=x#y' -> '/razhodi/obrazovanie'; null for files, the embed view and anything else that is not a screen */
+/** Crawl address without display queries or fragments; individual measures retain their historical law period.
+ * Returns null for files, embeds and other addresses that are not screens. */
 export function normPath(href: string): string | null {
   // urllib.parse.urlsplit(href).path: tabs and line breaks dropped, leading controls and spaces stripped, cut at the query or the fragment
   const url = href.replace(/[\t\r\n]/g, '').replace(/^[\x00-\x20]+/, '');

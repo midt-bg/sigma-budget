@@ -1,8 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { readFileSync, mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { seedPaths, writeExtras, type PageInfo } from '../../scripts/release-artifact';
+import { readFileSync } from 'node:fs';
 import { parseHTML } from 'linkedom';
 import { institutions, stateDebt, strictSum, FRAMEWORK } from '../../client/budget-2027.js';
 import { annualView } from '../../client/annual.js';
@@ -565,37 +562,15 @@ it.each(['/vedomstva', '/vedomstvo/1300', '/vedomstvo/art1'])(
     expect(body.textContent).not.toMatch(/Предстои|пълен програмен архив|Програмите за 2027/);
   },
 );
-it('sitemap measure addresses show the measure and other periods link back to it', async () => {
-  const destination = seedPaths(['/merki/kr1?per=2026.law']).find((p) => p.startsWith('/merki/'))!;
+it('historical measures are shown in their own period and other periods link back to them', async () => {
+  const destination = '/merki/kr1?per=2026.law';
   const measure = await page(destination);
   expect(measure.vm.route.id).toBe('S12');
   expect(measure.document.querySelector('h1')!.textContent).not.toBe('Мерки в бюджета');
   expect(measure.html).not.toContain('Мярката е от бюджета за 2026 г.');
-  const directory = mkdtempSync(join(tmpdir(), 'sigma-measure-'));
-  try {
-    writeExtras(
-      directory,
-      {
-        [destination]: {
-          route: 'S12',
-          title: measure.document.querySelector('h1')!.textContent!,
-          desc: '',
-          robots: '',
-          text: measure.html,
-        } as PageInfo,
-      },
-      'https://budget.test',
-      '',
-      [],
-    );
-    const sitemap = readFileSync(join(directory, 'sitemap.xml'), 'utf8');
-    expect(sitemap).toContain('<loc>https://budget.test/merki/kr1?per=2026.law</loc>');
-    expect(sitemap).not.toContain('<loc>https://budget.test/merki/kr1</loc>');
-  } finally {
-    rmSync(directory, { recursive: true, force: true });
-  }
   for (const period of ['2027.draft', '2028.forecast', '2029.forecast']) {
     const other = await page(`/merki/kr1?per=${period}`);
+    expect(other.document.querySelector('h1')!.textContent).toBe('Мярка от бюджета за 2026 г.');
     const link = other.document.querySelector(`a[href="${destination}"]`);
     expect(link?.textContent).toContain('Виж мярката');
   }
@@ -652,5 +627,15 @@ it('keeps entity names above the missing-period message', async () => {
         ? 'Няма индивидуално общинско разпределение за този период'
         : 'Няма индивидуални бюджети за този период',
     );
+  }
+});
+
+it('missing-period recovery offers only periods containing the institution', async () => {
+  for (const address of ['/vedomstvo/art32?per=2025.report', '/vedomstvo/art1?per=2026.expected']) {
+    const { document } = await page(address);
+    expect(document.querySelector('.page-body')!.textContent).toContain('Няма данни за');
+    const actions = [...document.querySelectorAll('[data-action="set-period"]')];
+    expect(actions.map((action) => action.getAttribute('data-value'))).toEqual(['2027.draft']);
+    expect(actions[0]!.textContent).toContain('Покажи 2027');
   }
 });
