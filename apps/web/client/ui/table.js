@@ -83,6 +83,8 @@ export function updateRows(id, rows) {
 
 /** the table as plain values: used by the CSV export and by figure twins */
 export function tableData(s) {
+  const periodKey = s.rowPeriodKey || s.columns.find((c) => c.key === 'period')?.key;
+  const unit = [...new Set(s.columns.map((c) => c.unit).filter(Boolean))].join(' / ');
   return {
     columns: s.columns.map(unitLabel),
     rows: sorted(s).map((r) =>
@@ -92,7 +94,8 @@ export function tableData(s) {
       }),
     ),
     statuses: sorted(s).map((r) => (r._mock ? 'mock' : r._status)),
-    ...(s.rowUnitKey ? { units: sorted(s).map((r) => r[s.rowUnitKey]) } : {}),
+    units: sorted(s).map((r) => (s.rowUnitKey ? r[s.rowUnitKey] : unit || undefined)),
+    ...(periodKey ? { periods: sorted(s).map((r) => r[periodKey]) } : {}),
   };
 }
 

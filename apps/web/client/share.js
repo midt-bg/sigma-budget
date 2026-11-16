@@ -210,7 +210,9 @@ const csvDecimal = (v) =>
 /** what every row of a CSV says about itself (section 9.2): the period, the unit, the budget scope and the release of the data. The period
  *  line of a block is „януари—септември 2026 г. · млрд. €“: the part after „ · “ is the unit, unless the block names one */
 export function csvMeta(spec) {
-  const [per, ...rest] = String(spec.period || '').split(' · ');
+  const periods = currentRoute()?.periods;
+  const selected = Array.isArray(periods) && periods.length === 1 ? periods[0] : store.period.key;
+  const [per, ...rest] = String(spec.period || selected).split(' · ');
   const scope = typeof spec.scope === 'string' ? spec.scope : spec.scope?.key;
   return {
     period: per || (spec.asOf ? `към ${date(spec.asOf)}` : ''),
@@ -241,7 +243,7 @@ export function csvFor(spec) {
     lines.push(
       [
         ...r.map((v, column) => (t.decimalColumns?.includes(column) ? csvDecimal(v) : csvVal(v))),
-        ...[m.period, t.units?.[i] ?? m.unit, m.scope, m.release].map(csvVal),
+        ...[t.periods?.[i] ?? m.period, t.units?.[i] ?? m.unit, m.scope, m.release].map(csvVal),
         st(i),
         src,
       ]

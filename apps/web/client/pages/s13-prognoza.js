@@ -184,6 +184,7 @@ function twin(f, items) {
   const rows = f.years.map((y, i) => {
     const r = {
       y: String(y),
+      period: f.o.periodKeys[i],
       v: LONG[f.kinds[i]],
       _status: f.kinds[i] === 'forecast' ? 'forecast' : 'real',
     };
@@ -205,7 +206,7 @@ function twin(f, items) {
     });
     return r;
   });
-  return { columns, rows };
+  return { columns, rows, rowPeriodKey: 'period' };
 }
 const scaled = (s, sign) => ({
   mln: s.mln.map((v) => (ok(v) ? v * sign : null)),

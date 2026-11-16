@@ -242,12 +242,13 @@ function lawsPanel(ctx, all) {
 }
 
 /* ---------------------------------------------------------------- the sums */
-function sums(doc, rev, exp, counts) {
-  const balance = ok(rev[0]) && ok(exp[0]) ? Math.round((rev[0] - exp[0]) * 10) / 10 : null;
+function sums(ctx, doc, rev, exp, counts) {
+  const index = FRAMEWORK.indexOf(ctx.period.key);
+  const year = YEARS[index];
+  const balance =
+    ok(rev[index]) && ok(exp[index]) ? Math.round((rev[index] - exp[index]) * 10) / 10 : null;
   const later = (v) =>
-    YEARS.slice(1)
-      .map((y, k) => `${yr(y)}: ${signed(v[k + 1])}`)
-      .join(' · ');
+    YEARS.flatMap((y, k) => (k === index ? [] : [`${yr(y)}: ${signed(v[k])}`])).join(' · ');
   const csv = () =>
     tableData({
       columns: [
@@ -277,29 +278,29 @@ function sums(doc, rev, exp, counts) {
     ...frameworkStatus,
     source: ['budget2027'],
     asOf: doc.publication,
-    sub: 'Общите редове на двете таблици. Сумите са промяната спрямо предходната година.',
+    sub: `Мерките от проекта за бюджет 2027 с ефект през ${yr(year)} Общите редове на двете таблици показват промяната спрямо предходната година.`,
     share: {
       ...share,
       table: csv,
-      text: `Мерките в проекта за бюджет 2027: приходни ${signed(rev[0])} млн. €, разходни ${signed(exp[0])} млн. € през 2027 г.`,
+      text: `Мерките в проекта за бюджет 2027: приходни ${signed(rev[index])} млн. €, разходни ${signed(exp[index])} млн. € през ${year} г.`,
     },
     foot: 'Ефектът върху салдото е наше пресмятане: приходните мерки минус разходните.',
     body: kpiGrid(
       [
         kpi({
-          label: `Приходни мерки през ${yr(YEARS[0])}`,
-          value: signed(rev[0]),
+          label: `Приходни мерки през ${yr(year)}`,
+          value: signed(rev[index]),
           unit: 'млн. €',
           sub: `${plural(counts.II_7, 'мярка', 'мерки')}. ${later(rev)} млн. €.`,
         }),
         kpi({
-          label: `Разходни мерки през ${yr(YEARS[0])}`,
-          value: signed(exp[0]),
+          label: `Разходни мерки през ${yr(year)}`,
+          value: signed(exp[index]),
           unit: 'млн. €',
-          sub: `${plural(counts.II_8, 'мярка', 'мерки')}. ${ok(exp[0]) ? (exp[0] < 0 ? 'Нетно по-малко разходи.' : 'Нетно повече разходи.') : ''}`,
+          sub: `${plural(counts.II_8, 'мярка', 'мерки')}. ${ok(exp[index]) ? (exp[index] < 0 ? 'Нетно по-малко разходи.' : 'Нетно повече разходи.') : ''}`,
         }),
         kpi({
-          label: `Ефект върху салдото през ${yr(YEARS[0])}`,
+          label: `Ефект върху салдото през ${yr(year)}`,
           value: signed(balance),
           unit: 'млн. €',
           sub: ok(balance) ? (balance > 0 ? 'Подобрява салдото.' : 'Влошава салдото.') : '',
@@ -359,7 +360,7 @@ export function measuresView(ctx) {
         title: 'Числата са по законопроекта, не по приет закон',
         body: html`<p>Мерките са от таблици II-7 и II-8 на АСБП 2027–2029, публикувани от МФ на ${date(doc.publication)}. Народното събрание още не е приело бюджета.</p>`,
       })}
-      ${sums(doc, totalOf(doc, 'II_7'), totalOf(doc, 'II_8'), counts)}
+      ${sums(ctx, doc, totalOf(doc, 'II_7'), totalOf(doc, 'II_8'), counts)}
       ${howTo(doc, ctx.data.measures2027)}
       ${tabs({
         id: 's12-27-lists',
