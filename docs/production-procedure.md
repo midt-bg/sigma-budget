@@ -28,6 +28,7 @@ Staging ресурсите също са създадени, с приложен
 
 - GitHub Environment `production`: required reviewer и deployment tags само `v*`.
 - В `production`: secrets `CLOUDFLARE_API_TOKEN` и `CLOUDFLARE_ACCOUNT_ID`. Токенът има Editor само за Worker `sigma-budget` и Zone → Workers Routes → Write само за зоната `midt.bg`.
+- Repository-level secrets `CLOUDFLARE_*` не трябва да съществуват: при липсваща стойност Environment наследява repository secret.
 - Tag ruleset за `v*`, който ограничава създаването, преместването и изтриването на тези тагове до администратори.
 - GitHub Environment `staging`: отделен `CLOUDFLARE_API_TOKEN` с Editor само за Worker `sigma-budget-staging`, secret `CLOUDFLARE_ACCOUNT_ID` и variable `STAGING_ORIGIN` = `https://sigma-budget-staging.cf-midt.workers.dev`.
 
@@ -35,10 +36,24 @@ Staging ресурсите също са създадени, с приложен
 
 За commit от `main` с минал CI собственикът създава и push-ва таг `vX.Y.Z`. Всички validation jobs се изпълняват и за тага.
 Production build използва горното ниво на `wrangler.jsonc`, origin `https://sigma-budget.midt.bg` и няма `--noindex`.
-След успешен `required-validation` се изисква одобрение в `production`. Deploy job-ът отказва таг извън формата
-`^v[0-9]+\.[0-9]+\.[0-9]+$` или commit, който не е ancestor на `origin/main`, като проверява пълната Git история.
-После изпълнява `node tests/release/compat_check.mjs --env-url https://sigma-budget.midt.bg` и
-`pnpm exec wrangler deploy -c apps/web/build/server/wrangler.json`. Липсващи production secrets са грешка;
+В `target` job-а, преди останалите проверки и преди заявката за одобрение, се проверяват форматът
+`^v[0-9]+\.[0-9]+\.[0-9]+$` и дали commit-ът е ancestor на `origin/main`, с пълната Git история.
+След успешен `required-validation` се изисква одобрение в `production`.
+Одобряващият reviewer проверява, че tagged commit-ът е в `main`.
+Deploy job-ът повтаря проверките за формат и история и отказва таг, който не е първи в `git tag -l 'v*' --sort=-v:refname`;
+за умишлено връщане на кода се използва `wrangler rollback`.
+
+Преди deploy отделна стъпка без Cloudflare secrets изпълнява
+`node tests/release/compat_check.mjs --env-url https://sigma-budget.midt.bg --allow-first-deploy`.
+Ако сайтът отговаря, реалното текущо издание се проверява както досега, а несъвместимост или нечетимо издание спира deploy-а.
+За първото качване, когато сайтът още не работи (DNS грешка, чужд `404`, Cloudflare error code или placeholder `503` с текст
+„not deployed yet“), се издава warning „first deploy: the environment does not run the site yet, nothing to check against“ и се продължава.
+Това не е пропускане на проверка на съществуващо издание.
+
+Следва `pnpm exec wrangler deploy -c apps/web/build/server/wrangler.json`. После отделна публична GET проверка на `<origin>/`
+изисква `200` и `X-Release-Id`, равен на `release_id` от `data/release/releases/current.json`. Проверява се до три минути,
+за да има време за DNS и custom domain сертификата; грешен адрес, липсваща заглавка или друго издание завършват с грешка.
+Същата процедура се използва и за първия staging deploy. Липсващи production secrets са грешка;
 за staging остават notice и пропускане на deploy. Deploy-ите за всяка среда са последователни и не прекъсват текущия deploy.
 PR не публикува, а push към `main` публикува staging.
 
