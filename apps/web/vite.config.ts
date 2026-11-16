@@ -1,10 +1,8 @@
 import { availableCatalog } from './client/available-catalog.js';
 import { preservePublishedOutputs } from './scripts/release-artifact.ts';
-import { readFileSync } from 'node:fs';
+import { cpSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { staticResponseHeaders } from './app/lib/security.ts';
-import { writeFileSync } from 'node:fs';
 import { build as bundle, type Plugin as EsbuildPlugin } from 'esbuild';
-import { cpSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { reactRouter } from '@react-router/dev/vite';
 import { cloudflare } from '@cloudflare/vite-plugin';

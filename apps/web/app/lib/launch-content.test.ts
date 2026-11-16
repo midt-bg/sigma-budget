@@ -6,6 +6,7 @@ import { parse } from '../../client/data.js';
 import { requestState } from '../../client/store.js';
 import { build, frameHtml, resolve } from '../../client/render.js';
 import * as catalogue from '../../client/catalog.js';
+import { availableCatalog } from '../../client/available-catalog.js';
 import * as feed from '../../client/pages/s16-novo.js';
 import * as reactFeed from '../routes/novo-content';
 
@@ -131,4 +132,10 @@ it('keeps the debt forecast page and appends the dated bulletin snapshot without
   expect(text).toContain('XS2890436087');
   expect(text).toContain('не е превалутирана');
   expect(document.querySelector('#debt-issues-outstanding')).not.toBeNull();
+});
+
+it.each([undefined, 'unknown'])('excludes datasets with an unverified status (%s)', (status) => {
+  const input = { datasets: [{ id: 'test-set', slug: 'test-set', title: 'Тестов набор', status }] };
+  expect(catalogue.model(input).sets).toEqual([]);
+  expect(availableCatalog(input).datasets).toEqual([]);
 });

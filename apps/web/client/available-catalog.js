@@ -1,8 +1,10 @@
-import { datasetDescriptions } from './production/launch-texts.js';
+import { datasetDescriptions, catalogueMethodologyTexts } from './production/launch-texts.js';
 
 // Compatibility view for releases that still list unavailable datasets.
 export function availableCatalog(catalog) {
-  const datasets = (catalog.datasets || []).filter((set) => set.status !== 'pending');
+  const datasets = (catalog.datasets || []).filter((set) =>
+    ['real', 'partial', 'forecast', 'mock'].includes(set.status),
+  );
   const slugs = new Set(datasets.map((set) => set.slug));
   return {
     ...catalog,
@@ -28,6 +30,9 @@ export function availableCatalog(catalog) {
           key,
           catalog[key].map((note) => ({
             ...note,
+            ...(key === 'methodology' && catalogueMethodologyTexts[note.id]
+              ? { text: catalogueMethodologyTexts[note.id] }
+              : {}),
             ...(note.related ? { related: note.related.filter((slug) => slugs.has(slug)) } : {}),
           })),
         ]),

@@ -188,7 +188,7 @@ function normSchema(s) {
 function normSet(d, i) {
   const slug = str(d.slug).trim().toLowerCase() || str(d.id).trim().toLowerCase();
   const file = safeFile(d.file);
-  const status = STATUSES.includes(d.status) ? d.status : 'real';
+  const status = d.status;
   const parts = arr(d.parts)
     .map((p) => ({
       code: str(p?.code),
@@ -249,7 +249,7 @@ export function model(cat, sources) {
 function build(c, srcs) {
   const seen = new Set();
   const sets = arr(c.datasets)
-    .filter((d) => d && typeof d === 'object' && d.status !== 'pending')
+    .filter((d) => d && typeof d === 'object' && STATUSES.includes(d.status))
     .map(normSet)
     .filter((s) => s.slug && !seen.has(s.slug) && seen.add(s.slug));
   const bySlug = new Map(sets.map((s) => [s.slug, s]));
