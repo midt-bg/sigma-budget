@@ -254,11 +254,9 @@
 .page[data-route='S17'] .s17-key-figures {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin-inline: 0;
-  clip-path: none;
 }
 .page[data-route='S17'] .s17-key-figures > .kpi {
-  padding: var(--sp-4) var(--sp-2);
+  padding-block: var(--sp-4);
   border: 0;
 }
 .page[data-route='S17'] .s17-key-figures .kpi-value {
@@ -286,4 +284,17 @@
 .page[data-route='S17'] .s17-key-figures .kpi-sub {
   font-size: var(--fs-xs);
   color: var(--ink-mid);
+}
+
+@media (max-width: 599px) {
+  .page[data-route='S17'] .s17-key-figures {
+    margin-inline: 0;
+    clip-path: none;
+  }
+  .page[data-route='S17'] .s17-key-figures > .kpi {
+    padding-inline: var(--sp-2);
+  }
+  .page[data-route='S17'] .s17-key-figures > .kpi:first-child {
+    padding-left: 0;
+  }
 }

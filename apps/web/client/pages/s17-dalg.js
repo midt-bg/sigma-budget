@@ -1,13 +1,13 @@
 import { debtKeyFigures } from '../ui/debt-key-figures.js';
 import { debtIssues } from '../ui/debt-issues.js';
-import { isFramework } from '../budget-2027.js';
+import { isFramework, stateDebt, cellValue } from '../budget-2027.js';
 import { debtView, mountBillSearch, debtChart2027 } from './bill-views.js';
 // S17 Колко дължим? (G3). The state debt counted two ways: by the State Debt Act (ЗДД: table VI-1 of the budget motives, 2024-2028)
 // and by the Maastricht rules (Eurostat, 2015-2025, against the 60% line). Every number comes from debt.json (D13+D14); the financing of
 // the deficit from execution.json (D16), interest and balance from outlook.json (D15). Nothing is typed from memory.
 // The visitor picks the count in the query: ?obhvat=zdd (default) | maastricht. Charts honour „% от БВП“ and „на човек“ (view.chartUnit).
 import { html, esc } from '../html.js';
-import { num, pct, date, monthName, money, moneyParts, EUR_RATE, NBSP, DASH } from '../format.js';
+import { num, pct, date, monthName, money, moneyParts, NBSP, DASH } from '../format.js';
 import { block } from '../ui/block.js';
 import { seg } from '../ui/seg.js';
 import { dataTable } from '../ui/table.js';
@@ -40,8 +40,6 @@ const list = (a, n) =>
 const pick = (a, i) => (Array.isArray(a) && ok(a[i]) ? a[i] : null);
 const lastOf = (a) => (Array.isArray(a) && a.length ? a[a.length - 1] : null);
 const maxAbs = (...lists) => Math.max(0, ...lists.flat().filter(ok).map(Math.abs));
-const diff = (a, b) => (ok(a) && ok(b) ? a - b : null);
-const chg = (a, b) => (ok(a) && ok(b) && b !== 0 ? (a / b - 1) * 100 : null);
 /** „2026 г.“ with a no-break space, so that „г.“ never stands alone on a line */
 const yr = (y) => `${y}${NBSP}г.`;
 /** a year ends in a period already ("2025 г."): close a sentence with one period only */
@@ -57,10 +55,6 @@ const qName = (id) => {
 const qCat = (id) => {
   const m = /^(\d{4})-Q([1-4])$/.exec(id || '');
   return m ? `${m[1]}\nТ${m[2]}` : String(id || '');
-};
-const levTxt = (mln) => {
-  const v = mln * EUR_RATE;
-  return `≈${NBSP}${v >= 1000 ? `${num(v / 1000, 2)}${NBSP}млрд.` : `${num(v, 1)}${NBSP}млн.`}${NBSP}лв.`;
 };
 const withShare = (mln, pg) => `${money(mln)}${ok(pg) ? ` (${pct(pg, 1)} от БВП)` : ''}`;
 
@@ -152,14 +146,6 @@ export function ledeText(M) {
   return `${base}${what} ${withShare(M.mln, M.pg)}.`;
 }
 
-/** one sentence under the heading of the numbers: what the chosen count is */
-function scopeLead(M) {
-  if (M.scope === ZDD)
-    return 'Това е дългът на държавата по Закона за държавния дълг, както го показва Министерството на финансите. Разделен е на външен и вътрешен.';
-  const thr = M.m && M.m.thresholdPctGdp;
-  return `Това е консолидираният брутен дълг на целия сектор „Държавно управление“. По него България се сравнява с Европейския съюз${ok(thr) ? ` и с референтната стойност от ${pct(thr, 0)} от БВП` : ''}.`;
-}
-
 /* ------------------------------------------------------------------ the controls band */
 const ctl = (label, id, inner) =>
   html`<div class="field s17-ctl"><span class="field-label" id="${id}">${label}</span>${inner}</div>`;
@@ -194,6 +180,7 @@ export function kpisBlock(M) {
     scope: M.scope,
     source: M.src,
     asOf: M.asOf,
+    debtReason: M.fallback ? `Методиката стига до ${M.lastYear} г.` : undefined,
   });
 }
 
@@ -1668,11 +1655,10 @@ function methodDisclosure(M) {
 
 /* ------------------------------------------------------------------ the page */
 export const needs = (ctx) =>
-  isFramework(ctx)
+  isFramework(ctx) || ctx.period.status === 'expected'
     ? ['core', 'budget2027?', 'outlook?', 'debt-issues?']
     : ['core', 'debt', 'execution?', 'outlook?', 'debt-issues?'];
 export const styles = ['s17-dalg'];
-export const periods = 'all';
 
 export function lede(ctx) {
   if (isFramework(ctx) || ctx.period.status === 'expected') return undefined;
@@ -1733,14 +1719,17 @@ const historicalEmbeds = {
 };
 
 export function render(ctx) {
-  if (ctx.period.status === 'expected')
-    return html`${debtKeyFigures(ctx, {
-      mln: null,
-      pg: null,
-      scope: ctx.query.obhvat === MAA ? MAA : ZDD,
-      source: ctx.data.outlook?.meta?.source || [],
-      asOf: ctx.data.outlook?.byPeriod?.[ctx.period.key]?.publication,
-    })}${emptyState({ title: 'Няма съпоставими данни за дълга за този период', text: 'В наличния набор няма отделен ред за очаквания държавен дълг. Лихвите са от оценката на КФП за избрания период.' })}`;
+  if (ctx.period.status === 'expected') {
+    const scope = ctx.query.obhvat === MAA ? MAA : ZDD;
+    const debt = stateDebt(ctx.data.budget2027, ctx.period.key);
+    return debtKeyFigures(ctx, {
+      mln: scope === ZDD ? cellValue(debt?.total) : null,
+      pg: scope === ZDD ? cellValue(debt?.pctGdp) : null,
+      scope,
+      source: ['budget2027'],
+      asOf: ctx.data.budget2027?.publication,
+    });
+  }
 
   if (isFramework(ctx)) {
     const page = debtView(ctx);

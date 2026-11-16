@@ -34,6 +34,7 @@ test('debt summary shows the selected data in one row on phone and desktop', asy
       await expect(tiles).toHaveCount(3);
       const year = Number(key.slice(0, 4));
       const frameworkColumns: Record<string, number> = {
+        '2026.expected': 1,
         '2027.draft': 2,
         '2028.forecast': 3,
         '2029.forecast': 4,
@@ -50,14 +51,12 @@ test('debt summary shows the selected data in one row on phone and desktop', asy
         outlook.byPeriod[key]?.series.interest.value ??
         outlook.kfp.interest.mln[outlook.years.indexOf(year)];
       const values = await tiles.locator('.kpi-num').allTextContents();
-      if (key === '2026.expected') {
-        expect(values.slice(0, 2)).toEqual(['—', '—']);
-        await expect(tiles.nth(0)).toContainText('Няма данни за периода');
-        await expect(tiles.nth(1)).toContainText('Няма данни за периода');
-      } else {
-        expect(number(values[0]!)).toBe(Number(pg.toFixed(1)));
-        expect(number(values[1]!)).toBe(Number((total / 1000).toFixed(2)));
-      }
+      expect(number(values[0]!)).toBe(Number(pg.toFixed(1)));
+      expect(number(values[1]!)).toBe(Number((total / 1000).toFixed(2)));
+      await expect(tiles.nth(1).locator('[data-gl="darzhaven-dalg"]')).toBeVisible();
+      await expect(tiles.nth(2).locator('[data-gl="lihva"]')).toHaveText('Лихви по КФП');
+      if (key === '2025.report') await expect(tiles.nth(2)).toContainText('предварителни');
+      if (key === '2026.law') await expect(band.locator('.block-asof')).toContainText('06.11.2026');
       expect(number(values[2]!)).toBe(
         Number((interest < 1000 ? interest : interest / 1000).toFixed(interest < 1000 ? 1 : 2)),
       );
@@ -77,8 +76,36 @@ test('debt summary shows the selected data in one row on phone and desktop', asy
       for (const tile of await tiles.all())
         await expect(tile.locator('.kpi-sub')).toContainText(String(year));
       await expect(band.locator('[data-share="s17-b-kpi"]')).toBeVisible();
-      if (key === '2027.draft')
-        await page.screenshot({ path: `tmp/screenshots/dalg-${width}.png` });
+      const edges = await band.evaluate((node) => {
+        const head = node.querySelector('.block-head')!.getBoundingClientRect();
+        const grid = node.querySelector('.s17-key-figures')!;
+        const rect = grid.getBoundingClientRect();
+        const clip = getComputedStyle(grid).clipPath;
+        const inset = clip === 'none' ? 0 : Number(clip.match(/inset\([^ ]+ ([\d.]+)px/)![1]);
+        const first = node.querySelector('.kpi-label')!.getBoundingClientRect();
+        return {
+          left: rect.left + inset,
+          right: rect.right - inset,
+          headLeft: head.left,
+          headRight: head.right,
+          textLeft: first.left,
+        };
+      });
+      expect(Math.abs(edges.left - edges.headLeft)).toBeLessThan(1);
+      expect(Math.abs(edges.right - edges.headRight)).toBeLessThan(1);
+      expect(Math.abs(edges.textLeft - edges.headLeft)).toBeLessThan(1);
+      if (['2026.expected', '2027.draft'].includes(key))
+        await page.screenshot({ path: `tmp/screenshots/dalg-${key}-${width}.png` });
     }
+    await page.goto(`${siteURL}/index.html#/dalg?per=2027.draft&obhvat=maastricht`);
+    await expect(page.locator('#s17-b-kpi .kpi-num').first()).toHaveText('—');
+    await expect(page.locator('#s17-b-kpi .kpi').first()).toContainText(
+      'Методиката стига до 2025 г.',
+    );
+    await page.evaluate("import('/js/store.js').then(m => m.store.set('leva', true))");
+    await page.goto(`${siteURL}/index.html#/dalg?per=2027.draft`);
+    await expect(page.locator('#s17-b-kpi .kpi').nth(1)).toContainText('лв.');
+    await expect(page.locator('#s17-b-kpi .kpi').nth(2)).toContainText('лв.');
+    await page.evaluate("import('/js/store.js').then(m => m.store.set('leva', false))");
   }
 });

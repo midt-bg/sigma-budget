@@ -662,6 +662,7 @@ export function debtView(ctx) {
       mln: maastricht ? null : cellValue(d?.total),
       pg: maastricht ? null : cellValue(d?.pctGdp),
       scope: maastricht ? 'maastricht' : 'zdd',
+      debtReason: maastricht ? 'Методиката стига до 2025 г.' : undefined,
       source,
       asOf: doc.publication,
     })}${field({
