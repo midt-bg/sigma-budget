@@ -500,7 +500,7 @@ it('shows the selected year’s published measures totals and keeps missing effe
     ['2028.forecast', '−0,1'],
     ['2029.forecast', '+660,1'],
   ]) {
-    const { document } = await page(`/merki?per=${period}`);
+    const { document, scope } = await page(`/merki?per=${period}`);
     const sums = document.querySelectorAll('#s12-27-sums .kpi');
     const text = sums[0]!.textContent!.replace(/[\u00a0\u202f]/g, ' ');
     expect(text).toContain(`Приходни мерки през ${period!.slice(0, 4)} г.`);
@@ -508,6 +508,8 @@ it('shows the selected year’s published measures totals and keeps missing effe
     if (period !== '2027.draft') {
       expect(sums[1]!.textContent).toContain('—');
       expect(sums[2]!.textContent).toContain('—');
+      expect(scope.maps.share.get('s12-27-sums').text).not.toContain('разходни');
+      expect(scope.maps.share.get('s12-27-sums').text).not.toContain('— млн. €');
     }
   }
 });
@@ -524,4 +526,23 @@ it('describes debt with the status of each selected budget period', async () => 
   }
   const expected = await page('/dalg?per=2026.expected');
   expect(expected.html).toContain('Няма данни за 2026 · Очаквано на този екран');
+});
+
+it('keeps the 2015 COFOG export independent of the selected draft period', async () => {
+  const { scope } = await page('/razhodi?per=2027.draft');
+  const spec = scope.maps.share.get('s07-hist');
+  const table = scope.maps.attached.get('s07-yr-cofog').table;
+  const [header, ...rows] = parseCsv(csvFor({ ...spec, table }).slice(1));
+  const row = rows.find((r) => r[0] === '2015');
+  expect(row).toBeDefined();
+  expect(row![header!.indexOf('период')]).not.toBe('2027.draft');
+});
+
+it('exports overview expenditure in the block’s explicit million-euro unit', async () => {
+  const { scope } = await page('/byudzhet-2027');
+  const spec = scope.maps.share.get('b27-razhodi');
+  const table = scope.maps.attached.get(spec.chart).table;
+  const [header, ...rows] = parseCsv(csvFor({ ...spec, table }).slice(1));
+  expect(rows.length).toBeGreaterThan(0);
+  for (const row of rows) expect(row[header!.indexOf('единица')]).toBe('млн. €');
 });

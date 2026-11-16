@@ -696,6 +696,7 @@ function macroBlock(ctx, f) {
   const toRow = (r) => ({
     n: `${r.short || r.label}, ${r.unit}`,
     level: r.level || 0,
+    unit: r.unit,
     d: r.unit === 'млн. €' ? 0 : 1,
     ...Object.fromEntries(f.years.map((_, k) => [`y${k}`, pick(r.values, k)])),
   });
@@ -707,8 +708,7 @@ function macroBlock(ctx, f) {
     },
     ...f.years.map((y, k) => ({
       key: `y${k}`,
-      label: String(y),
-      unit: macroKind(f, k),
+      label: `${y}, ${macroKind(f, k)}`,
       num: true,
       fmt: (v, r) => (ok(v) ? num(v, r.d) : DASH),
     })),
@@ -729,6 +729,7 @@ function macroBlock(ctx, f) {
         id: `s13-macro-${x.g.id}`,
         caption: `${x.g.name}, ${f.span}`,
         columns: cols('Показател'),
+        rowUnitKey: 'unit',
         rows: x.rows,
         dense: true,
         note: x.rows.some((r) => r.level)
@@ -771,7 +772,7 @@ function macroBlock(ctx, f) {
         { label: `Макроикономически показатели за ${yr(f.years[i])}` },
       )}
       <p class="s13-howto small muted">Промяната е в ${gl('protsenten-punkt', 'процентни пунктове')} (пр.п.) спрямо предходната година.</p>
-      ${key.length ? dataTable({ id: 's13-macro-key', caption: `Основни макропоказатели, ${f.span}`, columns: cols('Показател'), rows: key, dense: true }) : ''}
+      ${key.length ? dataTable({ id: 's13-macro-key', caption: `Основни макропоказатели, ${f.span}`, columns: cols('Показател'), rowUnitKey: 'unit', rows: key, dense: true }) : ''}
       ${more}
     </div>`,
   });

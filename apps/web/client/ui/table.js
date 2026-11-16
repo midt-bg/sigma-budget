@@ -83,7 +83,7 @@ export function updateRows(id, rows) {
 
 /** the table as plain values: used by the CSV export and by figure twins */
 export function tableData(s) {
-  const periodKey = s.rowPeriodKey || s.columns.find((c) => c.key === 'period')?.key;
+  const periodKey = s.rowPeriodKey;
   const unit = [...new Set(s.columns.map((c) => c.unit).filter(Boolean))].join(' / ');
   return {
     columns: s.columns.map(unitLabel),

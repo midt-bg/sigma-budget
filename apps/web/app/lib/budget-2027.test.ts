@@ -384,7 +384,7 @@ it('provides row anchors for searched measures, preserving effects and blank cel
 it('exports each forecast debt row with its own unit', async () => {
   const { scope } = await page('/dalg');
   const table = tableData(scope.maps.table.get('s17-debt-table'));
-  const csv = csvFor({ table, period: '2027.draft', unit: 'По редове' });
+  const csv = csvFor({ ...scope.maps.share.get('s17-debt-2027'), table });
   for (const [i, row] of table.rows.entries()) {
     const unit = table.units[i];
     expect(csv.split('\r\n')[i + 1]).toContain(`;2027.draft;${unit};`);

@@ -282,7 +282,7 @@ function sums(ctx, doc, rev, exp, counts) {
     share: {
       ...share,
       table: csv,
-      text: `Мерките в проекта за бюджет 2027: приходни ${signed(rev[index])} млн. €, разходни ${signed(exp[index])} млн. € през ${year} г.`,
+      text: `Мерките в проекта за бюджет 2027: ${[ok(rev[index]) ? `приходни ${signed(rev[index])} млн. €` : '', ok(exp[index]) ? `разходни ${signed(exp[index])} млн. €` : ''].filter(Boolean).join(', ')} през ${year} г.`,
     },
     foot: 'Ефектът върху салдото е наше пресмятане: приходните мерки минус разходните.',
     body: kpiGrid(

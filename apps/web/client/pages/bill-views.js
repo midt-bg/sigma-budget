@@ -679,7 +679,7 @@ export function debtView(ctx) {
               {
                 status: 'forecast',
                 statusLabel: 'Прогноза на МФ',
-                share: { period: ctx.period.key, unit: 'По редове' },
+                share: { period: ctx.period.key },
               },
             )}${base(ctx, 's17-b-zdd', 'Държавен дълг 2027–2029', chart(spec), {
               status: 'forecast',
