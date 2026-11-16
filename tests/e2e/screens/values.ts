@@ -64,9 +64,9 @@ export const VALUE_CHECKS: Record<string, { all: string[] }> = {
 };
 export async function visibleValues(page: Page, route: string) {
   const expected = VALUE_CHECKS[route]!;
-  const text = (await page.locator('#view').innerText()).replace(
-    /[\u00a0\u2007\u2009\u202f]/g,
-    ' ',
-  );
-  return expected.all.filter((value) => text.includes(value));
+  // innerText follows CSS: buttons and labels are drawn in capitals, so the comparison ignores case
+  const text = (await page.locator('#view').innerText())
+    .replace(/[\u00a0\u2007\u2009\u202f]/g, ' ')
+    .toLocaleLowerCase('bg');
+  return expected.all.filter((value) => text.includes(value.toLocaleLowerCase('bg')));
 }
