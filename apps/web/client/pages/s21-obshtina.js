@@ -25,6 +25,7 @@ export const needs = (ctx) =>
   isFramework(ctx)
     ? ['core', 'budget2027?', 'municipalities']
     : ['core', 'municipalities', 'geo/obshtini?'];
+export const entityPeriods = () => ['2026.law', '2027.draft'];
 export const styles = ['s21-obshtina'];
 export const periods = ['2026.law', '2027.draft', '2028.forecast', '2029.forecast'];
 

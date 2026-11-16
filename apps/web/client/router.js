@@ -647,7 +647,9 @@ export const router = {
   },
   /** the periods the current screen supports: 'all' | 'none' | ['2026.draft', …] (the shell uses it for the period switch) */
   get periods() {
-    return cur ? periodsFor(cur.route, cur.vm && cur.vm.mod) : periodsFor(resolve(here()).route);
+    return cur
+      ? periodsFor(cur.route, cur.vm?.mod, cur.vm?.ctx)
+      : periodsFor(resolve(here()).route);
   },
   get ready() {
     return readyP;

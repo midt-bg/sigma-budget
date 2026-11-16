@@ -169,7 +169,8 @@ export function readText(path: string): string {
 
 // --- addresses ----------------------------------------------------------------------------------------------------------------------
 
-/** '/razhodi/obrazovanie?per=x#y' -> '/razhodi/obrazovanie'; null for files, the embed view and anything else that is not a screen */
+/** Crawl address without display queries or fragments; individual measures retain their historical law period.
+ * Returns null for files, embeds and other addresses that are not screens. */
 export function normPath(href: string): string | null {
   // urllib.parse.urlsplit(href).path: tabs and line breaks dropped, leading controls and spaces stripped, cut at the query or the fragment
   const url = href.replace(/[\t\r\n]/g, '').replace(/^[\x00-\x20]+/, '');
@@ -180,7 +181,8 @@ export function normPath(href: string): string | null {
   if (FILE_EXT.test(p) && !p.startsWith('/embed/')) return null;
   if (/^\/(data\/|api\/releases(\/|$))/.test(p)) return null; // the data files and the release API (as NOT_SCREENS in apps/web/client/loc.js)
   if (p.startsWith('/embed/')) return null;
-  return p;
+  // Individual measures belong to the historical law, not the default bill.
+  return /^\/merki\/[^/]+$/.test(p) ? p + '?per=2026.law' : p;
 }
 
 /** how long the crawl waits before it asks again for a document the Worker refused with 429 (the per-client limit on uncached renders,

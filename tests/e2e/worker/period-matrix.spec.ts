@@ -188,3 +188,52 @@ for (const width of [1280, 390])
       )
       .toBe(true);
   });
+
+test('original ministry notes wrap within the viewport', async ({ page, siteURL }) => {
+  for (const width of [320, 390, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const entity of ['7400', '1800', '1800/1800.02.03', '0100']) {
+      await page.goto(`${siteURL}/vedomstvo/${entity}?per=2026.law`);
+      await page.waitForFunction(() => document.querySelector('article[data-ready="1"]'), null, {
+        polling: 100,
+      });
+      const layout = await page.evaluate(() => {
+        const notes = [...document.querySelectorAll('.callout')].find((n) =>
+          n.textContent?.includes('Бележки към оригиналния документ'),
+        );
+        const paragraphs = [...(notes?.querySelectorAll('p') || [])];
+        return {
+          width: document.documentElement.scrollWidth,
+          stacked: paragraphs.every(
+            (p, i) =>
+              !i ||
+              p.getBoundingClientRect().top >= paragraphs[i - 1]!.getBoundingClientRect().bottom,
+          ),
+        };
+      });
+      expect(layout.width, `${width}: ${entity}`).toBe(width);
+      expect(layout.stacked, `${width}: ${entity} notes`).toBe(true);
+    }
+  }
+});
+
+test('entity period choices lead only to periods with entity data', async ({ page, siteURL }) => {
+  for (const [path, allowed] of [
+    ['/vedomstvo/art32', ['2027.draft']],
+    ['/vedomstvo/art1', ['2027.draft']],
+    ['/vedomstvo/1300', ['2026.law', '2027.draft']],
+    ['/vedomstvo/1800/1800.02.03?per=2026.law', ['2026.law']],
+    ['/obshtina/BLG03', ['2026.law', '2027.draft']],
+    ['/merki/kr1?per=2026.law', ['2026.law']],
+  ] as const) {
+    await page.goto(siteURL + path);
+    await page.waitForFunction(() => document.querySelector('article[data-ready="1"]'), null, {
+      polling: 100,
+    });
+    await page.locator('#btn-period').dispatchEvent('click');
+    const enabled = await page
+      .locator('.opt-list input:not(:disabled)')
+      .evaluateAll((inputs) => inputs.map((input) => (input as HTMLInputElement).value));
+    expect(enabled, path).toEqual([...allowed]);
+  }
+});

@@ -562,13 +562,18 @@ it.each(['/vedomstva', '/vedomstvo/1300', '/vedomstvo/art1'])(
     expect(body.textContent).not.toMatch(/Предстои|пълен програмен архив|Програмите за 2027/);
   },
 );
-it('keeps historical measure navigation with a neutral explanation', async () => {
-  const { document } = await page('/merki/historical');
-  expect(document.querySelector('article')!.textContent).toContain(
-    'Мярката е от бюджета за 2026 г.',
-  );
-  expect(document.querySelector('.page-body [data-st="pending"]')).toBeNull();
-  expect(document.querySelector('a[href*="merki?per=2027.draft"]')).not.toBeNull();
+it('historical measures are shown in their own period and other periods link back to them', async () => {
+  const destination = '/merki/kr1?per=2026.law';
+  const measure = await page(destination);
+  expect(measure.vm.route.id).toBe('S12');
+  expect(measure.document.querySelector('h1')!.textContent).not.toBe('Мерки в бюджета');
+  expect(measure.html).not.toContain('Мярката е от бюджета за 2026 г.');
+  for (const period of ['2027.draft', '2028.forecast', '2029.forecast']) {
+    const other = await page(`/merki/kr1?per=${period}`);
+    expect(other.document.querySelector('h1')!.textContent).toBe('Мярка от бюджета за 2026 г.');
+    const link = other.document.querySelector(`a[href="${destination}"]`);
+    expect(link?.textContent).toContain('Виж мярката');
+  }
 });
 it('keeps feedback usable without a configured mail address', async () => {
   const { document } = await page('/vrazka');
@@ -605,4 +610,32 @@ it('keeps the glossary source and date without the working-group credit', async 
   const credit = document.querySelector('.s03-credit')!;
   expect(credit.querySelector('[data-src]')).not.toBeNull();
   expect(credit.textContent).not.toContain('Работна група');
+});
+
+it('keeps entity names above the missing-period message', async () => {
+  for (const [path, period] of [
+    ['/vedomstvo/1300', '2028.forecast'],
+    ['/obshtina/BLG03', '2029.forecast'],
+  ]) {
+    const current = await page(path!);
+    const missing = await page(`${path}?per=${period}`);
+    const name = current.document.querySelector('h1')!.textContent!;
+    const heading = missing.document.querySelector('h1')!.textContent!;
+    expect(heading).toContain(path!.startsWith('/obshtina') ? name.replace(/^Община /, '') : name);
+    expect(missing.html).toContain(
+      path!.startsWith('/obshtina')
+        ? 'Няма индивидуално общинско разпределение за този период'
+        : 'Няма индивидуални бюджети за този период',
+    );
+  }
+});
+
+it('missing-period recovery offers only periods containing the institution', async () => {
+  for (const address of ['/vedomstvo/art32?per=2025.report', '/vedomstvo/art1?per=2026.expected']) {
+    const { document } = await page(address);
+    expect(document.querySelector('.page-body')!.textContent).toContain('Няма данни за');
+    const actions = [...document.querySelectorAll('[data-action="set-period"]')];
+    expect(actions.map((action) => action.getAttribute('data-value'))).toEqual(['2027.draft']);
+    expect(actions[0]!.textContent).toContain('Покажи 2027');
+  }
 });

@@ -14,6 +14,7 @@ import { num, date, plural, EUR_RATE, DASH, NBSP } from '../format.js';
 
 export const needs = (ctx) =>
   isFramework(ctx) ? ['core', 'budget2027?', 'measures2027?'] : ['measures'];
+export const entityPeriods = (ctx) => (ctx.params.id ? ['2026.law'] : ctx.route.periods);
 export const styles = ['s12-merki'];
 
 const TABS = ['short', 'discretionary', 'laws'];

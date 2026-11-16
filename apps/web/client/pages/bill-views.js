@@ -282,6 +282,10 @@ export function institutionView(ctx) {
     items = institutions(doc, variant);
   if (ctx.period.key !== '2027.draft')
     return {
+      title:
+        institutions(doc).find((i) => i.code === ctx.params.code)?.name ||
+        ctx.data.ministries?.items?.find((m) => String(m.id) === ctx.params.code)?.name ||
+        (ctx.params.code === 'art1' ? 'Държавен бюджет' : undefined),
       body: gap(
         'Няма индивидуални бюджети за този период',
         'Публикуваните бюджети по членове са проект за 2027 г. Няма индивидуална разбивка за 2028–2029 г.',
@@ -427,6 +431,13 @@ function municipalTable(ctx, id, title, entries, names) {
     ),
   );
 }
+function municipalityTitle(all, code) {
+  const m = all.find((m) => m.id === String(code).toUpperCase());
+  return m
+    ? `Община ${m.displayName}${all.filter((x) => x.displayName === m.displayName).length > 1 ? ' · ' + m.regionName : ''}`
+    : undefined;
+}
+
 export function municipalityView(ctx) {
   if (unavailable(ctx)) return unavailable(ctx);
   const doc = ctx.data.budget2027,
@@ -434,6 +445,7 @@ export function municipalityView(ctx) {
     specific = ctx.route.id === 'S21';
   if (specific && ctx.period.key !== '2027.draft')
     return {
+      title: municipalityTitle(all, ctx.params.code),
       body: gap(
         'Няма индивидуално общинско разпределение за този период',
         doc.gaps.municipalForecast,
@@ -451,7 +463,7 @@ export function municipalityView(ctx) {
     const m = all.find((x) => x.id === String(ctx.params.code).toUpperCase());
     if (!m) ctx.notFound();
     return {
-      title: `Община ${m.displayName}${all.filter((x) => x.displayName === m.displayName).length > 1 ? ' · ' + m.regionName : ''}`,
+      title: municipalityTitle(all, m.id),
       crumbs: listCrumbs(ctx, `Община ${m.displayName}`),
       lede: 'Проект 2027: основните бюджетни взаимоотношения по чл. 52 и разбивката на делегираните дейности по чл. 53. Сумите са в хил. евро.',
       body: html`${municipalTable(
