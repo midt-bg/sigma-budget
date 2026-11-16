@@ -217,7 +217,7 @@ jobs:
           node-version: '24'
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: node --test tests/release/compat_check.test.mjs tests/release/release_lib.test.mjs
+      - run: node --test tests/release/compat_check.test.mjs tests/release/release_lib.test.mjs scripts/check-deployment.test.mjs
       - run: node tests/release/release_check.mjs
       - run: node tests/release/restore_drill.mjs
 
@@ -269,11 +269,11 @@ jobs:
           cache: pnpm
       # the wrangler of pnpm-lock.yaml, the one release_check tests with
       - run: pnpm install --frozen-lockfile
-      - name: Deploy to the target Worker
+      - name: Require environment deployment credentials
+        id: credentials
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          STAGING_ORIGIN: ${{ vars.STAGING_ORIGIN }}
           TARGET: ${{ needs.target.outputs.environment }}
         run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
@@ -284,16 +284,36 @@ jobs:
             echo "::notice::Cloudflare secrets are not set: skipping the deployment."
             exit 0
           fi
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+      - name: Compatibility with the current release before deployment
+        if: steps.credentials.outputs.ready == 'true'
+        id: compatibility
+        env:
+          STAGING_ORIGIN: ${{ vars.STAGING_ORIGIN }}
+          TARGET: ${{ needs.target.outputs.environment }}
+        run: |
           if [ "$TARGET" = production ]; then
-            node tests/release/compat_check.mjs --env-url https://sigma-budget.midt.bg
+            origin=https://sigma-budget.midt.bg
           else
             if [ -z "$STAGING_ORIGIN" ]; then
               echo "::error::The variable STAGING_ORIGIN is not set: the compatibility check cannot run, so nothing is deployed."
               exit 1
             fi
-            node tests/release/compat_check.mjs --env-url "$STAGING_ORIGIN"
+            origin="$STAGING_ORIGIN"
           fi
-          pnpm exec wrangler deploy -c apps/web/build/server/wrangler.json
+          node tests/release/compat_check.mjs --env-url "$origin" --allow-first-deploy
+          echo "origin=$origin" >> "$GITHUB_OUTPUT"
+      - name: Deploy to the target Worker
+        if: steps.credentials.outputs.ready == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: pnpm exec wrangler deploy -c apps/web/build/server/wrangler.json
+      - name: Verify the deployed site and release identity
+        if: steps.credentials.outputs.ready == 'true'
+        env:
+          ORIGIN: ${{ steps.compatibility.outputs.origin }}
+        run: node scripts/check-deployment.mjs --origin "$ORIGIN"
 
   node-inputs:
     # Draft assets need push access. This job runs no checkout or project code;
