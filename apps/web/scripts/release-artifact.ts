@@ -533,6 +533,41 @@ export function checkPublishedOutputs(
     if (actual !== output.sha256) throw new Error(`release output sha256 mismatch: ${output.path}`);
   }
   if (strict) {
+    const registry = join(release, 'releases');
+    for (const archivedId of readdirSync(registry)) {
+      if (archivedId === 'current.json') continue;
+      const directory = join(registry, archivedId);
+      if (!/^[a-f0-9]{64}$/.test(archivedId) || !lstatSync(directory).isDirectory())
+        throw new Error(`Invalid archived release: ${archivedId}`);
+      for (const name of readdirSync(directory)) {
+        if (
+          !['manifest.json', 'receipt.json', 'validation.json'].includes(name) ||
+          !lstatSync(join(directory, name)).isFile()
+        )
+          throw new Error(`Unexpected archived release file: ${archivedId}/${name}`);
+      }
+      const manifestBytes = readFileSync(join(directory, 'manifest.json'));
+      if (createHash('sha256').update(manifestBytes).digest('hex') !== archivedId)
+        throw new Error(`release ${archivedId}: manifest.json differs from its release_id`);
+      const archivedManifest = JSON.parse(manifestBytes.toString('utf8'));
+      const validation = readFileSync(join(directory, 'validation.json'));
+      const output = archivedManifest.outputs?.find(
+        (o: { path: string }) => o.path === 'validation.json',
+      );
+      if (
+        output &&
+        (output.bytes !== validation.length ||
+          output.sha256 !== createHash('sha256').update(validation).digest('hex'))
+      )
+        throw new Error(`release ${archivedId}: validation.json differs from manifest`);
+      if (existsSync(join(directory, 'receipt.json')))
+        checkReceipt(
+          archivedId,
+          archivedManifest,
+          JSON.parse(readText(join(directory, 'receipt.json'))),
+          validation,
+        );
+    }
     function inventory(dir: string, prefix = '') {
       for (const entry of readdirSync(dir)) {
         const path = prefix + entry;

@@ -1,9 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { expect, it } from 'vitest';
+import { provideScope } from '../client/env.js';
+import { requestState } from '../client/store.js';
+import { build, resolve } from '../client/render.js';
+import { parse } from '../client/data.js';
 import { byId } from '../client/routes.js';
 import { destination } from './hrefs.ts';
 
-it('every guide and glossary link reaches a site route or screen', () => {
+it('every guide and glossary link reaches a site route or screen', async () => {
   const links: string[] = [];
   function visit(value: unknown) {
     if (typeof value === 'string') {
@@ -35,5 +39,27 @@ it('every guide and glossary link reaches a site route or screen', () => {
       ),
     );
   expect(links.length).toBeGreaterThan(0);
-  for (const link of links) expect(destination(link).id, link).not.toBeNull();
+  try {
+    for (const link of new Set(links)) {
+      expect(destination(link).id, link).not.toBeNull();
+      const address = resolve(link);
+      const url = new URL(link.replace(/^#/, ''), 'https://budget.test');
+      provideScope(() => ({
+        url,
+        origin: url.origin,
+        data: new Map(),
+        state: requestState(address.query.per),
+        load: async (name: string) =>
+          parse(
+            name,
+            readFileSync(new URL(`../../../data/release/${name}.json`, import.meta.url), 'utf8'),
+          ),
+      }));
+      const model = await build(address.route, address.params, address.query);
+      expect(model.route.id, link).not.toBe('S30');
+      expect(model.view, link).toBe('ready');
+    }
+  } finally {
+    provideScope(() => null);
+  }
 });

@@ -1,5 +1,13 @@
 // Release postprocessing, independent of the browser crawl (build-release.ts).
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import {
+  cpSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
@@ -108,6 +116,20 @@ describe('the deploy artifact', () => {
       JSON.stringify({ release_id: 'notahexid' }),
     );
     expect(() => checkPublishedOutputs(out)).toThrow('invalid release_id');
+  });
+
+  it('rejects a tampered historical manifest in the offline release check', () => {
+    const release = join(out, 'release');
+    cpSync(new URL('../../../data/release/', import.meta.url), release, { recursive: true });
+    expect(() => checkPublishedOutputs(out, release, true)).not.toThrow();
+    const manifest = join(
+      release,
+      'releases/7347b26bce61f36dbe22a40f7623ba35693649efdd920cd09585302a08712bdf/manifest.json',
+    );
+    writeFileSync(manifest, readFileSync(manifest, 'utf8') + ' ');
+    expect(() => checkPublishedOutputs(out, release, true)).toThrow(
+      'manifest.json differs from its release_id',
+    );
   });
 
   it('production and noindex', () => {

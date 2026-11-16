@@ -196,16 +196,7 @@ Worker-ът избира текущото издание веднъж за ст�
 
 ### 8.1. CLI
 
-```sh
-# без акаунт в Cloudflare
-./budget collect --out /outside/new/acquisition
-./budget import-source --source <source-id> --file <файл> --out /outside/new/import
-./budget build --commit HEAD --inputs /outside/new/acquisition --out /outside/new/candidate --build-date 2026-11-10
-./budget validate --release /outside/new/candidate --inputs /outside/new/acquisition
-./budget reproduce --current <адрес на сайта> --originals /outside/new/acquisition
-./budget refetch --manifest <адрес на манифеста> --out /outside/new/refetch
-
-```
+Командите `./budget collect`, `import-source`, `build`, `validate`, `reproduce` и `refetch` се изпълняват в [хранилището за данни](https://github.com/midt-bg/sigma-budget-data/blob/main/docs/release.md). Тук готовото издание се приема с `pnpm data:pull --commit <sha>` и се проверява offline с `pnpm data:check`.
 
 ### 8.2. Публикуване чрез PR
 
