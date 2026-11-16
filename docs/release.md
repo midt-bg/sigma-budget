@@ -65,3 +65,5 @@
 Публичният API и липсващите release адреси запазват rate limiter-а. Включените статични файлове се обслужват преди него. В production липсващ или повреден limiter връща 503; извън production локалната проверка може да продължи без binding.
 
 `node tests/release/compat_check.mjs` проверява съвместимостта на кода с включените издания локално. След deploy `scripts/check-deployment.mjs` проверява идентичността на публикувания сайт. Сглобяването и production процедурата са описани в [README](../README.md) и [production-procedure.md](production-procedure.md).
+
+Изходните файлове на текущото издание са достъпни на адресите от манифеста под `/data/releases/<id>/data/…`; `validation.json` е до манифеста. Входните файлове не се свалят от сайта: подготвят се по инструкциите в `midt-bg/sigma-budget-data` и при `reproduce --current` се подават изрично с `--originals /път/до/входовете`. Старите издания запазват само `manifest.json`, `receipt.json` и `validation.json`; техните изходи не се заменят с текущите.

@@ -4,7 +4,14 @@
 // whitespace), so the same crawl gives the same files.
 import { execFileSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+  mkdirSync,
+  copyFileSync,
+} from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzip } from 'pako';
@@ -457,6 +464,19 @@ export function stampFiles(
   dataVersion: string,
   revision = shortRevision(),
 ): void {
+  const pointer = join(out, 'data/releases/current.json');
+  if (existsSync(pointer)) {
+    const { release_id: rid } = JSON.parse(readText(pointer));
+    if (/^[a-f0-9]{64}$/.test(rid)) {
+      const archive = join(out, 'data/releases', rid, 'data');
+      mkdirSync(archive, { recursive: true });
+      for (const name of ['feed.xml', 'catalog.json']) {
+        const source = join(out, 'data', name),
+          target = join(archive, name);
+        if (existsSync(source) && !existsSync(target)) copyFileSync(source, target);
+      }
+    }
+  }
   const feed = join(out, 'data', 'feed.xml');
   if (existsSync(feed) && statSync(feed).isFile()) {
     const x = readText(feed)

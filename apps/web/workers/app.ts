@@ -131,6 +131,30 @@ function documentHeaders(
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
 }
 
+/** Archive addresses for current outputs reuse the packaged assets, never source inputs. */
+async function currentOutput(request: Request, env: Env, url: URL): Promise<Response | null> {
+  const match = /^\/data\/releases\/([a-f0-9]{64})\/(data\/.+)$/.exec(url.pathname);
+  if (!match) return null;
+  let path: string;
+  try {
+    path = decodeURIComponent(match[2]);
+  } catch {
+    return null;
+  }
+  const pointer = await env.ASSETS.fetch(new Request(new URL('/data/releases/current.json', url)));
+  if (!pointer.ok) return null;
+  const current = (await pointer.json()) as { release_id: string };
+  if (match[1] !== current.release_id) return null;
+  const manifest = await env.ASSETS.fetch(
+    new Request(new URL(`/data/releases/${current.release_id}/manifest.json`, url)),
+  );
+  if (!manifest.ok) return null;
+  const data = (await manifest.json()) as { outputs: { path: string; sha256: string }[] };
+  const entry = data.outputs.find((file) => file.path === path);
+  if (!entry) return null;
+  return env.ASSETS.fetch(new Request(new URL('/' + entry.path, url), request));
+}
+
 async function dispatch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const url = new URL(request.url);
   if (url.pathname.startsWith('/admin/')) return new Response('Not found', { status: 404 });
@@ -141,6 +165,8 @@ async function dispatch(request: Request, env: Env, ctx: ExecutionContext): Prom
     if (url.pathname.startsWith('/data/releases/')) {
       const asset = await env.ASSETS.fetch(request);
       if (asset.status !== 404) return asset;
+      const output = await currentOutput(request, env, url);
+      if (output) return output;
     }
     const limited = await rateLimitReleaseRead(request, env);
     if (limited) return limited;
