@@ -15,12 +15,13 @@ export const controls = () =>
 let loading;
 const formWidgets = new WeakMap();
 function loadWidget() {
+  if (loading) return loading;
   if (globalThis.turnstile) return Promise.resolve(globalThis.turnstile);
   if (!loading)
     loading = new Promise((resolve, reject) => {
       const script = document.createElement('script');
       script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
-      script.onload = () => globalThis.turnstile.ready(() => resolve(globalThis.turnstile));
+      script.onload = () => resolve(globalThis.turnstile);
       script.onerror = () => {
         loading = null;
         script.remove();
@@ -32,42 +33,57 @@ function loadWidget() {
 }
 export function mountForms(root) {
   let disposed = false;
-  const widgets = [];
+  const cleanups = [];
   for (const container of root.querySelectorAll('[data-feedback-widget]')) {
     const form = container.closest('form');
     const button = form.querySelector('[type="submit"]');
-    button.disabled = true;
-    if (!siteKey()) continue;
-    loadWidget()
-      .then((api) => {
-        if (disposed) return;
-        const id = api.render(container, {
-          sitekey: siteKey(),
-          theme: 'light',
-          callback: () => {
-            button.disabled = false;
-          },
-          'expired-callback': () => {
-            button.disabled = true;
-          },
-          'error-callback': () => {
-            button.disabled = true;
-            form.querySelector('[data-feedback-status]').textContent =
-              'Проверката не успя. Опитай след малко.';
-          },
+    const status = form.querySelector('[data-feedback-status]');
+    button.disabled = !siteKey();
+    let started = false;
+    let widget;
+    const start = () => {
+      if (started || !siteKey() || disposed) return;
+      started = true;
+      button.disabled = true;
+      status.textContent = 'Проверява се…';
+      loadWidget()
+        .then((api) => {
+          if (disposed) return;
+          widget = api.render(container, {
+            sitekey: siteKey(),
+            theme: 'light',
+            callback: () => {
+              button.disabled = false;
+              if (status.textContent === 'Проверява се…') status.textContent = '';
+            },
+            'expired-callback': () => {
+              button.disabled = true;
+            },
+            'error-callback': () => {
+              button.disabled = true;
+              status.textContent = 'Проверката не успя. Опитай след малко.';
+            },
+          });
+          formWidgets.set(form, widget);
+        })
+        .catch(() => {
+          if (disposed) return;
+          started = false;
+          button.disabled = false;
+          status.textContent = 'Изпращането временно не е достъпно. Опитай след малко.';
         });
-        widgets.push(id);
-        formWidgets.set(form, id);
-      })
-      .catch(() => {
-        if (!disposed)
-          form.querySelector('[data-feedback-status]').textContent =
-            'Изпращането временно не е достъпно. Опитай след малко.';
-      });
+    };
+    // Reading a page never contacts Turnstile; each form starts its own check on interaction.
+    for (const event of ['focusin', 'input', 'submit']) form.addEventListener(event, start);
+    cleanups.push(() => {
+      for (const event of ['focusin', 'input', 'submit']) form.removeEventListener(event, start);
+      if (widget !== undefined) globalThis.turnstile?.remove(widget);
+      formWidgets.delete(form);
+    });
   }
   return () => {
     disposed = true;
-    for (const id of widgets) globalThis.turnstile?.remove(id);
+    cleanups.forEach((cleanup) => cleanup());
   };
 }
 export async function submit(form, report) {
