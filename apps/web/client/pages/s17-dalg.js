@@ -1,6 +1,6 @@
 import { debtKeyFigures } from '../ui/debt-key-figures.js';
 import { debtIssues } from '../ui/debt-issues.js';
-import { isFramework, stateDebt, cellValue } from '../budget-2027.js';
+import { isFramework } from '../budget-2027.js';
 import { debtView, mountBillSearch, debtChart2027 } from './bill-views.js';
 // S17 Колко дължим? (G3). The state debt counted two ways: by the State Debt Act (ЗДД: table VI-1 of the budget motives, 2024-2028)
 // and by the Maastricht rules (Eurostat, 2015-2025, against the 60% line). Every number comes from debt.json (D13+D14); the financing of
@@ -1622,11 +1622,11 @@ function compareBlock(M) {
     body: html`<p>Институциите броят различни части от публичния дълг и затова показват различни суми.</p>${note(c.note)}${block(
       {
         id: 's17-compare-data',
-        level: 2,
+        level: 3,
         title: 'Сравнение на обхватите',
         source: srcOf(...c.rows.map((r) => r.source)),
         asOf: M.d.meta && M.d.meta.asOf,
-        share: { period: M.ctx.period.key },
+        share: { period: c.years.join(' / ') },
         sub: `Три реда от различни институции за ${c.years.map(yr).join(' и ')}`,
         body: html`${dataTable({
           id: 's17-t-compare',
@@ -1662,13 +1662,13 @@ function methodDisclosure(M) {
 
 /* ------------------------------------------------------------------ the page */
 export const needs = (ctx) =>
-  isFramework(ctx) || ctx.period.status === 'expected'
+  isFramework(ctx)
     ? ['core', 'budget2027?', 'outlook?', 'debt-issues?']
     : ['core', 'debt', 'execution?', 'outlook?', 'debt-issues?'];
 export const styles = ['s17-dalg'];
 
 export function lede(ctx) {
-  if (isFramework(ctx) || ctx.period.status === 'expected') return undefined;
+  if (isFramework(ctx)) return undefined;
   try {
     if (!ctx.data || !ctx.data.debt) return undefined;
     return ledeText(model(ctx)) || undefined;
@@ -1726,18 +1726,6 @@ const historicalEmbeds = {
 };
 
 export function render(ctx) {
-  if (ctx.period.status === 'expected') {
-    const scope = ctx.query.obhvat === MAA ? MAA : ZDD;
-    const debt = stateDebt(ctx.data.budget2027, ctx.period.key);
-    return debtKeyFigures(ctx, {
-      mln: scope === ZDD ? cellValue(debt?.total) : null,
-      pg: scope === ZDD ? cellValue(debt?.pctGdp) : null,
-      scope,
-      source: ['budget2027'],
-      asOf: ctx.data.budget2027?.publication,
-    });
-  }
-
   if (isFramework(ctx)) {
     const page = debtView(ctx);
     return { ...page, body: html`${page.body}${debtIssues(ctx)}` };
@@ -1753,7 +1741,6 @@ export function render(ctx) {
 
 let lastScope = null;
 export function mount(root, ctx) {
-  if (ctx.period.status === 'expected') return;
   if (isFramework(ctx)) return mountBillSearch(root, ctx);
   const off = bindUnitSwitch(root, ctx, 's17-unit');
   if (ctx.data && ctx.data.debt) {
