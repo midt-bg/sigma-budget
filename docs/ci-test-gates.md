@@ -54,3 +54,13 @@ Parity report пътищата се дефинират само в `coverage.env
 защото оригиналите вече са включени в архива.
 
 Playwright Test конфигурацията е в `tests/e2e/`, с проекти `worker` и `static`. Статичният gate изпълнява redirects, calculator, sharing, acceptance, overlap и motion. Приемните проверки включват 54 числови комбинации и layout/keyboard матрици; overlap обхожда всички маршрути и допълнителни адреси. Fixtures управляват статичния сървър и loopback Worker; очакванията се четат независимо от release JSON. Guard-овете предотвратяват пропускане или селективно изпълнение на браузърните тестове.
+
+Проверките на екраните се изпълняват в задължителна стъпка след оставащия Python screens run:
+
+```bash
+E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker screens-base.spec.ts screens-demo.spec.ts screens-variants.spec.ts screens-selftest.spec.ts
+```
+
+Всеки пример и ширина, demo състояние и период е отделен тест. Типизирани browser функции изчакват реалната готовност и проверяват видимото съдържание, достъпността, навигационните връзки и преливането. Автоматичен fixture проваля теста при browser errors или бисквитки. Състоянията и числата от изданието имат отделни assertions. Потребителските типове и премахнатите настройки не се проверяват. Python запазва chrome/embed/gloss/png/share/tabs/to/tour/views. S21 има изрично временно изключение само за липсваща таблица към графиката; контрастът има отделна проверка.
+
+Проверките на списъците, CSV, споделените мерни единици и навигацията са в `tests/e2e/worker/public-bill-lists.spec.ts`, `share-units.spec.ts` и `react-bridge.spec.ts`. Job `check` ги изпълнява с `E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker public-bill-lists.spec.ts share-units.spec.ts react-bridge.spec.ts`. `apps/web/scripts/hrefs.test.ts` проверява адресите в хранилището чрез web Vitest suite. `node apps/web/scripts/make-images.ts` генерира social card и app icons; байтовете зависят от Chromium и шрифтовете.
