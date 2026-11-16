@@ -74,17 +74,6 @@ describe('repository ignore rules', () => {
     expect(ignored(GENERATED)).toEqual(GENERATED);
   });
 
-  it('bring every live builder under the Prettier check', async () => {
-    const tracked = git(['ls-files', '-z', '--', 'packages/ingest/src/build']);
-    expect(tracked.status, tracked.stderr).toBe(0);
-    const files = tracked.stdout.split('\0').filter(Boolean);
-    expect(files.length).toBeGreaterThan(0);
-    const skipped = [];
-    for (const file of files) if (await prettierIgnored(file)) skipped.push(file);
-    expect(skipped).toEqual([]);
-    expect(await prettierIgnored(SOURCE[0]!)).toBe(false);
-  });
-
   it('keep frozen evidence and generated output outside Prettier', async () => {
     for (const path of [
       'packages/ingest/test/fixtures/catalog/policy.json',

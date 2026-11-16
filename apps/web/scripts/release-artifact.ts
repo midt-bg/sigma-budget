@@ -6,6 +6,8 @@ import { execFileSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
 import {
   existsSync,
+  lstatSync,
+  readdirSync,
   readFileSync,
   statSync,
   writeFileSync,
@@ -472,28 +474,71 @@ export function preservePublishedOutputs(out: string): void {
 }
 
 /** Check the finished bytes at the same archive-first locations used by the Worker. */
-export function checkPublishedOutputs(out: string): void {
-  const { release_id: id } = JSON.parse(readText(join(out, 'data/releases/current.json')));
+export function checkPublishedOutputs(
+  out: string,
+  release = join(out, 'data'),
+  strict = false,
+): string {
+  const { release_id: id } = JSON.parse(readText(join(release, 'releases/current.json')));
   // The Worker serves no output for an id it does not accept or for a manifest without outputs.
   if (typeof id !== 'string' || !/^[a-f0-9]{64}$/.test(id))
     throw new Error(`release pointer: invalid release_id ${JSON.stringify(id)}`);
-  const archive = join(out, 'data/releases', id);
+  const archive = join(release, 'releases', id);
   const bytes = readFileSync(join(archive, 'manifest.json'));
   if (createHash('sha256').update(bytes).digest('hex') !== id)
     throw new Error(`release ${id}: manifest.json differs from its release_id`);
   const manifest = JSON.parse(bytes.toString('utf8')) as {
-    outputs?: { path: string; sha256: string }[];
+    format?: number;
+    manifest_schema?: string;
+    outputs?: { path: string; sha256: string; bytes: number }[];
   };
+  if (
+    (manifest.format !== undefined && manifest.format !== 1) ||
+    manifest.manifest_schema !== 'budget-release/1'
+  )
+    throw new Error('Unsupported release format');
+  const pointer = JSON.parse(readText(join(release, 'releases/current.json')));
+  if (pointer.format !== 1) throw new Error('Unsupported release pointer format');
+  const receipt = JSON.parse(readText(join(archive, 'receipt.json')));
+  if (receipt.release_id !== id) throw new Error('Receipt differs from release_id');
   if (!Array.isArray(manifest.outputs) || !manifest.outputs.length)
     throw new Error(`release ${id}: the manifest lists no outputs`);
+  const listed = new Set<string>();
   for (const output of manifest.outputs) {
+    if (
+      !/^(data\/[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)*|validation\.json)$/.test(output.path) ||
+      output.path.split('/').some((p) => p === '.' || p === '..') ||
+      output.path.startsWith('data/releases/') ||
+      listed.has(output.path)
+    )
+      throw new Error('Invalid release output path');
+    listed.add(output.path);
     const archived = join(archive, output.path);
-    const file = existsSync(archived) ? archived : join(out, output.path);
+    const file = existsSync(archived)
+      ? archived
+      : join(release, output.path.replace(/^data\//, ''));
     if (!existsSync(file) || !statSync(file).isFile())
       throw new Error(`release output missing: ${output.path}`);
+    if (statSync(file).size !== output.bytes)
+      throw new Error(`release output size mismatch: ${output.path}`);
     const actual = createHash('sha256').update(readFileSync(file)).digest('hex');
     if (actual !== output.sha256) throw new Error(`release output sha256 mismatch: ${output.path}`);
   }
+  if (strict) {
+    function inventory(dir: string, prefix = '') {
+      for (const entry of readdirSync(dir)) {
+        const path = prefix + entry;
+        const file = join(dir, entry);
+        const stat = lstatSync(file);
+        if (stat.isSymbolicLink()) throw new Error(`Release symlink: ${path}`);
+        if (stat.isDirectory()) inventory(file, path + '/');
+        else if (!path.startsWith('releases/') && !listed.has('data/' + path))
+          throw new Error(`Unlisted release data: ${path}`);
+      }
+    }
+    inventory(release);
+  }
+  return id;
 }
 
 /** what in the copied files depends on this build: the RSS links (data/feed.xml was generated with a placeholder host and hash addresses)

@@ -16,8 +16,8 @@ import { measureText } from '../../client/measures-2027.js';
 const read = (path: string) =>
   readFileSync(new URL('../../../../' + path, import.meta.url), 'utf8');
 const release = (name: string) => parse(name, read(`data/release/${name}.json`));
-// Independent expected values: the pinned extraction of the АСБП 2027–2029 motives, not the presentation adapter.
-const forecast = JSON.parse(read('data/inputs/budget_forecast_2027.json'));
+// Frozen presentation expectations from the previously pinned extraction.
+const forecast = JSON.parse(read('apps/web/app/lib/__fixtures__/budget_forecast_2027.json'));
 const annex3 = (label: string) =>
   forecast.tables.annex3_mln.rows.find((r: any) => r.label === label).values;
 const doc = release('budget2027');
