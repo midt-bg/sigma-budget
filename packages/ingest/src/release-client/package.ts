@@ -14,7 +14,7 @@ import {
   type ReleaseManifest,
 } from './types.js';
 
-// The path, MIME and size contract of workers/api/store.js; no data registry here.
+// The release package path, MIME and size contract.
 const SEG = '[\\p{L}\\p{N}._\\-]+(?: [\\p{L}\\p{N}._\\-]+)*';
 const SAFE_PATH = new RegExp(`^(?!.*(?:^|/)\\.\\.?(?:/|$))(?=.{1,300}$)${SEG}(?:/${SEG})*$`, 'u');
 const MIMES = new Set([

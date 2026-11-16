@@ -32,7 +32,7 @@ node apps/web/scripts/serve.ts
 
 Зависимостите на Node се инсталират в корена с един `pnpm-lock.yaml` (pnpm workspace). `pnpm build` е build за локална разработка, без SEO обхода. Единственият вход за deploy артефакт е `pnpm build:release` (`apps/web/scripts/build-release.ts`, Node 24 и Chromium на закрепения в `package.json` Playwright от следващия раздел). Той проверява екраните, генерира sitemap/llms/robots и кеш заглавките и маркира service worker за всяко сглобяване. За staging използвай `--env staging --noindex`; за production - `--origin https://<адрес>`.
 
-Сглобеният сайт е в `apps/web/build/`. Клиентът се публикува под `/js/`, а данните от `data/release/` под `/data/`; публичните адреси са запазени. SSR чете текущото издание от D1/R2; без регистър използва включеното в сглобяването издание.
+Сглобеният сайт е в `apps/web/build/`. Клиентът се публикува под `/js/`, а данните от `data/release/` под `/data/`; публичните адреси са запазени. SSR чете само изданието, включено в сглобяването.
 
 Нужни са Node 24 и pnpm 10.33.0. `pnpm test` пуска тестовете на TypeScript пакетите; програмните PDF-и, които тестовете изискват, се подготвят според раздел „Входове за `pnpm test`“ в [ръководството](docs/dev-guide.md). `./budget` изпълнява пълния Node импорт.
 
@@ -84,7 +84,7 @@ node apps/web/scripts/serve.ts --port 8000
 
 За изолиран build без запис в `data/release/` използвай [offline импорт и локален candidate сайт](docs/import-local.md). Двата readers за бюджет 2027 се проверяват автоматично при build; `BUDGET_CANDIDATE` избира валидирания пакет за assets и SSR.
 
-GitHub Actions проверява PR и сглобява staging, без deploy. Push към `main` публикува staging на `https://sigma-budget-staging.cf-midt.workers.dev` при конфигурирани Cloudflare секрети, с `noindex`. Push на таг `vX.Y.Z` върху commit от `main` изпълнява всички проверки и публикува production след одобрение в GitHub Environment `production`. Staging и production (`https://sigma-budget.midt.bg`) са публично достъпни; без Access операторският API остава изключен (`503`). Всяка среда използва собствен Cloudflare token от своя GitHub Environment. Настройките и `wrangler rollback` са в [production процедурата](docs/production-procedure.md). Публикуването на данни остава отделна [операторска стъпка](docs/operator-guide.md). Конфигурацията е в `apps/web/wrangler.jsonc`; собствена среда използва игнориран `wrangler.local.jsonc`. Готовността е описана в [production-readiness](docs/production-readiness.md).
+GitHub Actions проверява PR и сглобява staging, без deploy. Push към `main` публикува staging на `https://sigma-budget-staging.cf-midt.workers.dev` при конфигурирани Cloudflare секрети, с `noindex`. Push на таг `vX.Y.Z` върху commit от `main` изпълнява всички проверки и публикува production след одобрение в GitHub Environment `production`. Staging и production (`https://sigma-budget.midt.bg`) са публично достъпни; `/admin/*` връща `404`. Всяка среда използва собствен Cloudflare token от своя GitHub Environment. Настройките и `wrangler rollback` са в [production процедурата](docs/production-procedure.md). Новото издание идва от `midt-bg/sigma-budget-data` с PR, който обновява `data/release/`, включително `releases/`; [процедура](docs/operator-guide.md). Конфигурацията е в `apps/web/wrangler.jsonc`; собствена среда използва игнориран `wrangler.local.jsonc`. Готовността е описана в [production-readiness](docs/production-readiness.md).
 
 ## Документация
 

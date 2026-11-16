@@ -9,7 +9,7 @@
 //
 // How it works. `react-router build` writes build/client (the files of web assets/, served as they are) and build/server (the Worker that
 // draws every screen from the current release, apps/web/workers/app.ts). The files that depend on this build are stamped in build/client
-// (the RSS links, the service worker's cache name). Then the built Worker runs under `wrangler dev` with an empty registry, so it draws the
+// (the RSS links, the service worker's cache name). Then the built Worker runs under `wrangler dev`, so it draws the
 // screens from the data built from git, and headless Chromium crawls it from the start page: every screen it reaches through a link is
 // checked twice, as the server sends it (a finished screen in the HTML itself, for crawlers and the first paint: data-view="ready", an h1, a
 // description, the canonical link) and as the browser shows it once the app has taken over. Last, sitemap.xml, robots.txt, llms.txt,

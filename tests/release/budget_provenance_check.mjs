@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { publicApi } from '../../apps/web/workers/api/api.js';
-import { sha256 } from '../../apps/web/workers/api/store.js';
+import { createHash } from 'node:crypto';
+const sha256 = async (bytes) => createHash('sha256').update(bytes).digest('hex');
 
 const root = process.env.BUDGET_PROVENANCE_TEST_ROOT
   ? pathToFileURL(process.env.BUDGET_PROVENANCE_TEST_ROOT + '/')

@@ -14,7 +14,6 @@
     "pnpm test:e2e --project=static share.spec.ts",
     "pnpm test:e2e --project=static accept.spec.ts overlap.spec.ts",
     "pnpm test:e2e --project=static motion.spec.ts",
-    "node tests/release/compat_check.mjs --env-url \"$origin\" --allow-first-deploy",
     "pnpm exec playwright install --with-deps chromium",
     "node tests/release/budget_provenance_check.mjs",
     "./budget check-site --inputs \"$RUNNER_TEMP/registered-node-inputs\"",

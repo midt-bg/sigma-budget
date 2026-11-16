@@ -4,15 +4,12 @@ import { afterEach, expect, it, vi } from 'vitest';
 const { render } = vi.hoisted(() => ({ render: vi.fn(async () => new Response('page')) }));
 vi.mock('react-router', () => ({ createRequestHandler: () => render }));
 vi.mock('./release-data', () => ({
-  usesRegistry: async () => true,
   releaseData: async () => ({
     releaseId: 'test',
     dataBase: '/data/',
     load: async () => null,
     file: async () => null,
   }),
-  candidateReleaseId: () => null,
-  noRegistry: () => false,
 }));
 import app from './app';
 
