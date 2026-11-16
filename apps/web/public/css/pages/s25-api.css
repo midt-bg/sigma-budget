@@ -1,4 +1,4 @@
-/* S25 · Отворени данни и API. v4 (СИГМА visual language): ruled blocks, the files as hairline rows under serif group headings,
+/* S25 · Отворени данни и MCP. v4 (СИГМА visual language): ruled blocks, the files as hairline rows under serif group headings,
    code on a warm well in mono, example data marked by the crimson hatch. Tokens only, light only, every selector scoped to the screen, classes prefixed s25-. */
 
 /* the blocks: a long reference page, each block set off by an ink rule */
@@ -263,4 +263,16 @@
   .page[data-route='S25'] .s25-block .s25-file-a {
     grid-area: act;
   }
+}
+
+/* Keep long install commands inside their keyboard-scrollable code region. */
+.page[data-route='S25'] .s25-mcp-tool {
+  display: grid;
+  gap: var(--sp-3);
+  min-width: 0;
+  margin-top: var(--sp-4);
+}
+.page[data-route='S25'] .s25-block,
+.page[data-route='S25'] .s25-snip {
+  min-width: 0;
 }

@@ -452,7 +452,7 @@ function provenanceBlock() {
 
         <li>
           {'Файловете и как се четат с код: '}
-          <a href={'' + href('api') + ''}>{'„Отворени данни и API“'}</a>
+          <a href={'' + href('api') + ''}>{'„Отворени данни и MCP“'}</a>
           {'.'}
         </li>
 

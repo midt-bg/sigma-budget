@@ -36,6 +36,9 @@ const fixture = (file: string) =>
 export function semantics(html: string) {
   const { document } = parseHTML(html),
     article = document.querySelector('article')!;
+  // The added MCP installation guide has its own visible-output test. Keep the file/API oracle frozen.
+  article.querySelector('#s25-mcp')?.parentElement?.remove();
+  article.querySelector('.s25-toc a[href*="to=s25-mcp"]')?.remove();
   article.normalize();
   const norm = (s: string | null) => s?.replace(/\s+/g, ' ').trim();
   const headings = [...article.querySelectorAll('h1,h2,h3')].map((x) => [
@@ -81,6 +84,10 @@ for (const c of manifest.cases) {
     // original captured HTML and its checksums intact.
     // SECURITY-06 intentionally replaces the unresolved CORS statement; preserve the frozen capture.
     const frozen = currentScreenNames(fixture(c.file))
+      .replaceAll(
+        'Файловете с данни, схемите и как да ги ползваш.',
+        'Отворени данни и MCP: файлове, схеми и свързване на AI асистент с бюджета.',
+      )
       // Pending catalogue entries no longer have public pages or a missing-files notice.
       .replace(/<p class="small muted">Още 7 набора нямат файл,[\s\S]*?<\/p>/, '')
       .replace(/ За 4 от 46 бюджета програмите предстоят \([\s\S]*?P03<\/a>\)\./g, '')

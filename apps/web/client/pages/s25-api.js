@@ -1,4 +1,6 @@
 // Static data files, metadata, download links and runnable reading examples.
+import { mcpInstall } from '../mcp-install.js';
+import { siteUrl } from '../seo.js';
 import { html, raw } from '../html.js';
 import { date, plural } from '../format.js';
 import { href } from '../routes.js';
@@ -358,6 +360,24 @@ function versionsBlock(ctx, M) {
   );
 }
 
+function mcpBlock() {
+  return block(
+    's25-mcp',
+    'Свържи AI асистент чрез MCP',
+    () => html`
+    <p>MCP дава на асистента достъп за четене на бюджетните данни. Адресът е ${code(siteUrl('/mcp'))}, транспортът е Streamable HTTP. Не се изискват регистрация, ключ или удостоверяване.</p>
+    <p>Избери своя инструмент и копирай командата, конфигурацията или адреса. После поискай например: „Покажи разходите по функции и посочи източника и датата на данните.“</p>
+    <p>За агенти: <a href="/llms.txt">кратки инструкции и адреси в llms.txt</a>.</p>
+    ${mcpInstall(siteUrl()).map(
+      (item) => html`<div class="s25-mcp-tool">
+      <h3 class="s25-h3">${item.title}</h3><p>${item.note}</p>
+      ${snippet(`s25-mcp-${item.id}`, item.title, item.code)}
+      <p class="small"><a href="${item.docs}" target="_blank" rel="noopener">Официални инструкции за ${item.title}<span class="sr-only"> (друг сайт, в нов раздел)</span></a></p>
+    </div>`,
+    )}`,
+  );
+}
+
 /* ---------------------------------------------------------------- the page contract */
 export async function render(ctx) {
   const M = modelOf(ctx);
@@ -367,6 +387,7 @@ export async function render(ctx) {
   const set = pickSet(M, want);
   const chosen = set && want ? set.slug : '';
   const toc = [
+    ['s25-mcp', 'MCP'],
     ['s25-files', 'Файловете'],
     ['s25-read', 'Как да прочетеш файл'],
     ['s25-licence', 'Лиценз'],
@@ -383,7 +404,7 @@ export async function render(ctx) {
   return {
     lede: 'Всички публикувани данни са достъпни като файлове, които можеш да свалиш и да прочетеш с код. Тук са адресите, полетата и примерите за използване.',
     body: html`<nav class="s25-toc" aria-label="На тази страница">${chips({ items: toc.map(([id, label]) => ({ label, href: at(id, chosen) })) })}</nav>
-      ${stateBlock(M, withFiles, waiting)}${filesBlock(M, waiting)}${read}${licenceBlock()}${versionsBlock(ctx, M)}`,
+      ${mcpBlock()}${stateBlock(M, withFiles, waiting)}${filesBlock(M, waiting)}${read}${licenceBlock()}${versionsBlock(ctx, M)}`,
   };
 }
 

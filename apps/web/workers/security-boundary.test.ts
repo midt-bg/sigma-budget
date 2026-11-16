@@ -254,3 +254,32 @@ it("serves OpenAI's domain-check token as plain text, and 404 without one", asyn
   );
   expect(post.status).toBe(405);
 });
+
+it.each(['https://staging.example/', undefined])(
+  'serves MCP discovery using SITE_ORIGIN %s or the request origin',
+  async (SITE_ORIGIN) => {
+    const res = await app.fetch(
+      new Request('https://request.example/llms.txt'),
+      { SITE_ORIGIN } as Env,
+      {} as ExecutionContext,
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get('Content-Type')).toBe('text/plain; charset=utf-8');
+    const text = await res.text();
+    const origin = SITE_ORIGIN?.replace(/\/+$/, '') || 'https://request.example';
+    expect(text).toContain('# СИГМА Бюджет');
+    expect(text).toContain('> Държавният бюджет');
+    expect(text).toContain(`${origin}/mcp`);
+    expect(text).toContain(`claude mcp add --transport http sigma-budget ${origin}/mcp`);
+    for (const client of [
+      'Claude Desktop',
+      'ChatGPT',
+      'Codex CLI',
+      'Cursor',
+      'GitHub Copilot',
+      'Gemini CLI',
+    ])
+      expect(text).toContain(client);
+    expect(text).toContain(`${origin}/data/catalog.json`);
+  },
+);

@@ -14,6 +14,7 @@ import { inFlight, claim, withinCap } from './render-gate';
 import { finalizeResponse } from '../app/lib/security';
 import { rateLimitReleaseRead, rateLimitRender } from './release-rate-limit';
 import { bundledFeed } from './feed';
+import { llms } from './llms';
 
 declare module 'react-router' {
   interface AppLoadContext {
@@ -242,6 +243,10 @@ async function dispatch(request: Request, env: Env, ctx: ExecutionContext): Prom
   if (url.pathname === '/mcp' || url.pathname === '/mcp/') return mcp(request, env, url); // the address as people paste it, with or without the slash
   if (request.method !== 'GET' && request.method !== 'HEAD') {
     return new Response('Method not allowed', { status: 405, headers: { Allow: 'GET, HEAD' } });
+  }
+  if (url.pathname === '/llms.txt') {
+    const response = llms((env.SITE_ORIGIN || url.origin).replace(/\/+$/, ''));
+    return request.method === 'HEAD' ? new Response(null, { headers: response.headers }) : response;
   }
   if (url.pathname === OPENAI_CHALLENGE) return openaiChallenge(env);
   if (RELEASES.test(url.pathname)) {

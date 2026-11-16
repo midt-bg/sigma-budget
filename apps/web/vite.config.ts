@@ -58,6 +58,11 @@ function siteFiles(candidate: Candidate | null): Plugin {
       if (candidate) copyCandidate(candidate, resolve(options.dir, 'data'));
       else cpSync(resolve('../../data/release'), resolve(options.dir, 'data'), { recursive: true });
       await bundle({
+        entryPoints: ['client/mcp-install.ts'],
+        outfile: resolve(options.dir, 'js/mcp-install.js'),
+        format: 'esm',
+      });
+      await bundle({
         entryPoints: ['client/routes.js'],
         outfile: resolve(options.dir, 'js/routes.js'),
         bundle: true,
