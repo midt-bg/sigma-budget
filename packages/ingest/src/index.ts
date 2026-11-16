@@ -66,7 +66,6 @@ export * from './build/fiscal-graph.js';
 export * from './build/indirect-taxes.js';
 export * from './build/wave13b.js';
 export * from './build/wave13b-fixture.js';
-export * from './build/wave13b-parity.js';
 export { core as validateCore, catalog as validateCatalog } from './validate/catalog.js';
 export { runWave17a, WAVE17A_GROUPS, WAVE17A_REMAINING } from './validate/wave17a.js';
 export { budget2027 } from './validate/budget-2027.js';
