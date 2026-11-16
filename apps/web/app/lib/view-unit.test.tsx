@@ -21,7 +21,7 @@ const release = {
   dataBase: '/data/',
   origin: 'https://budget.test',
   sigmaUrl: 'https://sigma.test',
-  feedbackEmail: '',
+  turnstileSiteKey: '',
 };
 function scopeFor(path: string, savedUnit = 'eur') {
   return {

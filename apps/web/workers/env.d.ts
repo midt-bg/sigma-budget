@@ -9,8 +9,11 @@ interface Env {
   SITE_ORIGIN?: string;
   /** the address of the original СИГМА (docs/approach-specification.md, section 2.2) */
   SIGMA_URL?: string;
-  /** the address the feedback form writes to (apps/web/client/feedback.js); empty: the form keeps the message in the browser and says so */
-  FEEDBACK_EMAIL?: string;
+  VRAZKA_BUCKET?: R2Bucket;
+  VRAZKA_IP_KEY?: string;
+  TURNSTILE_SECRET_KEY?: string;
+  TURNSTILE_SITE_KEY?: string;
+  VRAZKA_LIMITER?: DurableObjectNamespace<import('./vrazka-limit').VrazkaLimiter>;
   /** the token of OpenAI's domain check, served at /.well-known/openai-apps-challenge (docs/openai-plugin.md); empty: 404 */
   OPENAI_APPS_CHALLENGE?: string;
   /** "1" keeps the environment out of search engines (staging) */

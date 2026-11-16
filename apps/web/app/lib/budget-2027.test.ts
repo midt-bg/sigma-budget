@@ -575,10 +575,11 @@ it('historical measures are shown in their own period and other periods link bac
     expect(link?.textContent).toContain('Виж мярката');
   }
 });
-it('keeps feedback usable without a configured mail address', async () => {
+it('explains unavailable feedback without a site key', async () => {
   const { document } = await page('/vrazka');
-  expect(document.querySelector('article')!.textContent).toContain('Запазване в браузъра');
-  expect(document.querySelector('article')!.textContent).toContain('не се изпраща');
+  expect(document.querySelector('article')!.textContent).toContain(
+    'Изпращането временно не е достъпно',
+  );
   expect(document.querySelector('article')!.textContent).not.toMatch(
     /Изпращането предстои|към екипа още|Общини и проекти \(предстои\)/,
   );

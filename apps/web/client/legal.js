@@ -1,11 +1,14 @@
 // The copy of the two legal pages, S36 „Поверителност“ (/poveritelnost) and S37 „Условия за ползване“ (/usloviya), shared by the React screens
 // (app/routes/legal-content.tsx) and their legacy twins (client/pages/s36-poveritelnost.js, s37-usloviya.js), so the text exists once.
 // A section is {id, title, body}; a body item is {p: parts} or {list: [parts, …]}; parts is a string or a list of a string,
-// {route: [id, params, query], text} (a screen of the site), {url, text} (another site) or {contact: true} (the team's address).
-// What the privacy page says follows the code: no cookies or analytics (as stated in the privacy text), browser storage only for the
-// keys of client/store.js, client/feedback.js and client/pages/s27-vrazka.js, the service worker cache (public/sw.js), feedback as mailto
-// (client/feedback.js), no invocation logs (apps/web/wrangler.jsonc), the rate limit on the address for 60 s (workers/release-rate-limit.ts),
-// MCP arguments never logged (workers/mcp/handler.ts). Change the copy when one of these changes.
+// {route: [id, params, query], text} (a screen of the site), {url, text} (another site) or {contact: true} (the feedback page).
+// Claims are backed by client/store.js (preferences and notices), pages/s27-vrazka.js (session-only drafts),
+// public/sw.js (offline cache), and client/feedback.js (lazy Turnstile and POST transport, no receipt archive).
+// workers/api/vrazka.ts stores text/context/optional contact in private R2; vrazka-window.ts expires keyed IP hashes
+// at the hourly boundary. workers/release-rate-limit.ts handles the separate minute-long request limit.
+// wrangler.jsonc disables invocation logs; workers/mcp/handler.ts does not log conversation arguments.
+// Team access, possible external AI processing, and manual deletion are described in docs/signali.md.
+// Keep this copy aligned with those implementations; Turnstile processes the IP during verification.
 import { html } from './html.js';
 import { href } from './routes.js';
 
@@ -20,7 +23,7 @@ export const PAGES = {
       title: 'Накратко',
       body: [
         {
-          p: 'СИГМА Бюджет не събира лични данни. Няма регистрация и профили, няма бисквитки и няма инструменти за анализ на посещенията или реклама. Страниците не зареждат нищо от други сайтове.',
+          p: 'Няма регистрация и профили, нито инструменти за анализ на посещенията или реклама. Формулярите за обратна връзка използват Cloudflare Turnstile за защита от автоматични съобщения.',
         },
       ],
     },
@@ -35,7 +38,7 @@ export const PAGES = {
           list: [
             'настройките на изгледа, например обхват и мерна единица;',
             'кои новини вече са видени и дали е скрито съобщението в горната част на сайта;',
-            'черновата и копие на обратната връзка, която подготвяте;',
+            'черновата на обратната връзка, която подготвяте, докато разделът е отворен;',
             'копие на страниците, за да се отварят и без връзка с интернет.',
           ],
         },
@@ -52,7 +55,7 @@ export const PAGES = {
           p: [
             'Формулярът ',
             { route: ['S27'], text: '„Обратна връзка“' },
-            ' не изпраща нищо към сървъра. Той отваря готов имейл във вашата поща. Ако го изпратите, писмото и адресът ви се получават като всяко друго писмо и се използват само за отговор.',
+            ' изпраща текста, контекста (например екран, число, източник или термин) и имейла, само ако го дадете. Сигналите се пазят в частно хранилище в ЕС до ръчното им изтриване. Сигналите се четат от екипа на СИГМА Бюджет в МИДТ и може да се обработват и с външна услуга с изкуствен интелект. Не включвайте лични данни в текста.',
           ],
         },
       ],
@@ -72,7 +75,7 @@ export const PAGES = {
           ],
         },
         {
-          p: 'Ограничението на броя заявки държи адреса в паметта до една минута. Сайтът не пази IP адреси и не води дневник на посещенията: записват се само технически грешки и броят на извикванията, без данни за посетителя.',
+          p: 'Общото ограничение на заявките към сайта държи IP адреса в паметта до една минута. За лимита на сигналите адресът се използва само за получаване на хеш с таен ключ, който се пази най-много един час. Адресът и хешът не влизат в сигнала. Cloudflare Turnstile обработва IP адреса при проверката. Сайтът не води дневник на посещенията.',
         },
       ],
     },
@@ -156,6 +159,19 @@ export const PAGES = {
       ],
     },
     {
+      id: 's37-vrazka',
+      title: 'Сигнали и предложения',
+      body: [
+        {
+          p: [
+            'Формулярите за обратна връзка са за грешки, неясни обяснения и идеи за сайта. Изпращането изисква проверка с Cloudflare Turnstile и е ограничено до 10 сигнала на час от един адрес и 100 общо. Полученият номер потвърждава записването на сигнала. За съхранението и обработването вижте ',
+            { route: ['S36'], text: 'политиката за поверителност' },
+            '.',
+          ],
+        },
+      ],
+    },
+    {
       id: 's37-ai',
       title: 'Отговорите на AI асистенти',
       body: [
@@ -186,23 +202,20 @@ export const PAGES = {
 
 /** the parts of a paragraph as a list, a lone string included */
 export const partsOf = (p) => (Array.isArray(p) ? p : [p]);
-/** where a link part points: a screen of the site, another site, or the team's address (mailto, else the feedback screen) */
-export function target(part, email) {
-  if (part.contact)
-    return email
-      ? { href: `mailto:${email}`, text: email }
-      : { href: href('S27'), text: 'страницата „Обратна връзка“' };
+/** Resolve a reference to a page or external source. */
+export function target(part) {
+  if (part.contact) return { href: href('S27'), text: 'страницата „Обратна връзка“' };
   if (part.url) return { href: part.url, text: part.text };
   const [id, params = {}, query = {}] = part.route;
   return { href: href(id, params, query), text: part.text };
 }
 
 /** the body of a legal page for the legacy renderer; the React one is app/routes/legal-content.tsx */
-export function legalHtml(screen, email) {
+export function legalHtml(screen) {
   const parts = (p) =>
     partsOf(p).map((x) => {
       if (typeof x === 'string') return x;
-      const t = target(x, email);
+      const t = target(x);
       return html`<a href="${t.href}">${t.text}</a>`;
     });
   return html`<div class="legal">${PAGES[screen].map(

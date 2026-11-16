@@ -192,7 +192,9 @@ describe('SECURITY-09 release rate limit', () => {
     expect(config.name).toBe('sigma-budget');
     expect(config.vars.ENVIRONMENT).toBe('production');
     expect(config.vars.SITE_ORIGIN).toBe('https://sigma-budget.midt.bg');
-    expect(config.vars.FEEDBACK_EMAIL).toBe('contact@midt.government.bg');
+    expect(config.vars.TURNSTILE_SITE_KEY).toBeTruthy();
+    expect(config.env.staging.vars.TURNSTILE_SITE_KEY).toBeTruthy();
+    expect(config.vars.TURNSTILE_SITE_KEY).not.toBe(config.env.staging.vars.TURNSTILE_SITE_KEY);
     expect(config.vars.NOINDEX).toBe('');
     expect(config.env).not.toHaveProperty('production');
     expect(text).not.toContain('WORKER_VERSION');
