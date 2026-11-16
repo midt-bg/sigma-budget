@@ -233,7 +233,7 @@ function provenanceBlock() {
     html`<ul class="s35-list">
     <li>Всяко число от месечните отчети води до листа и клетката на оригинала: <a href="${dataHref('execution-provenance')}">произходът на всяко число</a> (JSON) и „Откъде са числата“ в <a href="${href('izpalnenie')}">месечните отчети</a>.</li>
     <li>Наборите, източниците им и методиката: <a href="${href('danni')}">„Откъде са данните?“</a>.</li>
-    <li>Файловете и как се четат с код: <a href="${href('api')}">„Отворени данни и API“</a>.</li>
+    <li>Файловете и как се четат с код: <a href="${href('api')}">„Отворени данни и MCP“</a>.</li>
     <li>Текущото издание: <a href="/api/releases/current">JSON указател</a>.</li>
   </ul>`,
   );

@@ -10,12 +10,16 @@ export const publicOrganization = (html: string) =>
 // stays on the pages). Historical captures keep the old chrome and names; adapt exactly these parts and fail if one is not found.
 // (the old names are split, so that the scan of live files in navigation.test.tsx does not match them here)
 export const SCREEN_RENAMES = [
+  ['Отворени данни и ' + 'API', 'Отворени данни и MCP'],
   ['Данни и ' + 'методика', 'Методология'],
   ['Данни и ' + 'проверка', 'Проверка на данните'],
 ] as const;
 export const BUDGET_GROUP = ['S34', 'S05', 'S07', 'S06', 'S10', 'S12', 'S13', 'S20', 'S14'];
 export const currentScreenNames = (html: string) =>
-  SCREEN_RENAMES.reduce((s, [from, to]) => s.replaceAll(from, to), html);
+  SCREEN_RENAMES.reduce((s, [from, to]) => s.replaceAll(from, to), html).replaceAll(
+    'Отворени <em>данни</em> и ' + 'API',
+    'Отворени <em>данни</em> и MCP',
+  );
 export function currentNavigation(html: string) {
   const legend =
     /\s*<button type="button" class="link-btn" data-action="legend">Легенда: какво означават белезите<\/button>/;

@@ -36,6 +36,9 @@ const fixture = (file: string) =>
 export function semantics(html: string) {
   const { document } = parseHTML(html),
     article = document.querySelector('article')!;
+  // The added MCP installation guide has its own visible-output test. Keep the file/API oracle frozen.
+  article.querySelector('#s25-mcp')?.parentElement?.remove();
+  article.querySelector('.s25-toc a[href*="to=s25-mcp"]')?.remove();
   article.normalize();
   const norm = (s: string | null) => s?.replace(/\s+/g, ' ').trim();
   const headings = [...article.querySelectorAll('h1,h2,h3')].map((x) => [
@@ -81,6 +84,14 @@ for (const c of manifest.cases) {
     // original captured HTML and its checksums intact.
     // SECURITY-06 intentionally replaces the unresolved CORS statement; preserve the frozen capture.
     const frozen = currentScreenNames(fixture(c.file))
+      .replaceAll(
+        'Всички публикувани данни са достъпни като файлове, които можеш да свалиш и да прочетеш с код. Тук са адресите, полетата и примерите за използване.',
+        'Свали публикуваните данни и ги прочети с код или свържи AI асистент чрез MCP. Тук са адресите, полетата и примерите за използване.',
+      )
+      .replaceAll(
+        'Файловете с данни, схемите и как да ги ползваш.',
+        'Файлове, схеми и свързване на AI асистент с бюджета.',
+      )
       // Pending catalogue entries no longer have public pages or a missing-files notice.
       .replace(/<p class="small muted">Още 7 набора нямат файл,[\s\S]*?<\/p>/, '')
       .replace(/ За 4 от 46 бюджета програмите предстоят \([\s\S]*?P03<\/a>\)\./g, '')
@@ -91,7 +102,7 @@ for (const c of manifest.cases) {
       .replaceAll('Бюджет 2026 и прогноза', 'Бюджет и прогноза')
       .replaceAll(
         'Тук няма жив API: всички данни на сайта са готови файлове, които можеш да свалиш и да прочетеш с код. Ето кои са, как изглеждат и как се ползват.',
-        'Всички публикувани данни са достъпни като файлове, които можеш да свалиш и да прочетеш с код. Тук са адресите, полетата и примерите за използване.',
+        'Свали публикуваните данни и ги прочети с код или свържи AI асистент чрез MCP. Тук са адресите, полетата и примерите за използване.',
       )
       .replaceAll(
         'Файловете са в UTF-8. Ако ги четеш от страница на друг сайт, браузърът може да поиска разрешение от сървъра (CORS): за истинския портал това още не е решено.',

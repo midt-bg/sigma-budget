@@ -54,9 +54,17 @@ function siteFiles(candidate: Candidate | null): Plugin {
         recursive: true,
         filter: (src) => src !== resolve('public/index.html'),
       });
-      cpSync(resolve('client'), resolve(options.dir, 'js'), { recursive: true });
+      cpSync(resolve('client'), resolve(options.dir, 'js'), {
+        recursive: true,
+        filter: (src) => !src.endsWith('.ts'),
+      });
       if (candidate) copyCandidate(candidate, resolve(options.dir, 'data'));
       else cpSync(resolve('../../data/release'), resolve(options.dir, 'data'), { recursive: true });
+      await bundle({
+        entryPoints: ['client/mcp-install.ts'],
+        outfile: resolve(options.dir, 'js/mcp-install.js'),
+        format: 'esm',
+      });
       await bundle({
         entryPoints: ['client/routes.js'],
         outfile: resolve(options.dir, 'js/routes.js'),
