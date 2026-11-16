@@ -555,3 +555,41 @@ it('uses KFP in the beginner glossary link, share sentence and deficit explanati
     'Когато разходите по КФП са по-големи от приходите',
   );
 });
+
+it('SSR keeps the debt comparison table inside a closed disclosure', async () => {
+  const url = new URL('https://budget.test/dalg?per=2026.law');
+  provideScope(() => ({
+    url,
+    origin: url.origin,
+    state: requestState('2026.law'),
+    data: new Map(),
+    load,
+  }));
+  try {
+    const result = await renderScreen(url, {
+      id: 'a'.repeat(64),
+      dataBase: '/data/',
+      origin: url.origin,
+      sigmaUrl: '',
+      turnstileSiteKey: '',
+    });
+    if (!('doc' in result)) throw Error('Expected SSR document');
+    const { document } = parseHTML(result.doc.view);
+    const disclosure = document.querySelector('details#s17-b-compare')!;
+    expect(disclosure).not.toBeNull();
+    expect(disclosure.hasAttribute('open')).toBe(false);
+    expect(disclosure.querySelector('summary')?.textContent).toContain(
+      'Защо числата за дълга се различават',
+    );
+    const comparison = (await load('debt')).compare;
+    const table = disclosure.querySelector('#s17-t-compare')!;
+    expect(table).not.toBeNull();
+    for (const row of comparison.rows) expect(table.textContent).toContain(row.label);
+    expect(disclosure.textContent).toContain(comparison.note);
+    expect(disclosure.querySelector('.s17-switch a')?.getAttribute('href')).toContain(
+      'obhvat=maastricht',
+    );
+  } finally {
+    provideScope(() => null);
+  }
+});

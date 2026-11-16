@@ -12,7 +12,7 @@
     "pnpm test:e2e --project=static redirects.spec.ts",
     "pnpm test:e2e --project=static calc.spec.ts",
     "pnpm test:e2e --project=static share.spec.ts",
-    "pnpm test:e2e --project=static accept.spec.ts overlap.spec.ts",
+    "pnpm test:e2e --project=static accept.spec.ts overlap.spec.ts dalg-key-figures.spec.ts",
     "pnpm test:e2e --project=static motion.spec.ts",
     "node scripts/check-deployment.mjs --origin \"$ORIGIN\""
   ]

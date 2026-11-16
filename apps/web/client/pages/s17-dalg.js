@@ -1,3 +1,4 @@
+import { debtKeyFigures } from '../ui/debt-key-figures.js';
 import { debtIssues } from '../ui/debt-issues.js';
 import { isFramework } from '../budget-2027.js';
 import { debtView, mountBillSearch, debtChart2027 } from './bill-views.js';
@@ -6,7 +7,7 @@ import { debtView, mountBillSearch, debtChart2027 } from './bill-views.js';
 // the deficit from execution.json (D16), interest and balance from outlook.json (D15). Nothing is typed from memory.
 // The visitor picks the count in the query: ?obhvat=zdd (default) | maastricht. Charts honour „% от БВП“ and „на човек“ (view.chartUnit).
 import { html, esc } from '../html.js';
-import { num, pct, date, monthName, money, moneyParts, EUR_RATE, NBSP, DASH } from '../format.js';
+import { num, pct, date, monthName, money, moneyParts, NBSP, DASH } from '../format.js';
 import { block } from '../ui/block.js';
 import { seg } from '../ui/seg.js';
 import { dataTable } from '../ui/table.js';
@@ -39,8 +40,6 @@ const list = (a, n) =>
 const pick = (a, i) => (Array.isArray(a) && ok(a[i]) ? a[i] : null);
 const lastOf = (a) => (Array.isArray(a) && a.length ? a[a.length - 1] : null);
 const maxAbs = (...lists) => Math.max(0, ...lists.flat().filter(ok).map(Math.abs));
-const diff = (a, b) => (ok(a) && ok(b) ? a - b : null);
-const chg = (a, b) => (ok(a) && ok(b) && b !== 0 ? (a / b - 1) * 100 : null);
 /** „2026 г.“ with a no-break space, so that „г.“ never stands alone on a line */
 const yr = (y) => `${y}${NBSP}г.`;
 /** a year ends in a period already ("2025 г."): close a sentence with one period only */
@@ -56,10 +55,6 @@ const qName = (id) => {
 const qCat = (id) => {
   const m = /^(\d{4})-Q([1-4])$/.exec(id || '');
   return m ? `${m[1]}\nТ${m[2]}` : String(id || '');
-};
-const levTxt = (mln) => {
-  const v = mln * EUR_RATE;
-  return `≈${NBSP}${v >= 1000 ? `${num(v / 1000, 2)}${NBSP}млрд.` : `${num(v, 1)}${NBSP}млн.`}${NBSP}лв.`;
 };
 const withShare = (mln, pg) => `${money(mln)}${ok(pg) ? ` (${pct(pg, 1)} от БВП)` : ''}`;
 
@@ -151,14 +146,6 @@ export function ledeText(M) {
   return `${base}${what} ${withShare(M.mln, M.pg)}.`;
 }
 
-/** one sentence under the heading of the numbers: what the chosen count is */
-function scopeLead(M) {
-  if (M.scope === ZDD)
-    return 'Това е дългът на държавата по Закона за държавния дълг, както го показва Министерството на финансите. Разделен е на външен и вътрешен.';
-  const thr = M.m && M.m.thresholdPctGdp;
-  return `Това е консолидираният брутен дълг на целия сектор „Държавно управление“. По него България се сравнява с Европейския съюз${ok(thr) ? ` и с референтната стойност от ${pct(thr, 0)} от БВП` : ''}.`;
-}
-
 /* ------------------------------------------------------------------ the controls band */
 const ctl = (label, id, inner) =>
   html`<div class="field s17-ctl"><span class="field-label" id="${id}">${label}</span>${inner}</div>`;
@@ -185,178 +172,15 @@ export function controls(M) {
   </div>`;
 }
 
-/* ------------------------------------------------------------------ „Накратко“: the three numbers of the debt */
-/** the top of the default view (no Eurostat): three numbers of the budget itself. The debt at the end of the last report year, the biggest new debt
- *  of the planned year (for 2026 the cap of the law, art. 67) and the interest of that year. A planned period (2026-2028) picks its own year. */
-function zddTiles(M) {
-  const { ctx, d, z } = M,
-    o = ctx.data.outlook,
-    nd = d.newDebt,
-    L = d.latest && d.latest.zdd,
-    yrs = z.years || [];
-  const lim =
-    d.limits && Array.isArray(d.limits.items)
-      ? d.limits.items.find((x) => x.id === 'newDebt')
-      : null;
-  const y1 = M.kind === 'actual' ? M.Y : L && L.year,
-    yp = M.kind !== 'actual' ? M.Y : L && L.next && L.next.year;
-  const lev = (v) => (ctx.store.get('leva') && ok(v) ? `(${levTxt(v)})` : '');
-  const parts = (v) => (ok(v) ? moneyParts(v) : null);
-  // 1 · the debt at the end of the last report year, with its share of GDP and per person
-  const i1 = yrs.indexOf(y1),
-    v1 = pick(z.totalMln, i1),
-    g1 = pick(z.pctGdp, i1),
-    c1 = i1 > 0 ? chg(v1, pick(z.totalMln, i1 - 1)) : null;
-  const p1 = parts(v1),
-    per = ok(v1) && M.persons ? (v1 * 1e6) / M.persons : null;
-  const t1 = kpi({
-    label: `Държавен дълг към края на ${yr(y1)}`,
-    value: p1 ? p1.v : null,
-    unit: p1 ? p1.u : '',
-    gl: 'darzhaven-dalg',
-    status: (z.vintage || [])[i1] === 'actual' ? undefined : 'forecast',
-    delta: ok(c1)
-      ? { value: c1, unit: '%', d: 1, label: `спрямо края на ${yr(y1 - 1)}` }
-      : undefined,
-    sub:
-      [
-        ok(g1) ? `${pct(g1, 1)} от БВП` : '',
-        ok(per) ? `${num(per, 0)}${NBSP}€ на човек` : '',
-        lev(v1),
-      ]
-        .filter(Boolean)
-        .join(' · ') || undefined,
-  });
-  // 2 · the biggest new debt of the planned year: the law's cap for 2026, the Ministry's plan for 2027-2028
-  const pl = nd && Array.isArray(nd.plan) ? nd.plan.find((p) => p.year === yp) : null,
-    law = !!pl && pl.kind === 'limit';
-  const v2 =
-      law && lim && ok(lim.mln) ? lim.mln : pl && ok(pl.bln) ? Math.round(pl.bln * 1000) : null,
-    p2 = parts(v2);
-  const t2 = kpi({
-    label: law ? `Най-много нов дълг през ${yr(yp)}` : `Планиран нов дълг през ${yr(yp)}`,
-    value: p2 ? p2.v : null,
-    unit: p2 ? p2.u : '',
-    gl: 'nov-dalg-novo-zaemane',
-    status: law ? undefined : 'forecast',
-    sub: [
-      law && lim
-        ? `Горна граница по закона (чл. ${lim.art}${lim.para ? `, ал. ${lim.para}` : ''}), не е прогноза`
-        : 'План на Министерството на финансите',
-      lev(v2),
-    ]
-      .filter(Boolean)
-      .join(' · '),
-  });
-  // 3 · the interest of the planned year (the consolidated fiscal programme, as in the chart below)
-  const oi = o && Array.isArray(o.years) ? o.years.indexOf(yp) : -1,
-    I = o && o.kfp && o.kfp.interest;
-  const v3 = oi >= 0 && I ? pick(I.mln, oi) : null,
-    g3 = oi >= 0 && I ? pick(I.pctGdp, oi) : null,
-    c3 = oi > 0 && I ? chg(v3, pick(I.mln, oi - 1)) : null,
-    p3 = parts(v3);
-  const t3 = kpi({
-    label: `Лихви през ${yr(yp)}`,
-    value: p3 ? p3.v : null,
-    unit: p3 ? p3.u : '',
-    gl: 'lihva',
-    status: oi >= 0 && o.vintage && o.vintage[oi] === 'actual' ? undefined : 'forecast',
-    delta: ok(c3) ? { value: c3, unit: '%', d: 1, label: `спрямо ${yr(yp - 1)}` } : undefined,
-    sub: [
-      ok(g3) ? `${pct(g3, 1)} от БВП` : '',
-      'Разход на консолидираната фискална програма',
-      lev(v3),
-    ]
-      .filter(Boolean)
-      .join(' · '),
-  });
-  const inc =
-    law && lim && lim.includes
-      ? note(
-          `Най-големият нов дълг по закона включва ${lim.includes}${ok(lim.includesMln) ? ` (${money(lim.includesMln)})` : ''}. Всички граници на закона са в блока „Какви граници слага законът“ по-долу.`,
-        )
-      : '';
-  return {
-    items: [t1, t2, t3],
-    note: inc,
-    source: srcOf(M.src, law ? (d.limits && d.limits.source) || ['zdb'] : []),
-    asOf: [M.asOf, law && d.limits ? d.limits.asOf : null].filter(Boolean).sort().pop(),
-    sub: 'Три числа от самия бюджет: колко дължи държавата, колко най-много нов дълг може да поеме и колко струват лихвите.',
-  };
-}
+/* The selected year's figures are shared by the historical and framework views. */
 export function kpisBlock(M) {
-  const { ctx, Y, kind } = M;
-  const mp = ok(M.mln) ? moneyParts(M.mln) : null;
-  const status = kind === 'actual' ? undefined : 'forecast';
-  const vs = M.prevY ? `спрямо края на ${yr(M.prevY)}` : undefined;
-  const dMln = chg(M.mln, M.pMln),
-    dPg = diff(M.pg, M.pPg);
-  const per = mp && M.persons ? (M.mln * 1e6) / M.persons : null;
-  const kindNote =
-    kind === 'plan'
-      ? 'План по проекта на бюджета'
-      : kind === 'forecast'
-        ? 'Прогноза на Министерството на финансите'
-        : '';
-  const lev = ctx.store.get('leva') && mp ? `(${levTxt(M.mln)})` : '';
-  const thr = M.m && M.m.thresholdPctGdp;
-  const tiles = M.scope === ZDD ? zddTiles(M) : null; // the default count: the budget's own three numbers; Maastricht keeps the old three
-  const items = tiles
-    ? tiles.items
-    : [
-        kpi({
-          label: `${SCOPE_NAME[M.scope]} към края на ${yr(Y)}`,
-          value: mp ? mp.v : null,
-          unit: mp ? mp.u : '',
-          status,
-          gl: M.scope === ZDD ? 'darzhaven-dalg' : 'sektor-darzhavno-upravlenie',
-          delta: ok(dMln) ? { value: dMln, unit: '%', d: 1, label: vs } : undefined,
-          sub: [kindNote, lev].filter(Boolean).join(' · ') || undefined,
-        }),
-        kpi({
-          label: 'Дял от БВП',
-          value: ok(M.pg) ? pct(M.pg, 1) : null,
-          unit: ok(M.pg) ? 'от БВП' : '',
-          status,
-          gl: 'dyal-ot-bvp',
-          delta: ok(dPg) ? { value: dPg, unit: 'пр.п.', d: 1, label: vs } : undefined,
-          sub:
-            M.scope === MAA && ok(thr) ? `Референтна стойност: ${pct(thr, 0)} от БВП` : undefined,
-        }),
-        kpi({
-          label: 'На човек от населението',
-          value: ok(per) ? num(per, 0) : null,
-          unit: ok(per) ? '€ на човек' : '',
-          status,
-          sub: M.persons
-            ? `При население от ${num(M.persons / 1e6, 2)}${NBSP}млн. души${M.popDate ? ` (${dateG(M.popDate)})` : ''}`
-            : undefined,
-        }),
-      ];
-  const lastQ =
-    M.scope === MAA && M.d.latest && M.d.latest.maastricht ? M.d.latest.maastricht.quarter : null;
-  const fb =
-    M.fallback && M.want
-      ? html`<p class="s17-note">За ${yr(M.want)} няма данни по тази методика: тя стига до ${yr(M.lastYear)} Показана е последната налична година.</p>`
-      : '';
-  const qline =
-    lastQ && ok(lastQ.mln)
-      ? html`<p class="s17-note">Най-новото тримесечие е ${qName(lastQ.id)}: ${withShare(lastQ.mln, lastQ.pctGdp)}${lastQ.flag === 'p' ? ', предварителни данни' : ''}.</p>`
-      : '';
-  return block({
-    id: 's17-b-kpi',
-    level: 2,
-    title: tiles
-      ? 'Накратко: дългът, новият дълг и лихвите'
-      : `Накратко: дългът към края на ${yr(Y)}`,
+  return debtKeyFigures(M.ctx, {
+    mln: M.fallback ? null : M.mln,
+    pg: M.fallback ? null : M.pg,
     scope: M.scope,
-    source: tiles ? tiles.source : M.src,
-    asOf: tiles ? tiles.asOf : M.asOf,
-    status: tiles ? 'partial' : kind === 'actual' ? 'real' : 'forecast',
-    statusLabel: tiles ? 'Отчет и прогноза' : undefined,
-    sub: tiles ? tiles.sub : scopeLead(M),
-    share: { text: ledeText(M) },
-    body: html`${fb}${kpiGrid(items, { label: tiles ? 'Дълг, нов дълг и лихви' : 'Основни числа за дълга' })}${tiles ? tiles.note : ''}${qline}`,
+    source: M.src,
+    asOf: M.asOf,
+    debtReason: M.fallback ? `Методиката стига до ${M.lastYear} г.` : undefined,
   });
 }
 
@@ -1449,7 +1273,7 @@ function newDebtBlock(M) {
   });
 }
 
-/* ---- „Не бъркай с…“: the deficit, the new debt and the debt are three different numbers */
+/* ---- Distinguishing the concepts: the deficit, the new debt and the debt are three different numbers */
 function confuseBlock(M) {
   const z = M.z,
     o = M.ctx.data.outlook,
@@ -1503,8 +1327,8 @@ function confuseBlock(M) {
   return block({
     id: 's17-b-confuse',
     level: 2,
-    title: 'Не бъркай дефицит, нов дълг и дълг',
-    sub: 'Три различни числа за една и съща година. Не се събират и не се изваждат.',
+    title: 'Дефицит, нов дълг и дълг: три различни числа',
+    sub: 'Отнасят се до една и съща година, но не се събират и не се изваждат.',
     scope: ZDD,
     source: ['asbp'],
     asOf: z.asOf,
@@ -1792,23 +1616,30 @@ function compareBlock(M) {
       ? { q: {}, label: 'Виж държавния дълг по години, 2024–2028' }
       : { q: { obhvat: MAA }, label: 'Виж дълга по Маастрихт: България и Европейският съюз' };
   const href = M.ctx.href('S17', {}, other.q);
-  return block({
+  return disclosure({
     id: 's17-b-compare',
-    level: 2,
     title: 'Защо числата за дълга се различават',
-    source: srcOf(...c.rows.map((r) => r.source)),
-    asOf: M.d.meta && M.d.meta.asOf,
-    sub: `Три реда от различни институции за ${c.years.map(yr).join(' и ')}`,
-    body: html`${dataTable({
-      id: 's17-t-compare',
-      caption: `Дългът по три различни реда, ${mc.unit}`,
-      dense: true,
-      columns: [
-        { key: 'name', label: 'Ред' },
-        ...c.years.map((y, i) => mcol(mc, `y${i}`, String(y), `m${i}`)),
-      ],
-      rows,
-    })}<p class="s17-switch"><a href="${href}">${other.label}</a></p>`,
+    body: html`<p>Институциите броят различни части от публичния дълг и затова показват различни суми.</p>${note(c.note)}${block(
+      {
+        id: 's17-compare-data',
+        level: 3,
+        title: 'Сравнение на обхватите',
+        source: srcOf(...c.rows.map((r) => r.source)),
+        asOf: M.d.meta && M.d.meta.asOf,
+        share: { period: c.years.join(' / ') },
+        sub: `Три реда от различни институции за ${c.years.map(yr).join(' и ')}`,
+        body: html`${dataTable({
+          id: 's17-t-compare',
+          caption: `Дългът по три различни реда, ${mc.unit}`,
+          dense: true,
+          columns: [
+            { key: 'name', label: 'Ред' },
+            ...c.years.map((y, i) => mcol(mc, `y${i}`, String(y), `m${i}`)),
+          ],
+          rows,
+        })}<p class="s17-switch"><a href="${href}">${other.label}</a></p>`,
+      },
+    )}`,
   });
 }
 
@@ -1832,7 +1663,7 @@ function methodDisclosure(M) {
 /* ------------------------------------------------------------------ the page */
 export const needs = (ctx) =>
   isFramework(ctx)
-    ? ['core', 'budget2027?', 'debt-issues?']
+    ? ['core', 'budget2027?', 'outlook?', 'debt-issues?']
     : ['core', 'debt', 'execution?', 'outlook?', 'debt-issues?'];
 export const styles = ['s17-dalg'];
 
@@ -1905,7 +1736,7 @@ export function render(ctx) {
     M.scope === MAA
       ? [maastrichtBlock(M), euBlock(M), quarterBlock(M), compareBlock(M)]
       : [zddBlock(M), compareBlock(M)];
-  return html`${controls(M)}${kpisBlock(M)}${top}${confuseBlock(M)}${financeBlock(M, F)}${financeTableBlock(M, F)}${newDebtBlock(M)}<div class="s17-pair">${interestBlock(M)}${balanceBlock(M)}</div>${structureBlock(M)}${guaranteesBlock(M)}${limitsBlock(M)}${methodDisclosure(M)}${debtIssues(ctx)}`;
+  return html`${kpisBlock(M)}${controls(M)}${top}${confuseBlock(M)}${financeBlock(M, F)}${financeTableBlock(M, F)}${newDebtBlock(M)}<div class="s17-pair">${interestBlock(M)}${balanceBlock(M)}</div>${structureBlock(M)}${guaranteesBlock(M)}${limitsBlock(M)}${methodDisclosure(M)}${debtIssues(ctx)}`;
 }
 
 let lastScope = null;

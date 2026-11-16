@@ -3,7 +3,7 @@
 // Only the interface words are ours (labels, hints, the empty state, the form).
 //   #/rechnik               search ("Коя дума не разбираш?") + 5 themes + А–Я index + the 64 terms as disclosures
 //   #/rechnik?q=дълг&cat=…&l=Д   the same, with a search / theme / letter applied (kept in the address while typing, without re-rendering)
-//   #/rechnik/dds           one term: definition (lede), example, „Не бъркай с…“, „Виж в бюджета“, „Още не разбирам“, more from the theme
+//   #/rechnik/dds           one term: definition (lede), example, „Да не се бърка с:“, „Виж в бюджета“, „Още не разбирам“, more from the theme
 // The search lives in this file: it forgives typos, reads Latin letters as Cyrillic ("dds", "deficit"), knows the aliases of the data
 // ("осигуровки", "чиста заплата") and falls back to the words of the definitions. The in-place popover on other screens is glossary.js (SHELL).
 import { html, raw, cx } from '../html.js';
@@ -388,7 +388,7 @@ function termCard(ctx, I, e, o = {}) {
   const body = html`
     <p class="s03-def">${t.def}</p>
     <p class="s03-ex"><span class="s03-ex-label">Пример</span> ${t.example}</p>
-    ${groups.map((gr) => html`<p class="s03-confuse"><strong>Не бъркай с:</strong> ${gr.items.map((x, i) => html`${i ? ', ' : ''}<a href="${termHref(ctx, x.slug)}">${x.name}</a>`)}. <span class="s03-confuse-note">${gr.note}</span></p>`)}
+    ${groups.map((gr) => html`<p class="s03-confuse"><strong>Да не се бърка с:</strong> ${gr.items.map((x, i) => html`${i ? ', ' : ''}<a href="${termHref(ctx, x.slug)}">${x.name}</a>`)}. <span class="s03-confuse-note">${gr.note}</span></p>`)}
     <p class="s03-acts">
       ${glossaryLinks(t).map((s) => html`<a class="btn btn-sm btn-primary" href="${s.href}">${s.label}<span class="sr-only"> за „${t.name}“</span>${icon('arrowRight', { size: 14 })}</a>`)}
       <a class="btn btn-sm" href="${termHref(ctx, t.slug)}">Страница на термина<span class="sr-only"> „${t.name}“</span></a>
@@ -631,7 +631,7 @@ function termPage(ctx, I, e) {
         groups.length
           ? html`<section class="s03-block" aria-labelledby="s03-conf-h">
         <h2 id="s03-conf-h">${g.relationsTitle}</h2>
-        ${groups.map((gr) => html`<p class="s03-conf-note"><strong>Не бъркай с…</strong> ${gr.note}</p>${chips({ label: 'Не бъркай с', items: gr.items.map((x) => ({ label: x.name, href: termHref(ctx, x.slug) })) })}`)}
+        ${groups.map((gr) => html`<p class="s03-conf-note"><strong>Да не се бърка с:</strong> ${gr.note}</p>${chips({ label: 'Да не се бърка с:', items: gr.items.map((x) => ({ label: x.name, href: termHref(ctx, x.slug) })) })}`)}
       </section>`
           : ''
       }

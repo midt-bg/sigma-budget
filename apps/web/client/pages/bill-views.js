@@ -1,3 +1,4 @@
+import { debtKeyFigures } from '../ui/debt-key-figures.js';
 // The existing block, table, chart and sharing components, fed only by the November publication.
 import { html } from '../html.js';
 import { num, money, date, plural } from '../format.js';
@@ -657,7 +658,14 @@ export function debtView(ctx) {
   const maastricht = ctx.query.obhvat === 'maastricht';
   return {
     lede: `${ctx.period.status === 'draft' ? 'По проекта за бюджет' : 'По прогнозата на МФ за'} ${ctx.period.year} г. държавният дълг по ЗДД в края на годината е ${money(cellValue(d?.total))}. Разчетите са от ${date(doc.publication)}. Предложените законови граници са само за 2027 г.`,
-    body: html`${field({
+    body: html`${debtKeyFigures(ctx, {
+      mln: maastricht ? null : cellValue(d?.total),
+      pg: maastricht ? null : cellValue(d?.pctGdp),
+      scope: maastricht ? 'maastricht' : 'zdd',
+      debtReason: maastricht ? 'По Маастрихт няма прогноза за тази година.' : undefined,
+      source,
+      asOf: doc.publication,
+    })}${field({
       id: 's17-scope',
       label: 'Обхват на дълга',
       control: selectInput({
