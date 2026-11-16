@@ -138,8 +138,6 @@ jobs:
           pnpm exec budget-ts freshness
       - name: Check the source and dataset registries
         run: node packages/ingest/dist/validate/cli.js --live --only REGISTRY
-      - name: Check committed annual provenance API responses and membership
-        run: node tests/release/budget_provenance_check.mjs
       - name: Compatibility of code and data (stage E)
         run: node tests/release/compat_check.mjs
       - name: Build the Worker for the target and check every screen

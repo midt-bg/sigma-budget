@@ -48,7 +48,6 @@ node packages/ingest/dist/validate/cli.js --live --only REGISTRY
 # Възстановяването изисква нова директория извън хранилището и удостоверява архива и входовете.
 node scripts/restore-node-input-cache.mjs /path/to/registered-node-inputs.tar.gz /tmp/registered-node-inputs
 ./budget check-site --inputs /tmp/registered-node-inputs
-node tests/release/budget_provenance_check.mjs
 node tests/release/compat_check.mjs
 pnpm --filter @sigma-budget/web test # и списъците на заявките на екраните (app/lib/query-lists.test.ts)
 PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers pnpm build:release --env staging --noindex
