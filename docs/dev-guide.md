@@ -35,7 +35,7 @@
 5. Низовете са **текст**. Разметка се получава само с `html\`…\``. Виж 3.5 (правилото, на което се спъват всички).
 6. Парите се пазят в **милиони евро** (`mln`). Печатай ги с `money()`/`view.amount()`; никога не форматирай число на ръка.
 7. Всичко примерно (измислено) носи `mock:true`/`status:'mock'` и е със щриховка ▨ и надпис „Примерни данни“. Компонентите го правят, когато им подадеш флага. Число без източник и без флаг е грешка.
-8. Провери работата си с TypeScript audit-а и оставащите Python семейства за S06 (командите са в раздел 14).
+8. Провери работата си: `PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.screens --route S06` (раздел 14).
 9. Екраните се рисуват наново, когато се смени период, обхват или единица: **`render` трябва да е чиста функция**, а предпочитанията се четат от `ctx.store` в момента на рисуването.
 10. Публичен сайт: никъде под `apps/web/` няма имена на членове на групата, няма споменаване на чат платформи, няма цитати от вътрешни обсъждания. Авторството е общо („Работна група „Бюджет на светло“).
 
@@ -986,41 +986,32 @@ html`<a href="${ctx.href('funkciya', { fn:'obrazovanie' })}">Образован�
 ```bash
 # от корена на хранилището; средата е tmp/venv, а Chromium е в tmp/pw-browsers (и двете са извън git — виж .gitignore)
 PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.screens --route S06            # един екран, всички негови примерни адреси
-PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker screens-base.spec.ts --grep "S06 desktop" # audit на един екран
-PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.screens --quick               # съкратен вариант на оставащите Python семейства
-PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.screens                       # останалите семейства: 1280 и 400 px, светла тема
+PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.screens --route S06 --shots    # + снимки на екрана в tmp/render-check/
+PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.screens --quick               # финалната проверка, около минута: всеки маршрут, първият пример, 1280 px и 400 px, светла тема
+PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.screens                       # всичко: 1280 и 400 px × светла и тъмна
 PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.screens --url http://127.0.0.1:8000/   # вече пуснат сървър
 ```
 
-`--route` приема id (`S06`) или ключ (`prihodi`). Проверката пуска собствен локален сървър върху `apps/web/`. Изходен код 0 само когато всичко е зелено. Статичният root се сглобява чрез `static_assets.py`; пренесените audit проверки изискват Worker по примера по-долу.
+`--route` приема id (`S06`) или ключ (`prihodi`). Проверката пуска собствен локален сървър върху `apps/web/`. Изходен код 0 само когато всичко е зелено. Пътищата до `apps/web/` и до папката със снимки се изчисляват в началото на скрипта (`ROOT`, `SITE`, `SHOT_DIR`) — вижте бележката за разположението в `README.md`.
 
-Двете части заедно проверяват примерните адреси при 1280 и 400 px в светла тема: няма грешки или изключения в конзолата (HTTP грешките, включително за файлове с данни, са отказ); няма `NaN`/`undefined`/`Infinity`/`null`/`[object Object]` в текста или SVG; няма хоризонтално превъртане на страницата (освен вътре в `.table-wrap`); точно един `h1`; `document.title` се е променил; фокусът е на `h1` след навигация; целта на „Следва“ съществува; `?demo=loading|empty|error|pending|offline` рисува правилния компонент за състояние; ключовете в `data-src` съществуват в `core.sources`; всяка повърхност `[data-mock]` има значка или щриховка; примерните блокове са означени в текста за споделяне/CSV/PNG.
+Какво проверява за всеки маршрут × размер × тема: няма грешки или изключения в конзолата (404 за липсващ файл `/data/…` е само предупреждение „предстоящ файл с данни“); няма `NaN`/`undefined`/`Infinity`/`null`/`[object Object]` в текста или SVG; няма хоризонтално превъртане на страницата (освен вътре в `.table-wrap`); точно един `h1`; `document.title` се е променил; фокусът е на `h1` след навигация; целта на „Следва“ съществува; `?demo=loading|empty|error|pending|offline` рисува правилния компонент за състояние; ключовете в `data-src` съществуват в `core.sources`; всяка повърхност `[data-mock]` има значка или щриховка; примерните блокове са означени в текста за споделяне/CSV/PNG.
 
-По-старите тагове пазят `check_mock_vN.py` и съответната историческа документация. В текущото дърво `screens.py` изпълнява tour, `?to=`, chrome, share, embed, glossary, tabs, PNG и views. `-v` отпечатва всяка Python находка с всичките ѝ клетки и адреси; `--strict` превръща предупрежденията в отказ. За един audit се използва TypeScript командата с `--grep` от горния пример. Проверка на данните: `./budget check-site --inputs /path/to/registered-node-inputs`.
+> **Версии.** Командите в този раздел са писани за `check_mock.py` (версия v1, таг `mock-v1`). За последното дърво на `apps/web/` (v6) ползвайте `tests/e2e/screens.py` със същите опции и `./budget check-site --inputs /path/to/registered-node-inputs`; на по-старите тагове — съответния `check_mock_vN.py`.
 
-Пренесените проверки се изпълняват чрез `pnpm test:e2e` от корена. След `pnpm build:release --env staging --noindex` стартирайте `pnpm exec wrangler dev -c apps/web/build/server/wrangler.json --ip 127.0.0.1 --port 8814`, а в друг терминал:
+`check_mock.py` има още семейства проверки (period, user, prefs, tour, `?to=`, chrome, share, embed, glossary, tabs, theme); документацията в началото на файла ги изброява заедно с всяка опция. `-v` отпечатва всяка находка с всичките ѝ клетки и адреси. Предупрежденията никога не карат пускането да пропадне; `--only base --route S06` е най-бързият цикъл за един екран. За да видиш страницата, добави `--shots` (по един PNG за всяко зареждане, имената се преизползват).
+
+Петте пренесени проверки се изпълняват чрез `pnpm test:e2e` от корена. След `pnpm build:release --env staging --noindex` стартирайте `pnpm exec wrangler dev -c apps/web/build/server/wrangler.json --ip 127.0.0.1 --port 8814`, а в друг терминал:
 
 ```bash
 PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker
 PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers pnpm test:e2e --project=static
 ```
 
-Име на спецификация (например `period-matrix.spec.ts`) може да се добави като филтър. `tests/e2e/playwright.config.ts` разделя двата targets без дублиране на проверки; `fixtures.ts` управлява статичния сървър и изисква изричен `E2E_WORKER_URL` за Worker. Всеки тест получава чист browser context, освен изрично споделените в самата проверка страници. Старите адреси се обхождат с отделни страници в един общ context, както в Python проверката. Общите route gates, ограничени event waits и CSV download helper са в `fixtures.ts` и `helpers.ts`. Няма автоматични retries; всеки отказ блокира CI, а trace и снимките са в `tmp/e2e-results`. При следващите преноси спецификациите се добавят в `worker/` или `static/` според оригиналния target. Не се използват production V8 thresholds за browser спецификациите.
-
-Всеки порт задава изрично service-worker режима на оригинала, включително за ръчно създадените contexts. `narrative-adoption.spec.ts` допуска service worker и използва отделен context за независимата HTML fixture страница. Останалите портове, включително четирите `screens-*.spec.ts`, блокират service worker. При следващите преноси не се разчита сляпо на общото `'block'`: `metadata_adoption.py` и отделни contexts в `overlap.py` и `light_contrast.py` използват оригиналното `'allow'` по подразбиране. Статичният проект използва обикновен файлов сървър (`startStaticServer(directory, 0, { fallback: false })`), с 404 за липсващи адреси, без shell fallback и `.html` преименуване. Fallback се запазва за CLI разработката; включване в тест изисква посочена причина.
+Име на спецификация (например `period-matrix.spec.ts`) може да се добави като филтър. `tests/e2e/playwright.config.ts` разделя двата targets без дублиране на проверки; `fixtures.ts` управлява статичния сървър и изисква изричен `E2E_WORKER_URL` за Worker. Всеки тест получава чист browser context, освен изрично споделените в самата проверка страници. Старите адреси се обхождат с отделни страници в един общ context. Общите route gates, ограничени event waits и CSV download helper са в `fixtures.ts` и `helpers.ts`. Няма автоматични retries; всеки отказ блокира CI, а trace и снимките са в `tmp/e2e-results`. При следващите преноси спецификациите се добавят в `worker/` или `static/` според target-а. Не се използват production V8 thresholds за browser спецификациите.
 
 `forbidOnly: true`, `retries: 0` и CI guard-ът за всяка `tests/e2e/**/*.spec.ts` предотвратяват селективно или пропуснато изпълнение. Конфигурацията запазва външен `PLAYWRIGHT_BROWSERS_PATH`, иначе използва `tmp/pw-browsers`. При неуспех в job `check` директорията с traces и screenshots се качва като `e2e-failure-results`; след отказ следващите обичайни тестови стъпки не се изпълняват и не могат да я изчистят.
 
 `node apps/web/scripts/serve.ts --port 8000` стартира статичния вариант самостоятелно; `--dir` избира друга директория. Поддържат се същите file/path/embed fallback правила, MIME, HEAD и 404 като Python сървъра. `apps/web/scripts/serve.test.ts` проверява този договор. Python `serve.py` и `static_assets.py` остават, докато `calc_check`, `share_check`, `accept`, `motion` и `overlap` още ги използват.
-
-Проверките на екраните се изпълняват с четирите `screens-*.spec.ts` срещу Worker. Всеки пример и ширина има отделен тест с timeout 150 s; събитията от браузъра и бисквитките се проверяват автоматично. Готовността включва графиките, шрифтовете и изображенията. Deep pass отваря подробностите, посещава табовете и превърта до края. Отделни тестове обединяват видимите стойности на S01/S15 и ги сравняват с изданието. Проверяват се петте състояния и поддържаните/неподдържаните периоди. Всички находки провалят теста. За S21 временно е изключена само липсващата таблица към графиката; сайтът се поправя отделно.
-
-```bash
-E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker screens-base.spec.ts screens-demo.spec.ts screens-variants.spec.ts screens-selftest.spec.ts
-PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers tmp/venv/bin/python -m tests.e2e.screens --url http://127.0.0.1:8814/
-```
-
-Останалите семейства chrome/embed/gloss/png/share/tabs/to/tour/views продължават да се изпълняват от Python командата. Контрастът се проверява отделно.
 
 За текущата v6 основната проверка работи с намалено движение. `tests/e2e/motion.py` проверява включените и изключените анимации, крайните стойности, фокуса, разкриването при скрол и PNG подготовката. `tests/e2e/overlap.py` обхожда маршрутите при 1920/1440/1280/1241/1181/1024/768/390/320 px: припокривания, преливане, печат, клик, клавиатура и история. Неговият `--quick` вариант е включен в `accept.py`; при отделна пълна проверка може да се изпълни `accept.py numbers layout`, за да не се повтаря. Пускат се със същите `tmp/venv` и `PLAYWRIGHT_BROWSERS_PATH` като останалите инструменти.
 
@@ -1070,7 +1061,7 @@ Service worker (`sw.js`, кеш `bns-v5-11`) използва `fetch(req, { cach
 | `pages/s28-tarsene.js` (страницата за търсене)                                     | готов                                     | раздели 5.27 и 18                                                                                                                                                                               |
 | `pages/s29-embed.js` (+ `css/pages/s29-embed.css`)                                 | готов                                     | раздел 7.5; `share.embedHash` приема `embedParams`, `block({share:{embedParams}})` го предава; `errorState({link:false})`                                                                       |
 | `pages/s30-404.js` (+ `css/pages/s30-404.css`)                                     | готов                                     | раздел 11: подзаглавието назовава поисканния адрес (и след `ctx.notFound()`), после поле за търсене (`[data-search-field]`, Enter → `#/tarsene?q=`) и шест връзки; нормална рамка, без „Следва“ |
-| `tests/e2e/screens.py` и `tests/e2e/worker/screens-*.spec.ts`                      | частично пренесен                         | раздел 14; пълната проверка включва TypeScript audit-а и оставащите Python семейства                                                                                                            |
+| `tests/e2e/screens.py`                                                             | готов                                     | раздел 14; `--quick` е финалната проверка                                                                                                                                                       |
 | `apps/web/public/dev/components.html` (витрина на компонентите, без маршрут)       | не е направена                            | отпаднала при замразяването на обхвата; живите примери са екраните S28 / S29 / S30 и коментарът в началото на всеки `js/ui/*.js`                                                                |
 
 ---
@@ -1142,3 +1133,5 @@ pnpm exec budget-ts parity --oracle data/release --candidate tmp/candidate --sco
 S12 чете проверените откъси направо от `measures`; S08 няма редакционни връзки към мерки. S18 зарежда `indirect-tax-parameters` и приема отделни разходи по ДДС 20%, 9% и 0%/освободени, литри и вид гориво, кутии и късове, действителни цени и дата. Цените от ЕК и НСИ са датирани, редактируеми справки. Липсващ вход дава null; липса на покупки се задава с 0. Годишното умножение е сценарий. „Само реални данни“ не скрива оценката върху официални параметри.
 
 S18 запазва отделни състояния за невалиден вход, липсващ вход и дата без проверени ставки. Грешката остава до полето с `aria-invalid`. Референтните цени се показват с десетична запетая и подходяща точност; до първата редакция сметката използва стойността от източника. След редакция използва въведената цена.
+
+Проверките на списъците, CSV, споделените мерни единици и навигацията са в `tests/e2e/worker/public-bill-lists.spec.ts`, `share-units.spec.ts` и `react-bridge.spec.ts`. Job `check` ги изпълнява с `E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker public-bill-lists.spec.ts share-units.spec.ts react-bridge.spec.ts`. `apps/web/scripts/hrefs.test.ts` проверява адресите в хранилището чрез web Vitest suite. `node apps/web/scripts/make-images.ts` генерира social card и app icons; байтовете зависят от Chromium и шрифтовете.
