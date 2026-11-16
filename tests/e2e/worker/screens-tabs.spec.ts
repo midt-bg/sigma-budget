@@ -18,7 +18,8 @@ for (const entry of cases)
     const values = await list
       .getByRole('tab')
       .evaluateAll((tabs) => tabs.map((tab) => (tab as HTMLElement).dataset.key!));
-    for (let i = 0; i < names.length; i++) {
+    const order = [...names.keys()].slice(1).concat(0);
+    for (const i of order) {
       const tab = list.getByRole('tab', { name: names[i]!.trim(), exact: true });
       await tab.scrollIntoViewIfNeeded();
       const y = await page.evaluate(() => scrollY);
@@ -26,19 +27,20 @@ for (const entry of cases)
       const panel = page.getByRole('tabpanel', { name: names[i]!.trim(), exact: true });
       await drawn(panel);
       await expect
-        .poll(() => {
-          const value = new URLSearchParams(page.url().split('?')[1]).get(entry.query);
-          return i === 0 ? (value ?? values[0]) : value;
-        })
+        .poll(() => new URLSearchParams(page.url().split('?')[1]).get(entry.query))
         .toBe(values[i]);
       await expect.poll(() => page.evaluate(() => scrollY)).toBeCloseTo(y, 0);
     }
-    const last = list.getByRole('tab', { name: names.at(-1)!.trim(), exact: true });
-    await last.focus();
-    await last.press('ArrowRight');
-    await expect(list.getByRole('tab', { name: names[0]!.trim(), exact: true })).toBeFocused();
-    await expect(page.getByRole('tabpanel', { name: names[0]!.trim(), exact: true })).toBeVisible();
-    await list.getByRole('tab', { name: names[1]!.trim(), exact: true }).click();
+    const first = list.getByRole('tab', { name: names[0]!.trim(), exact: true });
+    await first.focus();
+    await first.press('ArrowRight');
+    await expect(
+      list.getByRole('tab', { name: names[1]!.trim(), exact: true, selected: true }),
+    ).toBeFocused();
+    await expect(page.getByRole('tabpanel', { name: names[1]!.trim(), exact: true })).toBeVisible();
+    await expect
+      .poll(() => new URLSearchParams(page.url().split('?')[1]).get(entry.query))
+      .toBe(values[1]);
     await page.reload();
     await expect(page.getByRole('tabpanel', { name: names[1]!.trim(), exact: true })).toBeVisible();
     await openScreen(page, siteURL, withQuery(entry.address, { [entry.query]: 'unknown' }));

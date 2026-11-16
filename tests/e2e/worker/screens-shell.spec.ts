@@ -1,7 +1,6 @@
 import { test, expect, openScreen } from '../screens/fixtures.ts';
 import { fitsViewport } from '../screens/interactions.ts';
 import { NAV_GROUPS, groupItems, navName } from '../../../apps/web/client/chrome.js';
-import { menuLinkName } from '../screens/navigation.ts';
 
 test('skip to content', async ({ page, siteURL }) => {
   await openScreen(page, siteURL, '#/prihodi');
@@ -54,7 +53,7 @@ test('search shortcuts, results and returning to the page', async ({ page, siteU
   await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0);
 });
 test('header groups and Escape', async ({ page, siteURL }) => {
-  await openScreen(page, siteURL, '#/');
+  await openScreen(page, siteURL, '#/tarsene');
   for (const [name, ids] of NAV_GROUPS) {
     const opener = page
       .getByRole('navigation', { name: 'Основна навигация', exact: true })
@@ -62,7 +61,7 @@ test('header groups and Escape', async ({ page, siteURL }) => {
     await opener.click();
     const dialog = page.getByRole('dialog').filter({ visible: true });
     for (const route of groupItems(ids)) {
-      await expect(dialog.getByRole('link', { name: menuLinkName(navName(route)) })).toBeVisible();
+      await expect(dialog.getByRole('link', { name: navName(route), exact: true })).toBeVisible();
     }
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
@@ -72,7 +71,7 @@ test('header groups and Escape', async ({ page, siteURL }) => {
 test.describe('phone', () => {
   test.use({ display: 'touch' });
   test('menu groups, navigation and period', async ({ page, siteURL }) => {
-    await openScreen(page, siteURL, '#/');
+    await openScreen(page, siteURL, '#/tarsene');
     await page.getByRole('button', { name: 'Меню', exact: true }).click();
     const dialog = page.getByRole('dialog').filter({ visible: true });
     await expect
@@ -83,7 +82,7 @@ test.describe('phone', () => {
       await expect(dialog.getByRole('heading', { name, exact: true })).toBeVisible();
       for (const route of groupItems(ids)) {
         await expect(
-          navigation.getByRole('link', { name: menuLinkName(navName(route)) }),
+          navigation.getByRole('link', { name: navName(route), exact: true }),
         ).toBeVisible();
       }
     }
@@ -103,7 +102,9 @@ test('320px header fits with 44px controls', async ({ page, siteURL }) => {
   await openScreen(page, siteURL, '#/prihodi');
   const header = page.locator('.mast-in');
   await fitsViewport(header);
-  for (const button of await header.getByRole('button').all()) {
+  const buttons = header.getByRole('button');
+  await expect(buttons.first()).toBeVisible();
+  for (const button of await buttons.all()) {
     if (!(await button.isVisible())) continue;
     const rect = await button.boundingBox();
     expect(rect!.width).toBeGreaterThanOrEqual(44);

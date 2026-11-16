@@ -17,8 +17,7 @@ for (const display of displays)
         .first();
       const dialogFor = (entry: typeof term) =>
         page.getByRole('dialog', {
-          name: display === 'touch' ? titleOf(entry) : `Речник: ${titleOf(entry)}`,
-          exact: true,
+          name: titleOf(entry),
         });
       const original = page.url();
       for (const method of ['click', 'Enter']) {
@@ -29,11 +28,18 @@ for (const display of displays)
         }
         const dialog = dialogFor(term);
         await fitsViewport(dialog);
+        await expect(dialog.getByText(titleOf(term), { exact: true })).toBeVisible();
         await expect(dialog.getByText(term.def, { exact: true })).toBeVisible();
         expect(page.url()).toBe(original);
         const related = glossary.terms.find((t) => t.slug === term.related[0]!.slug)!;
-        await dialog.getByRole('link', { name: related.name, exact: true }).click();
+        const relatedLink = dialog.getByRole('link', {
+          name: related.name || titleOf(related),
+          exact: true,
+        });
+        await expect(relatedLink).toHaveText(related.name || titleOf(related));
+        await relatedLink.click();
         const next = dialogFor(related);
+        await expect(next.getByText(titleOf(related), { exact: true })).toBeVisible();
         await expect(next.getByText(related.def, { exact: true })).toBeVisible();
         await next.getByRole('button', { name: `← ${titleOf(term)}`, exact: true }).click();
         await expect(dialog).toBeVisible();

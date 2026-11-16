@@ -35,7 +35,10 @@ for (const entry of sharingCases)
         await fresh.close();
       }
       await opener.click();
+      await expect(menu).toBeVisible();
       const csvAction = menu.getByRole('button', { name: /CSV/ });
+      const imageAction = menu.getByRole('button', { name: /^Изтегли изображение/ });
+      if (!entry.png) await expect(imageAction).toHaveCount(0);
       // Some narrative blocks offer an image and a link but have no tabular data.
       if (entry.csv) {
         const pending = page.waitForEvent('download');
@@ -53,13 +56,16 @@ for (const entry of sharingCases)
           expect(row).toHaveLength(header!.length);
           expect(row[source]!.trim()).not.toBe('');
         }
+      } else {
+        await expect(csvAction).toHaveCount(0);
       }
       await page.keyboard.press('Escape');
       await expect(menu).toBeHidden();
       if (!entry.png) return;
       await opener.click();
+      await expect(menu).toBeVisible();
       const pending = page.waitForEvent('download');
-      await menu.getByRole('button', { name: /^Изтегли изображение/ }).click();
+      await imageAction.click();
       const png = await downloadBytes(await pending);
       expect(png.subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a');
       expect(png.readUInt32BE(16)).toBeGreaterThanOrEqual(800);
