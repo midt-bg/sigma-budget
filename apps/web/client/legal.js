@@ -1,7 +1,14 @@
 // The copy of the two legal pages, S36 „Поверителност“ (/poveritelnost) and S37 „Условия за ползване“ (/usloviya), shared by the React screens
 // (app/routes/legal-content.tsx) and their legacy twins (client/pages/s36-poveritelnost.js, s37-usloviya.js), so the text exists once.
 // A section is {id, title, body}; a body item is {p: parts} or {list: [parts, …]}; parts is a string or a list of a string,
-// {route: [id, params, query], text} (a screen of the site), {url, text} (another site) or {contact: true} (the team's address).
+// {route: [id, params, query], text} (a screen of the site), {url, text} (another site) or {contact: true} (the feedback page).
+// Claims are backed by client/store.js (preferences and notices), pages/s27-vrazka.js (session-only drafts),
+// public/sw.js (offline cache), and client/feedback.js (lazy Turnstile and POST transport, no receipt archive).
+// workers/api/vrazka.ts stores text/context/optional contact in private R2; vrazka-window.ts expires keyed IP hashes
+// at the hourly boundary. workers/release-rate-limit.ts handles the separate minute-long request limit.
+// wrangler.jsonc disables invocation logs; workers/mcp/handler.ts does not log conversation arguments.
+// Team access, including automated tools, and manual deletion are described in docs/signali.md.
+// Keep this copy aligned with those implementations; Turnstile processes the IP during verification.
 import { html } from './html.js';
 import { href } from './routes.js';
 
@@ -48,7 +55,7 @@ export const PAGES = {
           p: [
             'Формулярът ',
             { route: ['S27'], text: '„Обратна връзка“' },
-            ' изпраща текста, контекста (например екран, число, източник или термин) и имейла, само ако го дадете. Сигналите се пазят в частно хранилище в ЕС до ръчното им изтриване. Четат се от екипа на СИГМА Бюджет в МИДТ за проверка, подобряване на сайта и отговор. Не включвайте лични данни в текста.',
+            ' изпраща текста, контекста (например екран, число, източник или термин) и имейла, само ако го дадете. Сигналите се пазят в частно хранилище в ЕС до ръчното им изтриване. Четат се от екипа на СИГМА Бюджет в МИДТ, включително с автоматизирани инструменти. Не включвайте лични данни в текста.',
           ],
         },
       ],
@@ -196,7 +203,7 @@ export const PAGES = {
 /** the parts of a paragraph as a list, a lone string included */
 export const partsOf = (p) => (Array.isArray(p) ? p : [p]);
 /** Resolve a reference to a page or external source. */
-export function target(part, email) {
+export function target(part) {
   if (part.contact) return { href: href('S27'), text: 'страницата „Обратна връзка“' };
   if (part.url) return { href: part.url, text: part.text };
   const [id, params = {}, query = {}] = part.route;
@@ -204,11 +211,11 @@ export function target(part, email) {
 }
 
 /** the body of a legal page for the legacy renderer; the React one is app/routes/legal-content.tsx */
-export function legalHtml(screen, email) {
+export function legalHtml(screen) {
   const parts = (p) =>
     partsOf(p).map((x) => {
       if (typeof x === 'string') return x;
-      const t = target(x, email);
+      const t = target(x);
       return html`<a href="${t.href}">${t.text}</a>`;
     });
   return html`<div class="legal">${PAGES[screen].map(

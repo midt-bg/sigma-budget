@@ -2,7 +2,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { markdown, validateReport, vrazka, type Report } from './vrazka';
 import { reportLimit, expireReports } from '../vrazka-window';
 vi.mock('../release-data', () => ({ releaseData: async () => ({ releaseId: 'release-test' }) }));
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.useRealTimers();
+});
 const good: Report = {
   type: 'error',
   text: 'Това е сигнал.',
@@ -56,7 +59,7 @@ function environment() {
   } as unknown as Env;
   vi.stubGlobal(
     'fetch',
-    vi.fn(async () => Response.json({ success: true })),
+    vi.fn(async () => Response.json({ success: true, hostname: 'site.test' })),
   );
   return { env, put, consume, state };
 }
@@ -234,10 +237,67 @@ it('fails closed on verification, limiter and bucket errors', async () => {
   expect((await vrazka(request(), env)).status).toBe(503);
   vi.stubGlobal(
     'fetch',
-    vi.fn(async () => Response.json({ success: true })),
+    vi.fn(async () => Response.json({ success: true, hostname: 'site.test' })),
   );
   consume.mockRejectedValueOnce(new Error('unavailable'));
   expect((await vrazka(request(), env)).status).toBe(503);
   put.mockRejectedValueOnce(new Error('unavailable'));
   expect((await vrazka(request(), env)).status).toBe(503);
+});
+
+it('checks Origin against the request host without changing canonical origin configuration', async () => {
+  const { env } = environment();
+  env.SITE_ORIGIN = 'https://canonical.test';
+  expect((await vrazka(request(), env)).status).toBe(201);
+  expect((await vrazka(request(good, { Origin: 'https://canonical.test' }), env)).status).toBe(403);
+});
+it.each([undefined, 'other.test'])(
+  'rejects a successful token for hostname %s before counting or writing',
+  async (hostname) => {
+    const { env, put, consume } = environment();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => Response.json({ success: true, hostname })),
+    );
+    expect((await vrazka(request(), env)).status).toBe(403);
+    expect(consume).not.toHaveBeenCalled();
+    expect(put).not.toHaveBeenCalled();
+  },
+);
+it('skips hostname matching only with the documented Turnstile test secret', async () => {
+  const { env } = environment();
+  env.TURNSTILE_SECRET_KEY = '1x0000000000000000000000000000000AA';
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => Response.json({ success: true, hostname: 'example.com' })),
+  );
+  expect((await vrazka(request(), env)).status).toBe(201);
+});
+it('returns 503 without counting or writing when siteverify times out after five seconds', async () => {
+  const { env, put, consume } = environment();
+  // AbortSignal.timeout uses the platform clock; capture the requested deadline without waiting five seconds.
+  let abort!: () => void;
+  const controller = new AbortController();
+  const timeout = vi.spyOn(AbortSignal, 'timeout').mockImplementation(() => controller.signal);
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(
+      (_url, init: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          abort = () => controller.abort(new DOMException('Timed out', 'TimeoutError'));
+          init.signal!.addEventListener('abort', () => reject(init.signal!.reason), { once: true });
+        }),
+    ),
+  );
+  try {
+    const pending = vrazka(request(), env);
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalled());
+    expect(timeout).toHaveBeenCalledWith(5000);
+    abort();
+    expect((await pending).status).toBe(503);
+    expect(consume).not.toHaveBeenCalled();
+    expect(put).not.toHaveBeenCalled();
+  } finally {
+    timeout.mockRestore();
+  }
 });

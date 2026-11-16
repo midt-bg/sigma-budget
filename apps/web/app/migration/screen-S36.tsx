@@ -19,7 +19,7 @@ export function MigratedScreen({
     );
   return (
     <PageFrame model={model}>
-      <LegalBody screen="S36" email="" />
+      <LegalBody screen="S36" />
     </PageFrame>
   );
 }

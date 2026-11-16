@@ -1,3 +1,7 @@
+// S27 · Обратна връзка · /vrazka · no period. Three report forms share client/feedback.js.
+// Link context (?from=, ?val=, ?src=, ?block=) accompanies POST /api/vrazka; val is hidden, never editable.
+// Only the form being filled starts Turnstile. A receipt is shown after R2 storage; failures keep the draft.
+// Unsent drafts survive re-renders in sessionStorage until this tab closes; sent reports are not archived here.
 import { html } from '../html.js';
 import { ROUTES, GROUPS, byKey, byId, match } from '../routes.js';
 import { safe } from '../store.js';

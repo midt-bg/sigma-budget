@@ -1,5 +1,6 @@
 import { releaseData } from '../release-data';
 
+const TEST_SECRET = '1x0000000000000000000000000000000AA';
 const CONTEXT = ['route', 'block', 'value', 'source', 'url', 'term'] as const;
 type Context = (typeof CONTEXT)[number];
 export interface Report extends Partial<Record<Context, string>> {
@@ -87,11 +88,7 @@ export async function vrazka(request: Request, env: Env): Promise<Response> {
     request.headers.get('Content-Type')?.split(';')[0].trim().toLowerCase() !== 'application/json'
   )
     return answer(415);
-  if (
-    request.headers.get('Origin') !==
-    (env.SITE_ORIGIN || new URL(request.url).origin).replace(/\/+$/, '')
-  )
-    return answer(403);
+  if (request.headers.get('Origin') !== new URL(request.url).origin) return answer(403);
   if (Number(request.headers.get('Content-Length')) > 8192) return answer(413);
   let input: unknown;
   try {
@@ -131,6 +128,7 @@ export async function vrazka(request: Request, env: Env): Promise<Response> {
     const ip = request.headers.get('CF-Connecting-IP') || 'unknown-client';
     const verification = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
       method: 'POST',
+      signal: AbortSignal.timeout(5000),
       body: new URLSearchParams({
         secret: env.TURNSTILE_SECRET_KEY,
         response: report.token,
@@ -140,6 +138,11 @@ export async function vrazka(request: Request, env: Env): Promise<Response> {
     if (!verification.ok) return answer(503);
     const result = await verification.json<{ success: boolean; hostname?: string }>();
     if (result.success !== true) return answer(403);
+    if (
+      env.TURNSTILE_SECRET_KEY !== TEST_SECRET &&
+      result.hostname !== new URL(request.url).hostname
+    )
+      return answer(403);
     const key = await crypto.subtle.importKey(
       'raw',
       new TextEncoder().encode(env.VRAZKA_IP_KEY),

@@ -6,8 +6,7 @@ import { legalHtml, PAGES } from '../../client/legal.js';
 import { byId } from '../lib/legacy';
 import type { TextScreenModel } from '../lib/screen-state';
 
-const EMAIL = 'team@example.org';
-const model = (screen: 'S36' | 'S37', turnstileSiteKey = EMAIL) =>
+const model = (screen: 'S36' | 'S37') =>
   ({
     screen,
     view: 'ready',
@@ -20,17 +19,17 @@ const model = (screen: 'S36' | 'S37', turnstileSiteKey = EMAIL) =>
       dataBase: '/data/',
       origin: 'https://budget.example',
       sigmaUrl: '',
-      turnstileSiteKey,
+      turnstileSiteKey: '',
     },
   }) as TextScreenModel;
-const react = (screen: 'S36' | 'S37', email?: string) =>
+const react = (screen: 'S36' | 'S37') =>
   parseHTML(
     renderToStaticMarkup(
-      <MigratedScreen model={model(screen, email)} navigation={{ go() {}, announce() {} }} />,
+      <MigratedScreen model={model(screen)} navigation={{ go() {}, announce() {} }} />,
     ),
   ).document.querySelector('.legal')!;
-const legacy = (screen: 'S36' | 'S37', email = EMAIL) =>
-  parseHTML(`<div>${String(legalHtml(screen, email))}</div>`).document.querySelector('.legal')!;
+const legacy = (screen: 'S36' | 'S37') =>
+  parseHTML(`<div>${String(legalHtml(screen))}</div>`).document.querySelector('.legal')!;
 const shape = (root: Element) => ({
   headings: [...root.querySelectorAll('h2')].map((h) => [h.id, h.textContent]),
   links: [...root.querySelectorAll('a')].map((a) => [a.textContent, a.getAttribute('href')]),

@@ -6,12 +6,12 @@ type Item = { p?: Part | Part[]; list?: (Part | Part[])[] };
 
 export const needs = [];
 
-function Parts({ value, email }: { value: Part | Part[]; email: string }) {
+function Parts({ value }: { value: Part | Part[] }) {
   return (
     <>
       {(partsOf(value) as Part[]).map((x, i) => {
         if (typeof x === 'string') return x;
-        const t = target(x, email) as { href: string; text: string };
+        const t = target(x) as { href: string; text: string };
         return (
           <a key={i} href={t.href}>
             {t.text}
@@ -22,7 +22,7 @@ function Parts({ value, email }: { value: Part | Part[]; email: string }) {
   );
 }
 
-export function LegalBody({ screen, email }: { screen: 'S36' | 'S37'; email: string }) {
+export function LegalBody({ screen }: { screen: 'S36' | 'S37' }) {
   const sections = PAGES[screen] as { id: string; title: string; body: Item[] }[];
   return (
     <div className="legal">
@@ -36,13 +36,13 @@ export function LegalBody({ screen, email }: { screen: 'S36' | 'S37'; email: str
               <ul key={i}>
                 {b.list.map((li, j) => (
                   <li key={j}>
-                    <Parts value={li} email={email} />
+                    <Parts value={li} />
                   </li>
                 ))}
               </ul>
             ) : (
               <p key={i}>
-                <Parts value={b.p!} email={email} />
+                <Parts value={b.p!} />
               </p>
             ),
           )}

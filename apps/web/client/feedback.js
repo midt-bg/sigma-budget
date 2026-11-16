@@ -45,7 +45,7 @@ export function mountForms(root) {
       if (started || !siteKey() || disposed) return;
       started = true;
       button.disabled = true;
-      status.textContent = 'Проверява се…';
+      status.textContent = 'Изчакай проверката.';
       loadWidget()
         .then((api) => {
           if (disposed) return;
@@ -54,7 +54,7 @@ export function mountForms(root) {
             theme: 'light',
             callback: () => {
               button.disabled = false;
-              if (status.textContent === 'Проверява се…') status.textContent = '';
+              if (status.textContent === 'Изчакай проверката.') status.textContent = '';
             },
             'expired-callback': () => {
               button.disabled = true;
@@ -86,10 +86,23 @@ export function mountForms(root) {
     cleanups.forEach((cleanup) => cleanup());
   };
 }
+export function reportUrl() {
+  const url = new URL(location.href);
+  url.searchParams.delete('val');
+  return (url.pathname + url.search).slice(0, 300);
+}
 export async function submit(form, report) {
   const button = form.querySelector('[type="submit"]');
   const status = form.querySelector('[data-feedback-status]');
-  if (!siteKey() || button.disabled) return null;
+  if (!siteKey()) {
+    status.textContent = 'Изпращането временно не е достъпно. Опитай след малко.';
+    return null;
+  }
+  if (!form.elements['cf-turnstile-response']?.value) {
+    status.textContent = 'Изчакай проверката.';
+    return null;
+  }
+  if (button.disabled) return null;
   button.disabled = true;
   status.textContent = 'Изпраща се…';
   try {
@@ -98,7 +111,7 @@ export async function submit(form, report) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...report,
-        url: location.pathname + location.search,
+        url: reportUrl(),
         website: form.elements.website.value,
         token: form.elements['cf-turnstile-response']?.value || '',
       }),
