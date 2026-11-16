@@ -489,7 +489,7 @@ it('exports expenditure functions with the selected period and the units of the 
   const [header, ...rows] = parseCsv(csvFor({ ...spec, table }).slice(1));
   expect(rows.length).toBeGreaterThan(0);
   for (const row of rows) {
-    expect(row[header!.indexOf('единица')]).toBe('млрд. € / %');
+    expect(row[header!.indexOf('единица')]).toBe('');
     expect(row[header!.indexOf('период')]).toBe('2027.draft');
   }
 });
@@ -526,6 +526,12 @@ it('describes debt with the status of each selected budget period', async () => 
   }
   const expected = await page('/dalg?per=2026.expected');
   expect(expected.html).toContain('Няма данни за 2026 · Очаквано на този екран');
+  const { scope } = await page('/dalg');
+  const spec = scope.maps.share.get('debt-issues-snapshot');
+  const table = scope.maps.attached.get('debt-issues-outstanding').table;
+  const [header, ...rows] = parseCsv(csvFor({ ...spec, table }).slice(1));
+  expect(rows.length).toBeGreaterThan(0);
+  for (const row of rows) expect(row[header!.indexOf('единица')]).toBe('');
 });
 
 it('keeps the 2015 COFOG export independent of the selected draft period', async () => {

@@ -135,7 +135,7 @@ it('frozen server documents and inputs match their recorded checksums', () => {
 
 // Preserve the CSV oracle check previously run by the fixture regeneration script.
 for (const c of manifest.exportCases) {
-  it(`${c.file} preserves the frozen legacy CSV values with corrected unit`, async () => {
+  it(`${c.file} preserves the frozen legacy CSV`, async () => {
     const url = new URL(c.address, manifest.origin);
     const scope = { url, origin: url.origin, data: new Map(), state: requestState(null), load };
     provideScope(() => scope);
@@ -145,10 +145,7 @@ for (const c of manifest.exportCases) {
     await build(route.route, route.params, route.query);
     await data.load('releases/current');
     const table = (scope as any).maps.attached.get('s14-t-bjudzheti').table;
-    // The frozen capture predates the CSV metadata correction; its values stay unchanged.
-    expect(csvFor({ ...shareSpec(c.block), table })).toBe(
-      fixture(c.file).replaceAll(';към 31.07.2026;;', ';към 31.07.2026;хил. €;'),
-    );
+    expect(csvFor({ ...shareSpec(c.block), table })).toBe(fixture(c.file));
   });
 }
 
