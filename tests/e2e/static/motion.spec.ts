@@ -27,21 +27,29 @@ for (const reducedMotion of [true, false]) {
         await expect(page.locator('#s15-b-plan .prog-text').first()).toBeVisible();
         const percentages = page.locator('#s15-b-plan .prog-text');
         await expect(percentages).toHaveText(plan.bars, { timeout: 3000 });
-        const renderedWidths = await page
-          .locator('#s15-b-plan .prog-fill')
-          .evaluateAll((elements) =>
-            elements.map(
-              (element) =>
-                (element.getBoundingClientRect().width /
-                  element.parentElement!.getBoundingClientRect().width) *
-                100,
-            ),
-          );
-        for (const [index, rendered] of renderedWidths.entries())
-          expect(
-            Math.abs(rendered - Number(plan.widths[index]!.replace('%', ''))),
-            'visible bar width',
-          ).toBeLessThanOrEqual(0.1);
+        const expectedWidths = plan.widths.map((width) => Number(width.replace('%', '')));
+        const fills = page.locator('#s15-b-plan .prog-fill');
+        // the bars grow for a moment after the text is final: wait for them to settle
+        await expect
+          .poll(
+            () =>
+              fills.evaluateAll(
+                (elements, expected) =>
+                  Math.max(
+                    ...elements.map((element, index) =>
+                      Math.abs(
+                        (element.getBoundingClientRect().width /
+                          element.parentElement!.getBoundingClientRect().width) *
+                          100 -
+                          expected[index]!,
+                      ),
+                    ),
+                  ),
+                expectedWidths,
+              ),
+            { message: 'visible bar width', timeout: 3000 },
+          )
+          .toBeLessThanOrEqual(0.1);
         if (reducedMotion) expect(await page.evaluate(runningAnimations)).toBe(0);
       } finally {
         await context.close();

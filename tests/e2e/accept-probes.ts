@@ -121,27 +121,39 @@ export const inspectFocus = () => {
     ),
   ];
   const readStyles = () =>
-    candidates.flatMap((candidate) => {
-      const styles = [getComputedStyle(candidate)];
-      if (candidate === element && element.matches('input[type=range]'))
-        styles.push(getComputedStyle(element, '::-webkit-slider-thumb'));
-      return styles.map((style) => ({
+    candidates.map((candidate) => {
+      const style = getComputedStyle(candidate);
+      return {
         outline: parseFloat(style.outlineWidth) > 0 && style.outlineStyle !== 'none',
         shadow: style.boxShadow,
-      }));
+      };
     });
+  // A slider draws its ring on the thumb, which computed styles cannot read: find the rule that draws it.
+  const thumbRing =
+    element.matches('input[type=range]') &&
+    [...document.styleSheets]
+      .flatMap((sheet) => [...sheet.cssRules])
+      .some(
+        (rule) =>
+          rule instanceof CSSStyleRule &&
+          rule.selectorText.endsWith(':focus-visible::-webkit-slider-thumb') &&
+          element.matches(rule.selectorText.replace('::-webkit-slider-thumb', '')) &&
+          parseFloat(rule.style.getPropertyValue('outline')) > 0,
+      );
   const focused = readStyles();
   let ring: boolean;
   try {
     element.blur();
     const unfocused = readStyles();
-    ring = focused.some(
-      (style, index) =>
-        style.outline ||
-        (style.shadow !== 'none' &&
-          style.shadow !== '' &&
-          style.shadow !== unfocused[index]!.shadow),
-    );
+    ring =
+      thumbRing ||
+      focused.some(
+        (style, index) =>
+          style.outline ||
+          (style.shadow !== 'none' &&
+            style.shadow !== '' &&
+            style.shadow !== unfocused[index]!.shadow),
+      );
   } finally {
     element.focus({ preventScroll: true });
   }
