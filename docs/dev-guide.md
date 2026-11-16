@@ -983,18 +983,6 @@ html`<a href="${ctx.href('funkciya', { fn:'obrazovanie' })}">Образован�
 
 ## 14. Пускане на проверките
 
-```bash
-# от корена на хранилището; средата е tmp/venv, а Chromium е в tmp/pw-browsers (и двете са извън git — виж .gitignore)
-E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker
-E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker screens-base.spec.ts --grep S06
-```
-
-`--route` приема id (`S06`) или ключ (`prihodi`). Проверката пуска собствен локален сървър върху `apps/web/`. Изходен код 0 само когато всичко е зелено. Пътищата до `apps/web/` и до папката със снимки се изчисляват в началото на скрипта (`ROOT`, `SITE`, `SHOT_DIR`) — вижте бележката за разположението в `README.md`.
-
-Какво проверява за всеки маршрут × размер × тема: няма грешки или изключения в конзолата (404 за липсващ файл `/data/…` е само предупреждение „предстоящ файл с данни“); няма `NaN`/`undefined`/`Infinity`/`null`/`[object Object]` в текста или SVG; няма хоризонтално превъртане на страницата (освен вътре в `.table-wrap`); точно един `h1`; `document.title` се е променил; фокусът е на `h1` след навигация; целта на „Следва“ съществува; `?demo=loading|empty|error|pending|offline` рисува правилния компонент за състояние; ключовете в `data-src` съществуват в `core.sources`; всяка повърхност `[data-mock]` има значка или щриховка; примерните блокове са означени в текста за споделяне/CSV/PNG.
-
-`check_mock.py` има още семейства проверки (period, user, prefs, tour, `?to=`, chrome, share, embed, glossary, tabs, theme); документацията в началото на файла ги изброява заедно с всяка опция. `-v` отпечатва всяка находка с всичките ѝ клетки и адреси. Предупрежденията никога не карат пускането да пропадне; `--only base --route S06` е най-бързият цикъл за един екран. За да видиш страницата, добави `--shots` (по един PNG за всяко зареждане, имената се преизползват).
-
 Браузърните проверки се изпълняват чрез `pnpm test:e2e` от корена. След `pnpm build:release --env staging --noindex` стартирайте `pnpm exec wrangler dev -c apps/web/build/server/wrangler.json --ip 127.0.0.1 --port 8814`, а в друг терминал:
 
 ```bash
@@ -1005,7 +993,7 @@ PLAYWRIGHT_BROWSERS_PATH=$PWD/tmp/pw-browsers pnpm test:e2e --project=static
 Име на спецификация (например `period-matrix.spec.ts`) може да се добави като филтър. `tests/e2e/playwright.config.ts` разделя двата targets без дублиране на проверки; `fixtures.ts` управлява статичния сървър и изисква изричен `E2E_WORKER_URL` за Worker. Всеки тест получава чист browser context, освен изрично споделените в самата проверка страници. Старите адреси се обхождат с отделни страници в един общ context, с изолирано състояние. Общите route gates, ограничени event waits и CSV download helper са в `fixtures.ts` и `helpers.ts`. Няма автоматични retries; всеки отказ блокира CI, а trace и снимките са в `tmp/e2e-results`. Спецификациите се добавят в `worker/` или `static/` според оригиналния target. Не се използват production V8 thresholds за browser спецификациите.
 
 Визуалният одит и контрастът се изпълняват последователно в job `check` срещу
-сглобения Worker (Chromium), непосредствено след screens:
+сглобения Worker (Chromium):
 
 ```bash
 E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker visual-audit.spec.ts

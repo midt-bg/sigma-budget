@@ -119,7 +119,10 @@ test('status legend returns focus', async ({ page, siteURL }) => {
     .first();
   await opener.click();
   const dialog = page.getByRole('dialog').filter({ visible: true });
-  await expect(dialog).toContainText('Публикувани');
+  await expect(
+    dialog.getByRole('heading', { name: 'Легенда: какво означават белезите', exact: true }),
+  ).toBeVisible();
+  await expect(dialog).toContainText('Официални данни');
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
   await expect(opener).toBeFocused();

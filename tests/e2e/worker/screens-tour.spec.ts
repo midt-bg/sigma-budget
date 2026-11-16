@@ -26,7 +26,11 @@ for (const display of displays)
           .filter({ visible: true })
           .getByRole('link', { name: route.short || route.title, exact: true })
           .click();
-        await verify(route.id, route.title);
+        const headings: Record<string, string> = {
+          S03: 'Речник: бюджетът на разбираем език',
+          S12: 'Мерки в проекта за бюджет 2027',
+        };
+        await verify(route.id, headings[route.id] || route.title);
         const children: Record<string, string> = { S07: 'S08', S10: 'S11', S20: 'S21' };
         const child = children[route.id];
         if (child) {

@@ -9,8 +9,8 @@ for (const display of displays)
   test.describe(display, () => {
     test.use({ display });
     test('glossary in context', async ({ page, siteURL }) => {
-      await openScreen(page, siteURL, '#/prihodi');
-      const opener = page.locator('#view a[data-gl="dds"]').first();
+      await openScreen(page, siteURL, '#/5-minuti');
+      const opener = page.locator('#view').getByRole('link', { name: 'ДДС', exact: true }).first();
       const term = glossary.terms.find((t) => t.slug === 'dds')!;
       const original = page.url();
       for (const method of ['click', 'Enter']) {
@@ -33,8 +33,9 @@ for (const display of displays)
         await expect(dialog).toBeHidden();
         await expect(opener).toBeFocused();
         expect(page.url()).toBe(original);
-        await page.mouse.wheel(0, 400);
-        await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0);
+        const before = await page.evaluate(() => scrollY);
+        await page.mouse.wheel(0, 200);
+        await expect.poll(() => page.evaluate(() => scrollY)).not.toBe(before);
       }
       await opener.click();
       await page.getByRole('link', { name: /Пълно обяснение в речника/ }).click();
