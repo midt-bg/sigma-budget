@@ -1,11 +1,8 @@
 import { ROUTES } from '../../../apps/web/app/lib/routes.ts';
 import { PERIODS } from '../../../apps/web/client/periods.js';
-export type RouteId = string;
 export const routes = ROUTES.filter((route) => !route.retired).map((route) => ({
   ...route,
-  samples: route.samples.length
-    ? route.samples
-    : [route.pattern ? '#' + route.pattern : '#/nyama-takava'],
+  samples: route.samples.length ? route.samples : ['#/nyama-takava'],
 }));
 export const displays = ['desktop', 'touch'] as const;
 export const auditCases = routes.flatMap((route) =>

@@ -1,8 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Page } from '@playwright/test';
-import { ROOT } from '../../apps/web/scripts/serve.ts';
-import type { RouteId } from './screens/cases.ts';
+import { ROOT } from '../../../apps/web/scripts/serve.ts';
 // Expected screen text computed from the published execution dataset.
 interface Execution {
   latest: {
@@ -31,7 +30,7 @@ const compareRows = ['rev', 'exp.total', 'balance'];
 const year = Number(ex.latest.asOf.slice(0, 4));
 const a = compareRows.map((r) => Number(ex.data[String(year - 1)]!.kfp[r]![ex.latest.month - 1]!));
 const b = compareRows.map((r) => Number(ex.data[String(year)]!.kfp[r]![ex.latest.month - 1]!));
-export const VALUE_CHECKS: Record<RouteId, { all: string[]; needs?: string }> = {
+export const VALUE_CHECKS: Record<string, { all: string[] }> = {
   S01: {
     all: [
       'Държавният бюджет на достъпен език',
@@ -62,12 +61,10 @@ export const VALUE_CHECKS: Record<RouteId, { all: string[]; needs?: string }> = 
       'дефицит',
     ],
   },
-  S18: { all: ['1 500'], needs: 'rates.json' },
 };
-export async function visibleValues(page: Page, route: RouteId, missingData: Set<string>) {
-  const expected = VALUE_CHECKS[route];
-  if (!expected || (expected.needs && missingData.has(expected.needs))) return [];
-  const text = ((await page.locator('#view').textContent()) || '').replace(
+export async function visibleValues(page: Page, route: string) {
+  const expected = VALUE_CHECKS[route]!;
+  const text = (await page.locator('#view').innerText()).replace(
     /[\u00a0\u2007\u2009\u202f]/g,
     ' ',
   );

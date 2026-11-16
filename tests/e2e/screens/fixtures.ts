@@ -4,14 +4,9 @@ import type { Page } from '@playwright/test';
 export { expect };
 export const test = base.extend<{
   display: 'desktop' | 'touch';
-  routeId: string;
-  expectedBrowserErrors: string[];
-  browserHealth: void;
-  missingData: Set<string>;
+  browserEvents: { readAndClear(): Promise<Finding[]> };
 }>({
   display: ['desktop', { option: true }],
-  routeId: ['', { option: true }],
-  expectedBrowserErrors: [[], { option: true }],
   viewport: async ({ display }, use) =>
     use(display === 'desktop' ? { width: 1280, height: 900 } : { width: 400, height: 800 }),
   hasTouch: async ({ display }, use) => use(display === 'touch'),
@@ -22,12 +17,14 @@ export const test = base.extend<{
   serviceWorkers: 'block',
   actionTimeout: 15000,
   navigationTimeout: 20000,
-  missingData: async ({}, use) => use(new Set<string>()),
-  browserHealth: [
-    async ({ page, context, siteURL, missingData, expectedBrowserErrors, routeId }, use) => {
-      const errors: Finding[] = [];
-      const record = (code: string, message: string) => errors.push({ code, message });
+  browserEvents: [
+    async ({ page, context, siteURL }, use) => {
+      const events: Finding[] = [];
+      const record = (code: string, message: string) => events.push({ code, message });
       const origin = new URL(siteURL).origin;
+      await context.exposeBinding('recordScreenEvent', (_source, event: Finding) => {
+        events.push(event);
+      });
       await context.addInitScript(initializeScreen);
       page.on('console', (message) => {
         if (
@@ -45,13 +42,7 @@ export const test = base.extend<{
         await dialog.dismiss();
       });
       page.on('response', (response) => {
-        if (response.status() < 400) return;
-        const url = new URL(response.url());
-        if (url.origin === origin && url.pathname.startsWith('/data/')) {
-          missingData.add(url.pathname.split('/').at(-1)!);
-          if (routeId === 'S18' && url.pathname.endsWith('/rates.json')) return;
-        }
-        record('http', `${response.status()} ${response.url()}`);
+        if (response.status() >= 400) record('http', `${response.status()} ${response.url()}`);
       });
       page.on('requestfailed', (request) => {
         const message = request.failure()?.errorText || '';
@@ -62,13 +53,19 @@ export const test = base.extend<{
         if (/^(https?|wss?|ftp):/.test(request.url()) && new URL(request.url()).origin !== origin)
           record('external', request.url());
       });
-      await use();
-      const cookies = await context.cookies();
-      if (cookies.length) record('cookie', cookies.map((cookie) => cookie.name).join(', '));
-      expect(
-        errors.filter((error) => !expectedBrowserErrors.includes(error.code)),
-        'Browser errors and cookies',
-      ).toEqual([]);
+      const readAndClear = async () => {
+        const cookies = await context.cookies();
+        if (cookies.length) {
+          record('cookie', cookies.map((cookie) => cookie.name).join(', '));
+          await context.clearCookies();
+        }
+        return events.splice(0);
+      };
+      try {
+        await use({ readAndClear });
+      } finally {
+        expect(await readAndClear(), 'Browser errors and cookies').toEqual([]);
+      }
     },
     { auto: true },
   ],
@@ -76,21 +73,23 @@ export const test = base.extend<{
 export async function openScreen(page: Page, siteURL: string, address: string) {
   await page.goto(new URL('/' + address, siteURL).href);
   await expect(page.locator('article.page')).toHaveAttribute('data-ready', '1');
-  await page.waitForFunction(screenReady, undefined, { timeout: 15000 });
+  await page.waitForFunction(screenReady, undefined, { timeout: 15000, polling: 100 });
 }
 export async function deepPass(page: Page) {
   await page.evaluate(revealScreen);
   for (const list of await page.locator('#view [role="tablist"]').all()) {
     const tabs = list.locator('[role="tab"]');
-    const selected = await list.locator('[aria-selected="true"]').getAttribute('id');
+    const selectedIndex = await tabs.evaluateAll((elements) =>
+      elements.findIndex((element) => element.getAttribute('aria-selected') === 'true'),
+    );
+    const selected = selectedIndex >= 0 ? tabs.nth(selectedIndex) : undefined;
     for (const tab of await tabs.all()) {
-      await tab.evaluate((element: HTMLElement) => element.click());
+      await tab.click();
       await page.evaluate(revealScreen);
-      await page.waitForFunction(screenReady, undefined, { timeout: 15000 });
+      await page.waitForFunction(screenReady, undefined, { timeout: 15000, polling: 100 });
     }
-    if (selected)
-      await page.locator(`[id="${selected}"]`).evaluate((element: HTMLElement) => element.click());
+    if (selected) await selected.click();
   }
   await page.evaluate(revealScreen);
-  await page.waitForFunction(screenReady, undefined, { timeout: 15000 });
+  await page.waitForFunction(screenReady, undefined, { timeout: 15000, polling: 100 });
 }

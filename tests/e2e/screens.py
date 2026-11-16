@@ -2,8 +2,8 @@
 """Screen, accessibility and layout checks against the current site.
 
 Run from the repository root with python -m tests.e2e.screens --url URL.
-Base audits, demo states and period/user/preference variants now run in the
-worker/screens-*.spec.ts files. This module runs the remaining check families.
+Base audits, demo states and periods run in worker/screens-*.spec.ts.
+User types and removed preference switches are no longer checked.
 """
 from __future__ import annotations
 

@@ -1,44 +1,9 @@
 import { test, expect, openScreen } from '../screens/fixtures.ts';
-import { auditScreen, screenReady } from '../screens/browser.ts';
-test.use({ expectedBrowserErrors: ['console-error', 'pageerror', 'request-failed'] });
-const codes = [
-  'frame',
-  'route',
-  'h1',
-  'title',
-  'lang',
-  'landmark',
-  'layout',
-  'tokens',
-  'placeholder',
-  'encoding',
-  'scroll-x',
-  'a11y-name',
-  'a11y-label',
-  'a11y-alt',
-  'aria-ref',
-  'aria-hidden-focus',
-  'a11y-structure',
-  'dead-link',
-  'img-broken',
-  'tabs',
-  'target-size',
-  'tiny-text',
-  'src-key',
-  'pending-id',
-  'gl-term',
-  'share-id',
-  'fig-table',
-  'mock-marker',
-  'chart',
-  'next',
-  'link-route',
-  'csp',
-  'rejection',
-];
+import { AUDIT_CODES, auditScreen, screenReady } from '../screens/browser.ts';
 test('screen audit detects visible defects and a busy screen times out', async ({
   page,
   siteURL,
+  browserEvents,
 }) => {
   test.setTimeout(150_000);
   await openScreen(page, siteURL, '#/');
@@ -46,9 +11,9 @@ test('screen audit detects visible defects and a busy screen times out', async (
     const view = document.getElementById('view')!;
     view.setAttribute('aria-busy', 'true');
   });
-  await expect(page.waitForFunction(screenReady, undefined, { timeout: 500 })).rejects.toThrow(
-    /Timeout/,
-  );
+  await expect(
+    page.waitForFunction(screenReady, undefined, { timeout: 500, polling: 100 }),
+  ).rejects.toThrow(/Timeout/);
   await page.evaluate(() => {
     document.getElementById('view')!.removeAttribute('aria-busy');
     document.querySelector<HTMLElement>('article.page')!.dataset.ready = '0';
@@ -72,18 +37,27 @@ test('screen audit detects visible defects and a busy screen times out', async (
     const script = document.createElement('script');
     script.textContent = 'void 0';
     document.body.append(script);
+    console.error('Deliberate console error');
+    setTimeout(() => {
+      throw new Error('Deliberate exception');
+    }, 0);
+    setTimeout(() => alert('Deliberate dialog'), 0);
+    void fetch('/data/missing.json');
+    document.cookie = 'audit-defect=1';
+    // CSP blocks external requests before they can leave the page.
     void Promise.reject(new Error('Deliberate audit rejection'));
   });
+  const captured: { code: string; message: string }[] = [];
+  const eventCodes = ['console-error', 'pageerror', 'dialog', 'http', 'cookie', 'csp', 'rejection'];
   await expect
-    .poll(() =>
-      page.evaluate(
-        () => window.screenEvents.csp.length > 0 && window.screenEvents.rejections.length > 0,
-      ),
-    )
-    .toBe(true);
+    .poll(async () => {
+      captured.push(...(await browserEvents.readAndClear()));
+      return eventCodes.filter((code) => !captured.some((event) => event.code === code));
+    })
+    .toEqual([]);
   const findings = await page.evaluate(auditScreen, 'missing-route');
   expect(
-    codes.filter((code) => !findings.some((finding) => finding.code === code)),
+    AUDIT_CODES.filter((code) => !findings.some((finding) => finding.code === code)),
     'Undetected defect codes',
   ).toEqual([]);
 });

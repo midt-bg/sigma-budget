@@ -1,3 +1,37 @@
+export const AUDIT_CODES = [
+  'frame',
+  'route',
+  'h1',
+  'title',
+  'lang',
+  'landmark',
+  'layout',
+  'tokens',
+  'placeholder',
+  'encoding',
+  'scroll-x',
+  'a11y-name',
+  'a11y-label',
+  'a11y-alt',
+  'aria-ref',
+  'aria-hidden-focus',
+  'a11y-structure',
+  'dead-link',
+  'img-broken',
+  'tabs',
+  'target-size',
+  'tiny-text',
+  'src-key',
+  'pending-id',
+  'gl-term',
+  'share-id',
+  'fig-table',
+  'mock-marker',
+  'chart',
+  'next',
+  'link-route',
+] as const;
+export type AuditCode = (typeof AUDIT_CODES)[number];
 export interface Finding {
   code: string;
   message: string;
@@ -5,18 +39,20 @@ export interface Finding {
 declare global {
   interface Window {
     __HASH_ROUTES__: boolean;
-    screenEvents: { csp: string[]; rejections: string[] };
+    recordScreenEvent(event: Finding): Promise<void>;
   }
 }
 export function initializeScreen() {
   window.__HASH_ROUTES__ = true;
-  window.screenEvents = { csp: [], rejections: [] };
-  document.addEventListener('securitypolicyviolation', (event) =>
-    window.screenEvents.csp.push(`${event.violatedDirective} ${event.blockedURI}`),
-  );
-  window.addEventListener('unhandledrejection', (event) =>
-    window.screenEvents.rejections.push(String(event.reason)),
-  );
+  document.addEventListener('securitypolicyviolation', (event) => {
+    void window.recordScreenEvent({
+      code: 'csp',
+      message: `${event.violatedDirective} ${event.blockedURI}`,
+    });
+  });
+  window.addEventListener('unhandledrejection', (event) => {
+    void window.recordScreenEvent({ code: 'rejection', message: String(event.reason) });
+  });
 }
 export function screenReady(): boolean {
   const view = document.getElementById('view');
@@ -43,13 +79,13 @@ export async function revealScreen() {
     const closed = [...view.querySelectorAll<HTMLDetailsElement>('details:not([open])')];
     for (const details of closed) details.open = true;
     if (!closed.length) break;
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
   }
   window.scrollTo(0, document.documentElement.scrollHeight);
 }
 export async function auditScreen(expectedRoute: string): Promise<Finding[]> {
   const findings: Finding[] = [];
-  const add = (code: string, message: string) => findings.push({ code, message });
+  const add = (code: AuditCode, message: string) => findings.push({ code, message });
   const all = (selector: string, root: ParentNode = document) => [
     ...root.querySelectorAll<HTMLElement>(selector),
   ];
@@ -330,7 +366,5 @@ export async function auditScreen(expectedRoute: string): Promise<Finding[]> {
     if ((href.startsWith('#/') && !resolves(href)) || /^(javascript|data):/i.test(href))
       add('link-route', `Invalid link ${href}`);
   }
-  for (const message of window.screenEvents.csp) add('csp', message);
-  for (const message of window.screenEvents.rejections) add('rejection', message);
   return findings;
 }

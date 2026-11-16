@@ -1,11 +1,13 @@
+import { auditScreen } from '../screens/browser.ts';
 import { test, expect, openScreen } from '../screens/fixtures.ts';
 import { stateCases, withQuery } from '../screens/cases.ts';
 for (const entry of stateCases)
   test.describe(`${entry.route} ${entry.display} ${entry.state}`, () => {
-    test.use({ display: entry.display, routeId: entry.route });
+    test.use({ display: entry.display });
     test('visible screen state', async ({ page, siteURL }) => {
       test.setTimeout(150_000);
       await openScreen(page, siteURL, withQuery(entry.address, { demo: entry.state }));
+      expect(await page.evaluate(auditScreen, entry.route)).toEqual([]);
       if (entry.state === 'offline') {
         await expect(page.locator('#offline')).toBeVisible();
         await expect(page.locator('#offline')).toHaveAttribute('data-state', 'offline');
