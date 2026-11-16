@@ -28,7 +28,6 @@ export const nodeHttpTransport: HttpTransport = async (request) => {
     const response = await fetch(request.url, {
       method: request.method,
       headers: { ...request.headers },
-      body: request.body ? Buffer.from(request.body) : undefined,
       redirect: 'manual',
       signal: AbortSignal.timeout(request.timeoutMs),
     });

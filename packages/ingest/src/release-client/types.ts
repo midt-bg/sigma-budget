@@ -1,10 +1,9 @@
 /** Shared release package and public reproduction types. */
-export type ExitCode = 2 | 3 | 4 | 5 | 6;
+export type ExitCode = 2 | 3;
 export class ReleaseError extends Error {
   constructor(
     public readonly code: ExitCode,
     message: string,
-    public readonly status?: number,
   ) {
     super(message);
     this.name = 'ReleaseError';
@@ -27,15 +26,14 @@ export interface ReleaseManifest {
   [key: string]: unknown;
 }
 export interface ReleaseEnvironment {
-  /** Explicit logical name and one origin for every public and admin request. */
+  /** Explicit logical name and origin for public reproduction reads. */
   name: string;
   url: string;
 }
 export interface HttpRequest {
-  method: 'GET' | 'POST' | 'PUT';
+  method: 'GET';
   url: string;
   headers: Readonly<Record<string, string>>;
-  body?: Uint8Array;
   timeoutMs: number;
   maxResponseBytes: number;
 }
@@ -48,7 +46,7 @@ export type HttpTransport = (request: HttpRequest) => Promise<HttpResponse>;
 export interface PackageOptions {
   release: string;
   originals: string;
-  /** Match the intended environment. Does not change any Worker setting. */
+  /** Maximum permitted size of each package object. */
   maxObjectBytes?: number;
 }
 export const SHA256 = /^[0-9a-f]{64}$/;

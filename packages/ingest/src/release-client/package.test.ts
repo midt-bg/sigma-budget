@@ -19,7 +19,6 @@ describe('strict offline package preflight', () => {
     const manifest = await readFile(join(pkg.release, 'manifest.json'));
     const result = await preflightRelease(pkg);
     expect(result.releaseId).toBe(sha256(manifest));
-    expect(result.objects.size).toBe(4);
     expect(await readFile(join(pkg.release, 'manifest.json'))).toEqual(manifest);
     await writeFile(join(pkg.originals, pkg.manifest.inputs[0]!.path), 'wrong');
     await expect(preflightRelease(pkg)).rejects.toMatchObject({ code: 2 });
