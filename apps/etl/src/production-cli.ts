@@ -71,7 +71,6 @@ const boolean = new Set([
   '--check-drift',
   '--replace',
   '--dry-run',
-  '--yes',
 ]);
 function flags(args: string[]) {
   const m = new Map<string, string>();
