@@ -420,7 +420,9 @@ it.each(['https://staging.example', 'https://sigma-budget.midt.bg'])(
   (origin) => {
     writeExtras(out, { '/': page() }, origin, '2026-11-11', routes);
     const text = read('llms.txt');
-    expect(text).toContain(`${origin}/mcp`);
+    // an agent reading only the head of the file finds the connection before the page index
+    expect(text.indexOf(`${origin}/mcp`)).toBeGreaterThan(-1);
+    expect(text.indexOf(`${origin}/mcp`)).toBeLessThan(text.indexOf('## Основни страници'));
     expect(text).toContain(
       `claude mcp add --transport http --scope user sigma-budget ${origin}/mcp`,
     );
