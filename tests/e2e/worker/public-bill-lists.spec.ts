@@ -22,6 +22,7 @@ for (const width of [1280, 390]) {
       );
     }
     async function compareSSR(selector: string, backSelector?: string) {
+      await expect(page.locator(selector).locator('tr').first()).toBeVisible();
       const staticContext = await freshContext({
         javaScriptEnabled: false,
         viewport: { width, height: 900 },
@@ -161,10 +162,10 @@ for (const width of [1280, 390]) {
       await expect(page.locator('#bill-count')).not.toHaveText('Намерени общини: 0.');
       await expect(page.locator('#bill-oblast')).toHaveValue('BLG');
       for (const [path, text] of [
-        ['/prihodi?per=2028.forecast', '2028'],
-        ['/razhodi?per=2029.forecast', '2029'],
-        ['/obshtini?per=2028.forecast', '2028'],
-        ['/vedomstva?per=2026.law', '2026'],
+        ['/prihodi?per=2028.forecast', '2028 · Прогноза'],
+        ['/razhodi?per=2029.forecast', '2029 · Прогноза'],
+        ['/obshtini?per=2028.forecast', '2028 · Прогноза'],
+        ['/vedomstva?per=2026.law', '2026 · Закон'],
       ] as const) {
         await go(path);
         await expect(page.locator('.context')).toContainText(text);

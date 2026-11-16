@@ -20,6 +20,7 @@ test('redirect, anchors, history and search', async ({ page, siteURL }) => {
   });
   await test.step('Съдържание и история', async () => {
     await page.goto(siteURL + '/api');
+    await expect(page.locator('article.page')).toHaveAttribute('data-ready', '1');
     const anchors = page.locator('nav.s25-toc a[href]');
     await expect(anchors).toHaveCount(4);
     for (const address of await anchors.evaluateAll((links) =>

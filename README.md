@@ -110,5 +110,3 @@ GitHub Actions проверява PR и сглобява staging. Push към ma
 ## Лиценз
 
 Кодът е под лиценза MIT — виж файла [`LICENSE`](LICENSE). Официалните документи, на които стъпват данните (законите, законопроектът и мотивите, отчетите на министерствата), са публични; текстът им е използван без промяна.
-
-Проверките на списъците, CSV, споделените мерни единици и навигацията са в `tests/e2e/worker/public-bill-lists.spec.ts`, `share-units.spec.ts` и `react-bridge.spec.ts`. Job `check` ги изпълнява с `E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker public-bill-lists.spec.ts share-units.spec.ts react-bridge.spec.ts`. `apps/web/scripts/hrefs.test.ts` проверява адресите в хранилището чрез web Vitest suite. `node apps/web/scripts/make-images.ts` генерира social card и app icons; байтовете зависят от Chromium и шрифтовете.

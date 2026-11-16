@@ -86,8 +86,14 @@ for (const width of [1280, 390]) {
       await expect(law.locator('#s14-unit-eur')).toBeChecked();
       await go(page, '/pari?unit=pct');
       await page.locator('article a[href^="/prihodi"]').first().click();
-      await expect(page.locator('article.page')).toHaveAttribute('data-ready', '1');
-      expect(new URL(page.url()).searchParams.getAll('unit')).toEqual(['pct']);
+      await expect(page).toHaveURL(
+        (url) =>
+          url.pathname.startsWith('/prihodi') && url.searchParams.getAll('unit').join() === 'pct',
+      );
+      await expect(page.locator('article.page:not([data-route="S05"])')).toHaveAttribute(
+        'data-ready',
+        '1',
+      );
       expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(
         false,
       );
