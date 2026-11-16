@@ -1,7 +1,7 @@
 import { test, expect, openScreen } from '../screens/fixtures.ts';
 import { fitsViewport } from '../screens/interactions.ts';
-import { NAV_GROUPS } from '../../../apps/web/client/chrome.js';
-import { routes } from '../screens/cases.ts';
+import { NAV_GROUPS, groupItems, navName } from '../../../apps/web/client/chrome.js';
+import { menuLinkName } from '../screens/navigation.ts';
 
 test('skip to content', async ({ page, siteURL }) => {
   await openScreen(page, siteURL, '#/prihodi');
@@ -22,7 +22,7 @@ test('skip to content', async ({ page, siteURL }) => {
 });
 test('search shortcuts, results and returning to the page', async ({ page, siteURL }) => {
   await openScreen(page, siteURL, '#/prihodi');
-  const opener = page.getByRole('button', { name: /Търси/ }).first();
+  const opener = page.getByRole('button', { name: 'Търсене', exact: true });
   for (const key of ['/', 'Control+k', 'button']) {
     await opener.focus();
     if (key === 'button') await opener.click();
@@ -61,11 +61,8 @@ test('header groups and Escape', async ({ page, siteURL }) => {
       .getByRole('button', { name, exact: true });
     await opener.click();
     const dialog = page.getByRole('dialog').filter({ visible: true });
-    for (const id of ids) {
-      const route = routes.find((r) => r.id === id)!;
-      await expect(
-        dialog.getByRole('link', { name: route.short || route.title, exact: true }),
-      ).toBeVisible();
+    for (const route of groupItems(ids)) {
+      await expect(dialog.getByRole('link', { name: menuLinkName(navName(route)) })).toBeVisible();
     }
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
@@ -81,16 +78,16 @@ test.describe('phone', () => {
     await expect
       .poll(() => dialog.evaluate((el) => el.contains(document.activeElement)))
       .toBe(true);
+    const navigation = dialog.getByRole('navigation', { name: 'Всички раздели', exact: true });
     for (const [name, ids] of NAV_GROUPS) {
       await expect(dialog.getByRole('heading', { name, exact: true })).toBeVisible();
-      for (const id of ids) {
-        const route = routes.find((r) => r.id === id)!;
+      for (const route of groupItems(ids)) {
         await expect(
-          dialog.getByRole('link', { name: route.short || route.title, exact: true }),
+          navigation.getByRole('link', { name: menuLinkName(navName(route)) }),
         ).toBeVisible();
       }
     }
-    await dialog.getByRole('link', { name: 'Приходи', exact: true }).click();
+    await navigation.getByRole('link', { name: 'Приходи', exact: true }).click();
     await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
     await page.getByRole('button', { name: /^Година и статус на данните:/ }).click();
     await page.getByRole('radio', { name: /2026.*Закон/i }).check();

@@ -10,8 +10,16 @@ for (const display of displays)
     test.use({ display });
     test('glossary in context', async ({ page, siteURL }) => {
       await openScreen(page, siteURL, '#/5-minuti');
-      const opener = page.locator('#view').getByRole('link', { name: 'ДДС', exact: true }).first();
-      const term = glossary.terms.find((t) => t.slug === 'dds')!;
+      const term = glossary.terms.find((t) => t.slug === 'kfp' && t.related.length > 0)!;
+      const opener = page
+        .locator('#view')
+        .getByRole('link', { name: term.abbr!, exact: true })
+        .first();
+      const dialogFor = (entry: typeof term) =>
+        page.getByRole('dialog', {
+          name: display === 'touch' ? titleOf(entry) : `Речник: ${titleOf(entry)}`,
+          exact: true,
+        });
       const original = page.url();
       for (const method of ['click', 'Enter']) {
         if (method === 'click') await opener.click();
@@ -19,13 +27,13 @@ for (const display of displays)
           await opener.focus();
           await opener.press('Enter');
         }
-        const dialog = page.getByRole('dialog', { name: `Речник: ${titleOf(term)}`, exact: true });
+        const dialog = dialogFor(term);
         await fitsViewport(dialog);
         await expect(dialog.getByText(term.def, { exact: true })).toBeVisible();
         expect(page.url()).toBe(original);
         const related = glossary.terms.find((t) => t.slug === term.related[0]!.slug)!;
         await dialog.getByRole('link', { name: related.name, exact: true }).click();
-        const next = page.getByRole('dialog', { name: `Речник: ${titleOf(related)}`, exact: true });
+        const next = dialogFor(related);
         await expect(next.getByText(related.def, { exact: true })).toBeVisible();
         await next.getByRole('button', { name: `← ${titleOf(term)}`, exact: true }).click();
         await expect(dialog).toBeVisible();
@@ -39,7 +47,7 @@ for (const display of displays)
       }
       await opener.click();
       await page.getByRole('link', { name: /Пълно обяснение в речника/ }).click();
-      await expect(page).toHaveURL(/\/rechnik\/dds/);
+      await expect(page).toHaveURL(new RegExp(`/rechnik/${term.slug}(?:[?&]|$)`));
       await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
     });
   });

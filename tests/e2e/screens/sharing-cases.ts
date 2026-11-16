@@ -16,7 +16,7 @@ export const sharingCases = routes
   .filter((route) => !withoutSharing[route.id])
   .map((route, index) => ({
     ...route,
-    csv: ['S01', 'S04', 'S15', 'S12', 'S20', 'S21', 'S17', 'S31', 'S24'].includes(route.id),
+    csv: ['S01', 'S04', 'S15', 'S11', 'S12', 'S20', 'S21', 'S17', 'S24'].includes(route.id),
     png: !['S16', 'S13'].includes(route.id),
     display: index % 2 ? ('touch' as const) : ('desktop' as const),
   }));

@@ -26,7 +26,10 @@ for (const entry of cases)
       const panel = page.getByRole('tabpanel', { name: names[i]!.trim(), exact: true });
       await drawn(panel);
       await expect
-        .poll(() => new URLSearchParams(page.url().split('?')[1]).get(entry.query))
+        .poll(() => {
+          const value = new URLSearchParams(page.url().split('?')[1]).get(entry.query);
+          return i === 0 ? (value ?? values[0]) : value;
+        })
         .toBe(values[i]);
       await expect.poll(() => page.evaluate(() => scrollY)).toBeCloseTo(y, 0);
     }

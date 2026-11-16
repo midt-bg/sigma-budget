@@ -21,11 +21,12 @@ for (const display of displays)
             .getByRole('button', { name: group[0], exact: true })
             .click();
         }
-        await page
-          .getByRole('dialog')
-          .filter({ visible: true })
-          .getByRole('link', { name: route.short || route.title, exact: true })
-          .click();
+        const dialog = page.getByRole('dialog').filter({ visible: true });
+        const menu =
+          display === 'touch'
+            ? dialog.getByRole('navigation', { name: 'Всички раздели', exact: true })
+            : dialog;
+        await menu.getByRole('link', { name: route.short || route.title, exact: true }).click();
         const headings: Record<string, string> = {
           S03: 'Речник: бюджетът на разбираем език',
           S12: 'Мерки в проекта за бюджет 2027',
@@ -44,11 +45,15 @@ for (const display of displays)
           await verify(detail.id);
         }
       }
-      // With no selected suggestion, Enter opens the complete search screen.
+      // The palette preselects the first suggestion; its footer opens the complete result list.
       await page.keyboard.press('/');
       const search = page.getByRole('combobox', { name: 'Търси в сайта', exact: true });
       await search.fill('ДДС');
-      await search.press('Enter');
+      await expect(page.getByRole('option').first()).toBeVisible();
+      await page
+        .getByRole('dialog', { name: 'Търсене в сайта', exact: true })
+        .getByRole('link', { name: 'Всички резултати', exact: true })
+        .click();
       await verify('S28');
       async function verify(id: string, name?: string) {
         await expect(page.locator('article.page[data-ready="1"]')).toHaveAttribute(

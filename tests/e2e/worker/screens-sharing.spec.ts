@@ -54,11 +54,9 @@ for (const entry of sharingCases)
           expect(row[source]!.trim()).not.toBe('');
         }
       }
-      if (!entry.png) {
-        await page.keyboard.press('Escape');
-        return;
-      }
-      if (!entry.csv) await page.keyboard.press('Escape');
+      await page.keyboard.press('Escape');
+      await expect(menu).toBeHidden();
+      if (!entry.png) return;
       await opener.click();
       const pending = page.waitForEvent('download');
       await menu.getByRole('button', { name: /^Изтегли изображение/ }).click();
