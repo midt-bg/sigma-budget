@@ -10,7 +10,7 @@
       "query": {},
       "status": 200,
       "file": "S16.html",
-      "sha256": "bd78bc1252e379a12e523510690410c1b6c77e3beac8c26f6223c733cb8313e6"
+      "sha256": "345e76dbf169080c90b2e116c8bac6433cb06488b59a8c59bfa2cadf15a304cc"
     },
     {
       "screen": "S16",
@@ -20,7 +20,7 @@
       },
       "status": 200,
       "file": "S16-loading.html",
-      "sha256": "db59559d54f674ce5ac922d13920b13ef44d1d500c2abc2859c1903fa7833ea1"
+      "sha256": "073696fe43c9ad123e5368db1d6c5c11029bc1eef39b249f84f68e473f1ceeee"
     },
     {
       "screen": "S16",
@@ -30,7 +30,7 @@
       },
       "status": 200,
       "file": "S16-empty.html",
-      "sha256": "c09b509250d9c95aa9231f07c16f7baed343e977b84d503e92703e83d375be3f"
+      "sha256": "c1f3ad40cd7e900ec6787edcf491cde67b112a2ff9d11c99e7da15c2b19ed96b"
     },
     {
       "screen": "S16",
@@ -40,7 +40,7 @@
       },
       "status": 200,
       "file": "S16-error.html",
-      "sha256": "141557d65b31ed9fb119e6b0ef7387107a94501ffa91a20e4fc06e1a127d0c8f"
+      "sha256": "d220f61c011fa1190d3bd6984c91100d2c5d7edd77f293c79b735f3a678ae59a"
     },
     {
       "screen": "S16",
@@ -50,7 +50,7 @@
       },
       "status": 200,
       "file": "S16-pending.html",
-      "sha256": "79cb9b7cfd93ad42f709b044b0b8e136b369509350a03f001699ade1bd8fce61"
+      "sha256": "94227898e526d32aca047306571db50bb369dfe54d795311517ab89467c4443d"
     },
     {
       "screen": "S16",
@@ -60,7 +60,7 @@
       },
       "status": 200,
       "file": "S16-draft.html",
-      "sha256": "5de6cbe6bcd17db614b50840c9c51b1a71482d4eb2fe77be2251de04c1d7c88e"
+      "sha256": "cf9c791fea9ae4b46c713c4520fca9af229e4040654098b7371290cab4f91d72"
     },
     {
       "screen": "S16",
@@ -70,7 +70,7 @@
       },
       "status": 200,
       "file": "S16-report.html",
-      "sha256": "80f9cb487383043a02b921455cff59a4d11a2c576c927380b82d55ca6d2699dd"
+      "sha256": "f73e06d6931d82a5e1062fe782cbbdb412edd51e62a12bd5ead72e3d9b71cdd7"
     },
     {
       "screen": "S16",
@@ -80,7 +80,7 @@
       },
       "status": 200,
       "file": "S16-law.html",
-      "sha256": "aaa609ede7f01a633b6308ee40459dfc0d2127e5ec3a547a0763d350c6190fa5"
+      "sha256": "dda8e5126c50d8747065e5034b4fcb0f4df1edfb1d8c7d9cf25533b065e78681"
     },
     {
       "screen": "S16",
@@ -90,7 +90,7 @@
       },
       "status": 200,
       "file": "S16-plenary.html",
-      "sha256": "55ee18da804eb45fe5ef7865297bb7f5e8ba888d86aae7e0c9ba75829c564e1b"
+      "sha256": "9e64a6ea8540eec697a545b704ac7925c833d3b740b1948982e8317efe7a6115"
     },
     {
       "screen": "S16",
@@ -100,7 +100,7 @@
       },
       "status": 200,
       "file": "S16-rates.html",
-      "sha256": "ec83400df70211407dc98a81539825d6ccd06c2d5c747113b9fbae1f07e16fcd"
+      "sha256": "62fc98fb1d4b161d22caf9e815c2d83235ab00ec67139ef15e6faa88741dfb0e"
     },
     {
       "screen": "S16",
@@ -110,7 +110,7 @@
       },
       "status": 200,
       "file": "S16-eurostat.html",
-      "sha256": "b351f3f801d9883cacafc8d548938e30609ad553c1ebf28cd2b1c3f09c081342"
+      "sha256": "8283497c9d7ccae2081bac486c9b54fca9715d94f49a01da1d156c6f52b4764a"
     },
     {
       "screen": "S16",
@@ -120,7 +120,7 @@
       },
       "status": 200,
       "file": "S16-data.html",
-      "sha256": "b8a14c6a0980f7cd673ec2c921e9c3bf856aa06c0eff17e2714e11014008498b"
+      "sha256": "307d3613cfb9517b630e06338e7c61645e7b769647732efe4839ed2ea468cbc9"
     },
     {
       "screen": "S16",
@@ -130,7 +130,7 @@
       },
       "status": 200,
       "file": "S16-unknown.html",
-      "sha256": "85a98929f6328dcb87db0569b18d7743291389b9ed685c5ae10a6e4d18c049d2"
+      "sha256": "e309df54f1e2da2a67c798524b5f7b1424e93d921d89086f441ac12f493c2296"
     },
     {
       "screen": "S14",
@@ -138,7 +138,7 @@
       "query": {},
       "status": 200,
       "file": "S14.html",
-      "sha256": "ebf9a10e30b9a96776108276f3c5f645436583b79f00d2d08e27e7ddb519561f"
+      "sha256": "541d337d6e93369561c6e0773c6b302e85301f5e8ba8a5f7cf71989791c5e13c"
     },
     {
       "screen": "S14",
@@ -148,7 +148,7 @@
       },
       "status": 200,
       "file": "S14-loading.html",
-      "sha256": "a25c7d47401269ec1362c9125a571a2085db98b420b7b3cc4ce929ff0440366a"
+      "sha256": "bd7d453928be127f86ce642ce4f4cdc6fb6934cb8352031debf194c71315e1b7"
     },
     {
       "screen": "S14",
@@ -158,7 +158,7 @@
       },
       "status": 200,
       "file": "S14-empty.html",
-      "sha256": "eee943df20fb40ad9794c0367ab9ad76d41e76046d46f9f1d6ecf40e35d5b912"
+      "sha256": "d95f6d4a3df5cc7ff3af2ac4a733468b3f6c76141eb40b2538f635fb9b34560f"
     },
     {
       "screen": "S14",
@@ -168,7 +168,7 @@
       },
       "status": 200,
       "file": "S14-error.html",
-      "sha256": "289329d05c5566d6159b84647b92ffb5de24d469abf76eca310b90cedef56307"
+      "sha256": "87cbe6f1349ec9675e771630c56f7a92a88e3bdaa1f97d91fd8224904faea37f"
     },
     {
       "screen": "S14",
@@ -178,7 +178,7 @@
       },
       "status": 200,
       "file": "S14-pending.html",
-      "sha256": "bbd8b671c5f87218658576dab4b45446c217b9eccfbd00273b7d1bd9c2685ee7"
+      "sha256": "e6b07c0887cb2f3300bca3c52f996a223eeffcf3dd1679f93e6595b1c60a43e5"
     },
     {
       "screen": "S14",
@@ -188,7 +188,7 @@
       },
       "status": 200,
       "file": "S14-draft.html",
-      "sha256": "fd6a84f5a6170083919968bfd1564d66da9605e1c30f4b934e0cd8d4f07cf9fe"
+      "sha256": "d21d0eb4b9966f5c00fcd7bf51656682880f2364ac11b715b02a5a6386a43d6f"
     },
     {
       "screen": "S14",
@@ -198,7 +198,7 @@
       },
       "status": 200,
       "file": "S14-unsupported.html",
-      "sha256": "de5fdba606a69062d21d62ec4459bc71452c62cd57437ce86e334fee8a05157d"
+      "sha256": "e203d956239936342447386043b4587f950f48129b2245d5fbc2a3dce1c0b365"
     }
   ],
   "browserCases": [

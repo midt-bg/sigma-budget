@@ -15,7 +15,7 @@ const release = {
   dataBase: '/data/',
   origin: manifest.origin,
   sigmaUrl: '',
-  feedbackEmail: '',
+  turnstileSiteKey: '',
 };
 afterEach(() => provideScope(() => null));
 

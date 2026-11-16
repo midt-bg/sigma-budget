@@ -19,7 +19,7 @@ const release = {
   dataBase: '/data/',
   origin: manifest.origin,
   sigmaUrl: '',
-  feedbackEmail: '',
+  turnstileSiteKey: '',
 };
 const docs: Record<string, unknown> = inputs;
 const load = async <T,>(name: string): Promise<T> => {

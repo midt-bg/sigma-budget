@@ -22,7 +22,7 @@ const release = {
   dataBase: '/data/',
   origin: manifest.origin,
   sigmaUrl: '',
-  feedbackEmail: '',
+  turnstileSiteKey: '',
 };
 const load = async <T,>(name: string): Promise<T> => {
   if (name === 'releases/current') return { release_id: manifest.releaseId } as T;

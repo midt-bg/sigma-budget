@@ -482,8 +482,8 @@ function sources(g) {
   });
 }
 
-/** „Още не разбирам“: a small form. The entry stays in this browser (feedback.js); with <meta name="feedback-email"> the visitor gets
- *  a ready e-mail to send from their own mail app, as on S27 */
+// A report about an unclear term.
+
 function askForm(id, o) {
   return html`<form class="s03-ask" id="${id}" data-s03-ask data-term="${o.term || ''}" novalidate>
     <div class="field">
@@ -493,7 +493,8 @@ function askForm(id, o) {
       <p class="field-error" id="${id}-text-err" role="alert" hidden></p>
     </div>
     <div class="cluster"><button type="submit" class="btn btn-primary">${feedback.send()}</button></div>
-    <p class="s03-ask-done" data-s03-done hidden>${feedback.sent()}${feedback.to() ? html` <a data-s03-mail href="mailto:${feedback.to()}">Отвори имейла</a>` : ''}</p>
+    ${feedback.controls()}
+    <p class="s03-ask-done" data-s03-done hidden></p>
   </form>`;
 }
 
@@ -688,7 +689,7 @@ export function render(ctx) {
 /* ------------------------------------------------------------------ behaviour */
 
 export function mount(root, ctx) {
-  const off = [];
+  const off = [feedback.mountForms(root)];
   const on = (el, ev, fn, opt) => {
     el.addEventListener(ev, fn, opt);
     off.push(() => el.removeEventListener(ev, fn, opt));
@@ -696,8 +697,8 @@ export function mount(root, ctx) {
   const g = ctx.data.glossary;
   const I = indexOf(g);
 
-  /* „Още не разбирам“ (both views): validate, keep the entry in this browser, say thanks and, with an address, link the ready e-mail */
-  on(root, 'submit', (e) => {
+  /* Send a report without losing the draft on failure. */
+  on(root, 'submit', async (e) => {
     const f = e.target.closest('form[data-s03-ask]');
     if (f) {
       e.preventDefault();
@@ -716,12 +717,17 @@ export function mount(root, ctx) {
       err.hidden = true;
       err.textContent = '';
       ta.removeAttribute('aria-invalid');
-      const rec = feedback.add({ type: 'unclear', text, route: 'S03', term: f.dataset.term });
-      const mail = f.querySelector('[data-s03-mail]');
-      if (mail) mail.href = feedback.mailto(rec);
+      const id = await feedback.submit(f, {
+        type: 'unclear',
+        text: ta.value,
+        route: 'S03',
+        term: f.dataset.term,
+      });
+      if (!id) return;
       ta.value = '';
+      done.textContent = feedback.sent(id);
       done.hidden = false;
-      ctx.announce(feedback.sent());
+      ctx.announce(feedback.sent(id));
       return;
     }
     if (e.target.closest('form[data-s03-search]')) e.preventDefault(); // Enter in the search box: no navigation

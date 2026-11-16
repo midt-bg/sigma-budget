@@ -8,8 +8,8 @@
 // unknown paths). run_worker_first sends every response through the shared header layer.
 // All data files come from the release packaged with the site.
 // SITE_ORIGIN names the public address in canonical links (empty: the address of the request); NOINDEX "1" keeps an environment out of
-// search engines; SIGMA_URL is the address of the original СИГМА (docs/approach-specification.md, section 2.2); FEEDBACK_EMAIL is the
-// address of the feedback form (empty: the form keeps the message in the browser and says so); OPENAI_APPS_CHALLENGE is the token of OpenAI's
+// search engines; SIGMA_URL is the address of the original СИГМА. TURNSTILE_SITE_KEY enables report forms.
+// OPENAI_APPS_CHALLENGE is the token of OpenAI's
 // domain check for the plugin directory, served at /.well-known/openai-apps-challenge (docs/openai-plugin.md; empty: 404).
 
 {
@@ -26,6 +26,11 @@
     "not_found_handling": "none",
     "run_worker_first": true
   },
+  "r2_buckets": [
+    { "binding": "VRAZKA_BUCKET", "bucket_name": "sigma-budget-feedback", "jurisdiction": "eu" }
+  ],
+  "durable_objects": { "bindings": [{ "name": "VRAZKA_LIMITER", "class_name": "VrazkaLimiter" }] },
+  "migrations": [{ "tag": "vrazka-v1", "new_sqlite_classes": ["VrazkaLimiter"] }],
   "ratelimits": [
     {
       "name": "RELEASE_RATE_LIMITER",
@@ -46,7 +51,7 @@
     "ENVIRONMENT": "production",
     "SITE_ORIGIN": "https://sigma-budget.midt.bg",
     "SIGMA_URL": "https://sigma.midt.bg/",
-    "FEEDBACK_EMAIL": "contact@midt.government.bg",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAGEEA_Evr2vZ-L6L",
     "NOINDEX": "",
     "OPENAI_APPS_CHALLENGE": ""
   },
@@ -55,6 +60,16 @@
   "env": {
     "staging": {
       "name": "sigma-budget-staging",
+      "r2_buckets": [
+        {
+          "binding": "VRAZKA_BUCKET",
+          "bucket_name": "sigma-budget-staging-feedback",
+          "jurisdiction": "eu"
+        }
+      ],
+      "durable_objects": {
+        "bindings": [{ "name": "VRAZKA_LIMITER", "class_name": "VrazkaLimiter" }]
+      },
       "ratelimits": [
         {
           "name": "RELEASE_RATE_LIMITER",
@@ -76,7 +91,7 @@
         "ENVIRONMENT": "staging",
         "SITE_ORIGIN": "https://sigma-budget-staging.cf-midt.workers.dev",
         "SIGMA_URL": "https://sigma.midt.bg/",
-        "FEEDBACK_EMAIL": "",
+        "TURNSTILE_SITE_KEY": "0x4AAAAAAGEECezaExSQiHmj",
         "NOINDEX": "1",
         "OPENAI_APPS_CHALLENGE": ""
       }

@@ -8,6 +8,7 @@ vi.mock('./release-data', () => ({
     load: async () => null,
   })),
 }));
+vi.mock('./vrazka-limit', () => ({ VrazkaLimiter: class {} }));
 import app from './app';
 
 it('finalizes actual dispatch early returns, resource fallbacks, unknown paths and exceptions', async () => {

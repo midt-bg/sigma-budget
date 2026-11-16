@@ -6,7 +6,7 @@ const release = {
   dataBase: '/data/',
   origin: 'https://budget.test',
   sigmaUrl: '',
-  feedbackEmail: '',
+  turnstileSiteKey: '',
 };
 it('an aborted navigation never becomes a successful editorial fallback', async () => {
   const reader: ReleaseReader = {
