@@ -1,11 +1,11 @@
 // S03 · Речник · #/rechnik/:term? · next S02, S01 · periods none
-// Definitions use the live editorial copy over data/glossary.json; document links preserve their original publication.
+// Definitions, examples, aliases and notes come verbatim from data/glossary.json; document links preserve their original publication.
+// Only the interface words are ours (labels, hints, the empty state, the form).
 //   #/rechnik               search ("Коя дума не разбираш?") + 5 themes + А–Я index + the 64 terms as disclosures
 //   #/rechnik?q=дълг&cat=…&l=Д   the same, with a search / theme / letter applied (kept in the address while typing, without re-rendering)
 //   #/rechnik/dds           one term: definition (lede), example, „Не бъркай с…“, „Виж в бюджета“, „Още не разбирам“, more from the theme
 // The search lives in this file: it forgives typos, reads Latin letters as Cyrillic ("dds", "deficit"), knows the aliases of the data
 // ("осигуровки", "чиста заплата") and falls back to the words of the definitions. The in-place popover on other screens is glossary.js (SHELL).
-import { index as glossaryIndex } from '../glossary-scan.js';
 import { html, raw, cx } from '../html.js';
 import { icon } from '../icons.js';
 import { plural } from '../format.js';
@@ -207,7 +207,7 @@ const IDX = new WeakMap();
 export function indexOf(g) {
   let I = IDX.get(g);
   if (I) return I;
-  const entries = glossaryIndex(g).terms.map((t) => {
+  const entries = g.terms.map((t) => {
     const keys = [{ s: norm(t.name), w: 1 }];
     if (t.abbr) keys.push({ s: norm(t.abbr), w: 1 });
     for (const a of t.aliases || []) keys.push({ s: norm(a), w: 0.97 });
@@ -555,8 +555,8 @@ export const schema = (ctx) => {
       name: g.title,
       description: g.subtitle,
       inLanguage: 'bg',
-      hasDefinedTerm: glossaryIndex(g)
-        .terms.filter((t) => t && t.slug && t.title)
+      hasDefinedTerm: (g.terms || [])
+        .filter((t) => t && t.slug && t.title)
         .map((t) => ({
           '@type': 'DefinedTerm',
           '@id': termUrl(t) + '#term',
