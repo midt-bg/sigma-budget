@@ -109,3 +109,26 @@ test('debt summary shows the selected data in one row on phone and desktop', asy
     await page.evaluate("import('/js/store.js').then(m => m.store.set('leva', false))");
   }
 });
+
+test('debt scope comparison starts closed and reveals the existing table', async ({
+  page,
+  siteURL,
+}) => {
+  await enableHashRoutes(page);
+  for (const width of [360, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto(`${siteURL}/index.html#/dalg?per=2026.law`);
+    await page.waitForSelector('article[data-ready="1"]');
+    const comparison = page.locator('details#s17-b-compare');
+    await expect(comparison).not.toHaveAttribute('open');
+    await expect(comparison.locator('#s17-t-compare')).toBeAttached();
+    await expect(comparison.locator('#s17-t-compare')).not.toBeVisible();
+    await comparison.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: `tmp/screenshots/dalg-compare-closed-${width}.png` });
+    await comparison.locator('summary').click();
+    await expect(comparison.locator('#s17-t-compare')).toBeVisible();
+    await expect(comparison.locator('.s17-switch a')).toBeVisible();
+    await page.screenshot({ path: `tmp/screenshots/dalg-compare-open-${width}.png` });
+    await comparison.locator('summary').click();
+  }
+});

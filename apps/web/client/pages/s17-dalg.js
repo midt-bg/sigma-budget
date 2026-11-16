@@ -1616,23 +1616,30 @@ function compareBlock(M) {
       ? { q: {}, label: 'Виж държавния дълг по години, 2024–2028' }
       : { q: { obhvat: MAA }, label: 'Виж дълга по Маастрихт: България и Европейският съюз' };
   const href = M.ctx.href('S17', {}, other.q);
-  return block({
+  return disclosure({
     id: 's17-b-compare',
-    level: 2,
     title: 'Защо числата за дълга се различават',
-    source: srcOf(...c.rows.map((r) => r.source)),
-    asOf: M.d.meta && M.d.meta.asOf,
-    sub: `Три реда от различни институции за ${c.years.map(yr).join(' и ')}`,
-    body: html`${dataTable({
-      id: 's17-t-compare',
-      caption: `Дългът по три различни реда, ${mc.unit}`,
-      dense: true,
-      columns: [
-        { key: 'name', label: 'Ред' },
-        ...c.years.map((y, i) => mcol(mc, `y${i}`, String(y), `m${i}`)),
-      ],
-      rows,
-    })}<p class="s17-switch"><a href="${href}">${other.label}</a></p>`,
+    body: html`<p>Институциите броят различни части от публичния дълг и затова показват различни суми.</p>${note(c.note)}${block(
+      {
+        id: 's17-compare-data',
+        level: 2,
+        title: 'Сравнение на обхватите',
+        source: srcOf(...c.rows.map((r) => r.source)),
+        asOf: M.d.meta && M.d.meta.asOf,
+        share: { period: M.ctx.period.key },
+        sub: `Три реда от различни институции за ${c.years.map(yr).join(' и ')}`,
+        body: html`${dataTable({
+          id: 's17-t-compare',
+          caption: `Дългът по три различни реда, ${mc.unit}`,
+          dense: true,
+          columns: [
+            { key: 'name', label: 'Ред' },
+            ...c.years.map((y, i) => mcol(mc, `y${i}`, String(y), `m${i}`)),
+          ],
+          rows,
+        })}<p class="s17-switch"><a href="${href}">${other.label}</a></p>`,
+      },
+    )}`,
   });
 }
 
