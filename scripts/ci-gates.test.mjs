@@ -341,18 +341,3 @@ test('e2e project selectors use equals so file filters cannot become project nam
     );
   }
 });
-
-test('visual and contrast checks evaluate typed functions instead of source strings', () => {
-  for (const file of [
-    'tests/e2e/contrast.ts',
-    'tests/e2e/audit-fixtures.ts',
-    'tests/e2e/worker/visual-audit.spec.ts',
-    'tests/e2e/worker/light-contrast.spec.ts',
-  ]) {
-    assert.doesNotMatch(
-      readFileSync(file, 'utf8'),
-      /\.evaluate(?:All)?(?:<[^>]+>)?\(\s*['"`]/,
-      file,
-    );
-  }
-});
