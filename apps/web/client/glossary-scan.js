@@ -5,11 +5,15 @@
 // The first mention of a term on the screen becomes a link, at most 3 per paragraph, never inside headings, numbers (the word right after
 // „5,7% от“), tables, buttons or other links. Only the curated forms below are linked (with articles and plurals); common words alone
 // („бюджет“, „приходи“, „разходи“) never are. A term the screen already linked by hand with gl() counts as done.
+import { termWithDefinition } from './production/launch-texts.js';
+
 export const HREF = (slug) => `#/rechnik/${slug}`;
 let ix = null;
 export function index(doc) {
   if (ix && ix.doc === doc) return ix;
-  const terms = Array.isArray(doc?.terms) ? doc.terms.filter((t) => t && t.slug) : [];
+  const terms = Array.isArray(doc?.terms)
+    ? doc.terms.filter((t) => t && t.slug).map(termWithDefinition)
+    : [];
   ix = { doc, terms, by: new Map(terms.map((t) => [t.slug, t])) };
   return ix;
 }

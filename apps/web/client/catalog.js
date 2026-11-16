@@ -20,6 +20,7 @@
 //   periodLabel(p) · sizeLabel(bytes) · paras(text) · idPart(s) · cleanQ(text) · kindLabel(kind) · accessLabel(access, hasUrl)
 //   yearSpan(p) · periodYears(M) · coversYear(set, y)   the years a period reaches ([2024, 2028]), the years any set covers (newest first), and whether a set covers a year (FB4: the „Период“ filter of ПРОВЕРИ)
 //   rich(text, M)             text from the catalogue -> SafeHtml: escaped, with `code`, „slug“ (a set of the catalogue) and P01..P07 (a pending set) as links or <code>
+import { datasetDescriptions } from './production/launch-texts.js';
 import { ROOT } from './loc.js';
 import { ROUTES, byId, href as routeHref, DATASET_SCREENS as datasetScreens } from './routes.js';
 import { esc, raw } from './html.js';
@@ -208,7 +209,7 @@ function normSet(d, i) {
     template: str(d.fileTemplate),
     title: str(d.title).trim() || slug,
     // Retire future-data sentences from the public description until the next release.
-    desc: str(d.description)
+    desc: str(datasetDescriptions[slug] ?? d.description)
       .trim()
       .replace(
         / (?:Изпълнението по видове данъци|Месечното изпълнение по съставни бюджети|За 4 от 46 бюджета програмите|Падежите и емисиите|Сценарият „Пенсионер“)[^.]*\.(?:$| )/g,

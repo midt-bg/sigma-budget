@@ -21,6 +21,7 @@ import { STATUS, statusPill } from '../ui/status.js';
 import { srcShort } from '../ui/source.js';
 import * as share from '../share.js';
 import * as C from '../catalog.js';
+import { catalogueDescription } from '../production/launch-texts.js';
 
 export const needs = ['catalog', 'core?'];
 export const styles = ['s24-danni'];
@@ -428,6 +429,7 @@ function listView(ctx, M) {
       <p>На страницата на всеки набор има готово цитиране. За число от екран натисни „Сподели“: копираният текст носи източника и връзка към числото.</p>`,
   })}</div>`;
   return {
+    lede: catalogueDescription,
     context: ctxParts.length ? withSep(ctxParts) : undefined,
     body: html`${toc}${how}${setsSection(M, f, L)}${present['s24-traps'] ? trapsSection(M) : ''}${present['s24-method'] ? methodSection(M) : ''}${present['s24-sources'] ? sourcesSection(M) : ''}${present['s24-files'] ? filesSection(M) : ''}`,
   };
