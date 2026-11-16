@@ -126,3 +126,24 @@ test('status legend returns focus', async ({ page, siteURL }) => {
   await expect(dialog).toBeHidden();
   await expect(opener).toBeFocused();
 });
+
+test('MCP instructions fit a 360px screen and survive client navigation', async ({
+  page,
+  siteURL,
+}) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await openScreen(page, siteURL, '#/api');
+  const section = page.locator('section[aria-labelledby="s25-mcp"]');
+  await expect(page.locator('#s25-mcp-claude-code')).toContainText(
+    'claude mcp add --transport http --scope user sigma-budget',
+  );
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  for (const box of await section.locator('.s25-pre').all()) {
+    const bounds = await box.boundingBox();
+    expect(bounds!.x).toBeGreaterThanOrEqual(0);
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(360);
+  }
+  const address = await page.locator('#s25-mcp-claude').textContent();
+  await page.locator('#s25-set').selectOption({ index: 1 });
+  await expect(page.locator('#s25-mcp-claude')).toHaveText(address!);
+});

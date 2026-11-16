@@ -414,3 +414,20 @@ describe('the crawl', () => {
     expect(cleanText('a\u2028bb\x1ccc', 100)).toBe('bb\ncc');
   });
 });
+
+it.each(['https://staging.example', 'https://sigma-budget.midt.bg'])(
+  'publishes MCP installation instructions alongside the site index for %s',
+  (origin) => {
+    writeExtras(out, { '/': page() }, origin, '2026-11-11', routes);
+    const text = read('llms.txt');
+    expect(text).toContain(`${origin}/mcp`);
+    expect(text).toContain(
+      `claude mcp add --transport http --scope user sigma-budget ${origin}/mcp`,
+    );
+    expect(text).toContain(`gemini mcp add --transport http -s user sigma-budget ${origin}/mcp`);
+    for (const client of ['Claude Desktop', 'ChatGPT', 'Codex CLI', 'Cursor', 'GitHub Copilot'])
+      expect(text).toContain(client);
+    expect(text).toContain(`${origin}/api/releases/current`);
+    expect(text).toContain(`${origin}/llms-full.txt`);
+  },
+);
