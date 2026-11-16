@@ -3,7 +3,7 @@
 // files and the final check of the deploy artifact. The text rules follow the former Python build byte for byte (code points, line breaks,
 // whitespace), so the same crawl gives the same files.
 import { execFileSync } from 'node:child_process';
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import {
   existsSync,
   readFileSync,
@@ -454,6 +454,40 @@ export function shortRevision(): string {
   }
 }
 
+/** Keep original output bytes before host stamping or omission from the public catalog. */
+export function preservePublishedOutputs(out: string): void {
+  const pointer = join(out, 'data/releases/current.json');
+  if (existsSync(pointer)) {
+    const { release_id: rid } = JSON.parse(readText(pointer));
+    if (/^[a-f0-9]{64}$/.test(rid)) {
+      const archive = join(out, 'data/releases', rid, 'data');
+      mkdirSync(archive, { recursive: true });
+      for (const name of ['feed.xml', 'catalog.json', 'sebra.json']) {
+        const source = join(out, 'data', name),
+          target = join(archive, name);
+        if (existsSync(source) && !existsSync(target)) copyFileSync(source, target);
+      }
+    }
+  }
+}
+
+/** Check the finished bytes at the same archive-first locations used by the Worker. */
+export function checkPublishedOutputs(out: string): void {
+  const { release_id: id } = JSON.parse(readText(join(out, 'data/releases/current.json')));
+  const archive = join(out, 'data/releases', id);
+  const manifest = JSON.parse(readText(join(archive, 'manifest.json'))) as {
+    outputs: { path: string; sha256: string }[];
+  };
+  for (const output of manifest.outputs) {
+    const archived = join(archive, output.path);
+    const file = existsSync(archived) ? archived : join(out, output.path);
+    if (!existsSync(file) || !statSync(file).isFile())
+      throw new Error(`release output missing: ${output.path}`);
+    const actual = createHash('sha256').update(readFileSync(file)).digest('hex');
+    if (actual !== output.sha256) throw new Error(`release output sha256 mismatch: ${output.path}`);
+  }
+}
+
 /** what in the copied files depends on this build: the RSS links (data/feed.xml was generated with a placeholder host and hash addresses)
  * and the cache name of the service worker (a new name per build: the worker of the previous build drops its copies on activate).
  * Runs before the crawl: the new links change the size of feed.xml, and data/catalog.json (and the catalog screen built from it) must give
@@ -464,19 +498,7 @@ export function stampFiles(
   dataVersion: string,
   revision = shortRevision(),
 ): void {
-  const pointer = join(out, 'data/releases/current.json');
-  if (existsSync(pointer)) {
-    const { release_id: rid } = JSON.parse(readText(pointer));
-    if (/^[a-f0-9]{64}$/.test(rid)) {
-      const archive = join(out, 'data/releases', rid, 'data');
-      mkdirSync(archive, { recursive: true });
-      for (const name of ['feed.xml', 'catalog.json']) {
-        const source = join(out, 'data', name),
-          target = join(archive, name);
-        if (existsSync(source) && !existsSync(target)) copyFileSync(source, target);
-      }
-    }
-  }
+  preservePublishedOutputs(out);
   const feed = join(out, 'data', 'feed.xml');
   if (existsSync(feed) && statSync(feed).isFile()) {
     const x = readText(feed)

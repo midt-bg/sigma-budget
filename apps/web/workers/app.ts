@@ -131,28 +131,84 @@ function documentHeaders(
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
 }
 
-/** Archive addresses for current outputs reuse the packaged assets, never source inputs. */
-async function currentOutput(request: Request, env: Env, url: URL): Promise<Response | null> {
-  const match = /^\/data\/releases\/([a-f0-9]{64})\/(data\/.+)$/.exec(url.pathname);
-  if (!match) return null;
+interface CurrentOutputs {
+  id: string;
+  hashes: Map<string, string>;
+}
+// A deploy's assets are immutable; share both the first load and its result across requests.
+const outputMaps = new WeakMap<Fetcher, Promise<CurrentOutputs | null>>();
+function currentOutputs(assets: Fetcher, url: URL): Promise<CurrentOutputs | null> {
+  let pending = outputMaps.get(assets);
+  if (!pending) {
+    pending = (async () => {
+      const pointer = await assets.fetch(new Request(new URL('/data/releases/current.json', url)));
+      if (!pointer.ok) return null;
+      const current = await pointer.json<{ release_id: string }>().catch(() => null);
+      if (!current || !/^[a-f0-9]{64}$/.test(current.release_id)) return null;
+      const manifest = await assets.fetch(
+        new Request(new URL(`/data/releases/${current.release_id}/manifest.json`, url)),
+      );
+      if (!manifest.ok) return null;
+      const data = await manifest.json<{ outputs: { path: string; sha256: string }[] }>();
+      return {
+        id: current.release_id,
+        hashes: new Map(data.outputs.map((f) => [f.path, f.sha256])),
+      };
+    })().catch((error) => {
+      outputMaps.delete(assets);
+      throw error;
+    });
+    outputMaps.set(assets, pending);
+  }
+  return pending;
+}
+
+/** Only current manifest outputs have archive download addresses; source inputs never do. */
+async function currentOutput(
+  request: Request,
+  env: Env,
+  url: URL,
+  archive: Response,
+): Promise<Response | null> {
+  const match = /^\/data\/releases\/([a-f0-9]{64})\/(.+)$/.exec(url.pathname);
+  if (!match) return archive.status !== 404 ? archive : null;
   let path: string;
   try {
     path = decodeURIComponent(match[2]);
   } catch {
     return null;
   }
-  const pointer = await env.ASSETS.fetch(new Request(new URL('/data/releases/current.json', url)));
-  if (!pointer.ok) return null;
-  const current = (await pointer.json()) as { release_id: string };
-  if (match[1] !== current.release_id) return null;
-  const manifest = await env.ASSETS.fetch(
-    new Request(new URL(`/data/releases/${current.release_id}/manifest.json`, url)),
+  const current = await currentOutputs(env.ASSETS, url);
+  if (!current) return archive.status !== 404 ? archive : null;
+  const hash = match[1] === current.id ? current.hashes.get(path) : undefined;
+  if (!hash) return !path.startsWith('data/') && archive.status !== 404 ? archive : null;
+  // The asset's own validator describes the stable (possibly host-stamped) copy.
+  // Archive URLs always use the original output hash from the manifest.
+  const headers = new Headers({
+    ETag: `"${hash}"`,
+    'X-Release-Id': current.id,
+    'Cache-Control': 'public, max-age=31536000, immutable, no-transform',
+  });
+  if (
+    request.headers
+      .get('If-None-Match')
+      ?.split(',')
+      .some((tag) => tag.trim().replace(/^W\//, '') === `"${hash}"` || tag.trim() === '*')
+  )
+    return new Response(null, { status: 304, headers });
+  const sourceRequest = new Request(
+    archive.status === 304 ? url : new URL('/' + path, url),
+    request,
   );
-  if (!manifest.ok) return null;
-  const data = (await manifest.json()) as { outputs: { path: string; sha256: string }[] };
-  const entry = data.outputs.find((file) => file.path === path);
-  if (!entry) return null;
-  return env.ASSETS.fetch(new Request(new URL('/' + entry.path, url), request));
+  sourceRequest.headers.delete('If-None-Match');
+  const asset =
+    archive.status !== 404 && archive.status !== 304
+      ? archive
+      : await env.ASSETS.fetch(sourceRequest);
+  if (asset.status === 404) return null;
+  const combined = new Headers(asset.headers);
+  headers.forEach((value, name) => combined.set(name, value));
+  return encoded(request, new Response(asset.body, { status: asset.status, headers: combined }));
 }
 
 async function dispatch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -164,8 +220,7 @@ async function dispatch(request: Request, env: Env, ctx: ExecutionContext): Prom
   if (RELEASES.test(url.pathname)) {
     if (url.pathname.startsWith('/data/releases/')) {
       const asset = await env.ASSETS.fetch(request);
-      if (asset.status !== 404) return asset;
-      const output = await currentOutput(request, env, url);
+      const output = await currentOutput(request, env, url, asset);
       if (output) return output;
     }
     const limited = await rateLimitReleaseRead(request, env);

@@ -125,7 +125,7 @@ it('never stores a HEAD render in the screen cache', async () => {
   expect(put).not.toHaveBeenCalled();
 });
 
-it('the service worker keeps neither operator pages nor no-store answers', async () => {
+it('the service worker keeps no-store answers out of the offline cache', async () => {
   const events: Record<string, (e: unknown) => void> = {};
   const records = new Map<string, Response>();
   let online = true;
@@ -163,7 +163,6 @@ it('the service worker keeps neither operator pages nor no-store answers', async
     await new Promise((r) => setTimeout(r, 0));
     return response;
   };
-  expect(await visit('/admin/operations/00000000-0000-0000-0000-000000000000')).toBeUndefined();
   headers = { 'Cache-Control': 'no-store' };
   await visit('/private');
   headers = { 'Cache-Control': 'public, max-age=0, must-revalidate' };

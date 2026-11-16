@@ -1,10 +1,13 @@
 // Release postprocessing, independent of the browser crawl (build-release.ts).
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   checkArtifact,
+  checkPublishedOutputs,
+  preservePublishedOutputs,
   checkPage,
   cleanText,
   gzSize,
@@ -50,6 +53,38 @@ const page = (o: Partial<PageInfo> = {}): PageInfo => ({
 const routes = [{ id: 'S01', pattern: '/', nav: true }];
 
 describe('the deploy artifact', () => {
+  it('rejects missing or changed output bytes and preserves omitted outputs in the archive', () => {
+    const id = 'd'.repeat(64);
+    const archive = join(out, 'data/releases', id);
+    mkdirSync(archive, { recursive: true });
+    const sebra = Buffer.from('{"rows":[]}\n');
+    const core = Buffer.from('{"value":42}\n');
+    const output = (path: string, bytes: Buffer) => ({
+      path,
+      sha256: createHash('sha256').update(bytes).digest('hex'),
+    });
+    writeFileSync(join(out, 'data/releases/current.json'), JSON.stringify({ release_id: id }));
+    writeFileSync(
+      join(archive, 'manifest.json'),
+      JSON.stringify({
+        outputs: [output('data/sebra.json', sebra), output('data/core.json', core)],
+      }),
+    );
+    writeFileSync(join(out, 'data/sebra.json'), sebra);
+    writeFileSync(join(out, 'data/core.json'), core);
+    preservePublishedOutputs(out);
+    rmSync(join(out, 'data/sebra.json'));
+    expect(() => checkPublishedOutputs(out)).not.toThrow();
+    expect(readFileSync(join(archive, 'data/sebra.json'))).toEqual(sebra);
+    writeFileSync(join(out, 'data/core.json'), 'changed');
+    expect(() => checkPublishedOutputs(out)).toThrow('sha256 mismatch: data/core.json');
+    rmSync(join(out, 'data/core.json'));
+    expect(() => checkPublishedOutputs(out)).toThrow('missing: data/core.json');
+    writeFileSync(join(out, 'data/core.json'), core);
+    writeFileSync(join(archive, 'data/sebra.json'), 'changed archive');
+    expect(() => checkPublishedOutputs(out)).toThrow('sha256 mismatch: data/sebra.json');
+  });
+
   it('production and noindex', () => {
     const pages = { '/': page() };
     writeExtras(out, pages, 'https://example.test', '2026-11-11', routes);
