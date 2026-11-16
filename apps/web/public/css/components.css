@@ -1076,8 +1076,13 @@ dialog.sheet.sheet-drawer .sheet-title {
   color: var(--ink-mid);
   text-decoration: none;
 }
-.sister-link::after,
-.code-link::after {
+.code-link svg {
+  display: block;
+  flex: none;
+  width: 14px;
+  height: 14px;
+}
+.sister-link::after {
   content: '↗';
   font-family: var(--font-sans);
   letter-spacing: 0;

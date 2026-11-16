@@ -8,10 +8,9 @@ import { describe, expect, it } from 'vitest';
 import * as legacy from '../../../client/chrome.js';
 import { ROUTES } from '../../lib/routes';
 import { NAV_GROUPS, footerHtml } from './chrome';
-import { FOOTER_NOTES } from '../../routes/launch-copy-test-helper';
 
 // The navigation the owner set: two screens renamed (their addresses stay), the «Бюджет» group in this order, and a footer without the
-// legend entry and without «За проекта», whose notes are now in its fine print. The browser side (dropdowns, phone «Меню», 44px targets at 320px) is checked in tests/e2e/worker/screens-shell.spec.ts.
+// legend entry and without «За проекта», with legal and repository links in its fine print. The browser side (dropdowns, phone «Меню», 44px targets at 320px) is checked in tests/e2e/worker/screens-shell.spec.ts.
 const BUDGET = ['S34', 'S05', 'S07', 'S06', 'S10', 'S12', 'S13', 'S20', 'S14'];
 const BUDGET_NAMES = [
   'Бюджет 2027',
@@ -124,6 +123,7 @@ describe('the footer', () => {
   it('lists the renamed screens under «Данни и проект»', () => {
     for (const doc of [footer(), legacyFooter()])
       expect([...group(doc, 'Данни и проект')!].map((a) => a.textContent?.trim())).toEqual([
+        'Речник',
         'Методология',
         'Проверка на данните',
         'Отворени данни и API',
@@ -131,12 +131,11 @@ describe('the footer', () => {
       ]);
   });
 
-  it('carries the notes of the retired «За проекта» page and the open code link just before СИГМА, in both chromes', () => {
+  it('shows legal links and accessible open code and СИГМА links, in both chromes', () => {
     for (const doc of [footer(), legacyFooter()]) {
       const fine = doc.querySelector('.fine')!;
       const items = [...fine.children].map((c) => c.textContent?.replace(/\s+/g, ' ').trim());
-      expect(items.slice(-6)).toEqual([
-        ...FOOTER_NOTES,
+      expect(items.slice(-4)).toEqual([
         'Поверителност',
         'Условия за ползване',
         'Отворен код (друг сайт, в нов раздел)',
@@ -152,6 +151,9 @@ describe('the footer', () => {
         ['S37', '/usloviya'],
       ]);
       const code = fine.querySelector('a.code-link')!;
+      expect(code.textContent?.trim()).toBe('Отворен код (друг сайт, в нов раздел)');
+      expect(code.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
+      expect(code.querySelector('svg')?.getAttribute('focusable')).toBe('false');
       expect(code.getAttribute('href')).toBe('https://github.com/midt-bg/sigma-budget');
       expect(code.getAttribute('target')).toBe('_blank');
       expect(code.getAttribute('rel')).toBe('noopener');

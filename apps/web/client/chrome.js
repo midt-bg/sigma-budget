@@ -41,11 +41,11 @@ export const SECTIONS = [
 export const TABS = SECTIONS;
 /* The five header buttons, the footer groups and the phone «Меню» are ONE list (the real routes of js/routes.js; nav:false screens such as S08/S11/S21 belong to their parents). */
 export const NAV_GROUPS = [
-  ['Начало', ['S01', 'S04', 'S03']],
+  ['Начало', ['S01', 'S04']],
   ['Изпълнение', ['S15', 'S16']],
   ['Бюджет', ['S34', 'S05', 'S07', 'S06', 'S10', 'S12', 'S13', 'S20', 'S14']],
   ['Данъци и контекст', ['S18', 'S17', 'S31']],
-  ['Данни и проект', ['S24', 'S35', 'S25', 'S27']],
+  ['Данни и проект', ['S03', 'S24', 'S35', 'S25', 'S27']],
 ];
 /* The sister platform (spec §2.2): visible, but after the screens of the site: the last item of «Данни и проект», the phone «Меню» and the footer. */
 // the address of the original СИГМА is configuration (docs/approach-specification.md, section 2.2): <meta name="sigma-url"> in the page,
@@ -72,7 +72,12 @@ const outLink = (cls, href, label) =>
 export const sigmaLink = (cls) => outLink(cls, SIGMA.href, SIGMA.label);
 /* the public repository of the site: in the fine print of the footer, next to СИГМА */
 export const CODE = { label: 'Отворен код', href: 'https://github.com/midt-bg/sigma-budget' };
-export const codeLink = (cls) => outLink(cls, CODE.href, CODE.label);
+export const codeLink = (cls) =>
+  outLink(
+    cls,
+    CODE.href,
+    html`<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>${CODE.label}`,
+  );
 const rootId = (r) => (r.parent ? rootId(byId[r.parent]) : r.id);
 export const rootOf = (r) => byId[rootId(r)];
 export const groupOf = (route) => {
@@ -161,9 +166,6 @@ export function footerHtml(o = {}) {
     <div class="fine">
       ${kfp ? html`<span>Данните: КФП към ${kfp}${b.kfpPublished ? html` (обн. ${date(b.kfpPublished)})` : ''}</span>` : ''}
       ${b && b.dataVersion ? html`<span>Версия на данните: ${b.dataVersion}</span>` : ''}
-      <span>Данни от официални източници. Законопроектите, прогнозите и отчетите са обозначени.</span>
-      <span>Речникът и поясненията са редакционни текстове, а не официални данни.</span>
-      <span>Без бисквитки и проследяване.</span>
       <span><a href="${navHref('S36')}" data-route="S36">Поверителност</a></span>
       <span><a href="${navHref('S37')}" data-route="S37">Условия за ползване</a></span>
       <span>${codeLink('code-link')}</span>

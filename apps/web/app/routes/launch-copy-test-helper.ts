@@ -37,14 +37,8 @@ export function currentNavigation(html: string) {
     });
 }
 
-// The owner retired «За проекта» (S26, its address redirects to «Методология»): the footer has no entry for it, and the fine print carries
-// the notes the page used to give, just before the СИГМА link. Historical captures keep the old footer; adapt exactly these parts and
-// fail if one is not found.
-export const FOOTER_NOTES = [
-  'Речникът и поясненията са редакционни текстове, а не официални данни.',
-  'Без бисквитки и проследяване.',
-];
-// the legal pages (S36, S37, client/legal.js) follow the notes, before the open code link
+// Historical captures retain «За проекта» and the old fine print; adapt only the changed footer.
+// The legal pages (S36, S37, client/legal.js) precede the open code link.
 export const FOOTER_LEGAL = [
   ['S36', '/poveritelnost', 'Поверителност'],
   ['S37', '/usloviya', 'Условия за ползване'],
@@ -57,14 +51,32 @@ export function currentFooter(html: string) {
   return html
     .replace(entry, '')
     .replace(
+      /\s*<span>Бета версия: няколко стойности са примерни и са означени със щриховка\.<\/span>/,
+      '',
+    )
+    .replace(
+      /(<summary[^>]*>Начало<\/summary><ul>)([\s\S]*?)(<\/ul>)/,
+      (_, open, items, close) =>
+        open +
+        items.replace(/<li><a href="\/rechnik" data-route="S03"[^>]*>Речник<\/a><\/li>/, '') +
+        close,
+    )
+    .replace(
+      /(<summary[^>]*>Данни и проект<\/summary><ul>)/,
+      '$1<li><a href="/rechnik" data-route="S03">Речник</a></li>',
+    )
+    .replace(
+      /\s*<span>Данни от официални източници\. Законопроектите, прогнозите и отчетите са обозначени\.<\/span>/,
+      '',
+    )
+    .replace(
       sigma,
       (_, space: string, link: string) =>
-        FOOTER_NOTES.map((note) => `${space}<span>${note}</span>`).join('') +
         FOOTER_LEGAL.map(
           ([id, path, label]) =>
             `${space}<span><a href="${path}" data-route="${id}">${label}</a></span>`,
         ).join('') +
-        `${space}<span><a class="code-link" href="https://github.com/midt-bg/sigma-budget" target="_blank" rel="noopener">Отворен код<span class="sr-only"> (друг сайт, в нов раздел)</span></a></span>` +
+        `${space}<span><a class="code-link" href="https://github.com/midt-bg/sigma-budget" target="_blank" rel="noopener"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>Отворен код<span class="sr-only"> (друг сайт, в нов раздел)</span></a></span>` +
         space +
         link,
     );

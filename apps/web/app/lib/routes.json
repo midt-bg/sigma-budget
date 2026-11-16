@@ -66,22 +66,6 @@
       }
     ],
     [
-      "S03",
-      "rechnik",
-      "/rechnik/:term?",
-      "s03-rechnik",
-      "Речник",
-      "learn",
-      "book",
-      {
-        "query": ["q", "cat", "l"],
-        "next": ["S04", "S01"],
-        "samples": ["#/rechnik", "#/rechnik/dds"],
-        "desc": "Думите от бюджетния език, обяснени просто.",
-        "periods": "none"
-      }
-    ],
-    [
       "S15",
       "izpalnenie",
       "/izpalnenie/:sub(byudzheti)?",
@@ -422,6 +406,22 @@
           "#/bvp?per=2029.forecast"
         ],
         "desc": "Колко расте икономиката: БВП, потреблението, инвестициите, износът и вносът по години."
+      }
+    ],
+    [
+      "S03",
+      "rechnik",
+      "/rechnik/:term?",
+      "s03-rechnik",
+      "Речник",
+      "learn",
+      "book",
+      {
+        "query": ["q", "cat", "l"],
+        "next": ["S04", "S01"],
+        "samples": ["#/rechnik", "#/rechnik/dds"],
+        "desc": "Думите от бюджетния език, обяснени просто.",
+        "periods": "none"
       }
     ],
     [

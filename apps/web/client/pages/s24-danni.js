@@ -320,6 +320,7 @@ const methodSection = (M) =>
     'Методика',
     () => html`
   <p class="s24-lead2">Правилата, по които подреждаме и показваме числата.</p>
+  <p>Данни от официални източници. Законопроектите, прогнозите и отчетите са обозначени.</p>
   <div class="s24-items">${M.methods.map((t) => item('m', t, M, seenOn(t.id)))}</div>`,
     { scan: true, foot: reportLink({ block: 's24-method' }) },
   );

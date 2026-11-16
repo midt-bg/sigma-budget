@@ -2,7 +2,7 @@
 // (app/routes/legal-content.tsx) and their legacy twins (client/pages/s36-poveritelnost.js, s37-usloviya.js), so the text exists once.
 // A section is {id, title, body}; a body item is {p: parts} or {list: [parts, …]}; parts is a string or a list of a string,
 // {route: [id, params, query], text} (a screen of the site), {url, text} (another site) or {contact: true} (the team's address).
-// What the privacy page says follows the code: no cookies or analytics (footer „Без бисквитки и проследяване.“), browser storage only for the
+// What the privacy page says follows the code: no cookies or analytics (as stated in the privacy text), browser storage only for the
 // keys of client/store.js, client/feedback.js and client/pages/s27-vrazka.js, the service worker cache (public/sw.js), feedback as mailto
 // (client/feedback.js), no invocation logs (apps/web/wrangler.jsonc), the rate limit on the address for 60 s (workers/release-rate-limit.ts),
 // MCP arguments never logged (workers/mcp/handler.ts). Change the copy when one of these changes.
