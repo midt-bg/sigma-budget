@@ -268,11 +268,6 @@
   background-image: repeating-linear-gradient(45deg, var(--crimson) 0 1.5px, transparent 1.5px 5px);
   border: 0;
 }
-.page[data-route='S24'] .s24-row[data-st='pending'] {
-  padding-inline: var(--sp-3);
-  border-bottom: 1px dashed var(--ink-soft);
-  background: var(--paper-warm);
-}
 @media (forced-colors: active) {
   .page[data-route='S24'] .s24-row[data-st='mock']::before {
     width: 0;
@@ -310,14 +305,14 @@
   gap: var(--sp-1) var(--sp-2);
 }
 
-/* a row is a small data sheet: label above value, in cells (two across on a phone; a waited-for set keeps label and value side by side) */
-.page[data-route='S24'] .s24-row:not([data-st='pending']) > .s24-meta {
+/* a row is a small data sheet: label above value, in cells (two across on a phone) */
+.page[data-route='S24'] .s24-row > .s24-meta {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--sp-2) var(--sp-3);
   padding-top: var(--sp-3);
   border-top: 1px solid var(--rule-soft);
 }
-.page[data-route='S24'] .s24-row:not([data-st='pending']) .s24-m {
+.page[data-route='S24'] .s24-row .s24-m {
   grid-template-columns: minmax(0, 1fr);
   gap: 2px;
 }
@@ -500,12 +495,6 @@
   color: var(--ink-mid);
   overflow-wrap: anywhere;
 }
-.page[data-route='S24'] .s24-wait {
-  margin: 0;
-  padding-left: 1.25em;
-  display: grid;
-  gap: var(--sp-1);
-}
 .page[data-route='S24'] .s24-parts {
   list-style: none;
   margin: 0;
@@ -550,9 +539,6 @@
   .page[data-route='S24'] .s24-row[data-st='mock'] {
     padding-left: calc(var(--sp-4) + 8px);
   }
-  .page[data-route='S24'] .s24-row[data-st='pending'] {
-    padding-inline: var(--sp-4);
-  }
 
   /* a row: the download sits at the top right */
   .page[data-route='S24'] .s24-row {
@@ -574,7 +560,7 @@
     grid-area: get;
     margin-left: var(--sp-3);
   }
-  .page[data-route='S24'] .s24-row:not([data-st='pending']) > .s24-meta {
+  .page[data-route='S24'] .s24-row > .s24-meta {
     grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
     gap: var(--sp-2) var(--sp-4);
   }

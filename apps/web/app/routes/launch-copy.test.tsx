@@ -25,6 +25,6 @@ it('keeps pending identifiers while hiding acquisition notes and supplied future
   expect(states[0]).toContain('data-pending-id="P01"');
   expect(states[1]).toContain('data-pending-id="P01"');
   const legend = String(legendBody()); // the status legend of «Методология» (apps/web/client/pages/s24-danni.js)
-  expect(legend).toContain('Няма данни');
+  expect(legend).not.toContain('Няма данни');
   expect(legend).not.toMatch(/Предстои|Примерни данни|не са извлечени/);
 });

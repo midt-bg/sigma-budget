@@ -230,7 +230,7 @@ ctx.data.revenue                                                // разобр�
 | частични | набор, при който част липсва/е изведена     | `status:'partial'` и бележка на един ред коя част                                                                                          |
 | прогноза | години 2027–2028, `vintage:'forecast'`      | `status:'forecast'` (пунктирана значка). Ползвай `view.periodStatus(ctx)`                                                                  |
 | примерни | `mock/*.json`, записи с `mock:true` + `why` | `status:'mock'`/`mock:true`: щриховка ▨ (`data-mock="true"`), значка и етикет „Примерни данни“, текст `why`, изключва се при „само реални“ |
-| предстои | `core.pending` P01–P07 или липсващ файл     | `pendingState({id:'P01'})`: пунктирана сива бележка, **никога число**                                                                      |
+| предстои | `core.pending` или липсващ файл             | `pendingState({id:'P01'})`: пунктирана сива бележка, **никога число**                                                                      |
 
 CSS куки (компонентите ги задават; задавай ги сам само върху ръчно написана разметка): `data-mock="true"` върху малка лента/ред/запълване я щрихова. Контейнерите ползват `data-block-mock`, `data-kpi-mock`, `data-mock-fig`, `data-mock-table` (иначе общото правило би щриховало целия текст). `data-src="kfp,forecast_tables"` (+ `data-asof="2026-07-31"`) върху всеки бутон/връзка отваря картата на източника; `sourceBtn()`, `srcTag()`, `val()` я произвеждат.
 
@@ -261,7 +261,7 @@ CSS куки (компонентите ги задават; задавай ги 
 | `indirect-tax-parameters` | S18                         |                  |                                       |
 
 Идентификатори в маршрутите: групи приходи `dds osiguritelni nedanachni pomoshti ddfl akcizi korporativen drugi`; функции `obshti-sluzhbi otbrana-sigurnost obrazovanie zdraveopazvane sotsialni zhilishtno-sreda kultura-sport ikonomika drugi`; код на ведомство = 4-цифрен ЕБК (`1300`), програма `1300.01.01`; мерки `kr1…kr8 kx1…kx9 kn1… d8-1… d9-1… p8-1…p8-8`; общини `BLG03`; проекти `pr-01…`; плащания по измислен ЕИК `999…`; набори по slug. Ключове на източниците: `kfp forecast_tables bill zdb zbdoo zbnzok prb parliament eurostat bnb nap sebra gisco dataeuropa minfin wg ec-oil excise-law nsi-pack`.
-Идентификатори на „предстои“: P01 (изпълнение по вид данък) S06 S15 · P02 S15 · P03 (програми на ~15 ведомства) S10 S11 · P04 S15 S16 · P05 S15 · P06 S17 · P07 S14.
+Идентификатори на „предстои“: P01 (изпълнение по вид данък) S06 S15 · P03 (програми на ~15 ведомства) S10 S11 · P05 S15 · P06 S17.
 
 Населението за „на човек“ е `ctx.core.population.persons`. Курсът евро/лев е `format.EUR_RATE`.
 
@@ -306,7 +306,7 @@ mockHidden(text?)                                 // компактното „�
 
 ```js
 import { statusPill, statusLabel, openLegend, STATUS } from '../ui/status.js';
-statusPill('real') · statusPill('forecast') · statusPill('mock') · statusPill('partial') · statusPill('pending')
+statusPill('real') · statusPill('forecast') · statusPill('mock') · statusPill('partial')
 statusPill('real', { label: 'Към 31.07.2026' })
 statusLabel('mock')        // 'Примерни данни'
 ```
@@ -1131,3 +1131,5 @@ pnpm dev
 ## Издание с кода
 
 SSR и публичните файлове използват само `data/release/`, включително цялата `releases/`. Ново издание се пренася от `midt-bg/sigma-budget-data` чрез PR. Merge към `main` публикува staging, а таг `vX.Y.Z` публикува production след одобрение. `/api/releases/current` назовава включеното издание; `/admin/*` връща `404`. Подробности: [процедура за издание](operator-guide.md).
+
+Каталогът показва само наличните набори. Записите `pending` от по-старо закрепено издание се изключват от публичния каталог, MCP и интерфейса; старите им адреси `/danni/<slug>` връщат 404. Оригиналният JSON се запазва само в архива на изданието за проверка на контролните суми. При следващо издание без тези записи филтрирането не променя набора от налични данни.

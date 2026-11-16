@@ -1,3 +1,6 @@
+import { availableCatalog } from './client/available-catalog.js';
+import { preservePublishedOutputs } from './scripts/release-artifact.ts';
+import { readFileSync } from 'node:fs';
 import { staticResponseHeaders } from './app/lib/security.ts';
 import { writeFileSync } from 'node:fs';
 import { build as bundle, type Plugin as EsbuildPlugin } from 'esbuild';
@@ -57,6 +60,12 @@ function siteFiles(candidate: Candidate | null): Plugin {
       cpSync(resolve('client'), resolve(options.dir, 'js'), { recursive: true });
       if (candidate) copyCandidate(candidate, resolve(options.dir, 'data'));
       else cpSync(resolve('../../data/release'), resolve(options.dir, 'data'), { recursive: true });
+      preservePublishedOutputs(options.dir);
+      const catalogPath = resolve(options.dir, 'data/catalog.json');
+      writeFileSync(
+        catalogPath,
+        JSON.stringify(availableCatalog(JSON.parse(readFileSync(catalogPath, 'utf8')))),
+      );
       await bundle({
         entryPoints: ['client/routes.js'],
         outfile: resolve(options.dir, 'js/routes.js'),
