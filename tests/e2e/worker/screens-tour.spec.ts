@@ -60,7 +60,10 @@ for (const display of displays)
         if (name) await expect(heading).toHaveText(name);
         await expect(heading).toBeFocused();
         const text = (await heading.textContent())!.trim().replace(/\s+/g, ' ');
-        await expect(page).toHaveTitle(`${text} · СИГМА Бюджет`);
+        // The home page leads with the site name; every other screen ends with it.
+        await expect(page).toHaveTitle(
+          id === 'S01' ? `СИГМА Бюджет · ${text}` : `${text} · СИГМА Бюджет`,
+        );
         expect(await page.title()).not.toBe(previous);
         await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
         const period = page.getByRole('button', { name: /^Година и статус на данните:/ });
