@@ -499,7 +499,9 @@ function chartBlock(C, spec, o) {
     source: ['kfp'],
     asOf: [C.asOfOf(C.g1), C.asOfOf(C.g2)].filter(Boolean).sort().pop(),
     cls: 's15-chart',
-    share: has ? { embed: spec.id, text: spec.desc, link: linkOf(C), period: periodOf(C) } : false,
+    share: has
+      ? { embed: spec.id, text: spec.desc, link: linkOf(C), period: periodOf(C), unit: 'млрд. €' }
+      : false,
     body: has
       ? chart(spec)
       : emptyState({

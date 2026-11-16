@@ -241,7 +241,12 @@ export function csvFor(spec) {
     lines.push(
       [
         ...r.map((v, column) => (t.decimalColumns?.includes(column) ? csvDecimal(v) : csvVal(v))),
-        ...[m.period, t.units?.[i] ?? m.unit, m.scope, m.release].map(csvVal),
+        ...[
+          t.periods?.[i] ?? m.period,
+          spec.unit || (t.units?.[i] ?? m.unit),
+          m.scope,
+          m.release,
+        ].map(csvVal),
         st(i),
         src,
       ]

@@ -255,6 +255,7 @@ it('annual CSV preserves published decimal precision and the law/expected distin
         );
       expect(row?.split(';')[2].replace(/^"|"$/g, '')).toBe(String(cell.value).replace('.', ','));
     }
+    expect(csv).toContain(';2026.law;млн. €;');
     expect(csv).toContain(';2026.expected;млн. €;');
     expect(csv).not.toContain('NaN');
   } finally {
