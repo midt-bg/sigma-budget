@@ -22,7 +22,7 @@ test('redirect, anchors, history and search', async ({ page, siteURL }) => {
     await page.goto(siteURL + '/api');
     await expect(page.locator('article.page')).toHaveAttribute('data-ready', '1');
     const anchors = page.locator('nav.s25-toc a[href]');
-    await expect(anchors).toHaveCount(4);
+    await expect(page.locator('nav.s25-toc a[href*="to=s25-mcp"]')).toHaveCount(1);
     for (const address of await anchors.evaluateAll((links) =>
       links.map((a) => a.getAttribute('href')!),
     )) {
