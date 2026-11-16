@@ -6,9 +6,8 @@ const cases = [
   ['S06', '#/prihodi'],
   ['S07', '#/razhodi'],
   ['S08', '#/razhodi/obrazovanie'],
-  ['S10', '#/vedomstva'],
-  ['S11', '#/vedomstvo/1300'],
-  ['S20', '#/obshtini'],
+  ['S10', '#/vedomstva?per=2026.law'],
+  ['S20', '#/obshtini?per=2026.law'],
 ] as const;
 for (const display of displays)
   test.describe(display, () => {

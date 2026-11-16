@@ -1,11 +1,14 @@
 import { test as base, expect } from '../fixtures.ts';
 import { initializeScreen, screenReady, revealScreen, type Finding } from './browser.ts';
 import { match } from '../../../apps/web/client/routes.js';
-import type { Page } from '@playwright/test';
+import type { BrowserContext, Page } from '@playwright/test';
 export { expect };
 export const test = base.extend<{
   display: 'desktop' | 'touch';
-  browserEvents: { readAndClear(): Promise<Finding[]> };
+  browserEvents: {
+    readAndClear(): Promise<Finding[]>;
+    trackContext(context: BrowserContext): Promise<void>;
+  };
 }>({
   display: ['desktop', { option: true }],
   viewport: async ({ display }, use) =>
@@ -23,37 +26,44 @@ export const test = base.extend<{
       const events: Finding[] = [];
       const record = (code: string, message: string) => events.push({ code, message });
       const origin = new URL(siteURL).origin;
-      await context.exposeBinding('recordScreenEvent', (_source, event: Finding) => {
-        events.push(event);
-      });
-      await context.addInitScript(initializeScreen);
-      page.on('console', (message) => {
-        if (
-          message.type() === 'error' &&
-          !/Service Worker|serviceWorker|^Failed to load resource|preloaded using link preload but not used/i.test(
-            message.text(),
+      async function trackContext(target: BrowserContext) {
+        await target.exposeBinding('recordScreenEvent', (_source, event: Finding) => {
+          events.push(event);
+        });
+        await target.addInitScript(initializeScreen);
+        target.on('page', watchPage);
+        for (const existing of target.pages()) watchPage(existing);
+      }
+      function watchPage(page: Page) {
+        page.on('console', (message) => {
+          if (
+            message.type() === 'error' &&
+            !/Service Worker|serviceWorker|^Failed to load resource|preloaded using link preload but not used/i.test(
+              message.text(),
+            )
           )
-        )
-          record('console-error', message.text());
-      });
-      page.on('pageerror', (error) => record('pageerror', String(error)));
-      page.on('crash', () => record('crash', 'Page crashed'));
-      page.on('dialog', async (dialog) => {
-        record('dialog', dialog.message());
-        await dialog.dismiss();
-      });
-      page.on('response', (response) => {
-        if (response.status() >= 400) record('http', `${response.status()} ${response.url()}`);
-      });
-      page.on('requestfailed', (request) => {
-        const message = request.failure()?.errorText || '';
-        if (!message.includes('ERR_ABORTED'))
-          record('request-failed', request.url() + ': ' + message);
-      });
-      page.on('request', (request) => {
-        if (/^(https?|wss?|ftp):/.test(request.url()) && new URL(request.url()).origin !== origin)
-          record('external', request.url());
-      });
+            record('console-error', message.text());
+        });
+        page.on('pageerror', (error) => record('pageerror', String(error)));
+        page.on('crash', () => record('crash', 'Page crashed'));
+        page.on('dialog', async (dialog) => {
+          record('dialog', dialog.message());
+          await dialog.dismiss();
+        });
+        page.on('response', (response) => {
+          if (response.status() >= 400) record('http', `${response.status()} ${response.url()}`);
+        });
+        page.on('requestfailed', (request) => {
+          const message = request.failure()?.errorText || '';
+          if (!message.includes('ERR_ABORTED'))
+            record('request-failed', request.url() + ': ' + message);
+        });
+        page.on('request', (request) => {
+          if (/^(https?|wss?|ftp):/.test(request.url()) && new URL(request.url()).origin !== origin)
+            record('external', request.url());
+        });
+      }
+      await trackContext(context);
       const readAndClear = async () => {
         const cookies = await context.cookies();
         if (cookies.length) {
@@ -63,7 +73,7 @@ export const test = base.extend<{
         return events.splice(0);
       };
       try {
-        await use({ readAndClear });
+        await use({ readAndClear, trackContext });
       } finally {
         expect(await readAndClear(), 'Browser errors and cookies').toEqual([]);
       }

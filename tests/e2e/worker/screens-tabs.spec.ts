@@ -3,11 +3,11 @@ import { withQuery } from '../screens/cases.ts';
 import { drawn } from '../screens/interactions.ts';
 
 const cases = [
-  { address: '#/prihodi', id: 's06-view', query: 'izgled' },
-  { address: '#/vedomstva', id: 's10-tabs', query: 'tab' },
-  { address: '#/merki?per=2026.law', id: 's12-lists', query: 'spisak' },
-  { address: '#/merki?per=2027.draft', id: 's12-2027-tabs', query: 'spisak' },
-  { address: '#/vrazka', id: 's27-tabs', query: 'tab' },
+  { address: '#/prihodi', query: 'izgled' },
+  { address: '#/vedomstva?per=2026.law', query: 'tab' },
+  { address: '#/merki?per=2026.law', query: 'spisak' },
+  { address: '#/merki?per=2027.draft', query: 'spisak' },
+  { address: '#/vrazka', query: 'tab' },
 ];
 for (const entry of cases)
   test(`tabs ${entry.address}`, async ({ page, siteURL }) => {
@@ -35,8 +35,9 @@ for (const entry of cases)
     await last.press('ArrowRight');
     await expect(list.getByRole('tab', { name: names[0]!.trim(), exact: true })).toBeFocused();
     await expect(page.getByRole('tabpanel', { name: names[0]!.trim(), exact: true })).toBeVisible();
+    await list.getByRole('tab', { name: names[1]!.trim(), exact: true }).click();
     await page.reload();
-    await expect(page.getByRole('tabpanel', { name: names[0]!.trim(), exact: true })).toBeVisible();
+    await expect(page.getByRole('tabpanel', { name: names[1]!.trim(), exact: true })).toBeVisible();
     await openScreen(page, siteURL, withQuery(entry.address, { [entry.query]: 'unknown' }));
     await expect(page.getByRole('tabpanel', { name: names[0]!.trim(), exact: true })).toBeVisible();
   });

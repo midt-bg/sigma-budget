@@ -34,7 +34,7 @@ it('guards spreadsheet formulas without changing numeric negative values', () =>
   const values = ['=1+1', '+cmd', '-cmd', '@SUM(A1)', '\tcmd', '＝cmd', '＋cmd', '－cmd', '＠cmd'];
   const rows = parseCsv(
     csvFor({
-      table: { columns: ['Текст'], rows: values.map((v) => [v]).concat([[-3.08] as never]) },
+      table: { columns: ['Текст'], rows: [...values.map((v) => [v]), [-3.08]] },
     }).slice(1),
   );
   for (const row of rows.slice(1, -1)) expect(row[0]).toMatch(/^'/);

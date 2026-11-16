@@ -2,12 +2,11 @@ import { test, expect, openScreen } from '../screens/fixtures.ts';
 import { sharingCases } from '../screens/sharing-cases.ts';
 import { downloadBytes, parseCsv } from '../helpers.ts';
 import { fitsViewport, targetVisible } from '../screens/interactions.ts';
-import { initializeScreen } from '../screens/browser.ts';
 
 for (const entry of sharingCases)
   test.describe(`share ${entry.id}`, () => {
     test.use({ display: entry.display, permissions: ['clipboard-read', 'clipboard-write'] });
-    test('copy, reopen target, CSV and PNG', async ({ page, context, browser, siteURL }) => {
+    test('copy, reopen target, CSV and PNG', async ({ page, browser, browserEvents, siteURL }) => {
       await openScreen(page, siteURL, entry.samples[0]!);
       const opener = page
         .getByRole('button', { name: /^Сподели/ })
@@ -28,8 +27,7 @@ for (const entry of sharingCases)
         serviceWorkers: 'block',
       });
       try {
-        await fresh.exposeBinding('recordScreenEvent', () => {});
-        await fresh.addInitScript(initializeScreen);
+        await browserEvents.trackContext(fresh);
         const targetPage = await fresh.newPage();
         await targetPage.goto(url);
         await targetVisible(targetPage, id!);
@@ -39,11 +37,11 @@ for (const entry of sharingCases)
       await opener.click();
       const csvAction = menu.getByRole('button', { name: /CSV/ });
       // Some narrative blocks offer an image and a link but have no tabular data.
-      if (await csvAction.isVisible()) {
+      if (entry.csv) {
         const pending = page.waitForEvent('download');
         await csvAction.click();
         const csv = await pending;
-        expect(csv.suggestedFilename()).toMatch(/^bns-[a-z0-9-]+-[a-z0-9._-]+\.csv$/);
+        expect(csv.suggestedFilename()).toBe(`bns-${entry.key}-${id}.csv`.toLowerCase());
         const bytes = await downloadBytes(csv);
         const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
         expect(text).not.toMatch(/undefined|NaN/);
@@ -55,8 +53,13 @@ for (const entry of sharingCases)
           expect(row).toHaveLength(header!.length);
           expect(row[source]!.trim()).not.toBe('');
         }
-        await opener.click();
       }
+      if (!entry.png) {
+        await page.keyboard.press('Escape');
+        return;
+      }
+      if (!entry.csv) await page.keyboard.press('Escape');
+      await opener.click();
       const pending = page.waitForEvent('download');
       await menu.getByRole('button', { name: /^Изтегли изображение/ }).click();
       const png = await downloadBytes(await pending);
