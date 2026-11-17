@@ -59,7 +59,7 @@ export function currentFooter(html: string) {
   const project = /(<summary[^>]*>Данни и проект<\/summary><ul>)/;
   if (!beta.test(html) || !glossary.test(start.exec(html)?.[2] ?? '') || !project.test(html))
     throw new Error('the capture has no beta note, «Речник» in «Начало» or «Данни и проект» group');
-  return html
+  const adapted = html
     .replace(entry, '')
     .replace(beta, '')
     .replace(start, (_, open, items, close) => open + items.replace(glossary, '') + close)
@@ -75,6 +75,10 @@ export function currentFooter(html: string) {
         space +
         link,
     );
+  // Keep the frozen captures intact; adoption starts from the current two-row chrome.
+  const rows = /(<div class="fine">)([\s\S]*?)(<span><a href="\/poveritelnost"[\s\S]*?)(<\/div>)/;
+  if (!rows.test(adapted)) throw new Error('the capture has no fine print with the legal links');
+  return adapted.replace(rows, '$1<div class="fine-row">$2</div><div class="fine-row">$3</div>$4');
 }
 
 // Only the shared missing-data presentation changes; preserve headings, links and controls.

@@ -134,7 +134,9 @@ describe('the footer', () => {
   it('shows legal links and accessible open code and СИГМА links, in both chromes', () => {
     for (const doc of [footer(), legacyFooter()]) {
       const fine = doc.querySelector('.fine')!;
-      const items = [...fine.children].map((c) => c.textContent?.replace(/\s+/g, ' ').trim());
+      const items = [...fine.querySelectorAll('a')].map((c) =>
+        c.textContent?.replace(/\s+/g, ' ').trim(),
+      );
       expect(items.slice(-4)).toEqual([
         'Поверителност',
         'Условия за ползване',
