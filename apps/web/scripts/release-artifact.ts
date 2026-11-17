@@ -346,20 +346,6 @@ export function writeExtras(
     'Сумите са в евро (България използва еврото от 1 януари 2026 г.).' +
       (lastmod ? ` Данните са към ${lastmod}.` : ''),
     '',
-    '## Основни страници',
-    '',
-  ];
-  for (const p of main) L.push(`- [${title(idx[p]!)}](${url(p)}): ${idx[p]!.desc}`);
-  for (const [rid, label, withDesc] of childGroups) {
-    const ps = (byRoute.get(rid) ?? []).filter((p) => !main.includes(p));
-    if (!ps.length) continue;
-    L.push('', `## ${label}`, '');
-    L.push(
-      ...ps.map((p) => `- [${title(idx[p]!)}](${url(p)})` + (withDesc ? `: ${idx[p]!.desc}` : '')),
-    );
-  }
-  L.push(
-    '',
     '## MCP: свързване',
     '',
     `Адрес: ${origin}/mcp. Транспорт: Streamable HTTP. Без удостоверяване, регистрация или API ключ. Име: sigma-budget.`,
@@ -377,7 +363,18 @@ export function writeExtras(
       `- [Официални инструкции](${item.docs})`,
       '',
     ]),
-  );
+    '## Основни страници',
+    '',
+  ];
+  for (const p of main) L.push(`- [${title(idx[p]!)}](${url(p)}): ${idx[p]!.desc}`);
+  for (const [rid, label, withDesc] of childGroups) {
+    const ps = (byRoute.get(rid) ?? []).filter((p) => !main.includes(p));
+    if (!ps.length) continue;
+    L.push('', `## ${label}`, '');
+    L.push(
+      ...ps.map((p) => `- [${title(idx[p]!)}](${url(p)})` + (withDesc ? `: ${idx[p]!.desc}` : '')),
+    );
+  }
   L.push(
     '',
     '## Данни',
@@ -385,7 +382,6 @@ export function writeExtras(
     `- [Каталог на наборите (JSON)](${origin}/data/catalog.json): всички файлове с данни, с източник, период, обхват и статус`,
     `- [Отворени данни и MCP](${url('/api')}): как се четат файловете с код`,
     `- [Какво ново (RSS)](${origin}/data/feed.xml): последните отчети, решения и данни`,
-    '',
     `- [Текущо издание (API)](${origin}/api/releases/current): версия на публикуваните данни`,
     '',
     '## Optional',
