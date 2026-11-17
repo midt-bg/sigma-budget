@@ -45,7 +45,7 @@ for (const width of [1280, 390]) {
     await test.step('Търсене, сортиране, CSV и връщане към списъците', async () => {
       await go('/vedomstva?variant=billMc');
       await expect(page.locator('#s10-bill-table tbody tr')).toHaveCount(1);
-      await expect(page.locator('#s10-bill-table tbody')).toContainText('съдебната власт');
+      await expect(page.locator('#s10-bill-table tbody')).toContainText('Съдебна власт');
       await page.locator('#bill-variant').selectOption('bill');
       await expect(page.locator('#s10-bill-table tbody tr')).toHaveCount(47);
       let field = page.locator('#bill-q');

@@ -618,7 +618,6 @@ function vedomstva(ctx) {
       const c = change(now, before);
       return {
         name: l?.name || l?.short || i.name,
-        of: i.name, // the bill's own form after „на“: „Министерството на отбраната“
         code: i.code,
         before: ok(before) ? before / 1000 : null,
         now: ok(now) ? now / 1000 : null,
@@ -640,7 +639,7 @@ function vedomstva(ctx) {
       ${
         grow
           ? html`<p class="b27-note">
-            Най-голямо увеличение има бюджетът на ${grow.of}: с ${mlnTxt(grow.abs)}
+            Най-голямо е увеличението при „${grow.name}“: с ${mlnTxt(grow.abs)}
             (${pct(grow.pct, 1, { sign: true })}) спрямо закона за ${yr(2026)}
           </p>`
           : ''

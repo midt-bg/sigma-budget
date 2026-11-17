@@ -313,7 +313,7 @@ export async function auditScreen(expectedRoute: string): Promise<Finding[]> {
       if (core?.sources && !Object.hasOwn(core.sources, key))
         add('src-key', `Unknown source ${key}`);
   for (const element of all('[data-pending-id]'))
-    if (core?.pending && !Object.hasOwn(core.pending, element.dataset.pendingId!))
+    if (core && !Object.hasOwn(core.pending ?? {}, element.dataset.pendingId!))
       add('pending-id', `Unknown pending dataset ${element.dataset.pendingId}`);
   const glossary = (await import(glossaryPath)) as {
     ready(): Promise<unknown>;
