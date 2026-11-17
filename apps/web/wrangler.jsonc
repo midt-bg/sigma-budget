@@ -14,7 +14,8 @@
 
 {
   "name": "sigma-budget",
-  "routes": [{ "pattern": "sigma-budget.midt.bg", "custom_domain": true }],
+  // The custom domain sigma-budget.midt.bg is bound to this Worker by hand in Cloudflare, so the deploy token needs no zone permission.
+  // Without routes here, wrangler deploy leaves that binding as it is (a custom domain in routes would need Zone access: code 10084).
   "workers_dev": false,
   "preview_urls": false,
   "main": "./workers/app.ts",
@@ -83,7 +84,7 @@
         }
       ],
       // Public staging on sigma-budget-staging.cf-midt.workers.dev, without a custom domain or preview URL.
-      // Override inherited production routes: staging serves only its workers.dev address.
+      // Staging serves only its workers.dev address.
       "routes": [],
       "workers_dev": true,
       "preview_urls": false,
