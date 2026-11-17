@@ -322,35 +322,39 @@ export function footerHtml(o: { wide?: boolean; cur?: string; from?: string } = 
           {groups}
         </nav>
         <div className="fine">
-          {kfp ? (
-            <>
-              <span>
-                Данните: КФП към {kfp}
-                {b?.kfpPublished ? <> (обн. {date(b.kfpPublished)})</> : ''}
-              </span>
-            </>
-          ) : (
-            ''
-          )}
-          {b && b.dataVersion ? (
-            <>
-              <span>Версия на данните: {b.dataVersion}</span>
-            </>
-          ) : (
-            ''
-          )}
-          <span>
-            <a href={navHref('S36')} data-route="S36">
-              Поверителност
-            </a>
-          </span>
-          <span>
-            <a href={navHref('S37')} data-route="S37">
-              Условия за ползване
-            </a>
-          </span>
-          <span>{codeLink('code-link')}</span>
-          <span>{sigmaLink('sister-link')}</span>
+          <div className="fine-row">
+            {kfp ? (
+              <>
+                <span>
+                  Данните: КФП към {kfp}
+                  {b?.kfpPublished ? <> (обн. {date(b.kfpPublished)})</> : ''}
+                </span>
+              </>
+            ) : (
+              ''
+            )}
+            {b && b.dataVersion ? (
+              <>
+                <span>Версия на данните: {b.dataVersion}</span>
+              </>
+            ) : (
+              ''
+            )}
+          </div>
+          <div className="fine-row">
+            <span>
+              <a href={navHref('S36')} data-route="S36">
+                Поверителност
+              </a>
+            </span>
+            <span>
+              <a href={navHref('S37')} data-route="S37">
+                Условия за ползване
+              </a>
+            </span>
+            <span>{codeLink('code-link')}</span>
+            <span>{sigmaLink('sister-link')}</span>
+          </div>
         </div>
       </div>
     </>
