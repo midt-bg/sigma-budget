@@ -776,9 +776,13 @@ body.bare .page {
    (overflow-clip-margin would do the same, but Safari does not have it). */
 .footer .fine {
   display: grid;
-  gap: var(--sp-1);
+  gap: var(--sp-3);
   padding-top: var(--sp-3);
   border-top: 1px solid var(--rule);
+}
+/* Without the data date and version the first row is empty and takes no space. */
+.footer .fine-row:empty {
+  display: none;
 }
 .footer .fine-row {
   display: flex;

@@ -164,10 +164,7 @@ export function footerHtml(o = {}) {
   return html`<div class="footer-in">
     <nav class="foot-nav" aria-label="Всички страници">${groups}</nav>
     <div class="fine">
-      <div class="fine-row">
-      ${kfp ? html`<span>Данните: КФП към ${kfp}${b.kfpPublished ? html` (обн. ${date(b.kfpPublished)})` : ''}</span>` : ''}
-      ${b && b.dataVersion ? html`<span>Версия на данните: ${b.dataVersion}</span>` : ''}
-      </div>
+      <div class="fine-row">${kfp ? html`<span>Данните: КФП към ${kfp}${b.kfpPublished ? html` (обн. ${date(b.kfpPublished)})` : ''}</span>` : ''}${b && b.dataVersion ? html`<span>Версия на данните: ${b.dataVersion}</span>` : ''}</div>
       <div class="fine-row">
       <span><a href="${navHref('S36')}" data-route="S36">Поверителност</a></span>
       <span><a href="${navHref('S37')}" data-route="S37">Условия за ползване</a></span>
