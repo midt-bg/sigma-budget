@@ -9,7 +9,7 @@ html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   scroll-padding-top: 16px;
-  scroll-padding-bottom: calc(var(--tabbar-h) + 16px);
+  scroll-padding-bottom: calc(var(--tabbar-h) + var(--safe-area-bottom-max) + 16px);
 }
 body {
   margin: 0;

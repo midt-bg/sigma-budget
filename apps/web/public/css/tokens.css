@@ -86,6 +86,9 @@
   --nav-w: 0px;
   --topbar-h: 0px;
   --tabbar-h: 64px;
+  /* Stable reserve for bottom controls (only Chromium has safe-area-max-inset-*). Without viewport-fit=cover, Safari and Firefox report
+     no bottom inset, so the fallback is the current inset, not Chrome's 36px Safari value for cover. */
+  --safe-area-bottom-max: env(safe-area-max-inset-bottom, env(safe-area-inset-bottom, 0px));
 
   /* ---- roles (v2/v3 names) mapped onto the СИГМА palette ---- */
   --bg: var(--paper);
