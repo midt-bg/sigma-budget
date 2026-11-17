@@ -14,12 +14,12 @@ Workflow-ът `.github/workflows/site.yml` изпълнява всички пр�
 
 ## 1. Средата е създадена; остава GitHub конфигурацията
 
-Production използва Worker `sigma-budget`, custom domain `sigma-budget.midt.bg`, `workers_dev: false` и `preview_urls: false` от горното ниво на `apps/web/wrangler.jsonc`. Staging използва `https://sigma-budget-staging.cf-midt.workers.dev` с `noindex`. Данните се обслужват от build-а. Съществуващите D1 и R2 ресурси не се променят с тази процедура; собственикът решава отделно за тях.
+Production използва Worker `sigma-budget`, `workers_dev: false` и `preview_urls: false` от горното ниво на `apps/web/wrangler.jsonc`. Custom domain `sigma-budget.midt.bg` е вързан към Worker-а ръчно в Cloudflare и не е в `routes`. Така токенът за deploy не се нуждае от права върху зоната, а `wrangler deploy` не пипа връзката. Staging използва `https://sigma-budget-staging.cf-midt.workers.dev` с `noindex`. Данните се обслужват от build-а. Съществуващите D1 и R2 ресурси не се променят с тази процедура; собственикът решава отделно за тях.
 
 Еднократно собственикът настройва в GitHub:
 
 - GitHub Environment `production`: required reviewer и deployment tags само `v*`.
-- В `production`: secrets `CLOUDFLARE_API_TOKEN` и `CLOUDFLARE_ACCOUNT_ID`. Токенът има Editor само за Worker `sigma-budget` и Zone → Workers Routes → Write само за зоната `midt.bg`.
+- В `production`: secrets `CLOUDFLARE_API_TOKEN` и `CLOUDFLARE_ACCOUNT_ID`. Токенът има Editor само за Worker `sigma-budget`, без права върху зоната.
 - Repository-level secrets `CLOUDFLARE_*` не трябва да съществуват: при липсваща стойност Environment наследява repository secret.
 - Tag ruleset за `v*`, който ограничава създаването, преместването и изтриването на тези тагове до администратори.
 - GitHub Environment `staging`: отделен `CLOUDFLARE_API_TOKEN` с Editor само за Worker `sigma-budget-staging`, secret `CLOUDFLARE_ACCOUNT_ID` и variable `STAGING_ORIGIN` = `https://sigma-budget-staging.cf-midt.workers.dev`.
