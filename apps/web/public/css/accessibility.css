@@ -70,7 +70,9 @@ html.font-resize .page-title {
 }
 @media (max-width: 960px) {
   .accessibility-controls.a11y-tools {
-    bottom: calc(var(--tabbar-h, 64px) + env(safe-area-inset-bottom, 0px) + 12px);
+    bottom: calc(
+      var(--tabbar-h, 64px) + var(--safe-area-bottom, env(safe-area-inset-bottom, 0px)) + 12px
+    );
   }
 }
 .accessibility-controls .a11y-tools__button {
