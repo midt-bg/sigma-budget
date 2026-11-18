@@ -19,7 +19,16 @@ export async function initAccessibility(): Promise<void> {
       document.addEventListener('DOMContentLoaded', () => resolve(), { once: true }),
     );
   }
-  if (typeof accessibility !== 'function') return;
+  if (typeof accessibility !== 'function') {
+    await new Promise<void>((resolve) => {
+      const script = document.createElement('script');
+      script.src = '/assets/accessibility/accessibility.js';
+      script.onload = () => resolve();
+      script.onerror = () => resolve();
+      document.head.append(script);
+    });
+    if (typeof accessibility !== 'function') return;
+  }
   const root = document.documentElement;
   const tables = new Map<HTMLDetailsElement, boolean>();
   const syncText = () => {

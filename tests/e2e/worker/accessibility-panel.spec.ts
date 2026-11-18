@@ -9,6 +9,18 @@ async function choose(page: Page, selector: string) {
   await page.keyboard.press('Escape');
 }
 
+async function expectSiteStyles(page: Page) {
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        [...document.styleSheets]
+          .filter((sheet) => !sheet.disabled && sheet.href)
+          .map((sheet) => new URL(sheet.href!).pathname),
+      ),
+    )
+    .toEqual(expect.arrayContaining(['/css/base.css', '/css/layout.css']));
+}
+
 test('skip first, panel second: keyboard, ARIA and visible focus', async ({ page, visit }) => {
   await visit('/');
   await page.keyboard.press('Tab');
@@ -88,6 +100,16 @@ test('text mode shows chart numbers and survives application navigation', async 
     if (path !== '/dalg') await page.locator('#footer a[href="/razhodi"]').click();
     await expect(page.locator('#view')).not.toHaveAttribute('aria-busy', 'true');
     await expect(page.locator('#view svg:visible')).toHaveCount(0);
+    const controls = await page.locator('.accessibility-controls').boundingBox();
+    const button = await trigger(page).boundingBox();
+    expect(controls!.height).toBeLessThanOrEqual(button!.height + 2);
+    const nextParts = page.locator('.next-kicker,.next-title,.next-text');
+    const boxes = await nextParts.evaluateAll((parts) =>
+      parts.map((el) => el.getBoundingClientRect().toJSON()),
+    );
+    for (let i = 1; i < boxes.length; i++)
+      expect(boxes[i].top).toBeGreaterThanOrEqual(boxes[i - 1].bottom);
+
     const tables = page.locator('details.fig-table');
     await expect(tables.first().locator('table')).toBeVisible();
     expect(await tables.count()).toBeGreaterThan(0);
@@ -160,23 +182,19 @@ test('preferences restore before initialization, reload and application navigati
   await page.reload();
   await expect(trigger(page)).toBeVisible();
   await expect(page.locator('#view h1')).toHaveCSS('font-family', /adys/);
-  await choose(page, '.a11y__item--textonly button');
-  await page.reload();
-  await expect(trigger(page)).toBeVisible();
-  await expect(page.locator('html')).toHaveClass(/a11y-textonly/);
-  await choose(page, '.a11y__item--clear button');
+  for (const exit of ['.a11y__item--textonly button', '.a11y__item--clear button']) {
+    await choose(page, '.a11y__item--textonly button');
+    await page.reload();
+    await expect(trigger(page)).toBeVisible();
+    await expect(page.locator('html')).toHaveClass(/a11y-textonly/);
+    await choose(page, exit);
+    await expect(page.locator('html')).not.toHaveClass(/a11y-textonly/);
+    await expectSiteStyles(page);
+  }
   await page.locator('#footer a[href="/razhodi"]').click();
   await expect(page).toHaveURL(/\/razhodi/);
   await expect(page.locator('#view')).not.toHaveAttribute('aria-busy', 'true');
-  await expect
-    .poll(() =>
-      page.evaluate(() =>
-        [...document.styleSheets]
-          .filter((s) => s.href?.includes('/css/pages/'))
-          .every((s) => !s.disabled),
-      ),
-    )
-    .toBe(true);
+  await expectSiteStyles(page);
 });
 
 test('default search and option padding equals the browser and site cascade', async ({
@@ -205,9 +223,15 @@ test('default search and option padding equals the browser and site cascade', as
 });
 
 test('embedded view has no panel', async ({ page, visit }) => {
+  const panelRequests: string[] = [];
+  page.on('request', (request) => {
+    if (/\/assets\/accessibility\/|\/css\/accessibility\.css/.test(request.url()))
+      panelRequests.push(request.url());
+  });
   await visit('/embed/s17-dalg-chart');
   await expect(page.locator('body')).toHaveClass(/bare/);
   await expect(page.locator('.accessibility-controls')).toHaveCount(0);
+  expect(panelRequests).toEqual([]);
 });
 
 test('contrast variants and reset keep their state accessible', async ({ page, visit }) => {

@@ -26,7 +26,11 @@ export const catalogueMethodologyTexts = {
 };
 
 export const accessibilityCredits = {
-  font: 'Шрифтът ADYS в панела за достъпност се разпространява непроменен под CC BY-ND 4.0.',
+  font: 'Шрифтът ADYS в панела за достъпност се разпространява непроменен.',
+  copyright: '© 2017 AdysFont',
+  authorUrl: 'http://adysfont.com/about/',
+  license: 'CC BY-ND 4.0',
+  licenseUrl: 'https://creativecommons.org/licenses/by-nd/4.0/',
   plugin:
     'Приставката за достъпност е от Информационно обслужване АД, с поправки от проекта СИГМА. Шрифтът и кодът на приставката не са под MIT лиценза на сайта.',
 };

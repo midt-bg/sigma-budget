@@ -32,17 +32,6 @@
     box-sizing: revert-layer;
   }
 }
-/* First-party integration; the vendor directory must retain its original bytes. */
-@font-face {
-  font-family: adys;
-  src: url('/assets/accessibility/ADYS-Regular-V5-4.ttf') format('truetype');
-  font-display: block;
-}
-html.dyslectic-font,
-html.dyslectic-font body,
-html.dyslectic-font body * {
-  font-family: adys, sans-serif !important;
-}
 /* A single root scale enlarges rem-based type without compounding body percentages. */
 html.font-resize {
   font-size: 125%;
@@ -56,9 +45,6 @@ html.font-resize .mast-in {
 }
 html.font-resize .topbar-tools {
   flex-wrap: wrap;
-}
-html.font-resize .tabbar {
-  --tabbar-h: 80px;
 }
 html.font-resize {
   --tabbar-h: 80px;
@@ -112,9 +98,6 @@ html.font-resize .page-title {
   color: #000;
   border: 1px solid #46423d;
   transition: none;
-}
-.accessibility-controls .a11y-tools__nav[hidden] {
-  display: none !important;
 }
 .accessibility-controls .a11y-tools__list {
   list-style: none;
@@ -239,4 +222,15 @@ html.a11y-textonly .tabbar > * {
 }
 html.a11y-textonly .block-tags {
   margin-block: 0.5em;
+}
+
+/* A closed text-mode panel must not reserve its hidden contents in normal flow. */
+html.a11y-textonly .accessibility-controls:not(.is-open) .a11y-tools__nav {
+  display: none;
+}
+html.a11y-textonly .next-kicker,
+html.a11y-textonly .next-title,
+html.a11y-textonly .next-text {
+  display: block;
+  margin-bottom: 0.25em;
 }

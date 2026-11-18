@@ -261,7 +261,6 @@ function setsSection(M, f, L) {
     's24-sets',
     'Наборите данни',
     () => html`
-    <p>${accessibilityCredits.font} <a href="https://adysfont.com/">adysfont.com</a> · <a href="https://creativecommons.org/licenses/by-nd/4.0/">CC BY-ND 4.0</a></p><p>${accessibilityCredits.plugin}</p>
     <p class="s24-lead">Каталогът описва <strong>${plural(M.counts.datasets, 'набор данни', 'набора данни')}</strong>: ${breakdown(M)}. До всеки набор са източникът, периодът, датата на данните, форматът и размерът. Как се четат файловете с код е в <a href="${href('api')}">${byKey.api?.title || 'Отворени данни и MCP'}</a>.</p>
     <p class="s24-dl"><a class="btn btn-sm" href="data/catalog.json" download="catalog.json">${icon('download', { size: 16 })}<span>Свали каталога (JSON)</span></a>
       <button type="button" class="btn btn-sm" data-s24-csv>${icon('table', { size: 16 })}<span>Свали показаното (CSV)</span></button></p>
@@ -330,7 +329,9 @@ const sourcesSection = (M) =>
     'Първични източници',
     () => html`
   <p class="s24-lead2">Всяко число идва от първичен източник. Тук са източниците, които ползва поне един набор.</p>
-  <ul class="s24-srclist" role="list">${M.sourceKeys.map((k) => srcItem(k, M))}</ul>`,
+  <ul class="s24-srclist" role="list">${M.sourceKeys.map((k) => srcItem(k, M))}</ul>
+  <p>${accessibilityCredits.font} <a href="${accessibilityCredits.authorUrl}">${accessibilityCredits.copyright}</a> · <a href="${accessibilityCredits.licenseUrl}">${accessibilityCredits.license}</a></p>
+  <p>${accessibilityCredits.plugin}</p>`,
     { foot: reportLink({ block: 's24-sources' }) },
   );
 

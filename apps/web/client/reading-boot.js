@@ -1,6 +1,11 @@
-// Apply reading preferences before paint. No network, inline script or CSP exception.
+// Restore reading preferences and load their local styles before paint.
 try {
   if (!location.pathname.startsWith('/embed/')) {
+    var styles = document.createElement('link');
+    styles.rel = 'stylesheet';
+    styles.href = '/css/accessibility.css';
+    styles.setAttribute('blocking', 'render');
+    document.head.append(styles);
     for (var setting of [
       ['fontSize', 'font-resize'],
       ['dyslectic', 'dyslectic-font'],
@@ -18,9 +23,10 @@ try {
           if (
             link instanceof HTMLLinkElement &&
             link.rel === 'stylesheet' &&
-            !link.href.endsWith('/css/accessibility.css')
+            !link.href.endsWith('/css/accessibility.css') &&
+            link.sheet
           )
-            link.disabled = true;
+            link.sheet.disabled = true;
         },
         true,
       );
