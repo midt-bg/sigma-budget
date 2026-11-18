@@ -254,8 +254,8 @@ jobs:
             echo "::error::Production requires a tag matching vX.Y.Z (numeric major, minor and patch)."
             exit 1
           fi
-          # On a tag push actions/checkout creates a local lightweight tag for the ref; the tag in origin is annotated,
-          # so a plain fetch refuses to overwrite it ("would clobber existing tag"). --force takes the tags as they are in origin.
+          # Refresh main and the tags from origin right before the checks; --force takes the tags exactly as they are
+          # in origin even if a local one differs (older actions/checkout left a lightweight tag for an annotated one).
           git fetch --force origin main --tags
           if ! git merge-base --is-ancestor HEAD origin/main; then
             echo "::error::The tagged commit must be an ancestor of origin/main."
