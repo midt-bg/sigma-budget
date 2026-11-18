@@ -27,8 +27,8 @@ export const catalogueMethodologyTexts = {
 
 export const accessibilityCredits = {
   font: 'Шрифтът ADYS в панела за достъпност се разпространява непроменен.',
-  copyright: '© 2017 AdysFont',
-  authorUrl: 'http://adysfont.com/about/',
+  copyright: 'ADYS (2017), AdysFont',
+  authorUrl: 'https://adysfont.com/about-adys/',
   license: 'CC BY-ND 4.0',
   licenseUrl: 'https://creativecommons.org/licenses/by-nd/4.0/',
   plugin:
