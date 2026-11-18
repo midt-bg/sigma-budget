@@ -143,9 +143,8 @@ for (const width of [360, 1280]) {
       await page.locator('#footer a[href="/rechnik"]').first().click();
       await expect(page).toHaveURL(/\/rechnik/);
       await expect(page.locator('#view h1')).toBeVisible();
-      expect(
-        await page.locator('#view h1').evaluate((el) => getComputedStyle(el).fontFamily),
-      ).toContain('adys');
+      await expect(page.locator('#view')).not.toHaveAttribute('aria-busy', 'true');
+      await expect(page.locator('#view h1')).toHaveCSS('font-family', /adys/);
       await expect(page.locator('.accessibility-controls')).toHaveCount(1);
     });
   });
