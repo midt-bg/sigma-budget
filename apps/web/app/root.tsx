@@ -42,6 +42,7 @@ export function Layout({ children }: { children: ReactNode }) {
         <meta name="color-scheme" content="light" />
         <meta name="theme-color" content="#FDFAF4" />
         <script src="/js/chrome-boot.js" data-keep="" />
+        <script src="/js/reading-boot.js" data-keep="" />
         <link rel="icon" href="/favicon.ico" sizes="48x48" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
@@ -59,7 +60,6 @@ export function Layout({ children }: { children: ReactNode }) {
           title="СИГМА Бюджет за езикови модели"
           href="/llms.txt"
         />
-        <link rel="stylesheet" href="/assets/accessibility/accessibility.css" />
         <script defer src="/assets/accessibility/accessibility.js" />
         {SHARED_CSS.map((n) => (
           <link key={n} rel="stylesheet" href={`/css/${n}.css`} />

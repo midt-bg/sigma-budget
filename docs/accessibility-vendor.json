@@ -1,6 +1,7 @@
 {
   "repository": "https://github.com/midt-bg/sigma",
-  "head": "7d5d13777aabc42f23f424ca0428ed827891ffef",
+  "head": "058cef64a4aea3baf2f48a54685c8d908eb1835d",
+  "directoryCommit": "b6daaa693f38513fd3de1b96d0665f2b8a43c1af",
   "files": [
     {
       "path": "apps/web/public/assets/accessibility/ADYS-Regular-V5-4.ttf",
@@ -9,13 +10,13 @@
     },
     {
       "path": "apps/web/public/assets/accessibility/accessibility.css",
-      "commit": "2d93cd523bf22514b08aa0468e0787f231bb5299",
-      "sha256": "45deef8d7d73862603b0e3ebf93b0732684196cfed31aa1ed6c69d41bfa56c2c"
+      "commit": "2dffb409a9aa333590881c7b2eeb3404cf245886",
+      "sha256": "d872a70635f4f780473e33a3a539769e645c3c17cd4524d1f22d309712e32e69"
     },
     {
       "path": "apps/web/public/assets/accessibility/accessibility.js",
-      "commit": "2d93cd523bf22514b08aa0468e0787f231bb5299",
-      "sha256": "e56dd2ea195aa299fc6b038637240a97be567acb1c32932938faa2c3a1b78449"
+      "commit": "b6daaa693f38513fd3de1b96d0665f2b8a43c1af",
+      "sha256": "bdce84c6e4dc8745ad6fefc8db81894b56c840161a5214d8329aac62b2be1eb4"
     },
     {
       "path": "apps/web/public/assets/accessibility/contrast.svg",
@@ -54,8 +55,8 @@
     },
     {
       "path": "apps/web/public/assets/accessibility/translations.json",
-      "commit": "2d93cd523bf22514b08aa0468e0787f231bb5299",
-      "sha256": "c8ffc77d8fcb40feeb20b0569e3199648a3139a53c5491c3ba8c25ea49ec1b18"
+      "commit": "2dffb409a9aa333590881c7b2eeb3404cf245886",
+      "sha256": "9f97186bff607021139f761e72f9686a175eee7d4b83fb8a0bab7cad628bb8c9"
     }
   ]
 }

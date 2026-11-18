@@ -1,151 +1,226 @@
 import { test, expect } from '../audit-fixtures.ts';
+import type { Page } from '@playwright/test';
 
-const modes = [
-  { name: 'дислексия', selector: '.a11y__item--dyslexic button', marker: 'dyslectic-font' },
-  { name: 'голям шрифт', selector: '.a11y__item--increase button', marker: 'font-resize' },
-  { name: 'текст', selector: '.a11y__item--textonly button', marker: 'a11y-textonly' },
-  { name: 'жълт контраст', selector: '.a11y__btn--yellow', marker: 'accessibility-yellow' },
-  { name: 'тъмен контраст', selector: '.a11y__btn--dark', marker: 'accessibility-dark' },
-  { name: 'син контраст', selector: '.a11y__btn--blue', marker: 'accessibility-blue' },
-  { name: 'оригинален контраст', selector: '.a11y__btn--clear', marker: '' },
-];
-for (const width of [360, 1280]) {
-  test.describe(`${width}px accessibility panel`, () => {
-    test.use({ viewport: { width, height: 900 } });
-    for (const path of ['/', '/dalg', '/razhodi', '/rechnik']) {
-      for (const mode of modes) {
-        test(`${path}: ${mode.name}, keyboard, reset and reload`, async ({ page, visit }, info) => {
-          const errors: string[] = [];
-          page.on('pageerror', (error) => errors.push(error.message));
-          await page.addInitScript(() => {
-            document.addEventListener('securitypolicyviolation', (event) => {
-              (window as typeof window & { cspErrors?: string[] }).cspErrors ??= [];
-              (window as typeof window & { cspErrors?: string[] }).cspErrors!.push(
-                event.blockedURI,
-              );
-            });
-          });
-          await visit(path);
-          const trigger = page.getByRole('button', {
-            name: 'покажи меню за достъпност',
-            exact: true,
-          });
-          await trigger.focus();
-          await trigger.press('Enter');
-          await expect(trigger).toHaveAttribute('aria-expanded', 'true');
-          await expect(trigger).toBeFocused();
-          // All options are reachable in the ordinary Tab sequence with visible focus.
-          for (let i = 0; i < 8; i++) {
-            await page.keyboard.press('Tab');
-            await expect(page.locator('#accessibility-panel button').nth(i)).toBeFocused();
-            expect(
-              await page.locator(':focus').evaluate((el) => getComputedStyle(el).outlineStyle),
-            ).not.toBe('none');
-          }
-          const option = page.locator(mode.selector);
-          await option.focus();
-          await option.press('Space');
-          if (mode.marker) await expect(page.locator('html')).toHaveClass(new RegExp(mode.marker));
-          await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-          if (mode.name === 'дислексия') {
-            await page.evaluate(() => document.fonts.ready);
-            for (const selector of ['#topbar button', '#view h1', '#view td', '#view svg text']) {
-              const elements = page.locator(selector);
-              if (await elements.count())
-                expect(
-                  await elements.first().evaluate((el) => getComputedStyle(el).fontFamily),
-                ).toContain('adys');
-            }
-          }
-          if (mode.name === 'текст') {
-            await expect(page.locator('#view svg:visible')).toHaveCount(0);
-            for (const table of await page.locator('details.fig-table').all()) {
-              await expect(table).toHaveAttribute('open', '');
-              await expect(table.locator('table')).toBeVisible();
-            }
-          }
-          await page.keyboard.press('Escape');
-          await expect(trigger).toBeFocused();
-          await expect(trigger).toHaveAttribute('aria-expanded', 'false');
-          expect(
-            await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1),
-          ).toBe(true);
-          if (width === 360 && mode.name !== 'текст') {
-            const buttonBox = await trigger.boundingBox();
-            const tabBox = await page.locator('#tabbar').boundingBox();
-            expect(buttonBox!.y + buttonBox!.height).toBeLessThanOrEqual(tabBox!.y);
-          }
-          await page.reload();
-          await expect(page.locator('.accessibility-controls')).toHaveCount(1);
-          if (mode.marker) await expect(page.locator('html')).toHaveClass(new RegExp(mode.marker));
-          await trigger.click();
-          await page.locator('.a11y__item--clear button').click();
-          await expect(page.locator('html')).not.toHaveClass(
-            /dyslectic-font|font-resize|a11y-textonly|accessibility-(yellow|dark|blue)/,
-          );
-          expect(errors).toEqual([]);
-          expect(
-            await page.evaluate(
-              () => (window as typeof window & { cspErrors?: string[] }).cspErrors ?? [],
-            ),
-          ).toEqual([]);
-          if (path === '/' && mode.name === 'дислексия') {
-            await page.locator(mode.selector).click();
-            await page.keyboard.press('Escape');
-            await info.attach(`panel-${width}`, {
-              body: await page.screenshot({ fullPage: false, timeout: 15000 }),
-              contentType: 'image/png',
-            });
-          }
-        });
-      }
-    }
-    test('text mode keeps chart data through navigation and restores layout', async ({
-      page,
-      visit,
-    }) => {
-      await visit('/dalg');
-      await page.locator('.a11y-tools__button').click();
-      await page.locator('.a11y__item--textonly button').click();
-      await page.keyboard.press('Escape');
-      if (width === 360)
-        await page
-          .locator('#footer details')
-          .filter({ has: page.locator('a[href="/razhodi"]') })
-          .locator('summary')
-          .click();
-      await page.locator('#footer a[href="/razhodi"]').first().click();
-      await expect(page).toHaveURL(/\/razhodi/);
-      await expect(page.locator('#view h1')).toBeVisible();
-      await expect(page.locator('#view svg:visible')).toHaveCount(0);
-      const tables = page.locator('details.fig-table');
-      expect(await tables.count()).toBeGreaterThan(0);
-      for (const table of await tables.all()) await expect(table.locator('table')).toBeVisible();
-      const skip = page.getByRole('link', { name: 'Към съдържанието', exact: true });
-      await skip.focus();
-      await expect(skip).toBeVisible();
-      await page.locator('.a11y-tools__button').click();
-      await page.locator('.a11y__item--clear button').click();
-      await expect(page.locator('html')).not.toHaveClass(/a11y-textonly/);
-      await expect(page.locator('#topbar')).toBeVisible();
-    });
-    test('ADYS persists through application navigation', async ({ page, visit }) => {
-      await visit('/');
-      await page.locator('.a11y-tools__button').click();
-      await page.locator('.a11y__item--dyslexic button').click();
-      await page.keyboard.press('Escape');
-      if (width === 360)
-        await page
-          .locator('#footer details')
-          .filter({ has: page.locator('a[href="/rechnik"]') })
-          .locator('summary')
-          .click();
-      await page.locator('#footer a[href="/rechnik"]').first().click();
-      await expect(page).toHaveURL(/\/rechnik/);
-      await expect(page.locator('#view h1')).toBeVisible();
-      await expect(page.locator('#view')).not.toHaveAttribute('aria-busy', 'true');
-      await expect(page.locator('#view h1')).toHaveCSS('font-family', /adys/);
-      await expect(page.locator('.accessibility-controls')).toHaveCount(1);
-    });
-  });
+const trigger = (page: Page) =>
+  page.getByRole('button', { name: 'Меню за достъпност', exact: true });
+async function choose(page: Page, selector: string) {
+  await trigger(page).click();
+  await page.locator(selector).click();
+  await page.keyboard.press('Escape');
 }
+
+test('skip first, panel second: keyboard, ARIA and visible focus', async ({ page, visit }) => {
+  await visit('/');
+  await page.keyboard.press('Tab');
+  await expect(page.locator('.skip-link')).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(trigger(page)).toBeFocused();
+  await expect(trigger(page)).toHaveAttribute('aria-expanded', 'false');
+  await trigger(page).press('Enter');
+  await expect(trigger(page)).toHaveAttribute('aria-controls', 'a11y-tools-panel');
+  await expect(trigger(page)).toHaveAttribute('aria-expanded', 'true');
+  for (const option of await page.locator('.a11y-tools__nav button').all()) {
+    await page.keyboard.press('Tab');
+    await expect(option).toBeFocused();
+    expect(await option.evaluate((el) => getComputedStyle(el).outlineStyle)).not.toBe('none');
+  }
+  await page.keyboard.press('Escape');
+  await expect(trigger(page)).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.locator('.a11y-tools__nav :focus')).toHaveCount(0);
+  await choose(page, '.a11y__item--dyslexic button');
+  await trigger(page).click();
+  await expect(page.locator('.a11y__item--dyslexic button')).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect(page.locator('.a11y__item--increase button')).not.toHaveAttribute('aria-pressed');
+});
+
+test('ADYS covers every visible text node, including charts, headings and navigation', async ({
+  page,
+  visit,
+}) => {
+  for (const path of ['/dalg', '/razhodi', '/rechnik']) {
+    await visit(path);
+    if (path === '/dalg') await choose(page, '.a11y__item--dyslexic button');
+    for (const chart of await page.locator('.chart:visible').all()) {
+      await chart.scrollIntoViewIfNeeded();
+      await expect(chart).toHaveAttribute('data-ready', '1');
+    }
+    await page.evaluate(() => document.fonts.ready);
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+          const failures: string[] = [];
+          while (walker.nextNode()) {
+            const node = walker.currentNode,
+              el = node.parentElement;
+            if (
+              !node.textContent?.trim() ||
+              !el ||
+              el.closest('script,style,.sr-only,[hidden]') ||
+              !el.checkVisibility()
+            )
+              continue;
+            const range = document.createRange();
+            range.selectNodeContents(node);
+            if (![...range.getClientRects()].some((r) => r.width && r.height)) continue;
+            if (!getComputedStyle(el).fontFamily.includes('adys'))
+              failures.push(node.textContent.slice(0, 60));
+          }
+          return failures;
+        }),
+      )
+      .toEqual([]);
+    expect(await page.evaluate(() => document.fonts.check('16px adys'))).toBe(true);
+  }
+});
+
+test('text mode shows chart numbers and survives application navigation', async ({
+  page,
+  visit,
+}) => {
+  await visit('/dalg');
+  await choose(page, '.a11y__item--textonly button');
+  for (const path of ['/dalg', '/razhodi']) {
+    if (path !== '/dalg') await page.locator('#footer a[href="/razhodi"]').click();
+    await expect(page.locator('#view')).not.toHaveAttribute('aria-busy', 'true');
+    await expect(page.locator('#view svg:visible')).toHaveCount(0);
+    const tables = page.locator('details.fig-table');
+    await expect(tables.first().locator('table')).toBeVisible();
+    expect(await tables.count()).toBeGreaterThan(0);
+    for (const table of await tables.all()) {
+      await expect(table.locator('table')).toBeVisible();
+      expect(await table.locator('tbody').innerText()).toMatch(/\d/);
+    }
+  }
+  expect(
+    await trigger(page).evaluate(
+      (el) => el.closest('.accessibility-controls')!.previousElementSibling!.className,
+    ),
+  ).toBe('skip-link');
+});
+
+test('larger type reflows at 360px on several pages', async ({ page, visit }) => {
+  await page.setViewportSize({ width: 360, height: 900 });
+  for (const path of ['/', '/dalg', '/razhodi', '/rechnik']) {
+    await visit(path);
+    if (path === '/') await choose(page, '.a11y__item--increase button');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(
+      true,
+    );
+    await expect(page.locator('#topbar')).toBeVisible();
+  }
+});
+
+test('trigger stays above the phone tabbar with standard and enlarged type', async ({
+  page,
+  visit,
+}) => {
+  await page.setViewportSize({ width: 360, height: 900 });
+  await visit('/');
+  for (const enlarged of [false, true]) {
+    if (enlarged) await choose(page, '.a11y__item--increase button');
+    const button = await trigger(page).boundingBox(),
+      tabs = await page.locator('#tabbar').boundingBox();
+    expect(button!.y + button!.height).toBeLessThanOrEqual(tabs!.y);
+  }
+});
+
+test('preferences restore before initialization, reload and application navigation', async ({
+  page,
+  visit,
+}) => {
+  await visit('/');
+  await choose(page, '.a11y__item--dyslexic button');
+  await choose(page, '.a11y__item--increase button');
+  await choose(page, '.a11y__btn--blue');
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/assets/accessibility/accessibility.js', async (route) => {
+    await gate;
+    await route.continue();
+  });
+  await page.goto(new URL('/dalg', page.url()).href, { waitUntil: 'commit' });
+  await expect(page.locator('html')).toHaveClass(/dyslectic-font/);
+  await expect(page.locator('html')).toHaveClass(/font-resize/);
+  await expect(page.locator('html')).toHaveClass(/accessibility-blue/);
+  await expect(page.locator('.accessibility-controls')).toHaveCount(0);
+  release();
+  await expect(trigger(page)).toBeVisible();
+  await expect(page.locator('#view h1')).toHaveCSS('font-family', /adys/);
+  await page.locator('#footer a[href="/rechnik"]').click();
+  await expect(page).toHaveURL(/\/rechnik/);
+  await expect(page.locator('#view')).not.toHaveAttribute('aria-busy', 'true');
+  await expect(page.locator('#view h1')).toHaveCSS('font-family', /adys/);
+  await page.reload();
+  await expect(trigger(page)).toBeVisible();
+  await expect(page.locator('#view h1')).toHaveCSS('font-family', /adys/);
+  await choose(page, '.a11y__item--textonly button');
+  await page.reload();
+  await expect(trigger(page)).toBeVisible();
+  await expect(page.locator('html')).toHaveClass(/a11y-textonly/);
+  await choose(page, '.a11y__item--clear button');
+  await page.locator('#footer a[href="/razhodi"]').click();
+  await expect(page).toHaveURL(/\/razhodi/);
+  await expect(page.locator('#view')).not.toHaveAttribute('aria-busy', 'true');
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        [...document.styleSheets]
+          .filter((s) => s.href?.includes('/css/pages/'))
+          .every((s) => !s.disabled),
+      ),
+    )
+    .toBe(true);
+});
+
+test('default search and option padding equals the browser and site cascade', async ({
+  page,
+  visit,
+}) => {
+  for (const path of ['/', '/danni', '/dalg']) {
+    await visit(path);
+    const result = await page.evaluate(() => {
+      const read = () =>
+        [...document.querySelectorAll('#btn-search,.s24-clear,option,input')].map((el) => {
+          const s = getComputedStyle(el);
+          return [s.paddingTop, s.paddingRight, s.paddingBottom, s.paddingLeft];
+        });
+      const actual = read();
+      const sheet = [...document.styleSheets].find((s) =>
+        s.href?.endsWith('/css/accessibility.css'),
+      )!;
+      sheet.disabled = true;
+      const baseline = read();
+      sheet.disabled = false;
+      return { actual, baseline };
+    });
+    expect(result.actual).toEqual(result.baseline);
+  }
+});
+
+test('embedded view has no panel', async ({ page, visit }) => {
+  await visit('/embed/s17-dalg-chart');
+  await expect(page.locator('body')).toHaveClass(/bare/);
+  await expect(page.locator('.accessibility-controls')).toHaveCount(0);
+});
+
+test('contrast variants and reset keep their state accessible', async ({ page, visit }) => {
+  await visit('/');
+  for (const mode of ['yellow', 'dark', 'blue', 'clear']) {
+    await choose(page, `.a11y__btn--${mode}`);
+    await trigger(page).click();
+    await expect(page.locator(`.a11y__btn--${mode}`)).toHaveAttribute('aria-pressed', 'true');
+    await page.keyboard.press('Escape');
+  }
+  await page.reload();
+  await expect(page.locator('html')).not.toHaveClass(/accessibility-null/);
+  await choose(page, '.a11y__item--increase button');
+  await choose(page, '.a11y__item--clear button');
+  await expect(page.locator('html')).not.toHaveClass(/font-resize/);
+});

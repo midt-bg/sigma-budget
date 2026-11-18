@@ -1,8 +1,42 @@
+@import url('/assets/accessibility/accessibility.css') layer(a11y-vendor);
+
+/* Return the vendor's universal reset to the earlier cascade outside its controls.
+   Layering alone would still override UA padding on inputs, options and buttons. */
+@layer a11y-vendor {
+  :where(html, body, body *):not(
+    :where(
+      .accessibility-controls,
+      .accessibility-controls *,
+      .accessibility-content,
+      .accessibility-content *
+    )
+  ),
+  :where(html, body, body *):not(
+      :where(
+        .accessibility-controls,
+        .accessibility-controls *,
+        .accessibility-content,
+        .accessibility-content *
+      )
+    )::before,
+  :where(html, body, body *):not(
+      :where(
+        .accessibility-controls,
+        .accessibility-controls *,
+        .accessibility-content,
+        .accessibility-content *
+      )
+    )::after {
+    margin: revert-layer;
+    padding: revert-layer;
+    box-sizing: revert-layer;
+  }
+}
 /* First-party integration; the vendor directory must retain its original bytes. */
 @font-face {
   font-family: adys;
   src: url('/assets/accessibility/ADYS-Regular-V5-4.ttf') format('truetype');
-  font-display: swap;
+  font-display: block;
 }
 html.dyslectic-font,
 html.dyslectic-font body,
@@ -122,6 +156,9 @@ html:is(.accessibility-yellow, .accessibility-dark, .accessibility-blue) a {
   text-decoration: underline !important;
 }
 /* Survives upstream disabling stylesheets, including newly loaded route CSS. */
+body.bare .accessibility-controls {
+  display: none !important;
+}
 html.a11y-textonly body {
   margin: 16px;
   line-height: 1.6;
@@ -191,4 +228,15 @@ html.a11y-textonly.font-resize {
 }
 html.a11y-textonly body.font-resize {
   font-size: inherit;
+}
+
+/* Text mode keeps inline metadata and navigation links separate without site layout. */
+html.a11y-textonly .fine-row > *,
+html.a11y-textonly .block-tags > *,
+html.a11y-textonly .tabbar > * {
+  display: inline-block;
+  margin: 0 0.75em 0.5em 0;
+}
+html.a11y-textonly .block-tags {
+  margin-block: 0.5em;
 }

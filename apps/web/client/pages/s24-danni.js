@@ -21,7 +21,7 @@ import { STATUS, statusPill } from '../ui/status.js';
 import { srcShort } from '../ui/source.js';
 import * as share from '../share.js';
 import * as C from '../catalog.js';
-import { catalogueDescription } from '../production/launch-texts.js';
+import { catalogueDescription, accessibilityCredits } from '../production/launch-texts.js';
 
 export const needs = ['catalog', 'core?'];
 export const styles = ['s24-danni'];
@@ -261,6 +261,7 @@ function setsSection(M, f, L) {
     's24-sets',
     'Наборите данни',
     () => html`
+    <p>${accessibilityCredits.font} <a href="https://adysfont.com/">adysfont.com</a> · <a href="https://creativecommons.org/licenses/by-nd/4.0/">CC BY-ND 4.0</a></p><p>${accessibilityCredits.plugin}</p>
     <p class="s24-lead">Каталогът описва <strong>${plural(M.counts.datasets, 'набор данни', 'набора данни')}</strong>: ${breakdown(M)}. До всеки набор са източникът, периодът, датата на данните, форматът и размерът. Как се четат файловете с код е в <a href="${href('api')}">${byKey.api?.title || 'Отворени данни и MCP'}</a>.</p>
     <p class="s24-dl"><a class="btn btn-sm" href="data/catalog.json" download="catalog.json">${icon('download', { size: 16 })}<span>Свали каталога (JSON)</span></a>
       <button type="button" class="btn btn-sm" data-s24-csv>${icon('table', { size: 16 })}<span>Свали показаното (CSV)</span></button></p>

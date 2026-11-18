@@ -11,7 +11,7 @@ declare const accessibility: (options: {
 
 let started = false;
 export async function initAccessibility(): Promise<void> {
-  if (started) return;
+  if (started || document.body.classList.contains('bare')) return;
   started = true;
   // Deferred classic scripts finish before DOMContentLoaded; the shell may start earlier.
   if (document.readyState === 'loading') {
@@ -35,6 +35,8 @@ export async function initAccessibility(): Promise<void> {
     });
   };
   try {
+    // Upstream toggles the root and body after fetching translations. Its body starts
+    // clean; reconcile the prepaint root immediately after initialization (before paint).
     await accessibility({
       parentSelector: 'body',
       navSelector: '#topbar',
@@ -58,59 +60,13 @@ export async function initAccessibility(): Promise<void> {
         },
       ],
     });
+    for (const mode of ['font-resize', 'dyslectic-font']) {
+      root.classList.toggle(mode, document.body.classList.contains(mode));
+    }
     const toolbar = document.querySelector<HTMLElement>('.accessibility-controls')!;
-    const button = toolbar.querySelector<HTMLButtonElement>('.a11y-tools__button')!;
-    const panel = toolbar.querySelector<HTMLElement>('.a11y-tools__nav')!;
-    // Keep the site's skip link first in the document's keyboard order.
-    document.body.append(toolbar);
-    toolbar.removeAttribute('tabindex');
-    panel.removeAttribute('tabindex');
-    panel.id = 'accessibility-panel';
-    panel.setAttribute('aria-label', 'Настройки за достъпност');
-    button.tabIndex = 0;
-    button.setAttribute('aria-controls', panel.id);
-    const setOpen = (open: boolean) => {
-      button.setAttribute('aria-expanded', String(open));
-      panel.hidden = !open;
-    };
-    setOpen(false);
-    button.addEventListener('click', () => setOpen(panel.hidden));
-    toolbar.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') {
-        setOpen(false);
-        button.focus();
-      }
-    });
-    document.addEventListener('click', (event) => {
-      if (!toolbar.contains(event.target as Node)) setOpen(false);
-    });
-    toolbar.addEventListener('focusout', (event) => {
-      if (!toolbar.contains(event.relatedTarget as Node)) setOpen(false);
-    });
-    // Replace upstream JS-only skip links with the site's existing native skip link.
+    // The vendor owns keyboard/ARIA. Keep our native skip link first and the trigger second.
+    document.querySelector('.skip-link')?.after(toolbar);
     document.querySelector('.accessibility-content')?.remove();
-    const syncPressed = () => {
-      for (const [selector, active] of [
-        ['.a11y__item--increase button', root.classList.contains('font-resize')],
-        ['.a11y__item--dyslexic button', root.classList.contains('dyslectic-font')],
-        ['.a11y__item--textonly button', root.classList.contains('a11y-textonly')],
-        ...['yellow', 'dark', 'blue', 'clear'].map((mode) => [
-          `.a11y__btn--${mode}`,
-          mode === 'clear'
-            ? !/accessibility-(yellow|dark|blue)/.test(root.className)
-            : root.classList.contains(`accessibility-${mode}`),
-        ]),
-      ] as Array<[string, boolean]>) {
-        toolbar.querySelector(selector)?.setAttribute('aria-pressed', String(active));
-      }
-      toolbar.querySelector('.a11y__item--increase span')!.textContent = root.classList.contains(
-        'font-resize',
-      )
-        ? 'Намали шрифта'
-        : 'Увеличи шрифта';
-    };
-    toolbar.addEventListener('click', syncPressed);
-    syncPressed();
     document.head.addEventListener('load', syncText, true);
     new MutationObserver(syncText).observe(document.head, { childList: true, subtree: true });
     new MutationObserver(syncText).observe(document.querySelector('#view')!, {
