@@ -88,6 +88,7 @@
   --tabbar-h: 64px;
   /* Stable reserve for bottom controls (only Chromium has safe-area-max-inset-*). Without viewport-fit=cover, Safari and Firefox report
      no bottom inset, so the fallback is the current inset, not Chrome's 36px Safari value for cover. */
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --safe-area-bottom-max: env(safe-area-max-inset-bottom, env(safe-area-inset-bottom, 0px));
 
   /* ---- roles (v2/v3 names) mapped onto the СИГМА palette ---- */
@@ -283,4 +284,14 @@ html {
 
 :root[data-theme='light'] {
   color-scheme: light;
+}
+
+/* Without viewport-fit=cover, Gecko on Android already lays the page out above the system navigation, yet with the dynamic
+   toolbar at the top it still reports that navigation as a bottom inset, so every bottom reserve would count it twice.
+   https://bugzilla.mozilla.org/show_bug.cgi?id=2057232 — revisit if viewport-fit=cover ever returns. */
+@supports (-moz-appearance: none) {
+  :root {
+    --safe-area-bottom: 0px;
+    --safe-area-bottom-max: 0px;
+  }
 }

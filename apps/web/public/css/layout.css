@@ -458,7 +458,7 @@
 }
 .main {
   min-width: 0;
-  padding: 0 var(--gutter) calc(var(--sp-8) + env(safe-area-inset-bottom, 0px));
+  padding: 0 var(--gutter) calc(var(--sp-8) + var(--safe-area-bottom));
 }
 .view {
   max-width: var(--content-w);
@@ -481,7 +481,7 @@
     right: 0;
     /* Keep sizing stable while browser controls move; only the offset follows the inset.
        https://developer.chrome.com/docs/css-ui/edge-to-edge */
-    bottom: calc(env(safe-area-inset-bottom, 0px) - var(--safe-area-bottom-max));
+    bottom: calc(var(--safe-area-bottom) - var(--safe-area-bottom-max));
     z-index: 40;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -902,7 +902,7 @@ body.bare .page {
 }
 @media (max-width: 960px) {
   .toasts {
-    bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tabbar-h) + var(--sp-3));
+    bottom: calc(var(--safe-area-bottom) + var(--tabbar-h) + var(--sp-3));
   }
 }
 
