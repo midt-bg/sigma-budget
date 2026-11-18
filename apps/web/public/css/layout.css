@@ -490,6 +490,18 @@
     background: var(--paper);
     border-top: 1px solid var(--ink);
   }
+  @supports (-moz-appearance: none) {
+    @media (scripting: enabled) {
+      .tabbar {
+        /* Gecko's bottom-fixed layer can detach while the top toolbar moves.
+           Keep this body-level nav in the root scrollport's sticky path instead.
+           https://bugzilla.mozilla.org/show_bug.cgi?id=1797964
+           Without scripting, the following noscript notice needs the fixed path.
+           Chromium keeps the edge-to-edge fixed offset above. */
+        position: sticky;
+      }
+    }
+  }
 }
 .tabbar a,
 .tabbar button {
