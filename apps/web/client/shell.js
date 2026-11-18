@@ -8,6 +8,7 @@
 // three tabs «Начало · Отчет · Бюджет»; everything else is under «Меню».
 // The shell follows the store (period, user type, sources) and the router
 // (current item, period switch hidden on screens that do not depend on a period). Page workers never edit this file.
+import { initAccessibility } from './accessibility.js';
 import { store, safe } from './store.js';
 import { byId, href as routeHref } from './routes.js';
 import { html, nextId } from './html.js';
@@ -259,6 +260,7 @@ export const shell = {
     $('footer')?.addEventListener('click', footClick);
     window.matchMedia(WIDE).addEventListener?.('change', syncFooter);
     applySources();
+    void initAccessibility();
 
     $('topbar').addEventListener('click', (e) => {
       const period = e.target.closest('#btn-period');

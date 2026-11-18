@@ -68,8 +68,8 @@ function siteFiles(candidate: Candidate | null): Plugin {
         JSON.stringify(availableCatalog(JSON.parse(readFileSync(catalogPath, 'utf8')))),
       );
       await bundle({
-        entryPoints: ['client/mcp-install.ts'],
-        outfile: resolve(options.dir, 'js/mcp-install.js'),
+        entryPoints: ['client/mcp-install.ts', 'client/accessibility.ts'],
+        outdir: resolve(options.dir, 'js'),
         format: 'esm',
       });
       await bundle({

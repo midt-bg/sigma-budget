@@ -21,7 +21,7 @@ import { STATUS, statusPill } from '../ui/status.js';
 import { srcShort } from '../ui/source.js';
 import * as share from '../share.js';
 import * as C from '../catalog.js';
-import { catalogueDescription } from '../production/launch-texts.js';
+import { catalogueDescription, accessibilityCredits } from '../production/launch-texts.js';
 
 export const needs = ['catalog', 'core?'];
 export const styles = ['s24-danni'];
@@ -329,7 +329,9 @@ const sourcesSection = (M) =>
     'Първични източници',
     () => html`
   <p class="s24-lead2">Всяко число идва от първичен източник. Тук са източниците, които ползва поне един набор.</p>
-  <ul class="s24-srclist" role="list">${M.sourceKeys.map((k) => srcItem(k, M))}</ul>`,
+  <ul class="s24-srclist" role="list">${M.sourceKeys.map((k) => srcItem(k, M))}</ul>
+  <p>${accessibilityCredits.font} <a href="${accessibilityCredits.authorUrl}">${accessibilityCredits.copyright}</a> · <a href="${accessibilityCredits.licenseUrl}">${accessibilityCredits.license}</a></p>
+  <p>${accessibilityCredits.plugin}</p>`,
     { foot: reportLink({ block: 's24-sources' }) },
   );
 

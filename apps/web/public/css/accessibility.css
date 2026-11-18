@@ -1,0 +1,238 @@
+@import url('/assets/accessibility/accessibility.css') layer(a11y-vendor);
+
+/* Return the vendor's universal reset to the earlier cascade outside its controls.
+   Layering alone would still override UA padding on inputs, options and buttons. */
+@layer a11y-vendor {
+  :where(html, body, body *):not(
+    :where(
+      .accessibility-controls,
+      .accessibility-controls *,
+      .accessibility-content,
+      .accessibility-content *
+    )
+  ),
+  :where(html, body, body *):not(
+      :where(
+        .accessibility-controls,
+        .accessibility-controls *,
+        .accessibility-content,
+        .accessibility-content *
+      )
+    )::before,
+  :where(html, body, body *):not(
+      :where(
+        .accessibility-controls,
+        .accessibility-controls *,
+        .accessibility-content,
+        .accessibility-content *
+      )
+    )::after {
+    margin: revert-layer;
+    padding: revert-layer;
+    box-sizing: revert-layer;
+  }
+}
+/* A single root scale enlarges rem-based type without compounding body percentages. */
+html.font-resize {
+  font-size: 125%;
+}
+html body.font-resize {
+  font-size: var(--fs-0);
+}
+html.font-resize .mast-in {
+  flex-wrap: wrap;
+  height: auto;
+}
+html.font-resize .topbar-tools {
+  flex-wrap: wrap;
+}
+html.font-resize {
+  --tabbar-h: 80px;
+}
+html.font-resize .tabbar span {
+  white-space: normal;
+  overflow: visible;
+}
+html.font-resize .page-title {
+  overflow-wrap: anywhere;
+}
+.accessibility-controls.a11y-tools {
+  position: fixed;
+  left: 12px;
+  right: auto;
+  bottom: 16px;
+  display: block;
+  font:
+    400 16px/1.5 system-ui,
+    sans-serif;
+  z-index: 80;
+  transition: none;
+}
+@media (max-width: 960px) {
+  .accessibility-controls.a11y-tools {
+    bottom: calc(
+      var(--tabbar-h, 64px) + var(--safe-area-bottom, env(safe-area-inset-bottom, 0px)) + 12px
+    );
+  }
+}
+.accessibility-controls .a11y-tools__button {
+  position: static;
+  display: block;
+  width: 48px;
+  height: 48px;
+  border: 4px solid #ac1b18;
+  background-color: #ac1b18;
+  cursor: pointer;
+  transition: none;
+}
+.accessibility-controls .a11y-tools__button::before {
+  content: none;
+}
+.accessibility-controls.a11y-tools .a11y-tools__nav {
+  position: absolute;
+  bottom: 56px;
+  left: 0;
+  width: min(340px, calc(100vw - 24px));
+  max-height: calc(100dvh - 160px);
+  overflow-y: auto;
+  margin: 0;
+  background: #bfc4c3;
+  color: #000;
+  border: 1px solid #46423d;
+  transition: none;
+}
+.accessibility-controls .a11y-tools__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.accessibility-controls .a11y-tools__list > li {
+  padding: 10px;
+}
+.accessibility-controls .a11y-tools__title {
+  font-size: 18px;
+}
+.accessibility-controls .a11y__item__button {
+  padding: 8px 0;
+  cursor: pointer;
+}
+.accessibility-controls .a11y__item__button span {
+  font-size: 16px;
+}
+.accessibility-controls .a11y-tools__contrast {
+  display: flex;
+  gap: 8px;
+  padding: 12px 0;
+}
+.accessibility-controls .a11y__btn--c {
+  min-width: 44px;
+  min-height: 44px;
+  margin: 0;
+  justify-content: center;
+}
+.accessibility-controls .a11y__item--credits p {
+  font-size: 14px;
+}
+.accessibility-controls :focus-visible {
+  outline: 3px solid currentColor !important;
+  outline-offset: 2px !important;
+}
+html:is(.accessibility-yellow, .accessibility-dark, .accessibility-blue) a {
+  text-decoration: underline !important;
+}
+/* Survives upstream disabling stylesheets, including newly loaded route CSS. */
+body.bare .accessibility-controls {
+  display: none !important;
+}
+html.a11y-textonly body {
+  margin: 16px;
+  line-height: 1.6;
+  color: #15110c;
+  background: #fff;
+}
+html.a11y-textonly img,
+html.a11y-textonly svg,
+html.a11y-textonly video,
+html.a11y-textonly iframe,
+html.a11y-textonly .chart {
+  display: none !important;
+}
+html.a11y-textonly .sr-only,
+html.a11y-textonly .skip-link:not(:focus) {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+}
+html.a11y-textonly .skip-link:focus {
+  position: relative;
+  display: block;
+}
+html.a11y-textonly :focus-visible {
+  outline: 3px solid currentColor !important;
+  outline-offset: 2px !important;
+}
+html.a11y-textonly .accessibility-controls {
+  position: static;
+  margin-bottom: 16px;
+}
+html.a11y-textonly .a11y-tools__button {
+  width: auto;
+  height: auto;
+  background: #fff;
+  border: 2px solid #15110c;
+  padding: 8px;
+}
+html.a11y-textonly .a11y-tools__button .sr-only {
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+  clip-path: none !important;
+}
+html.a11y-textonly .accessibility-controls .a11y-tools__nav {
+  position: static;
+  max-height: none;
+}
+html.a11y-textonly .a11y__item__button {
+  border: 1px solid #15110c;
+}
+html.a11y-textonly .table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  position: relative;
+}
+html.a11y-textonly [hidden] {
+  display: none !important;
+}
+html.a11y-textonly.font-resize {
+  font-size: 125%;
+}
+html.a11y-textonly body.font-resize {
+  font-size: inherit;
+}
+
+/* Text mode keeps inline metadata and navigation links separate without site layout. */
+html.a11y-textonly .fine-row > *,
+html.a11y-textonly .block-tags > *,
+html.a11y-textonly .tabbar > * {
+  display: inline-block;
+  margin: 0 0.75em 0.5em 0;
+}
+html.a11y-textonly .block-tags {
+  margin-block: 0.5em;
+}
+
+/* A closed text-mode panel must not reserve its hidden contents in normal flow. */
+html.a11y-textonly .accessibility-controls:not(.is-open) .a11y-tools__nav {
+  display: none;
+}
+html.a11y-textonly .next-kicker,
+html.a11y-textonly .next-title,
+html.a11y-textonly .next-text {
+  display: block;
+  margin-bottom: 0.25em;
+}

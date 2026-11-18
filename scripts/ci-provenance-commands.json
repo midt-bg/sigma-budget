@@ -3,7 +3,7 @@
     "pnpm exec playwright install --with-deps chromium",
     "pnpm exec playwright install --with-deps chromium",
     "E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker visual-audit.spec.ts",
-    "E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker light-contrast.spec.ts",
+    "E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker light-contrast.spec.ts accessibility-panel.spec.ts",
     "E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker screens-base.spec.ts screens-demo.spec.ts screens-variants.spec.ts screens-selftest.spec.ts",
     "E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker screens-tour.spec.ts screens-sharing.spec.ts screens-shell.spec.ts screens-glossary.spec.ts screens-tabs.spec.ts screens-views.spec.ts",
     "E2E_WORKER_URL=http://127.0.0.1:8814 pnpm test:e2e --project=worker boot.spec.ts narrative-adoption.spec.ts security-headers.spec.ts vrazka.spec.ts",
