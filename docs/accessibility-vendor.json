@@ -1,0 +1,61 @@
+{
+  "repository": "https://github.com/midt-bg/sigma",
+  "head": "7d5d13777aabc42f23f424ca0428ed827891ffef",
+  "files": [
+    {
+      "path": "apps/web/public/assets/accessibility/ADYS-Regular-V5-4.ttf",
+      "commit": "2854d9447c4a858183e4eabe6cf46179fa20f459",
+      "sha256": "256dcf777c36e44478afd322580a599c033a7011a8ba8e156ae4316a1d05bd8b"
+    },
+    {
+      "path": "apps/web/public/assets/accessibility/accessibility.css",
+      "commit": "2d93cd523bf22514b08aa0468e0787f231bb5299",
+      "sha256": "45deef8d7d73862603b0e3ebf93b0732684196cfed31aa1ed6c69d41bfa56c2c"
+    },
+    {
+      "path": "apps/web/public/assets/accessibility/accessibility.js",
+      "commit": "2d93cd523bf22514b08aa0468e0787f231bb5299",
+      "sha256": "e56dd2ea195aa299fc6b038637240a97be567acb1c32932938faa2c3a1b78449"
+    },
+    {
+      "path": "apps/web/public/assets/accessibility/contrast.svg",
+      "commit": "2854d9447c4a858183e4eabe6cf46179fa20f459",
+      "sha256": "eeb4b1c24934f2221d94b1e2e8cf9f741f2445116c19b102722dc5666b9be756"
+    },
+    {
+      "path": "apps/web/public/assets/accessibility/dyslexia.svg",
+      "commit": "2854d9447c4a858183e4eabe6cf46179fa20f459",
+      "sha256": "1022f6bf1cb79dfd5cb6e8618c8c5f33ade2501dd937e975637b3c196d06d8e6"
+    },
+    {
+      "path": "apps/web/public/assets/accessibility/fontscale-up.svg",
+      "commit": "2854d9447c4a858183e4eabe6cf46179fa20f459",
+      "sha256": "c1f8c1bf22aa09bc4dd7454af328a6f1850202aba98dd9678f7a6c7f1a0d0961"
+    },
+    {
+      "path": "apps/web/public/assets/accessibility/goto.svg",
+      "commit": "2854d9447c4a858183e4eabe6cf46179fa20f459",
+      "sha256": "940c56a1d6d34c7c9ec744b0e3470af50f08367586c7ae9a42876a05820a0a13"
+    },
+    {
+      "path": "apps/web/public/assets/accessibility/man-accessibility.svg",
+      "commit": "2854d9447c4a858183e4eabe6cf46179fa20f459",
+      "sha256": "ad251359c15567a2f5dd47526671a3f3ba27acdaffa9dee6aafe59987d9e7892"
+    },
+    {
+      "path": "apps/web/public/assets/accessibility/reset.svg",
+      "commit": "2854d9447c4a858183e4eabe6cf46179fa20f459",
+      "sha256": "c78ff20f50c37cb79f584cbf6609b86e536f2acdc69b8326e544b00706e24895"
+    },
+    {
+      "path": "apps/web/public/assets/accessibility/text-version.svg",
+      "commit": "2854d9447c4a858183e4eabe6cf46179fa20f459",
+      "sha256": "029aba57c2f882f1427c585c0ec3999f323f031f765e2010d47d22c4fc101949"
+    },
+    {
+      "path": "apps/web/public/assets/accessibility/translations.json",
+      "commit": "2d93cd523bf22514b08aa0468e0787f231bb5299",
+      "sha256": "c8ffc77d8fcb40feeb20b0569e3199648a3139a53c5491c3ba8c25ea49ec1b18"
+    }
+  ]
+}

@@ -6,7 +6,7 @@ import { Outlet, useMatches } from 'react-router';
 import type { ScreenDoc } from './lib/screen.server';
 import { CSP } from './lib/security';
 
-const SHARED_CSS = ['tokens', 'base', 'layout', 'components', 'charts', 'motion'];
+const SHARED_CSS = ['tokens', 'base', 'layout', 'components', 'charts', 'motion', 'accessibility'];
 const FIRST = new Set(['description', 'robots']); // apps/web/public/index.html has these two before the site's own meta tags
 
 const docOf = (matches: ReturnType<typeof useMatches>) =>
@@ -59,6 +59,8 @@ export function Layout({ children }: { children: ReactNode }) {
           title="СИГМА Бюджет за езикови модели"
           href="/llms.txt"
         />
+        <link rel="stylesheet" href="/assets/accessibility/accessibility.css" />
+        <script defer src="/assets/accessibility/accessibility.js" />
         {SHARED_CSS.map((n) => (
           <link key={n} rel="stylesheet" href={`/css/${n}.css`} />
         ))}
