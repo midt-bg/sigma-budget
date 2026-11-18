@@ -8,7 +8,8 @@ onlyBuiltDependencies:
   - sharp
 auditConfig:
   ignoreGhsas:
-    # GHSA-fc5q-39xc-vjpf (picomatch <=4.0.7, ReDoS on crafted extglobs): no patched version exists yet.
-    # picomatch is reached only at build time (@react-router/dev > tinyglobby), with glob patterns from our
-    # own config and no visitor input; the Worker never ships it. Remove this entry once picomatch is patched.
+    # GHSA-fc5q-39xc-vjpf (picomatch <=4.0.7, ReDoS through crafted repeated extglob patterns): no patched version exists yet.
+    # picomatch is dev-only (vite, vitest, tinyglobby/fdir under @react-router/dev): it runs in builds, tests and the local
+    # dev server, always with glob patterns from our config and code, never from visitors; the Worker bundle does not contain it.
+    # Remove this entry once a patched picomatch is released.
     - GHSA-fc5q-39xc-vjpf
