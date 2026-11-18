@@ -490,6 +490,15 @@
     background: var(--paper);
     border-top: 1px solid var(--ink);
   }
+  @supports (-moz-appearance: none) {
+    .tabbar {
+      /* Gecko already keeps the fixed bar above Android's system navigation.
+         Its dynamic safe-area inset would reserve that space a second time. */
+      bottom: 0;
+      height: var(--tabbar-h);
+      padding-bottom: 0;
+    }
+  }
 }
 .tabbar a,
 .tabbar button {
