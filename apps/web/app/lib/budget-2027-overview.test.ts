@@ -259,7 +259,7 @@ it('uses the motives terms for the measures and explains the law grouping', asyn
     'Целогодишен размер на оптимизацията с 10% на разходите за персонал',
   );
   expect(text('telk', '.s12-text')).toBe(
-    'Подобряване на ефективността на механизмите за оценка и контрол при определяне на правото на достъп до лична помощ по Закона за личната помощ.',
+    'Засилване на контрола върху публичния ресурс за хора с увреждания чрез реформа на медицинската експертиза и нов подход при оценка на потребностите от подкрепа. Включени са и възможности за съфинансиране с европейски средства.',
   );
   expect(text('akciz-gaz', '.s12-name')).toBe(
     'Ефект от нулевата ставка на акциза за втечнен нефтен газ (LPG) и природен газ, прилагана за периода 1 октомври – 31 декември 2026 г.',
@@ -322,12 +322,13 @@ it.each([
     'danak-imoti',
     'Поетапно увеличение на базисната данъчна стойност при данъка върху недвижимите имоти',
   ],
-  ['telk', 'Реформа в ТЕЛК: оценка и контрол при определяне на правото на достъп до лична помощ'],
+  ['telk', 'Медицинска експертиза и нов подход при оценка на потребностите от подкрепа'],
 ])('uses the source terminology in the title and law-index link of %s', async (id, expected) => {
   const { document } = await page('/merki?per=2027.draft');
   expect(document.querySelector(`#m27-${id} .s12-name`)!.textContent).toBe(expected);
   const link = document.querySelector(`#s12-27-zakoni a[href*="to=m27-${id}"]`);
-  if (id !== 'danak-imoti') expect(link?.textContent).toBe(expected);
+  if (id === 'telk') expect(link).toBeNull();
+  else if (id !== 'danak-imoti') expect(link?.textContent).toBe(expected);
 });
 
 it('states the aim of health financing measures and quotes the expenditure-group term', async () => {

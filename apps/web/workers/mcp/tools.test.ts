@@ -103,9 +103,15 @@ describe('search and fetch', () => {
     expect(hit.citations).toContainEqual(
       expect.objectContaining({
         slug: 'budget2027',
-        asOf: '2026-11-06',
+        asOf: '2026-11-16',
         unit: 'млн. €',
-        sources: expect.arrayContaining([expect.objectContaining({ id: 'budget2027' })]),
+        sources: expect.arrayContaining([
+          expect.objectContaining({
+            id: 'budget2027',
+            url: 'https://www.parliament.bg/bg/bills/ID/167645',
+            note: expect.stringContaining('Внесена версия от 16.11.2026'),
+          }),
+        ]),
       }),
     );
     expect(page.title).toBe('Пловдив');
@@ -270,7 +276,7 @@ describe('explain_number', () => {
     expect(monthly.from).toEqual(['data/2026-09/kfp/rev', 'data/2026-08/kfp/rev']);
     expect(monthly.cell).toBeUndefined();
   });
-  it('finds the page of a cell of the bill and its archive in the manifest', async () => {
+  it('finds the physical Word cell and its original in the manifest', async () => {
     const id = '7a83fb6508cd980457389efa'; // budget2027.json /budgets/bill/1/rows/0/cell
     const { out } = await run('explain_number', { record: 'budget2027/' + id });
     expect(out).toMatchObject({
@@ -279,9 +285,10 @@ describe('explain_number', () => {
       unit: 'хил. €',
       provenance: id,
       page_url: ORIGIN + '/danni/budget2027',
-      asOf: '2026-11-06',
+      asOf: '2026-11-16',
     });
-    expect(out.page).toBeDefined();
+    expect(out.page).toBeUndefined();
+    expect(out.location).toEqual({ member: 'word/document.xml', table: 1, row: 3, column: 2 });
     expect(out.document).toMatchObject({ archive: expect.any(String) });
     expect(out.source.path).toBe(out.document.archive);
   });

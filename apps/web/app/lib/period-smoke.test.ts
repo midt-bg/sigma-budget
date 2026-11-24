@@ -439,10 +439,14 @@ for (const per of [
       const entries = (await load('budget2027-provenance')).entries;
       const note = document.querySelector('#s07-notes')?.textContent;
       expect(note).toContain(
-        `По функции: Табл. III-1, стр. ${entries[p.functions[0].cell.provenance].page}`,
+        entries[p.functions[0].cell.provenance].location
+          ? 'По функции: Табл. III-1 (Word)'
+          : `По функции: Табл. III-1, стр. ${entries[p.functions[0].cell.provenance].page}`,
       );
       expect(note).toContain(
-        `По икономически вид: Приложение 3, стр. ${entries[p.rows[0].cell.provenance].page}`,
+        entries[p.rows[0].cell.provenance].location
+          ? 'По икономически вид: Приложение 3 (Word)'
+          : `По икономически вид: Приложение 3, стр. ${entries[p.rows[0].cell.provenance].page}`,
       );
     });
   }
