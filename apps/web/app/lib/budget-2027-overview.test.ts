@@ -276,7 +276,7 @@ it('uses the motives terms for the measures and explains the law grouping', asyn
   const group = document.getElementById('s12-27-zakoni')!;
   expect(group.querySelector('h2')!.textContent).toBe('Мерки по закони');
   expect(group.textContent).toContain(
-    'Мерките от таблици II-7 и II-8 са подредени по закона, когато мотивите посочват такъв. За 19 мерки мотивите не посочват закон и те не са включени тук.',
+    'Мерките от таблици II-7 и II-8 са подредени по закона, когато мотивите посочват такъв. За 20 мерки мотивите не посочват закон и те не са включени тук.',
   );
   expect(group.querySelectorAll('.m27-law')).toHaveLength(
     Number(tab.querySelector('.tab-count')!.textContent!.split(' ')[0]),
