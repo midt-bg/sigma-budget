@@ -664,9 +664,7 @@ it('shows the parliamentary revision and a complete revenue total with an explic
   expect(president.revenueCalculated).toBe(true);
   expect(sourceIndex.entries[president.revenue.provenance].operands).toHaveLength(2);
   const { document, scope, html } = await page('/vedomstva');
-  expect(document.getElementById('s10-bill-summary')?.textContent ?? html).not.toContain(
-    'Няма сбор',
-  );
+  expect(document.getElementById('s10-bill-totals')!.textContent).not.toContain('Няма сбор');
   expect(html).toContain('включва изчислен приход');
   expect(html).toContain('Приходната клетка в документа е празна');
   expect(html).toContain('16.11.2026');
