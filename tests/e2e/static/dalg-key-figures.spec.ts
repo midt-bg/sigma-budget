@@ -60,7 +60,7 @@ test('debt summary shows the selected data in one row on phone and desktop', asy
       if (key === '2026.law') {
         await expect(tiles.nth(0).locator('.kpi-sub')).toContainText('01.07.2026');
         await expect(tiles.nth(1).locator('.kpi-sub')).toContainText('01.07.2026');
-        await expect(tiles.nth(2).locator('.kpi-sub')).toContainText('06.11.2026');
+        await expect(tiles.nth(2).locator('.kpi-sub')).toContainText('16.11.2026');
       }
       await expect(tiles.nth(2).locator('.kpi-num')).toHaveText(interestText[key]!);
       const rows = await tiles.evaluateAll((nodes) =>
