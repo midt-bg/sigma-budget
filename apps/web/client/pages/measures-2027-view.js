@@ -82,12 +82,17 @@ function years(m) {
 function quote(m) {
   const t = m.text;
   const tableName = `Табл. ${m.table.replace('_', '-')}`;
-  const pages = t ? `стр.${NBSP}${t.page}${t.to && t.to !== t.page ? `–${t.to}` : ''}` : '';
+  const pages =
+    t?.page != null
+      ? `стр.${NBSP}${t.page}${t.to && t.to !== t.page ? `–${t.to}` : ''}`
+      : t?.sourceLocation
+        ? 'внесеният Word документ'
+        : '';
   return html`<details class="s12-quote">
     <summary>${t ? html`Откъс от мотивите · ${pages}` : html`Текстът в ${tableName}`}</summary>
     ${t ? html`<blockquote class="s12-quote-text" data-gl-skip>${t.quote}</blockquote>` : ''}
     <p class="m27-row small muted" data-gl-skip>
-      Редът в ${tableName}${t ? `, стр.${NBSP}${t.tablePage}` : ''}: „${m.row.label}“
+      Редът в ${tableName}${t?.tablePage != null ? `, стр.${NBSP}${t.tablePage}` : ''}: „${m.row.label}“
     </p>
   </details>`;
 }

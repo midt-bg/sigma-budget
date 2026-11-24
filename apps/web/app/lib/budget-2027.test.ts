@@ -640,3 +640,51 @@ it('missing-period recovery offers only periods containing the institution', asy
     expect(actions[0]!.textContent).toContain('Покажи 2027');
   }
 });
+
+it('uses a separately proven revenue calculation without converting arbitrary blanks to zero', () => {
+  const current = structuredClone(doc);
+  const budget = current.budgets.bill['5'];
+  budget.rows = budget.rows.filter((r: any) => r.no !== 'I.');
+  budget.derivedRevenue = { value: 0, unit: 'хил. €', provenance: 'calculated-revenue' };
+  const item = institutions(current).find((i) => i.article === 5);
+  expect(item.revenue).toEqual(budget.derivedRevenue);
+  expect(item.revenueCalculated).toBe(true);
+  delete budget.derivedRevenue;
+  expect(institutions(current).find((i) => i.article === 5).revenue).toBeUndefined();
+  expect(strictSum(institutions(current).map((i) => i.revenue))).toBeNull();
+});
+
+it('shows the parliamentary revision and a complete revenue total with an explicit calculated origin', async () => {
+  expect(doc.publication).toBe('2026-11-16');
+  const items = institutions(doc);
+  expect(items).toHaveLength(47);
+  expect(strictSum(items.map((i) => i.revenue))).toBe(2987376.1);
+  const president = items.find((i) => i.article === 5);
+  expect(president.revenue.value).toBe(0);
+  expect(president.revenueCalculated).toBe(true);
+  expect(sourceIndex.entries[president.revenue.provenance].operands).toHaveLength(2);
+  const { document, scope, html } = await page('/vedomstva');
+  expect(document.getElementById('s10-bill-summary')?.textContent ?? html).not.toContain(
+    'Няма сбор',
+  );
+  expect(html).toContain('включва изчислен приход');
+  expect(html).toContain('Приходната клетка в документа е празна');
+  expect(html).toContain('16.11.2026');
+  const table = tableData(scope.maps.table.get('s10-bill-table'));
+  const csv = csvFor({ table, source: ['budget2027'], period: '2027.draft', unit: 'хил. €' });
+  expect(csv).toContain('Изчислено от салдото, разходите и трансферите');
+  expect(csv).toContain(president.revenue.provenance);
+  const detail = await page('/vedomstvo/0200');
+  expect(detail.html).toContain('Собствени приходи (изчислено)');
+});
+
+it('reports the omitted investment project without inserting it or claiming cancellation', async () => {
+  expect(doc.projects).toHaveLength(225);
+  expect(doc.projects.some((p: any) => p.id === 'NP-25.001-0169')).toBe(false);
+  const { html, scope } = await page('/byudzhet-2027');
+  expect(html).toContain('NP-25.001-0169');
+  expect(html).toContain('Това не установява, че проектът е отменен');
+  const exported = csvFor({ table: tableData(scope.maps.table.get('s34-projects-table')) });
+  expect(exported).not.toContain('NP-25.001-0169');
+  expect(html).not.toMatch(/стр\.\s*(null|undefined)/);
+});

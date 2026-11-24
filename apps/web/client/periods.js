@@ -31,7 +31,7 @@ export const PERIODS = [
     status: 'expected',
     vintage: 'expected',
     label: '2026 · Очаквано',
-    desc: 'Оценка на МФ от 06.11.2026, не отчет',
+    desc: 'Оценка на МФ в избраното издание, не отчет',
   },
   {
     key: '2027.draft',
@@ -39,7 +39,7 @@ export const PERIODS = [
     status: 'draft',
     vintage: 'plan',
     label: '2027 · Законопроект',
-    desc: 'Законопроект на МФ от 06.11.2026',
+    desc: 'Законопроект за държавния бюджет',
   },
   {
     key: '2028.forecast',
@@ -47,7 +47,7 @@ export const PERIODS = [
     status: 'forecast',
     vintage: 'forecast',
     label: '2028 · Прогноза',
-    desc: 'АСБП 2027–2029 от 06.11.2026',
+    desc: 'АСБП 2027–2029 в избраното издание',
   },
   {
     key: '2029.forecast',
@@ -55,13 +55,13 @@ export const PERIODS = [
     status: 'forecast',
     vintage: 'forecast',
     label: '2029 · Прогноза',
-    desc: 'АСБП 2027–2029 от 06.11.2026',
+    desc: 'АСБП 2027–2029 в избраното издание',
   },
 ];
 const notices = {
   '2026.draft': 'Старият адрес избираше проекта за 2026. Показан е приетият закон за 2026.',
-  '2027.forecast': 'Прогнозата за 2027 е заменена с проекта, публикуван на 06.11.2026.',
-  '2028.forecast': 'Прогнозата за 2028 е обновена с АСБП 2027–2029 от 06.11.2026.',
+  '2027.forecast': 'Прогнозата за 2027 е заменена със законопроекта в избраното издание.',
+  '2028.forecast': 'Прогнозата за 2028 е обновена с АСБП 2027–2029 в избраното издание.',
 };
 export function resolvePeriod(requested) {
   const aliases = { '2026.draft': '2026.law', '2027.forecast': '2027.draft' };

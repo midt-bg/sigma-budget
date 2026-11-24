@@ -31,13 +31,12 @@ const source = ['budget2027'];
 export const gap = (title, text) => emptyState({ title, text });
 export const publication = (doc) =>
   html`<p>
-      МФ, ${date(doc.publication)}. Проектът за 2027 г. не е приет закон. Прогнозите са за 2028–2029 г. Сумите и
+      Публикация от ${date(doc.publication)}. Проектът за 2027 г. не е приет закон. Прогнозите са за 2028–2029 г. Сумите и
       празните клетки следват съответната таблица.
     </p>
     <p>
       <a href="${dataHref('budget2027-provenance')}"
-        >Произход на клетките, PDF страници и SHA-256 на оригиналния ZIP архив и двата PDF
-        документа</a
+        >Произход на числата, адреси на клетките и контролни суми на оригиналните документи</a
       >.
     </p>`;
 const namedScope = (key, label, long = label, note) => ({ key, label, long, note, gl: null });
@@ -153,7 +152,7 @@ export const unavailable = (ctx) =>
       ? {
           body: gap(
             'Това издание няма данните за проекта за 2027',
-            'Избери издание с публикацията на МФ от 06.11.2026. Исторически числа не заместват липсващите данни.',
+            'Избери издание с данните от законопроекта за 2027 г. и прогнозата за 2028–2029 г. Исторически числа не заместват липсващите данни.',
           ),
         }
       : null;
@@ -196,6 +195,12 @@ function institutionRows(ctx, items = institutions(ctx.data.budget2027, variantO
       code: i.code,
       article: i.article,
       revenue: cellValue(i.revenue),
+      revenueMethod: i.revenueCalculated
+        ? 'Изчислено от салдото, разходите и трансферите'
+        : cellValue(i.revenue) === null
+          ? 'Липсва стойност'
+          : 'Отпечатана стойност',
+      revenueOrigin: provenanceUrl(i.revenue),
       expenditure: cellValue(i.expenditure),
       provenance: i.expenditure?.provenance || '',
       origin: provenanceUrl(i.expenditure),
@@ -323,8 +328,17 @@ export function institutionView(ctx) {
         ctx,
         's11-budget-2027',
         `Бюджет по чл. ${selected.article}`,
-        rowsTable('s11-bill-rows', billRows(b.rows, variant)),
-        { sub: labels[variant] },
+        rowsTable('s11-bill-rows', [
+          ...billRows(b.rows, variant),
+          ...(cellValue(b.derivedRevenue) !== null
+            ? [
+                cellRow('Собствени приходи (изчислено)', b.derivedRevenue, {
+                  variant: labels[variant],
+                }),
+              ]
+            : []),
+        ]),
+        { sub: [labels[variant], b.derivedRevenueNote].filter(Boolean).join('. ') },
       )}
       ${base(
         ctx,
@@ -343,6 +357,12 @@ export function institutionView(ctx) {
   const rows = institutionRows(ctx, items);
   const total = strictSum(items.map((i) => i.expenditure)),
     rev = strictSum(items.map((i) => i.revenue));
+  const calculated = items.filter((i) => i.revenueCalculated);
+  const revenueNote = calculated.length
+    ? `За чл. ${calculated.map((i) => i.article).join(', ')} приходът е изчислен от отпечатаното равенство: приходи = салдо + разходи − трансфери. Приходната клетка в документа е празна.`
+    : rev === null
+      ? 'Поне една приходна стойност липсва и не може да бъде изведена от публикуваните данни.'
+      : '';
   const columns = [
     { key: 'name', label: 'Ведомство' },
     { key: 'article', label: 'Член' },
@@ -351,6 +371,8 @@ export function institutionView(ctx) {
     { key: 'variant', label: 'Вариант', csvOnly: true },
     { key: 'expenditure', label: 'Разходи', unit: 'хил. €', num: true, d: 1 },
     { key: 'revenue', label: 'Собствени приходи', unit: 'хил. €', num: true, d: 1 },
+    { key: 'revenueMethod', label: 'Основание за приходите', csvOnly: true },
+    { key: 'revenueOrigin', label: 'Произход на приходите', csvOnly: true },
     originCol,
     { key: 'origin', label: 'Връзка към произхода', csvOnly: true },
   ];
@@ -386,13 +408,17 @@ export function institutionView(ctx) {
       kpiGrid([
         kpi({ label: 'Публикувани бюджети', value: items.length }),
         kpi({ label: 'Разходи общо', mln: total == null ? null : total / 1000 }),
-        // without a printed revenue line for every article there is no total; „Предстои“ would promise one
+        // A complete sum may include a separately authenticated derived revenue cell.
         rev == null
-          ? kpi({ label: 'Собствени приходи', value: 'Няма сбор', sub: 'липсва отпечатан ред' })
-          : kpi({ label: 'Собствени приходи', mln: rev / 1000 }),
+          ? kpi({ label: 'Собствени приходи', value: 'Няма сбор', sub: 'непълни данни' })
+          : kpi({
+              label: 'Собствени приходи',
+              mln: rev / 1000,
+              sub: calculated.length ? 'включва изчислен приход' : '',
+            }),
       ]),
       {
-        sub: `${labels[variant]}. Сборът е изчислен от отпечатаните заглавни редове по членове 2–48; не е целият държавен бюджет. ${variant === 'billMc' ? 'Показан е само публикуваният чл. 2 от варианта на МС.' : 'За чл. 5 липсва отпечатан приходен ред, затова общият сбор на собствените приходи не е наличен.'}`,
+        sub: `${labels[variant]}. Сборът е изчислен от отпечатаните заглавни редове по членове 2–48; не е целият държавен бюджет. ${variant === 'billMc' ? 'Показан е само публикуваният чл. 2 от варианта на МС.' : revenueNote}`,
       },
     )}
       ${base(
@@ -808,6 +834,16 @@ export function projectsBlocks(ctx, doc) {
             Законопроектът предвижда ${money(toMln(sums[0]))} за ${num(projects.length)} инвестиционни
             проекта през 2027 г. Най-голяма част е за ${top.name}: ${money(toMln(top.value))}.
           </p>`
+        : ''
+    }
+    ${
+      doc.publication === '2026-11-16'
+        ? html`<p class="small">
+      Спрямо версията от 06.11.2026 г. във внесения документ не присъства проектът за автомобилите на НСО
+      (NP-25.001-0169). Липсата е проверена в оригиналната таблица; причина не е посочена.
+      Това не установява, че проектът е отменен.
+      <a href="https://www.parliament.bg/bg/bills/ID/167645">Внесеният законопроект и приложенията</a>.
+    </p>`
         : ''
     }
     <h3>Проектите по ведомства, 2027 г.</h3>

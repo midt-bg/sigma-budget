@@ -220,7 +220,7 @@ it('explains the GDP vintages, preliminary report and capital expenditure scope'
     `Дяловете от БВП за 2025 г. са спрямо БВП от „${release('core').sources.asbp.title}“`,
   );
   expect(text).toContain(
-    `за 2026 г. и 2027 г. — спрямо БВП от „${release('core').sources.budget2027.title}“ от 06.11.2026 г.`,
+    `за 2026 г. и 2027 г. — спрямо БВП от „${release('core').sources.budget2027.title}“ от ${release('budget2027').publication.split('-').reverse().join('.')} г.`,
   );
   expect(text).toContain(
     `В разчетите към закона редът „Капиталови“ е 9 408,1 млн. € и включва нетния прираст на държавния резерв. В Приложение 3 на „${release('core').sources.budget2027.title}“ прирастът е в отделен ред „Прираст на държавния резерв и изкупуване на земеделска продукция“, а капиталовите разходи в очакваното изпълнение са 9 360,6 млн. €.`,
@@ -410,7 +410,7 @@ it.each([1, 2])('derives dates and plural counts for %s records', async (count) 
   expect(overview.vm.lede).toContain(date(budget2027.publication));
   expect(String(overview.vm.context)).toContain(date(budget2027.publication));
   const text = overview.document.querySelector('article')!.textContent!;
-  expect(text).toContain(`МФ, ${date(budget2027.publication)}.`);
+  expect(text).toContain(`Публикация от ${date(budget2027.publication)}.`);
   expect(text).toContain(`От ${date(dbp2027.doc.date)}, по ЕСС 2010.`);
   expect(text).toContain(plural(count, 'бюджет', 'бюджета'));
   expect(text).toContain(plural(count, 'община', 'общини'));

@@ -314,7 +314,8 @@ for (const [per, attribution] of [
       expect(document.querySelector('article')?.textContent).not.toContain(
         'Приетият закон може да се различава от проекта',
       );
-      if (!per.endsWith('report')) expect(text).toContain('06.11.2026');
+      if (!per.endsWith('report'))
+        expect(text).toContain(date((await load('budget2027')).publication));
     });
   }
   it(`discloses the frozen sector snapshot beside figures for ${per}`, async () => {
@@ -424,7 +425,8 @@ for (const per of [
           const entry = (await load('budget2027-provenance')).entries[cell.provenance];
           expect(entry.period).toBe(per);
           expect(text).toContain(path.startsWith('/razhodi/') ? 'Табл. III-1' : 'Приложение 3');
-          expect(text).toContain(`стр. ${entry.page}`);
+          if (entry.location) expect(text).toContain('(Word)');
+          else expect(text).toContain(`стр. ${entry.page}`);
         }
       }
     });
