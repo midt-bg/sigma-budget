@@ -27,6 +27,7 @@ export function annualLocations(record, provenance, { sections, functionLabel } 
               .filter((row) => !functionLabel || norm(row.label) === norm(functionLabel))
               .map((row) => row.cell);
       const tables = new Map();
+      const nativeTables = new Set();
       for (const cell of rows) {
         const entry = provenance?.entries?.[cell?.provenance];
         const source = provenance?.documents?.[entry?.document]?.source;
@@ -37,6 +38,7 @@ export function annualLocations(record, provenance, { sections, functionLabel } 
           !record.sourceRefs?.includes(source)
         )
           continue;
+        if (entry.location) nativeTables.add(entry.table);
         const pages = tables.get(entry.table) || new Set();
         if (Number.isInteger(entry.page)) pages.add(entry.page);
         tables.set(entry.table, pages);
@@ -44,7 +46,7 @@ export function annualLocations(record, provenance, { sections, functionLabel } 
       const text = [...tables]
         .map(
           ([table, pages]) =>
-            `${TABLES[table] || table}${pages.size ? `, стр. ${[...pages].sort((a, b) => a - b).join(', ')}` : ''}`,
+            `${TABLES[table] || table}${nativeTables.has(table) ? ' (Word)' : ''}${pages.size ? `, стр. ${[...pages].sort((a, b) => a - b).join(', ')}` : ''}`,
         )
         .join('; ');
       return text ? `${sections ? `${SECTION[section] || section}: ` : ''}${text}.` : '';

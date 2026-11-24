@@ -74,7 +74,8 @@ export function institutions(doc, variant = 'bill') {
       code:
         Object.keys(ARTICLE_BY_CODE).find((k) => ARTICLE_BY_CODE[k] === Number(article)) ||
         `art${article}`,
-      revenue: headline(b, 'I'),
+      revenue: headline(b, 'I') ?? b.derivedRevenue,
+      revenueCalculated: !headline(b, 'I') && cellValue(b.derivedRevenue) !== null,
       expenditure: headline(b, 'II'),
       transfers: headline(b, 'III'),
     }));

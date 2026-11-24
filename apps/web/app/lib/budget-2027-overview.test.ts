@@ -220,7 +220,7 @@ it('explains the GDP vintages, preliminary report and capital expenditure scope'
     `Дяловете от БВП за 2025 г. са спрямо БВП от „${release('core').sources.asbp.title}“`,
   );
   expect(text).toContain(
-    `за 2026 г. и 2027 г. — спрямо БВП от „${release('core').sources.budget2027.title}“ от 06.11.2026 г.`,
+    `за 2026 г. и 2027 г. — спрямо БВП от „${release('core').sources.budget2027.title}“ от ${release('budget2027').publication.split('-').reverse().join('.')} г.`,
   );
   expect(text).toContain(
     `В разчетите към закона редът „Капиталови“ е 9 408,1 млн. € и включва нетния прираст на държавния резерв. В Приложение 3 на „${release('core').sources.budget2027.title}“ прирастът е в отделен ред „Прираст на държавния резерв и изкупуване на земеделска продукция“, а капиталовите разходи в очакваното изпълнение са 9 360,6 млн. €.`,
@@ -259,7 +259,7 @@ it('uses the motives terms for the measures and explains the law grouping', asyn
     'Целогодишен размер на оптимизацията с 10% на разходите за персонал',
   );
   expect(text('telk', '.s12-text')).toBe(
-    'Подобряване на ефективността на механизмите за оценка и контрол при определяне на правото на достъп до лична помощ по Закона за личната помощ.',
+    'Засилване на контрола върху публичния ресурс за хора с увреждания чрез реформа на медицинската експертиза и нов подход при оценка на потребностите от подкрепа. Включени са и възможности за съфинансиране с европейски средства.',
   );
   expect(text('akciz-gaz', '.s12-name')).toBe(
     'Ефект от нулевата ставка на акциза за втечнен нефтен газ (LPG) и природен газ, прилагана за периода 1 октомври – 31 декември 2026 г.',
@@ -276,7 +276,7 @@ it('uses the motives terms for the measures and explains the law grouping', asyn
   const group = document.getElementById('s12-27-zakoni')!;
   expect(group.querySelector('h2')!.textContent).toBe('Мерки по закони');
   expect(group.textContent).toContain(
-    'Мерките от таблици II-7 и II-8 са подредени по закона, когато мотивите посочват такъв. За 19 мерки мотивите не посочват закон и те не са включени тук.',
+    'Мерките от таблици II-7 и II-8 са подредени по закона, когато мотивите посочват такъв. За 20 мерки мотивите не посочват закон и те не са включени тук.',
   );
   expect(group.querySelectorAll('.m27-law')).toHaveLength(
     Number(tab.querySelector('.tab-count')!.textContent!.split(' ')[0]),
@@ -322,12 +322,13 @@ it.each([
     'danak-imoti',
     'Поетапно увеличение на базисната данъчна стойност при данъка върху недвижимите имоти',
   ],
-  ['telk', 'Реформа в ТЕЛК: оценка и контрол при определяне на правото на достъп до лична помощ'],
+  ['telk', 'Медицинска експертиза и нов подход при оценка на потребностите от подкрепа'],
 ])('uses the source terminology in the title and law-index link of %s', async (id, expected) => {
   const { document } = await page('/merki?per=2027.draft');
   expect(document.querySelector(`#m27-${id} .s12-name`)!.textContent).toBe(expected);
   const link = document.querySelector(`#s12-27-zakoni a[href*="to=m27-${id}"]`);
-  if (id !== 'danak-imoti') expect(link?.textContent).toBe(expected);
+  if (id === 'telk') expect(link).toBeNull();
+  else if (id !== 'danak-imoti') expect(link?.textContent).toBe(expected);
 });
 
 it('states the aim of health financing measures and quotes the expenditure-group term', async () => {
@@ -410,7 +411,7 @@ it.each([1, 2])('derives dates and plural counts for %s records', async (count) 
   expect(overview.vm.lede).toContain(date(budget2027.publication));
   expect(String(overview.vm.context)).toContain(date(budget2027.publication));
   const text = overview.document.querySelector('article')!.textContent!;
-  expect(text).toContain(`МФ, ${date(budget2027.publication)}.`);
+  expect(text).toContain(`Публикация от ${date(budget2027.publication)}.`);
   expect(text).toContain(`От ${date(dbp2027.doc.date)}, по ЕСС 2010.`);
   expect(text).toContain(plural(count, 'бюджет', 'бюджета'));
   expect(text).toContain(plural(count, 'община', 'общини'));

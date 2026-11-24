@@ -44,7 +44,8 @@ it('resolves section locations from the release cell IDs and checks period and s
         expect(entry.period).toBe(p.periodKey);
         expect(p.sourceRefs).toContain(provenance.documents[entry.document].source);
         expect(entry.output).toContain(`/byPeriod/${p.periodKey}/${section}/`);
-        expect(text).toContain(`стр. ${entry.page}`);
+        if (entry.location) expect(text).toContain('(Word)');
+        else expect(text).toContain(`стр. ${entry.page}`);
       }
     }
   }
@@ -54,7 +55,9 @@ it('resolves section locations from the release cell IDs and checks period and s
   entry.page = 321;
   entry.table = 'annex1_execution2026';
   const options = { provenance, sections: ['functions'], functionLabel: row.label };
-  expect(annualSourceText(p, options)).toContain('Приложение 1, стр. 321');
+  expect(annualSourceText(p, options)).toContain(
+    entry.location ? 'Приложение 1 (Word), стр. 321' : 'Приложение 1, стр. 321',
+  );
   expect(annualSourceText(p, options)).not.toContain('Табл. III-1');
   entry.period = '2027.draft';
   expect(annualSourceText(p, options)).not.toContain('321');

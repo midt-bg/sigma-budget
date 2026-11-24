@@ -314,7 +314,8 @@ for (const [per, attribution] of [
       expect(document.querySelector('article')?.textContent).not.toContain(
         'Приетият закон може да се различава от проекта',
       );
-      if (!per.endsWith('report')) expect(text).toContain('06.11.2026');
+      if (!per.endsWith('report'))
+        expect(text).toContain(date((await load('budget2027')).publication));
     });
   }
   it(`discloses the frozen sector snapshot beside figures for ${per}`, async () => {
@@ -424,7 +425,8 @@ for (const per of [
           const entry = (await load('budget2027-provenance')).entries[cell.provenance];
           expect(entry.period).toBe(per);
           expect(text).toContain(path.startsWith('/razhodi/') ? 'Табл. III-1' : 'Приложение 3');
-          expect(text).toContain(`стр. ${entry.page}`);
+          if (entry.location) expect(text).toContain('(Word)');
+          else expect(text).toContain(`стр. ${entry.page}`);
         }
       }
     });
@@ -437,10 +439,14 @@ for (const per of [
       const entries = (await load('budget2027-provenance')).entries;
       const note = document.querySelector('#s07-notes')?.textContent;
       expect(note).toContain(
-        `По функции: Табл. III-1, стр. ${entries[p.functions[0].cell.provenance].page}`,
+        entries[p.functions[0].cell.provenance].location
+          ? 'По функции: Табл. III-1 (Word)'
+          : `По функции: Табл. III-1, стр. ${entries[p.functions[0].cell.provenance].page}`,
       );
       expect(note).toContain(
-        `По икономически вид: Приложение 3, стр. ${entries[p.rows[0].cell.provenance].page}`,
+        entries[p.rows[0].cell.provenance].location
+          ? 'По икономически вид: Приложение 3 (Word)'
+          : `По икономически вид: Приложение 3, стр. ${entries[p.rows[0].cell.provenance].page}`,
       );
     });
   }
